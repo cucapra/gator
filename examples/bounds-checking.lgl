@@ -1,0 +1,11 @@
+// LinGL does not care about the bounds of spaces/tags
+// This example should not throw an error!
+
+// Defining screen tag, where user expects vectors with positive components
+// There is no option to provide these kind of bounds for tags in LinGL
+tag screen2 is vec2
+
+screen2 a_position;
+
+// Negative values totally passes through!
+a_position = [-3234, -123];
