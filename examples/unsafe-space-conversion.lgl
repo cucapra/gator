@@ -3,8 +3,8 @@
 // Example modified from:
 // https://github.com/greggman/webgl-fundamentals/blob/master/webgl/webgl-2d-geometry-translate-better.html
 
-tag clip2 is vec2
-tag screen2 is vec2
+tag clip2 is vec2;
+tag screen2 is vec2;
 
 screen2 a_position;
 
@@ -24,4 +24,4 @@ screen2->clip2 screenToClip = [[-1, 1],[2, 2]]
 
 // OCaml-esque piping for matrix manipulations
 // => SAFE
-clip2 clipVector = position |> screenToClip
+clip2 clipVector = position |> screenToClip;
