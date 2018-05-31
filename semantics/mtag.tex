@@ -3,6 +3,7 @@
 \usepackage{amsmath,amsthm,amssymb,bbm,amsfonts,syntax}
 \usepackage[ligature, inference]{semantic}
 \usepackage[T1]{fontenc}
+\usepackage{mathpartir}
 \textwidth 7.0 truein
 \oddsidemargin -0.25in %left-hand edge
 \evensidemargin -0.5 truein %right-hand edge
@@ -48,25 +49,52 @@ $t;e\;\textnormal{EOF}$\\
 
 \section{Subtype Ordering}
 
-\[
-\tau\leq\tau
-\qquad
-\inference[]{\tau_1\leq\tau_2\qquad\tau_2\leq\tau_3}{\tau_1\leq\tau_3}
-\qquad
-\inference[]{\Delta(\tau_1)=\tau_2}{\tau_1\leq\tau_2}
-\]
+% Including some English-language context for rules is important.
+We define a judgment $\tau_1 \leq \tau_2$ for subtyping.
+Subtyping is reflexive and transitive, as usual:
+% Adrian recommends using mathpartir, which will make you less sad in the long
+% run...
+\begin{mathpar}
+\inferrule
+    { }
+    {\tau\leq\tau}
 
-\[
-\tau\leq\mathsf{unit}
-\qquad\qquad
-\mathsf{int}\leq\mathsf{scalar}
-\qquad\qquad
-\mathsf{vec}n\leq\mathsf{mat}1\textnormal{x}n
-\]
+\inferrule
+    {\tau_1 \leq \tau_2 \and \tau_2 \leq \tau_3}
+    {\tau_1 \leq \tau_3}
+\end{mathpar}
 
-\[
-\inference[]{\tau_1\leq\mathsf{vec}n_1\qquad\tau_2\leq\mathsf{vec}n_2}{\tau_1->\tau_2\leq\mat}
-\]
+This rule refers to some context $\Delta$:
+%
+\begin{mathpar}
+\inferrule
+    {\Delta(\tau_1)=\tau_2}
+    {\tau_1\leq\tau_2}
+\end{mathpar}
+
+Here are some rules for subtyping on base types:
+%
+\begin{mathpar}
+\inferrule
+    { }
+    {\tau\leq\mathsf{unit}}
+
+\inferrule
+    { }
+    {\mathsf{int}\leq\mathsf{scalar}}
+
+\inferrule
+    { }
+    {\mathsf{vec}n\leq\mathsf{mat}1\textnormal{x}n}
+\end{mathpar}
+
+This rule lets us treat transformation matrices, whose type is always given by $\tau_1 \rightarrow \tau_2$ where $\tau_1$ and $\tau_2$ are vectors, as matrices:
+%
+\begin{mathpar}
+\inferrule
+    {\tau_1\leq\mathsf{vec}n_1\qquad\tau_2\leq\mathsf{vec}n_2}
+    {\tau_1->\tau_2\leq\mat}
+\end{mathpar}
 
 \section{Static Semantics}
 
