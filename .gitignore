@@ -1,8 +1,7 @@
 # Mac files
 .DS_Store
 
-
-# OCaml specific things
+# OCaml
 *.annot
 *.cmo
 *.cma

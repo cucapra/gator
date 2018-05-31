@@ -23,4 +23,3 @@ type comm =
 	| Assign of string * aexp
 	| Comp of comm * comm
 	| If of bexp * comm * comm
-	| While of bexp * comm

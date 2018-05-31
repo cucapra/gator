@@ -44,8 +44,6 @@ open Ast
 %token EOF
 %token SEMI
 
-%token WHILE
-%token DO
 
 %token LPAREN
 %token RPAREN
@@ -138,7 +136,6 @@ comm:
   | SKIP { Skip } 
   | x = ID; GETS; e1 = aexp { Assign(x, e1) }
   | IF; LPAREN; b1 = bexp; RPAREN; THEN; c1 = comm; ELSE; c2 = comm { If(b1,c1,c2) }
-  | WHILE; LPAREN; b1 = bexp; RPAREN; DO; c1 = comm { While(b1,c1) }
 
 aexp:
   | i = INT { Num i }
