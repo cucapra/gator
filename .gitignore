@@ -39,6 +39,7 @@ setup.log
 
 # Latexmk
 *.fdb_latexmk
+*.fls
 
 # SyncTeX
 *.synctex.gz
