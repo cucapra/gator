@@ -1,17 +1,34 @@
 (* AST definition of LinGL *)
 
+(* linear types *)
+type ltyp = 
+    VecTyp of int
+    | MatTyp of int * int
+    | TagTyp of string
+    | ConvTyp of ltyp * ltyp
+
+(* types *)
+type typ = 
+    FloatTyp
+    | IntTyp
+    | LtypTyp of ltyp
+
 type scalar = 
     Int of int
     | Float of float
 
 type vec = scalar list
 
+(* linear literal expressions*)
+type linlit =
+    Vec of vec * ltyp
+    | Var of string * ltyp
+    | Mat of vec list * ltyp
+
 (* arithmetic expressions *)
 type aexp = 
     Num of scalar
-    | Vec of vec 
-    | Var of string
-    | Mat of vec list
+    | LinLit of linlit
     | Plus of aexp * aexp
     | Times of aexp * aexp
     | Minus of aexp * aexp
@@ -32,18 +49,6 @@ type exp =
     Aexp of aexp
     | Bexp of bexp
 
-(* linear types *)
-type ltyp = 
-    VecTyp of int
-    | MatTyp of int * int
-    | TagTyp of string
-    | ConvTyp of ltyp * ltyp
-
-(* types *)
-type typ = 
-    FloatTyp
-    | IntTyp
-    | LtypTyp of ltyp
 
 type comm = 
     Skip
