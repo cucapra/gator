@@ -40,6 +40,7 @@ rule read =
   | "+"   { PLUS }
   | "*"   { TIMES }
   | ".*"  { CTIMES }
+  | "|>"  { LTIMES }
   | "("   { LPAREN }
   | ")"   { RPAREN }
   | "let" { LET }

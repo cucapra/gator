@@ -6,25 +6,20 @@ type scalar =
 
 type vec = scalar list
 
-(* linear expressions *)
-type lexp =
-    Vec of vec 
-    | LVar of string
-    | Mat of vec list
-    | LCompTimes of lexp * lexp
-    | LTimes of lexp * lexp
-    | LComp of lexp * lexp
-
 (* arithmetic expressions *)
 type aexp = 
     Num of scalar
+    | Vec of vec 
     | Var of string
+    | Mat of vec list
     | Plus of aexp * aexp
     | Times of aexp * aexp
     | Minus of aexp * aexp
-    
+    | LCompTimes of aexp * aexp
+    | LComp of aexp * aexp
+
 (* boolean expressions *)
-type bexp = 
+type bexp =
     True
     | False
     | Eq of aexp * aexp
@@ -33,10 +28,9 @@ type bexp =
     | And of bexp * bexp
     | Not of bexp
 
-type exp = 
-    | Aexp of aexp
+type exp =
+    Aexp of aexp
     | Bexp of bexp
-    | Lexp of lexp
 
 (* linear types *)
 type ltyp = 
