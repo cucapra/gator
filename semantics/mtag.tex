@@ -1,0 +1,206 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amsthm,amssymb,bbm,amsfonts,syntax}
+\usepackage[ligature, inference]{semantic}
+\usepackage[T1]{fontenc}
+\textwidth 7.0 truein
+\oddsidemargin -0.25in %left-hand edge
+\evensidemargin -0.5 truein %right-hand edge
+\topmargin -0.85in %top of paper to top of head, pulls whole unit
+\textheight 9.5in
+\setlength\parindent{0pt}
+\setlength{\parskip}{.5em}
+
+\begin{document}
+\newcommand{\mat}{\mathsf{mat}n_1\textnormal{x}n_2}
+\newcommand{\env}[1]{\langle#1,\sigma\rangle}
+
+\mathlig{->}{\rightarrow}
+\mathlig{|-}{\vdash}
+\mathlig{=>}{\Rightarrow}
+\mathligson
+
+\title{Matrix Tagging Syntax and Semantics}
+\author{Dietrich Geisler and Irene Yoon}
+
+\section{Syntax}
+
+$\begin{array}{cc}
+\textnormal{Tag }T&\textnormal{Variable Name }x
+\end{array}
+$
+
+$\begin{array}{rcl}
+\mathsf{unit}&::=&()\\
+\mathsf{int}\;n&::=&\mathbb{N}\\
+\mathsf{scalar}\;s&::=&\mathbb{R}\\
+\mathsf{mat}\;m&::=&\{[[s_{11},s_{12},\dots],[s_{21},s_{22},\dots],\dots]\}\\
+\mathsf{vec}\;v&::=&\{[s_1,s_2,\dots]\}\\
+\tau&::=&\mathsf{unit}\;|\;\mathsf{scalar}\;|\;\mathsf{mat}n_1\mathsf{x}n_2\;|\;\mathsf{vec}n\;|\;T\;|\;\tau_1->\tau_2\\
+c&::=&n\;|\;s\;|\;m\\
+t&::=&\mathsf{tag}\;\tau_1\;\mathsf{is}\;\tau_2\;|\;t_1;t_2\\
+e&::=&\dots\;|\;c\;|\;\tau\;x:=e\;|\;\tau\;x:=(\tau)\;m\;|\;e_1+e_2\;|\;e_1*e_2\;|\;e_1\;\mathsf{.*}\;e_2\;|\\
+&&e_1\textnormal{|>}e_2\;|\;\mathsf{comp}\;e_1\;e_2
+\end{array}$
+
+\subsection{Program Structure}
+$t;e\;\textnormal{EOF}$\\
+
+\section{Subtype Ordering}
+
+\[
+\tau\leq\tau
+\qquad
+\inference[]{\tau_1\leq\tau_2\qquad\tau_2\leq\tau_3}{\tau_1\leq\tau_3}
+\qquad
+\inference[]{\Delta(\tau_1)=\tau_2}{\tau_1\leq\tau_2}
+\]
+
+\[
+\tau\leq\mathsf{unit}
+\qquad\qquad
+\mathsf{int}\leq\mathsf{scalar}
+\qquad\qquad
+\mathsf{vec}n\leq\mathsf{mat}1\textnormal{x}n
+\]
+
+\[
+\inference[]{\tau_1\leq\mathsf{vec}n_1\qquad\tau_2\leq\mathsf{vec}n_2}{\tau_1->\tau_2\leq\mat}
+\]
+
+\section{Static Semantics}
+
+\subsection{Tag Declarations}
+
+\[  % Declare Tag
+\inference[]{\tau_1\in T\qquad\tau_2\in T\cup v}{\Delta,\mathsf{tag}\;\tau_1\;\mathsf{is}\;\tau_2|-\Delta(\tau_1)=\tau_2}
+\]
+
+\[
+% Tag sequencing
+\inference[]{\Delta|-t_1->\Delta'\qquad \Delta|-t_2->\Delta''}{\Delta|-t_1;t_2->\Delta''}
+\qquad\qquad
+% Tag/expression sequencing
+\inference[]{\Delta|-t->\Delta'\qquad\Gamma,\Delta'|-e:\tau}{\Gamma,\Delta|-t;e:\tau}
+\]
+
+\subsection{Constants and Variable Declarations}
+
+\[  % Numeric Declaration
+\Gamma,\Delta|-n:\mathsf{Int}
+\qquad
+\Gamma,\Delta|-s:\mathsf{Scalar}
+\]
+
+\[  % Matrix/Vector Declaration
+\Gamma,\Delta|-[[s_{11},\dots,s_{1n_2}],\dots,[s_{n_11},\dots,s_{n_1n_2}]]:\mathsf{Mat}n_1\mathsf{x}n_2
+\qquad
+\Gamma,\Delta|-[s_1,\dots,s_n]:\mathsf{Vec}n
+\]
+
+\[  % Variable Declarations
+\inference[]{\Gamma,\Delta|-e:\tau'\qquad\tau'\leq\tau}{\Gamma,\Delta,\tau\;x:=e|-\Gamma(x)=\tau}
+\qquad\qquad
+% Special case for tag casting
+\inference[]{\Gamma,\Delta|-e:\tau'\qquad\tau\leq\tau'\qquad\tau\leq\mat}
+{\Gamma,\Delta,\tau\;x:=(\tau)\;m|-\Gamma(x)=\tau}
+\]
+
+\subsection{Symmetric Binary Operations}
+
+All operators on Scalars and Ints work as one might expect (recall that $\mathsf{Int}\leq\mathsf{Scalar}$).
+
+We assume symmetry for typing for all following binary operations
+
+\[  % Addition
+\inference[]{\Gamma,\Delta|-e_1:\tau\qquad\Gamma,\Delta|-e_2:\tau'\qquad\tau'\leq\tau}
+{\Gamma,\Delta|-e_1+e_2:\tau}
+\qquad\qquad
+\]
+
+\[
+% Scalar multiplication
+\inference[]{\Gamma,\Delta|-e_1:\tau\qquad\Gamma,\Delta|-e_2:\tau'\qquad\tau\leq\mat\qquad\tau'\leq\mathsf{Scalar}}
+{\Gamma,\Delta|-e_1*e_2:\tau}
+\]
+
+\[ % Component Multiplication
+\inference[]{\Gamma,\Delta|-e_1:\tau\qquad\Gamma,\Delta|-e_2:\tau'\qquad\tau'\leq\tau\qquad\tau\leq\mathsf{vec}n}
+{\Gamma,\Delta|-e_1\;\mathsf{.*}\;e_2:\mathsf{vec}n}
+\]
+
+\subsection{Asymmetric Binary Operations}
+
+\[  % Bind
+\inference[]{\Gamma,\Delta|-e_1:\tau_1\qquad\Gamma,\Delta|-e_2:\tau_1'->\tau_2\qquad\tau_1\leq\tau_1'}
+{\Gamma,\Delta|-e_1\textnormal{|>}e_2:\tau_2}
+\qquad\qquad
+\]
+
+\[  % Composition
+\inference[]{\Gamma,\Delta|-e_1:\tau_1->\tau_2\qquad\Gamma,\Delta|-e_2:\tau_2'->\tau_3\qquad\tau_2\leq\tau_2'}
+{\Gamma,\Delta|-\mathsf{comp}\;e_1\;e_2:\tau_1->\tau_3}
+\qquad\qquad
+\]
+
+\section{Dynamic Semantics}
+
+\[
+% Tag declarations are thrown out at runtime
+\inference[]{}{t->\sigma}
+\]
+
+\subsection{Variable Declarations}
+\[
+% Variable Declarations
+\inference[]{}{\env{\tau\;x:=c}->\langle\mathsf{skip},\sigma[c/x]\rangle}
+\qquad
+% Declaration Reduction
+\inference[]{\env{e}->\env{e'}}{\env{\tau\;x:=e}->\env{\tau\;x:=e'}}
+\qquad
+\inference[]{}{\env{\tau\;x:=(\tau)\;m}->\langle\mathsf{skip},\sigma[m/x]\rangle}
+\]
+
+\subsection{Mathematical Operations}
+
+$\odot\in\{+,*,\mathsf{.*},\textnormal{|>}\}$
+
+\[
+% Left operation reduction
+\inference[]{\env{e_1}->\env{e_1'}}{\env{e_1\odot e_2}->\env{e_1'\odot e_2}}
+\qquad\qquad
+% Right operation reduction
+\inference[]{\env{e_2}->\env{e_2'}}{\env{c\odot e_2}->\env{c\odot e_2'}}
+\]
+
+\[
+% Addition
+\inference[]{}{\env{(m_1+m_2)}->\env{m_1+m_2}}
+\qquad\qquad
+% Scalar Multiplication
+\inference[]{}{\env{(s*m)}->\env{s*m}}
+\]
+
+\[
+% Component-wise multiplication
+\inference[]{v_1=[v_{11},\dots,v_{1n}]\qquad v_2=[v_{21},\dots,v_{2n}]}
+{\env{v_1\mathsf{.*}v_2}->\env{[v_{11}*v_{21},\dots,v_{1n}*v_{2n}]}}
+\qquad\qquad
+% Bind
+\inference[]{}
+{\env{v\textnormal{|>}m->v*m}}
+\]
+
+\[
+% Left composition reduction
+\inference[]{\env{e_1}->\env{e_1'}}{\env{\mathsf{comp}\;e_1\;e_2}->\env{\mathsf{comp}\;e_1'\;e_2}}
+\qquad\qquad
+% Right composition reduction
+\inference[]{\env{e_2}->\env{e_2'}}{\env{\mathsf{comp}\;c\;e_2}->\env{\mathsf{comp}\;c\;e_2'}}
+\]
+
+\[
+% Composition
+\inference[]{}{\env{\mathsf{comp}\;m_1\;m_2}->\env{m_1*m_2}}
+\]
+\end{document}
