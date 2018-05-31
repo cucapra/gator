@@ -22,12 +22,12 @@ type vec = scalar list
 (* linear literal expressions*)
 type linlit =
     Vec of vec * ltyp
-    | Var of string * ltyp
     | Mat of vec list * ltyp
 
 (* arithmetic expressions *)
 type aexp = 
     Num of scalar
+    | Var of string * ltyp
     | LinLit of linlit
     | Plus of aexp * aexp
     | Times of aexp * aexp
