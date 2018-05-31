@@ -24,6 +24,7 @@ open Ast
 %token PLUS
 %token MINUS
 %token TIMES
+%token CTIMES
 
 %token EQ
 %token LEQ

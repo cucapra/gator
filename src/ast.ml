@@ -12,7 +12,7 @@ type lexp =
     | LVar of string
     | Mat of vec list
     | LCompTimes of lexp * lexp
-    | LTimes of lexp * scalar
+    | LTimes of lexp * lexp
     | LComp of lexp * lexp
 
 (* arithmetic expressions *)

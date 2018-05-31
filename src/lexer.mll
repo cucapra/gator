@@ -39,6 +39,7 @@ rule read =
   | white { read lexbuf }
   | "+"   { PLUS }
   | "*"   { TIMES }
+  | ".*"  { CTIMES }
   | "("   { LPAREN }
   | ")"   { RPAREN }
   | "let" { LET }
