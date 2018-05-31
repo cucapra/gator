@@ -3,9 +3,9 @@
 tag screen3 is vec3;
 tag color3 is vec3;
 
-screen3 position = [1, 2, 3];
+screen3 position = [1.0, 2.0, 3.0];
 
-color3 rgb = [0, 1, 1];
+color3 rgb = [0.0, 1.0, 1.0];
 
 // Normalized vectors are scalar values, where
 // scalar values component-wise multiplied to a vector

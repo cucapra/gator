@@ -8,4 +8,4 @@ tag screen2 is vec2;
 screen2 a_position;
 
 // Negative values totally passes through!
-a_position = [-3234, -123];
+a_position = [-3234.0, -123.0];

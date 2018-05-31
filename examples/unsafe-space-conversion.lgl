@@ -20,7 +20,7 @@ screen2 position = a_position + u_translation;
 // 				 is not allowed
 clip2 badClipVector = position / u_resolution;
 
-screen2->clip2 screenToClip = [[-1, 1],[2, 2]]
+screen2->clip2 screenToClip = [[-1.0, 1.0],[2.0, 2.0]]
 
 // OCaml-esque piping for matrix manipulations
 // => SAFE
