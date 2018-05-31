@@ -41,8 +41,8 @@ type ltyp =
 
 (* types *)
 type typ = 
-    FloatTyp of float
-    | IntTyp of int
+    FloatTyp
+    | IntTyp
     | LtypTyp of ltyp
 
 type comm = 
