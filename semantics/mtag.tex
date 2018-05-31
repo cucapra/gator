@@ -26,19 +26,15 @@
 
 \section{Syntax}
 
-$\begin{array}{cc}
-\textnormal{Tag }T&\textnormal{Variable Name }x
-\end{array}
-$
-
 $\begin{array}{rcl}
-\mathsf{unit}&::=&()\\
-\mathsf{int}\;n&::=&\mathbb{N}\\
-\mathsf{scalar}\;s&::=&\mathbb{R}\\
+T &\in& \text{tags} \\
+x &\in& \text{variables} \\
+n &\in& \mathbb{N} \\
+s &\in& \mathbb{R}\\
 \mathsf{mat}\;m&::=&\{[[s_{11},s_{12},\dots],[s_{21},s_{22},\dots],\dots]\}\\
 \mathsf{vec}\;v&::=&\{[s_1,s_2,\dots]\}\\
 \tau&::=&\mathsf{unit}\;|\;\mathsf{scalar}\;|\;\mathsf{mat}n_1\mathsf{x}n_2\;|\;\mathsf{vec}n\;|\;T\;|\;\tau_1->\tau_2\\
-c&::=&n\;|\;s\;|\;m\\
+c&::=&n\;|\;s\;|\;m \;|\; ()\\
 t&::=&\mathsf{tag}\;\tau_1\;\mathsf{is}\;\tau_2\;|\;t_1;t_2\\
 e&::=&\dots\;|\;c\;|\;\tau\;x:=e\;|\;\tau\;x:=(\tau)\;m\;|\;e_1+e_2\;|\;e_1*e_2\;|\;e_1\;\mathsf{.*}\;e_2\;|\\
 &&e_1\textnormal{|>}e_2\;|\;\mathsf{comp}\;e_1\;e_2
