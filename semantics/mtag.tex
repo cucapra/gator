@@ -32,8 +32,8 @@ T &\in& \text{tags} \\
 x &\in& \text{variables} \\
 n &\in& \mathbb{N} \\
 s &\in& \mathbb{R}\\
-m&\in&\{[[s_{11},s_{12},\dots],[s_{21},s_{22},\dots],\dots]\}\\
-v&\in&\{[s_1,s_2,\dots]\}\\
+m &::=& [[s_{11},s_{12},\dots],[s_{21},s_{22},\dots],\dots] \\
+v &::=& [s_1,s_2,\dots] \\
 \tau&::=&\mathsf{unit}\;|\;\mathsf{scalar}\;|\; \mat \;|\;\vv{n}\;|\;T\;|\;\tau_1->\tau_2\\
 c&::=&s\;|\;m\;|\;v\;|\;()\\
 e&::=&\dots\;|\;c\;|\;\tau\;x:=e\;|\;m:\tau\;|\;v:\tau\;|\;e_1+e_2\;|\;e_1*e_2\;|\;e_1\;\mathsf{.*}\;e_2
@@ -74,7 +74,7 @@ Here are some rules for subtyping on base types:
     {\mathsf{mat}_{1{\times}n}\leq\vv{n}}
 \end{mathpar}
 
-We also introduce another partial ordering for tabs $\leq_\Delta$ with reflexivity and transitivity:
+We also introduce another partial ordering for tags $\leq_\Delta$ with reflexivity and transitivity:
 
 \begin{mathpar}
 \inferrule
@@ -106,7 +106,7 @@ This rule lets us treat transformation matrices, whose type is always given by $
 \section{Static Semantics}
 
 \subsection{Subsumption}
-Any type in a given context can be cast 'up' at any time.
+Any type in a given context can be cast ``up'' at any time.
 %
 \begin{mathpar}
 \inferrule
@@ -118,7 +118,7 @@ Any type in a given context can be cast 'up' at any time.
 	{\Gamma,\Delta|-e:\tau_2}
 \end{mathpar}
 
-We also have standard subsumption for functions under $\Delta$:=
+We also have standard subsumption for functions under $\Delta$:
 %
 \begin{mathpar}
 \inferrule
