@@ -41,6 +41,8 @@ rule read =
   | "*"   { TIMES }
   | ".*"  { CTIMES }
   | "|>"  { LTIMES }
+  | "["   { LBRACK }
+  | "]"   { RBRACK }
   | "("   { LPAREN }
   | ")"   { RPAREN }
   | "let" { LET }

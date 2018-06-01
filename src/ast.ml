@@ -29,11 +29,13 @@ type aexp =
     Num of scalar
     | Var of string * ltyp
     | LinLit of linlit
+    | Dot of aexp * aexp
+    | Norm of aexp
     | Plus of aexp * aexp
     | Times of aexp * aexp
     | Minus of aexp * aexp
     | LCompTimes of aexp * aexp
-    | LComp of aexp * aexp
+    | LTrans of aexp * aexp (* Linear Transformation, i.e. matrix mult *)
 
 (* boolean expressions *)
 type bexp =
@@ -48,7 +50,6 @@ type bexp =
 type exp =
     Aexp of aexp
     | Bexp of bexp
-
 
 type comm = 
     Skip
