@@ -13,8 +13,9 @@
 \setlength{\parskip}{.5em}
 
 \begin{document}
-\newcommand{\mat}{\mathsf{mat}n_1\textnormal{x}n_2}
-\newcommand{\env}[1]{\langle#1,\sigma\rangle}
+\newcommand{\mat}{\mathsf{mat}_{n_1{\times}n_2}}
+\newcommand{\vv}[1]{\mathsf{vec}_{#1}}
+\newcommand{\env}[1]{#1,\sigma}
 
 \mathlig{->}{\rightarrow}
 \mathlig{|-}{\vdash}
@@ -31,25 +32,18 @@ T &\in& \text{tags} \\
 x &\in& \text{variables} \\
 n &\in& \mathbb{N} \\
 s &\in& \mathbb{R}\\
-\mathsf{mat}\;m&::=&\{[[s_{11},s_{12},\dots],[s_{21},s_{22},\dots],\dots]\}\\
-\mathsf{vec}\;v&::=&\{[s_1,s_2,\dots]\}\\
-\tau&::=&\mathsf{unit}\;|\;\mathsf{scalar}\;|\; \mathsf{mat}_{n_1{\times}n_2} \;|\;\mathsf{vec}_n\;|\;T\;|\;\tau_1->\tau_2\\
-c&::=&n\;|\;s\;|\;m \;|\; ()\\
-t&::=&\mathsf{tag}\;\tau_1\;\mathsf{is}\;\tau_2\;|\;t_1;t_2\\
-e&::=&\dots\;|\;c\;|\;\tau\;x:=e\;|\;\tau\;x:=(\tau)\;m\;|\;e_1+e_2\;|\;e_1*e_2\;|\;e_1\;\mathsf{.*}\;e_2\;|\\
-&&e_1\textnormal{|>}e_2\;|\;\mathsf{comp}\;e_1\;e_2
+m&\in&\{[[s_{11},s_{12},\dots],[s_{21},s_{22},\dots],\dots]\}\\
+v&\in&\{[s_1,s_2,\dots]\}\\
+\tau&::=&\mathsf{unit}\;|\;\mathsf{scalar}\;|\; \mat \;|\;\vv{n}\;|\;T\;|\;\tau_1->\tau_2\\
+c&::=&s\;|\;m\;|\;v\;|\;()\\
+e&::=&\dots\;|\;c\;|\;\tau\;x:=e\;|\;m:\tau\;|\;v:\tau\;|\;e_1+e_2\;|\;e_1*e_2\;|\;e_1\;\mathsf{.*}\;e_2
 \end{array}$
-
-\subsection{Program Structure}
-$t;e\;\textnormal{EOF}$\\
 
 \section{Subtype Ordering}
 
 % Including some English-language context for rules is important.
 We define a judgment $\tau_1 \leq \tau_2$ for subtyping.
 Subtyping is reflexive and transitive, as usual:
-% Adrian recommends using mathpartir, which will make you less sad in the long
-% run...
 \begin{mathpar}
 \inferrule
     { }
@@ -58,14 +52,6 @@ Subtyping is reflexive and transitive, as usual:
 \inferrule
     {\tau_1 \leq \tau_2 \and \tau_2 \leq \tau_3}
     {\tau_1 \leq \tau_3}
-\end{mathpar}
-
-This rule refers to some context $\Delta$:
-%
-\begin{mathpar}
-\inferrule
-    {\Delta(\tau_1)=\tau_2}
-    {\tau_1\leq\tau_2}
 \end{mathpar}
 
 Here are some rules for subtyping on base types:
@@ -81,150 +67,159 @@ Here are some rules for subtyping on base types:
 
 \inferrule
     { }
-    {\mathsf{vec}n\leq\mathsf{mat}1\textnormal{x}n}
+    {\vv{n}\leq\mathsf{mat}_{1{\times}n}}
+
+\inferrule
+    { }
+    {\mathsf{mat}_{1{\times}n}\leq\vv{n}}
 \end{mathpar}
 
-This rule lets us treat transformation matrices, whose type is always given by $\tau_1 \rightarrow \tau_2$ where $\tau_1$ and $\tau_2$ are vectors, as matrices:
+We also introduce another partial ordering for tabs $\leq_\Delta$ with reflexivity and transitivity:
+
+\begin{mathpar}
+\inferrule
+    { }
+    {\Delta|-\tau\leq_\Delta\tau}
+
+\inferrule
+    {\Delta|-\tau_1 \leq_\Delta \tau_2 \and \Delta|-\tau_2 \leq_\Delta \tau_3}
+    {\Delta|-\tau_1 \leq_\Delta \tau_3}
+\end{mathpar}
+
+This rule refers to some context $\Delta$:
 %
 \begin{mathpar}
 \inferrule
-    {\tau_1\leq\mathsf{vec}n_1\qquad\tau_2\leq\mathsf{vec}n_2}
-    {\tau_1->\tau_2\leq\mat}
+    {\Delta|-\Delta(\tau_1)=\tau_2}
+    {\Delta|-\tau_1\leq_\Delta\tau_2}
 \end{mathpar}
+
+This rule lets us treat transformation matrices, whose type is always given by $\tau_1 \rightarrow \tau_2$ where $\tau_1$ and $\tau_2$ are members of $\Delta$, as matrices:
+%
+\begin{mathpar}
+\inferrule
+    {\Delta|-\tau_1\leq_\Delta\vv{n_1}\qquad\Delta|-\tau_2\leq_\Delta\vv{n_2}}
+    {\Delta|-\tau_1->\tau_2\leq_\Delta\mat}
+\end{mathpar}
+
 
 \section{Static Semantics}
 
-\subsection{Tag Declarations}
+\subsection{Subsumption}
+Any type in a given context can be cast 'up' at any time.
+%
+\begin{mathpar}
+\inferrule
+	{\tau_1\leq\tau_2\qquad\Gamma,\Delta|-e:\tau_1}
+	{\Gamma,\Delta|-e:\tau_2}
 
-\[  % Declare Tag
-\inference[]{\tau_1\in T\qquad\tau_2\in T\cup v}{\Delta,\mathsf{tag}\;\tau_1\;\mathsf{is}\;\tau_2|-\Delta(\tau_1)=\tau_2}
-\]
+\inferrule
+	{\Delta|-\tau_1\leq_\Delta\tau_2\qquad\Gamma,\Delta|-e:\tau_1}
+	{\Gamma,\Delta|-e:\tau_2}
+\end{mathpar}
 
-\[
-% Tag sequencing
-\inference[]{\Delta|-t_1->\Delta'\qquad \Delta|-t_2->\Delta''}{\Delta|-t_1;t_2->\Delta''}
-\qquad\qquad
-% Tag/expression sequencing
-\inference[]{\Delta|-t->\Delta'\qquad\Gamma,\Delta'|-e:\tau}{\Gamma,\Delta|-t;e:\tau}
-\]
+We also have standard subsumption for functions under $\Delta$:=
+%
+\begin{mathpar}
+\inferrule
+	{\Delta|-\tau_1\leq_\Delta\tau_1'\qquad\Delta|-\tau_2\leq_\Delta\tau_2'\qquad\Gamma,\Delta|-e:\tau_1'->\tau_2}
+	{\Gamma,\Delta|-e:\tau_1->\tau_2'}
+\end{mathpar}
 
 \subsection{Constants and Variable Declarations}
+Declaring constants produce the types one would expect:
+%
+\begin{mathpar}
+\inferrule
+	{ }
+	{\Gamma,\Delta|-s:\mathsf{Scalar}}
+\end{mathpar}
 
-\[  % Numeric Declaration
-\Gamma,\Delta|-n:\mathsf{Int}
-\qquad
-\Gamma,\Delta|-s:\mathsf{Scalar}
-\]
+When declaring vectors and matrices, we must provide a tag, causing a tagged value to produce the appropriate type.
+%
+\begin{mathpar}
+\inferrule
+	{\Gamma,\Delta|-v:\vv{n}\qquad\tau\leq_\Delta\vv{n}}
+	{\Gamma,\Delta|-(v:\tau):\tau}
 
-\[  % Matrix/Vector Declaration
-\Gamma,\Delta|-[[s_{11},\dots,s_{1n_2}],\dots,[s_{n_11},\dots,s_{n_1n_2}]]:\mathsf{Mat}n_1\mathsf{x}n_2
-\qquad
-\Gamma,\Delta|-[s_1,\dots,s_n]:\mathsf{Vec}n
-\]
+\inferrule
+	{\Gamma,\Delta|-m:\mat\qquad\tau\leq_\Delta\mat}
+	{\Gamma,\Delta|-(m:\tau_1->\tau_2):\tau_1->\tau_2}
+\end{mathpar}
 
-\[  % Variable Declarations
-\inference[]{\Gamma,\Delta|-e:\tau'\qquad\tau'\leq\tau}{\Gamma,\Delta,\tau\;x:=e|-\Gamma(x)=\tau}
-\qquad\qquad
-% Special case for tag casting
-\inference[]{\Gamma,\Delta|-e:\tau'\qquad\tau\leq\tau'\qquad\tau\leq\mat}
-{\Gamma,\Delta,\tau\;x:=(\tau)\;m|-\Gamma(x)=\tau}
-\]
+Declaring variables requires an immediate assignment -- as a result, there is no mutation in this language.
+%
+\begin{mathpar}
+\inferrule
+	{\Gamma,\Delta|-e:\tau}
+	{\Gamma,\Delta,\tau\;x:=e|-\Gamma(x)=\tau}
+\end{mathpar}
 
-\subsection{Symmetric Binary Operations}
+\subsection{Binary Operations}
 
 All operators on Scalars and Ints work as one might expect (recall that $\mathsf{Int}\leq\mathsf{Scalar}$).
 
-We assume symmetry for typing for all following binary operations
+Tags and spaces are closed under addition and scalar multiplication
+%
+\begin{mathpar}
+\inferrule
+	{\Gamma,\Delta|-e_1:\tau\qquad\Gamma,\Delta|-e_2:\tau}
+	{\Gamma,\Delta|-e_1+e_2:\tau}
 
-\[  % Addition
-\inference[]{\Gamma,\Delta|-e_1:\tau\qquad\Gamma,\Delta|-e_2:\tau'\qquad\tau'\leq\tau}
-{\Gamma,\Delta|-e_1+e_2:\tau}
-\qquad\qquad
-\]
+\inferrule
+	{\Gamma,\Delta|-e_1:\tau_1\qquad\Gamma,\Delta|-e_2:\tau_2\qquad\tau_1\leq_\Delta\mat\qquad\tau_2\leq\mathsf{Scalar}}
+	{\Gamma,\Delta|-e_1*e_2:\tau_1}
+\end{mathpar}
 
-\[
-% Scalar multiplication
-\inference[]{\Gamma,\Delta|-e_1:\tau\qquad\Gamma,\Delta|-e_2:\tau'\qquad\tau\leq\mat\qquad\tau'\leq\mathsf{Scalar}}
-{\Gamma,\Delta|-e_1*e_2:\tau}
-\]
+Component multiplication can be defined as a mathematical operation, but makes little formal sense.  Such operations are allowed, but don't interact with spaces and tags and result in a complete lack of information about a resulting matrix.
+%
+\begin{mathpar}
+\inferrule
+	{\Gamma,\Delta|-e_1:\tau\qquad\Gamma,\Delta|-e_2:\tau\qquad\tau\leq_\Delta\mat}
+	{\Gamma,\Delta|-e_1\;\mathsf{.*}\;e_2:\mat}
+\end{mathpar}
 
-\[ % Component Multiplication
-\inference[]{\Gamma,\Delta|-e_1:\tau\qquad\Gamma,\Delta|-e_2:\tau'\qquad\tau'\leq\tau\qquad\tau\leq\mathsf{vec}n}
-{\Gamma,\Delta|-e_1\;\mathsf{.*}\;e_2:\mathsf{vec}n}
-\]
+Matrix multiplication is both a way of transforming from one tag to another and for composing two matrix functions together.
+%
+\begin{mathpar}
+\inferrule
+	{\Gamma,\Delta|-e_1:\tau_1\qquad\Gamma,\Delta|-e_2:\tau_1->\tau_2}
+	{\Gamma,\Delta|-e_1*e_2:\tau_2}
 
-\subsection{Asymmetric Binary Operations}
-
-\[  % Bind
-\inference[]{\Gamma,\Delta|-e_1:\tau_1\qquad\Gamma,\Delta|-e_2:\tau_1'->\tau_2\qquad\tau_1\leq\tau_1'}
-{\Gamma,\Delta|-e_1\textnormal{|>}e_2:\tau_2}
-\qquad\qquad
-\]
-
-\[  % Composition
-\inference[]{\Gamma,\Delta|-e_1:\tau_1->\tau_2\qquad\Gamma,\Delta|-e_2:\tau_2'->\tau_3\qquad\tau_2\leq\tau_2'}
-{\Gamma,\Delta|-\mathsf{comp}\;e_1\;e_2:\tau_1->\tau_3}
-\qquad\qquad
-\]
+\inferrule
+	{\Gamma,\Delta|-e_1:\tau_1->\tau_2\qquad\Gamma,\Delta|-e_2:\tau_2->\tau_3}
+	{\Gamma,\Delta|-\;e_1*e_2:\tau_1->\tau_3}
+\end{mathpar}
 
 \section{Dynamic Semantics}
+Substitutions work as expected on the environment $\sigma$.
+%
+\begin{mathpar}
+\inferrule
+	{ }
+	{\env{\tau\;x:=c}->\mathsf{skip},\sigma[c/x]}
 
-\[
-% Tag declarations are thrown out at runtime
-\inference[]{}{t->\sigma}
-\]
+\inferrule
+	{\env{e}->\env{e'}}
+	{\env{\tau\;x:=e}->\env{\tau\;x:=e'}}
 
-\subsection{Variable Declarations}
-\[
-% Variable Declarations
-\inference[]{}{\env{\tau\;x:=c}->\langle\mathsf{skip},\sigma[c/x]\rangle}
-\qquad
-% Declaration Reduction
-\inference[]{\env{e}->\env{e'}}{\env{\tau\;x:=e}->\env{\tau\;x:=e'}}
-\qquad
-\inference[]{}{\env{\tau\;x:=(\tau)\;m}->\langle\mathsf{skip},\sigma[m/x]\rangle}
-\]
+\inferrule
+	{ }
+	{\env{\tau\;x:=(\tau)\;m}->\mathsf{skip},\sigma[m/x]}
+\end{mathpar}
 
 \subsection{Mathematical Operations}
+As usual, we can reduce on either side of the mathematical operations $\odot\in\{+,*,\mathsf{.*}\}$
+%
+\begin{mathpar}
+\inferrule
+	{\env{e_1}->\env{e_1'}}
+	{\env{e_1\odot e_2}->\env{e_1'\odot e_2}}
 
-$\odot\in\{+,*,\mathsf{.*},\textnormal{|>}\}$
+\inferrule
+	{\env{e_2}->\env{e_2'}}
+	{\env{c\odot e_2}->\env{c\odot e_2'}}
+\end{mathpar}
 
-\[
-% Left operation reduction
-\inference[]{\env{e_1}->\env{e_1'}}{\env{e_1\odot e_2}->\env{e_1'\odot e_2}}
-\qquad\qquad
-% Right operation reduction
-\inference[]{\env{e_2}->\env{e_2'}}{\env{c\odot e_2}->\env{c\odot e_2'}}
-\]
-
-\[
-% Addition
-\inference[]{}{\env{(m_1+m_2)}->\env{m_1+m_2}}
-\qquad\qquad
-% Scalar Multiplication
-\inference[]{}{\env{(s*m)}->\env{s*m}}
-\]
-
-\[
-% Component-wise multiplication
-\inference[]{v_1=[v_{11},\dots,v_{1n}]\qquad v_2=[v_{21},\dots,v_{2n}]}
-{\env{v_1\mathsf{.*}v_2}->\env{[v_{11}*v_{21},\dots,v_{1n}*v_{2n}]}}
-\qquad\qquad
-% Bind
-\inference[]{}
-{\env{v\textnormal{|>}m->v*m}}
-\]
-
-\[
-% Left composition reduction
-\inference[]{\env{e_1}->\env{e_1'}}{\env{\mathsf{comp}\;e_1\;e_2}->\env{\mathsf{comp}\;e_1'\;e_2}}
-\qquad\qquad
-% Right composition reduction
-\inference[]{\env{e_2}->\env{e_2'}}{\env{\mathsf{comp}\;c\;e_2}->\env{\mathsf{comp}\;c\;e_2'}}
-\]
-
-\[
-% Composition
-\inference[]{}{\env{\mathsf{comp}\;m_1\;m_2}->\env{m_1*m_2}}
-\]
+Addition and scalar multiplication have standard mathematical meaning.  Similarly, vector and matrix multiplication have standard mathematical meaning.  Component-wise multiplication is identical to matrix addition, except using multiplication of numbers in place of addition of numbers.  For readability, formal semantics of each of these operations will be ommitted.
 \end{document}
