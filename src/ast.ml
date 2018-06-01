@@ -5,7 +5,7 @@ type ltyp =
     VecTyp of int
     | MatTyp of int * int
     | TagTyp of string
-    | ConvTyp of ltyp * ltyp
+    | TransTyp of ltyp * ltyp
 
 (* types *)
 type typ = 
@@ -17,18 +17,12 @@ type scalar =
     Int of int
     | Float of float
 
-type vec = scalar list
-
-(* linear literal expressions*)
-type linlit =
-    Vec of vec * ltyp
-    | Mat of vec list * ltyp
-
 (* arithmetic expressions *)
 type aexp = 
     Num of scalar
     | Var of string * ltyp
-    | LinLit of linlit
+    | Vec of aexp * ltyp
+    | Mat of aexp * ltyp
     | Dot of aexp * aexp
     | Norm of aexp
     | Plus of aexp * aexp
@@ -57,6 +51,8 @@ type comm =
     | Comp of comm * comm
     | If of bexp * comm * comm
 
-type tagdecl = string * ltyp
+type tags = 
+    | TagDecl string * ltyp
+    | TagComp tags * tags
 
-type prog = tagdecl list * comm
+type prog = tags * comm

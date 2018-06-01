@@ -1,58 +1,50 @@
-(* The first section of the lexer definition, called the *header*,
-   is the part that appears below between { and }.  It is code
-   that will simply be copied literally into the generated lexer.ml. *)
-
 {
 open Parser
 }
 
-(* The second section of the lexer definition defines *identifiers*
-   that will be used later in the definition.  Each identifier is
-   a *regular expression*.  We won't go into details on how regular
-   expressions work.
-   
-   Below, we define regular expressions for 
-     - whitespace (spaces and tabs),
-     - digits (0 through 9)
-     - integers (nonempty sequences of digits, optionally preceded by a minus sign)
-     - letters (a through z, and A through Z), and
-     - identifiers (nonempty sequences of letters).
-     
-   FYI, these aren't exactly the same as the OCaml definitions of integers and 
-   identifiers. *)
+(* Regex definitons *)
 
 let white = [' ' '\t']+
 let digit = ['0'-'9']
 let int = '-'? digit+
 let letter = ['a'-'z' 'A'-'Z']
 let id = letter+
+let frac = '.' digit*
+let exp = ['e' 'E'] ['-' '+']? digit+
+let float = digit* frac? exp?
 
-(* The final section of the lexer definition defines how to parse a character
-   stream into a token stream.  Each of the rules below has the form 
-     | regexp { action }
-   If the lexer sees the regular expression [regexp], it produces the token 
-   specified by the [action].  We won't go into details on how the actions
-   work.  *)
+
+(* Lexer definition *)
 
 rule read = 
   parse
   | white { read lexbuf }
+  | "."   { PERIOD }
   | "+"   { PLUS }
   | "*"   { TIMES }
   | ".*"  { CTIMES }
+  | ":"   { COLON }
   | "|>"  { LTIMES }
   | "["   { LBRACK }
   | "]"   { RBRACK }
   | "("   { LPAREN }
   | ")"   { RPAREN }
+  | "->"  { TRANS }
   | "let" { LET }
   | "="   { GETS }
-  | "=="   { EQ }
+  | "=="  { EQ }
   | "<="  { LEQ }
   | "||"  { OR }
   | "&&"  { AND }
   | "!"   { NOT }
-  | "in"  { IN }
+  | ","   { COMMA }
+  | "tag" { TAG }
+  | "is"  { IS }
+  | "mat" { MAT }
+  | "vec" { VEC }
+  | "dot" { DOT }
+  | "comp" { COMP }
+  | "norm" { NORM }
   | "true" { TRUE }
   | "false" { FALSE }
   | "if" { IF }
@@ -60,8 +52,10 @@ rule read =
   | "else" { ELSE }
   | "skip" { SKIP }
   | ";"   { SEMI }
+  | "int" { INTTYP }
+  | "float" { FLOATTYP }
+  | ""
   | id    { ID (Lexing.lexeme lexbuf) }
   | int   { INT (int_of_string (Lexing.lexeme lexbuf)) }
+  | float    { FLOAT (float_of_string (Lexing.lexeme lexbuf)) }
   | eof   { EOF }
-  
-(* And that's the end of the lexer definition. *)
