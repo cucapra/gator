@@ -52,7 +52,7 @@ type comm =
     | If of bexp * comm * comm
 
 type tags = 
-    | TagDecl string * ltyp
-    | TagComp tags * tags
+    TagDecl of string * ltyp
+    | TagComp of tags * tags
 
 type prog = tags * comm
