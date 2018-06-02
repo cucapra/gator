@@ -16,6 +16,8 @@
 \newcommand{\mat}{\mathsf{mat}_{n_1{\times}n_2}}
 \newcommand{\vv}[1]{\mathsf{vec}_{#1}}
 \newcommand{\env}[1]{#1,\sigma}
+\newcommand{\topm}{\top_{n_1{\times}n_2}}
+\newcommand{\topv}{\top_n}
 
 \mathlig{->}{\rightarrow}
 \mathlig{|-}{\vdash}
@@ -28,15 +30,16 @@
 \section{Syntax}
 
 $\begin{array}{rcl}
-T &\in& \text{tags} \\
 x &\in& \text{variables} \\
 n &\in& \mathbb{N} \\
 s &\in& \mathbb{R}\\
-m &::=& [[s_{11},s_{12},\dots],[s_{21},s_{22},\dots],\dots] \\
+T &\in& \text{tags}\\
 v &::=& [s_1,s_2,\dots] \\
-\tau&::=&\mathsf{unit}\;|\;\mathsf{scalar}\;|\; \mat \;|\;\vv{n}\;|\;T\;|\;\tau_1->\tau_2\\
+m &::=& [[s_{11},s_{12},\dots],[s_{21},s_{22},\dots],\dots] \\
+\mu&::=& \mat \;|\;\vv{n}\;|\;T\\
+\tau&::=&\mathsf{unit}\;|\;\mathsf{scalar}\;|\; \mu \;|\; \tau_1->\tau_2\\
 c&::=&s\;|\;m\;|\;v\;|\;()\\
-e&::=&\dots\;|\;c\;|\;\tau\;x:=e\;|\;m:\tau\;|\;v:\tau\;|\;e_1+e_2\;|\;e_1*e_2\;|\;e_1\;\mathsf{.*}\;e_2
+e&::=&\dots\;|\;s\;|\;()\;|\;\tau\;x:=e\;|\;v:\mu\;|\;m:\mu_1->\mu_2\;|\;e_1+e_2\;|\;e_1*e_2\;|\;e_1\;\mathsf{.*}\;e_2
 \end{array}$
 
 \section{Subtype Ordering}
@@ -63,10 +66,6 @@ Here are some rules for subtyping on base types:
 
 \inferrule
     { }
-    {\mathsf{int}\leq\mathsf{scalar}}
-
-\inferrule
-    { }
     {\vv{n}\leq\mathsf{mat}_{1{\times}n}}
 
 \inferrule
@@ -74,34 +73,41 @@ Here are some rules for subtyping on base types:
     {\mathsf{mat}_{1{\times}n}\leq\vv{n}}
 \end{mathpar}
 
-We also introduce another partial ordering for tags $\leq_\Delta$ with reflexivity and transitivity:
+We also introduce another partial ordering for tags $\mu_1\leq_\Delta \mu_2$.  This ordering refers to a context $\Delta$, which maps $T$ to $T$:
+%
+\begin{mathpar}
+\inferrule
+    {\Delta|-\Delta(\mu_1)=\mu_2}
+    {\Delta|-\mu_1\leq_\Delta \mu_2}
+\end{mathpar}
 
+This rule has the usual reflexivity and transitivity
+%
 \begin{mathpar}
 \inferrule
     { }
-    {\Delta|-\tau\leq_\Delta\tau}
+    {\Delta|-\mu\leq_\Delta \mu}
 
 \inferrule
-    {\Delta|-\tau_1 \leq_\Delta \tau_2 \and \Delta|-\tau_2 \leq_\Delta \tau_3}
-    {\Delta|-\tau_1 \leq_\Delta \tau_3}
+    {\Delta|-\mu_1 \leq_\Delta \mu_2 \and \Delta|-\mu_2 \leq_\Delta \mu_3}
+    {\Delta|-\mu_1 \leq_\Delta \mu_3}
 \end{mathpar}
 
-This rule refers to some context $\Delta$:
+Vectors have a top type representing general vectors of dimension $n$ as $\topv$.  Similarly, we can give the top type of transformation matrices, whose type is always given by $\mu_1->\mu_2$, to be $\topm$:
 %
 \begin{mathpar}
 \inferrule
-    {\Delta|-\Delta(\tau_1)=\tau_2}
-    {\Delta|-\tau_1\leq_\Delta\tau_2}
+    {\Delta|-\mu_1\leq_\Delta\vv{n_1}\qquad\Delta|-\mu_2\leq_\Delta\vv{n_2}}
+    {\Delta|-\mu_1->\mu_2\leq_\Delta\topm}
 \end{mathpar}
 
-This rule lets us treat transformation matrices, whose type is always given by $\tau_1 \rightarrow \tau_2$ where $\tau_1$ and $\tau_2$ are members of $\Delta$, as matrices:
+We also have standard partial order for functions under $\Delta$:
 %
 \begin{mathpar}
 \inferrule
-    {\Delta|-\tau_1\leq_\Delta\vv{n_1}\qquad\Delta|-\tau_2\leq_\Delta\vv{n_2}}
-    {\Delta|-\tau_1->\tau_2\leq_\Delta\mat}
+	{\Delta|-\mu_1'\leq_\Delta \mu_1\qquad\Delta|-\mu_2\leq_\Delta \mu_2'}
+	{\mu_1\leq_\Delta \mu_1'->\mu_2'}
 \end{mathpar}
-
 
 \section{Static Semantics}
 
@@ -110,20 +116,12 @@ Any type in a given context can be cast ``up'' at any time.
 %
 \begin{mathpar}
 \inferrule
-	{\tau_1\leq\tau_2\qquad\Gamma,\Delta|-e:\tau_1}
-	{\Gamma,\Delta|-e:\tau_2}
+	{\tau_1\leq\tau_2\qquad\Gamma,\Delta|-e:\tau_1,\Gamma}
+	{\Gamma,\Delta|-e:\tau_2,\Gamma}
 
 \inferrule
-	{\Delta|-\tau_1\leq_\Delta\tau_2\qquad\Gamma,\Delta|-e:\tau_1}
-	{\Gamma,\Delta|-e:\tau_2}
-\end{mathpar}
-
-We also have standard subsumption for functions under $\Delta$:
-%
-\begin{mathpar}
-\inferrule
-	{\Delta|-\tau_1\leq_\Delta\tau_1'\qquad\Delta|-\tau_2\leq_\Delta\tau_2'\qquad\Gamma,\Delta|-e:\tau_1'->\tau_2}
-	{\Gamma,\Delta|-e:\tau_1->\tau_2'}
+	{\Delta|-\mu_1\leq_\Delta \mu_2\qquad\Gamma,\Delta|-e:\mu_1,\Gamma}
+	{\Gamma,\Delta|-e:\mu_2,\Gamma}
 \end{mathpar}
 
 \subsection{Constants and Variable Declarations}
@@ -132,42 +130,46 @@ Declaring constants produce the types one would expect:
 \begin{mathpar}
 \inferrule
 	{ }
-	{\Gamma,\Delta|-s:\mathsf{Scalar}}
+	{\Gamma,\Delta|-():\mathsf{unit},\Gamma}
+
+\inferrule
+	{ }
+	{\Gamma,\Delta|-s:\mathsf{scalar},\Gamma}
 \end{mathpar}
 
 When declaring vectors and matrices, we must provide a tag, causing a tagged value to produce the appropriate type.
 %
 \begin{mathpar}
 \inferrule
-	{\Gamma,\Delta|-v:\vv{n}\qquad\tau\leq_\Delta\vv{n}}
-	{\Gamma,\Delta|-(v:\tau):\tau}
+	{\mu\leq_\Delta\vv{n}}
+	{\Gamma,\Delta|-(v:\mu):\mu,\Gamma}
 
 \inferrule
-	{\Gamma,\Delta|-m:\mat\qquad\tau\leq_\Delta\mat}
-	{\Gamma,\Delta|-(m:\tau_1->\tau_2):\tau_1->\tau_2}
+	{\mu_1\leq_\Delta\vv{n_1}\qquad\mu_2\leq_\Delta\vv{n_2}}
+	{\Gamma,\Delta|-(m:\mu_1->\mu_2):\mu_1->\mu_2,\Gamma}
 \end{mathpar}
 
 Declaring variables requires an immediate assignment -- as a result, there is no mutation in this language.
 %
 \begin{mathpar}
 \inferrule
-	{\Gamma,\Delta|-e:\tau}
-	{\Gamma,\Delta,\tau\;x:=e|-\Gamma(x)=\tau}
+	{\Gamma,\Delta|-e:\tau,\Gamma}
+	{\Gamma,\Delta|-\tau\;x:=e:\mathsf{unit},\Gamma(x):=\tau}
 \end{mathpar}
 
 \subsection{Binary Operations}
 
-All operators on Scalars and Ints work as one might expect (recall that $\mathsf{Int}\leq\mathsf{Scalar}$).
+All operators on scalars and ints work as one might expect (recall that $\mathsf{int}\leq\mathsf{scalar}$).
 
 Tags and spaces are closed under addition and scalar multiplication
 %
 \begin{mathpar}
 \inferrule
-	{\Gamma,\Delta|-e_1:\tau\qquad\Gamma,\Delta|-e_2:\tau}
-	{\Gamma,\Delta|-e_1+e_2:\tau}
+	{\Gamma,\Delta|-e_1:\tau,\Gamma\qquad\Gamma,\Delta|-e_2:\tau,\Gamma}
+	{\Gamma,\Delta|-e_1+e_2:\tau,\Gamma}
 
 \inferrule
-	{\Gamma,\Delta|-e_1:\tau_1\qquad\Gamma,\Delta|-e_2:\tau_2\qquad\tau_1\leq_\Delta\mat\qquad\tau_2\leq\mathsf{Scalar}}
+	{\Gamma,\Delta|-e_1:\tau_1\qquad\Gamma,\Delta|-e_2:\mathsf{scalar}\qquad\tau_1\leq_\Delta\topm\qquad}
 	{\Gamma,\Delta|-e_1*e_2:\tau_1}
 \end{mathpar}
 
@@ -175,23 +177,28 @@ Component multiplication can be defined as a mathematical operation, but makes l
 %
 \begin{mathpar}
 \inferrule
-	{\Gamma,\Delta|-e_1:\tau\qquad\Gamma,\Delta|-e_2:\tau\qquad\tau\leq_\Delta\mat}
-	{\Gamma,\Delta|-e_1\;\mathsf{.*}\;e_2:\mat}
+	{\Gamma,\Delta|-e_1:\mat,\Gamma\qquad\Gamma,\Delta|-e_2:\mat,\Gamma}
+	{\Gamma,\Delta|-e_1\;\mathsf{.*}\;e_2:\mat,\Gamma}
 \end{mathpar}
 
 Matrix multiplication is both a way of transforming from one tag to another and for composing two matrix functions together.
 %
 \begin{mathpar}
 \inferrule
-	{\Gamma,\Delta|-e_1:\tau_1\qquad\Gamma,\Delta|-e_2:\tau_1->\tau_2}
-	{\Gamma,\Delta|-e_1*e_2:\tau_2}
+	{\Gamma,\Delta|-e_1:\tau_1,\Gamma\qquad\Gamma,\Delta|-e_2:\tau_1->\tau_2,\Gamma}
+	{\Gamma,\Delta|-e_1*e_2:\tau_2,\Gamma}
 
 \inferrule
-	{\Gamma,\Delta|-e_1:\tau_1->\tau_2\qquad\Gamma,\Delta|-e_2:\tau_2->\tau_3}
-	{\Gamma,\Delta|-\;e_1*e_2:\tau_1->\tau_3}
+	{\Gamma,\Delta|-e_1:\tau_1->\tau_2,\Gamma\qquad\Gamma,\Delta|-e_2:\tau_2->\tau_3,\Gamma}
+	{\Gamma,\Delta|-\;e_1*e_2:\tau_1->\tau_3,\Gamma}
+
+\inferrule
+	{\Gamma,\Delta|-e_1:\mat,\Gamma\qquad\Gamma,\Delta|-e_2:\mathsf{mat}_{n_2{\times}n_3},\Gamma}
+	{\Gamma,\Delta|-\;e_1*e_2:\mathsf{mat}_{n_1{\times}n_3},\Gamma}
 \end{mathpar}
 
 \section{Dynamic Semantics}
+\subsection{Substitution}
 Substitutions work as expected on the environment $\sigma$.
 %
 \begin{mathpar}
