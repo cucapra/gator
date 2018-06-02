@@ -8,19 +8,22 @@ type ltyp =
     | TransTyp of ltyp * ltyp
 
 (* types *)
-type typ = 
-    FloatTyp
+type atyp = 
+    UnitTyp
     | IntTyp
+    | FloatTyp
     | LtypTyp of ltyp
 
-type scalar = 
+type avalue =
     Int of int
     | Float of float
+    | Vec of float list
+    | Mat of float list list
 
 (* arithmetic expressions *)
 type aexp = 
-    Num of scalar
-    | Var of string * ltyp
+    Const of avalue
+    | Var of string
     | Vec of aexp * ltyp
     | Mat of aexp * ltyp
     | Dot of aexp * aexp
@@ -30,6 +33,9 @@ type aexp =
     | Minus of aexp * aexp
     | LCompTimes of aexp * aexp
     | LTrans of aexp * aexp (* Linear Transformation, i.e. matrix mult *)
+
+type btyp = BoolTyp
+type bvalue = Bool of bool
 
 (* boolean expressions *)
 type bexp =
@@ -47,7 +53,7 @@ type exp =
 
 type comm = 
     Skip
-    | Decl of typ * string * exp
+    | Decl of atyp * string * exp
     | Comp of comm * comm
     | If of bexp * comm * comm
 
