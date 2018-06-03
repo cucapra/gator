@@ -35,7 +35,7 @@ type aexp =
     | LTrans of aexp * aexp (* Linear Transformation, i.e. matrix mult *)
 
 type btyp = BoolTyp
-type bvalue = Bool of bool
+type bvalue = bool
 
 (* boolean expressions *)
 type bexp =
@@ -53,8 +53,9 @@ type exp =
 
 type comm = 
     Skip
+    | Print of aexp
     | Decl of atyp * string * exp
-    | Comp of comm * comm
+    | Seq of comm * comm
     | If of bexp * comm * comm
 
 type tags = 
