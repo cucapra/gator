@@ -4,26 +4,26 @@ open Parser
 
 (* Regex definitons *)
 
-let white = [' ' '\t']+
+let white = [' ' '\t' '\n' '\r']+
 let digit = ['0'-'9']
 let int = '-'? digit+
 let letter = ['a'-'z' 'A'-'Z']
 let id = letter+
 let frac = '.' digit*
 let exp = ['e' 'E'] ['-' '+']? digit+
-let float = digit* frac? exp?
-
+let float = ['+' '-']? (['0'-'9']*['.'])?['0'-'9']+
+let newline = ('\010' | '\013' | "\013\010")
+let comment = "//" [^ '\010' '\013']* newline
 
 (* Lexer definition *)
 
-rule read = 
-  parse
+rule read = parse
+  | comment 
   | white { read lexbuf }
   | "+"   { PLUS }
   | "*"   { TIMES }
   | ".*"  { CTIMES }
   | ":"   { COLON }
-  | "|>"  { LTIMES }
   | "["   { LBRACK }
   | "]"   { RBRACK }
   | "("   { LPAREN }
@@ -53,8 +53,7 @@ rule read =
   | "int" { INTTYP }
   | "float" { FLOATTYP }
   | "bool" { BOOLTYP }
-  | "" { EMPTY }
   | id    { ID (Lexing.lexeme lexbuf) }
-  | int   { INT (int_of_string (Lexing.lexeme lexbuf)) }
+  | int   { NUM (int_of_string (Lexing.lexeme lexbuf)) }
   | float    { FLOAT (float_of_string (Lexing.lexeme lexbuf)) }
-  | eof   { EOF }
+  | eof   { EOL }

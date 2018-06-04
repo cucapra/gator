@@ -24,7 +24,7 @@ type typ =
     | ATyp of atyp
 
 type avalue =
-    Int of int
+    Num of int
     | Float of float
     | VecLit of vec
     | MatLit of mat
@@ -40,7 +40,6 @@ type aexp =
     | Times of aexp * aexp
     | Minus of aexp * aexp
     | CTimes of aexp * aexp (* Component-wise multiplication*)
-    | LTimes of aexp * aexp (* Linear Transformation, i.e. matrix mult *)
 
 type bvalue = Bool of bool
 
@@ -52,7 +51,7 @@ type bexp =
     | Leq of aexp * aexp
     | Or of bexp * bexp
     | And of bexp * bexp
-    | Not of bexp
+    | Not of bexp    
 
 type exp =
     Aexp of aexp
@@ -64,11 +63,6 @@ type comm =
     | Decl of typ * string * exp
     | Seq of comm * comm
     | If of bexp * comm * comm
-
-type tags = 
-    Empty
     | TagDecl of string * atyp
-    | TagComp of tags * tags
 
-type prog = 
-    Prog of tags * comm
+
