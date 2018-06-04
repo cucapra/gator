@@ -1,4 +1,7 @@
 (* AST definition of LinGL *)
+
+(* Standard type definitions*)
+type id = string
 type vec = float list
 type mat = float list list
 
@@ -43,8 +46,6 @@ type aexp =
     | Minus of aexp * aexp
     | LCompTimes of aexp * aexp
     | LTrans of aexp * aexp (* Linear Transformation, i.e. matrix mult *)
-
-type bvalue = Bool of bool
 
 (* boolean expressions *)
 type bexp =
