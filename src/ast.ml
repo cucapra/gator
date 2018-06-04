@@ -1,4 +1,6 @@
 (* AST definition of LinGL *)
+type vec = float list
+type mat = float list list
 
 (* linear types *)
 type ltyp = 
@@ -25,8 +27,8 @@ type typ =
 type avalue =
     Int of int
     | Float of float
-    | VecLit of float list
-    | MatLit of float list list
+    | VecLit of vec
+    | MatLit of mat
 
 (* arithmetic expressions *)
 type aexp = 
@@ -60,9 +62,9 @@ type exp =
 
 type comm = 
     Skip
-    | Decl of typ * string * exp
-    | Comp of comm * comm
     | Print of exp
+    | Decl of typ * string * exp
+    | Seq of comm * comm
     | If of bexp * comm * comm
 
 type tags = 

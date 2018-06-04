@@ -110,15 +110,10 @@ aval:
   | i = INT { Int i }
   | f = FLOAT { Float f }
   | LBRACK; v = veclit; RBRACK { VecLit(v@[]) }
-  | LBRACK; m = matlit; RBRACK { MatLit([m]) }
 
 veclit:
   | f = FLOAT { f::[] }
-  | v1 = vec; COMMA; v2 = vec { v1@v2@[] }
-
-matlit:
-  | v = vec { v }
-  | v1 = vec; COMMA; v2 = vec { v1@v2@[[]] }
+  | v1 = veclit; COMMA; v2 = veclit { v1@v2@[] }
 
 aexp:
   | v = aval { Const v }  
