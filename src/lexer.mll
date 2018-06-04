@@ -19,7 +19,6 @@ let float = digit* frac? exp?
 rule read = 
   parse
   | white { read lexbuf }
-  | "."   { PERIOD }
   | "+"   { PLUS }
   | "*"   { TIMES }
   | ".*"  { CTIMES }
@@ -30,7 +29,6 @@ rule read =
   | "("   { LPAREN }
   | ")"   { RPAREN }
   | "->"  { TRANS }
-  | "let" { LET }
   | "="   { GETS }
   | "=="  { EQ }
   | "<="  { LEQ }
@@ -43,7 +41,6 @@ rule read =
   | "mat" { MAT }
   | "vec" { VEC }
   | "dot" { DOT }
-  | "comp" { COMP }
   | "norm" { NORM }
   | "true" { TRUE }
   | "false" { FALSE }
@@ -56,7 +53,7 @@ rule read =
   | "int" { INTTYP }
   | "float" { FLOATTYP }
   | "bool" { BOOLTYP }
-  | ""
+  | "" { EMPTY }
   | id    { ID (Lexing.lexeme lexbuf) }
   | int   { INT (int_of_string (Lexing.lexeme lexbuf)) }
   | float    { FLOAT (float_of_string (Lexing.lexeme lexbuf)) }

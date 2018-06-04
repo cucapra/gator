@@ -8,7 +8,6 @@ open Ast
 %token <int> INT
 %token <float> FLOAT
 %token <string> ID
-%token PERIOD
 %token PLUS
 %token MINUS
 %token TIMES
@@ -20,7 +19,6 @@ open Ast
 %token LPAREN
 %token RPAREN
 %token TRANS
-%token LET
 %token GETS
 %token EQ
 %token LEQ
@@ -33,7 +31,6 @@ open Ast
 %token MAT
 %token VEC
 %token DOT
-%token COMP
 %token NORM
 %token TRUE
 %token FALSE
@@ -47,13 +44,22 @@ open Ast
 %token INTTYP
 %token FLOATTYP 
 %token BOOLTYP
+%token EMPTY
 
 (* Precedences *)
-
+%nonassoc COMMA
 %left PLUS MINUS
 %left TIMES
+%left CTIMES
+%left LTIMES
+
 %left AND OR
+%nonassoc DOT
+%nonassoc NORM
 %nonassoc NOT
+
+%left TRANS
+%left COLON
 
 (* After declaring associativity and precedence, we need to declare what
    the starting point is for parsing the language.  The following
@@ -68,16 +74,22 @@ open Ast
 %%
    
 prog:
-  | e = tags; SEMI; c = comm; EOF { Prog(e, c) }
+  | e = proglist; EOF { e }
+  
+proglist: 
+  | e1 = tags ; SEMI; e2 = seq { Prog(e1,e2) }
   ;
 
 tagdecl:
   | TAG; x = ID; IS; e1 = ltyp { TagDecl(x, LTyp(e1)) }
 
 tags:
-  | e = tagdecl { e }
-  | e1 = tags ; SEMI; e2 = tags { TagComp(e1,e2) }
+  | EMPTY { Empty }
+  | t1 = tagdecl; SEMI; t2 = tags { TagComp(t1, t2) }
 
+seq:
+  | c1 = comm; SEMI; c2 = comm { Seq(c1, c2) }
+  
 comm:
   | SKIP { Skip } 
   | t = typ; x = ID; GETS; e1 = exp { Decl(t, x, e1) }
@@ -110,17 +122,27 @@ aval:
   | i = INT { Int i }
   | f = FLOAT { Float f }
   | LBRACK; v = veclit; RBRACK { VecLit(v@[]) }
+  | LBRACK; m = matlit; RBRACK { MatLit(m@[]) }
 
 veclit:
   | f = FLOAT { f::[] }
   | v1 = veclit; COMMA; v2 = veclit { v1@v2@[] }
 
+matlit:
+  | LBRACK; v = veclit; RBRACK { [v] }
+  | m1 = matlit; COMMA; m2 = matlit { m1@m2@[] }
+
 aexp:
   | v = aval { Const v }  
   | x = ID { Var x }
+  | e = aexp; COLON; t = ltyp { LExp(e, t) }
+  | DOT; e1 = aexp; e2 = aexp { Dot(e1, e2) }
+  | NORM; e = aexp { Norm(e) } (* Normie *)
   | e1 = aexp; PLUS; e2 = aexp { Plus(e1,e2) }
   | e1 = aexp; TIMES; e2 = aexp { Times(e1,e2) }
   | e1 = aexp; MINUS; e2 = aexp { Minus(e1,e2) }
+  | e1 = aexp; CTIMES; e2 = aexp { CTimes(e1,e2) }
+  | e1 = aexp; LTIMES; e2 = aexp { LTimes(e1,e2) }
 
 bexp:
   | TRUE { True }

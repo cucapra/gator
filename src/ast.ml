@@ -20,7 +20,6 @@ type btyp = BoolTyp
 
 (* types *)
 type typ = 
-    UnitTyp
     | BTyp of btyp
     | ATyp of atyp
 
@@ -34,15 +33,14 @@ type avalue =
 type aexp = 
     Const of avalue
     | Var of string
-    | Vec of aexp * ltyp
-    | Mat of aexp * ltyp
+    | LExp of aexp * ltyp (* Linear exp *)
     | Dot of aexp * aexp
     | Norm of aexp
     | Plus of aexp * aexp
     | Times of aexp * aexp
     | Minus of aexp * aexp
-    | LCompTimes of aexp * aexp
-    | LTrans of aexp * aexp (* Linear Transformation, i.e. matrix mult *)
+    | CTimes of aexp * aexp (* Component-wise multiplication*)
+    | LTimes of aexp * aexp (* Linear Transformation, i.e. matrix mult *)
 
 type bvalue = Bool of bool
 
