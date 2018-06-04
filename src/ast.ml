@@ -7,18 +7,26 @@ type ltyp =
     | TagTyp of string
     | TransTyp of ltyp * ltyp
 
-(* types *)
+(* arithmetic types *)
 type atyp = 
-    UnitTyp
     | IntTyp
     | FloatTyp
-    | LtypTyp of ltyp
+    | LTyp of ltyp
+
+(* bool types *)
+type btyp = BoolTyp
+
+(* types *)
+type typ = 
+    UnitTyp
+    | BTyp of btyp
+    | ATyp of atyp
 
 type avalue =
     Int of int
     | Float of float
-    | Vec of float list
-    | Mat of float list list
+    | VecLit of float list
+    | MatLit of float list list
 
 (* arithmetic expressions *)
 type aexp = 
@@ -34,7 +42,6 @@ type aexp =
     | LCompTimes of aexp * aexp
     | LTrans of aexp * aexp (* Linear Transformation, i.e. matrix mult *)
 
-type btyp = BoolTyp
 type bvalue = Bool of bool
 
 (* boolean expressions *)
@@ -53,12 +60,15 @@ type exp =
 
 type comm = 
     Skip
-    | Decl of atyp * string * exp
+    | Decl of typ * string * exp
     | Comp of comm * comm
+    | Print of exp
     | If of bexp * comm * comm
 
 type tags = 
-    TagDecl of string * ltyp
+    Empty
+    | TagDecl of string * atyp
     | TagComp of tags * tags
 
-type prog = tags * comm
+type prog = 
+    Prog of tags * comm

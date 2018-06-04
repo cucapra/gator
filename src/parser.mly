@@ -6,6 +6,7 @@ open Ast
 (* Tokens *)
 
 %token <int> INT
+%token <float> FLOAT
 %token <string> ID
 %token PERIOD
 %token PLUS
@@ -18,6 +19,7 @@ open Ast
 %token RBRACK
 %token LPAREN
 %token RPAREN
+%token TRANS
 %token LET
 %token GETS
 %token EQ
@@ -28,6 +30,8 @@ open Ast
 %token COMMA
 %token TAG
 %token IS
+%token MAT
+%token VEC
 %token DOT
 %token COMP
 %token NORM
@@ -37,8 +41,12 @@ open Ast
 %token THEN
 %token ELSE
 %token SKIP
+%token PRINT
 %token EOF
 %token SEMI
+%token INTTYP
+%token FLOATTYP 
+%token BOOLTYP
 
 (* Precedences *)
 
@@ -53,34 +61,67 @@ open Ast
    The declaration also says that parsing a [prog] will return an OCaml
    value of type [Ast.expr]. *)
 
-%start <Ast.comm> prog
+%start <Ast.prog> prog
 
 (* The following %% ends the declarations section of the grammar definition. *)
 
 %%
    
 prog:
-  | e = tags; EOF { e }
-  | c1 = comm; SEMI; c2 = comm; EOF { Comp(c1,c2) }
+  | e = tags; SEMI; c = comm; EOF { Prog(e, c) }
   ;
 
 tagdecl:
-  | TAG; x = ID; IS; e1 = ltyp { TagDecl(x, e1) }
+  | TAG; x = ID; IS; e1 = ltyp { TagDecl(x, LTyp(e1)) }
 
 tags:
   | e = tagdecl { e }
   | e1 = tags ; SEMI; e2 = tags { TagComp(e1,e2) }
 
-typ:
-  | FLOAT
-
 comm:
   | SKIP { Skip } 
-  | t = typ; x = ID; GETS; e1 = aexp { Decl(t, x, e1) }
+  | t = typ; x = ID; GETS; e1 = exp { Decl(t, x, e1) }
   | IF; LPAREN; b1 = bexp; RPAREN; THEN; c1 = comm; ELSE; c2 = comm { If(b1,c1,c2) }
+  | PRINT; e = exp { Print(e) }
+
+typ:
+  | a = atyp { ATyp(a) }
+  | b = btyp { BTyp(b) }
+
+atyp:
+  | FLOATTYP  { FloatTyp }
+  | INTTYP    { IntTyp }
+  | e = ltyp { LTyp(e) }
+
+ltyp: 
+  | VEC; i = INT { VecTyp(i) }
+  | MAT; i1 = INT; TIMES; i2 = INT { MatTyp(i1,i2) }
+  | TAG; x = ID { TagTyp(x) }
+  | x1 = ltyp; TRANS; x2 = ltyp { TransTyp(x1,x2) }
+
+btyp:
+  | BOOLTYP { BoolTyp }
+
+exp:
+  | a = aexp { Aexp(a) }
+  | b = bexp { Bexp(b) }
+
+aval: 
+  | i = INT { Int i }
+  | f = FLOAT { Float f }
+  | LBRACK; v = veclit; RBRACK { VecLit(v@[]) }
+  | LBRACK; m = matlit; RBRACK { MatLit([m]) }
+
+veclit:
+  | f = FLOAT { f::[] }
+  | v1 = vec; COMMA; v2 = vec { v1@v2@[] }
+
+matlit:
+  | v = vec { v }
+  | v1 = vec; COMMA; v2 = vec { v1@v2@[[]] }
 
 aexp:
-  | i = INT { Num i }
+  | v = aval { Const v }  
   | x = ID { Var x }
   | e1 = aexp; PLUS; e2 = aexp { Plus(e1,e2) }
   | e1 = aexp; TIMES; e2 = aexp { Times(e1,e2) }

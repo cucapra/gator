@@ -51,9 +51,11 @@ rule read =
   | "then" { THEN }
   | "else" { ELSE }
   | "skip" { SKIP }
+  | "print" { PRINT }
   | ";"   { SEMI }
   | "int" { INTTYP }
   | "float" { FLOATTYP }
+  | "bool" { BOOLTYP }
   | ""
   | id    { ID (Lexing.lexeme lexbuf) }
   | int   { INT (int_of_string (Lexing.lexeme lexbuf)) }
