@@ -16,8 +16,6 @@
 \newcommand{\mat}{\mathsf{mat}_{n_1{\times}n_2}}
 \newcommand{\vv}[1]{\mathsf{vec}_{#1}}
 \newcommand{\env}[1]{#1,\sigma}
-\newcommand{\topm}{\top_{n_1{\times}n_2}}
-\newcommand{\topv}{\top_n}
 
 \mathlig{->}{\rightarrow}
 \mathlig{|-}{\vdash}
@@ -37,7 +35,7 @@ T &\in& \text{tags}\\
 v &::=& [s_1,s_2,\dots] \\
 m &::=& [[s_{11},s_{12},\dots],[s_{21},s_{22},\dots],\dots] \\
 \mu&::=& \mat \;|\;\vv{n}\;|\;T\\
-\tau&::=&\mathsf{unit}\;|\;\mathsf{scalar}\;|\; \mu \;|\; \tau_1->\tau_2\\
+\tau&::=&\mathsf{unit}\;|\;\mathsf{scalar}\;|\; \mu \;|\; \mu_1->\mu_2\\
 c&::=&s\;|\;m\;|\;v\;|\;()\\
 e&::=&\dots\;|\;s\;|\;()\;|\;\tau\;x:=e\;|\;v:\mu\;|\;m:\mu_1->\mu_2\;|\;e_1+e_2\;|\;e_1*e_2\;|\;e_1\;\mathsf{.*}\;e_2
 \end{array}$
@@ -57,7 +55,7 @@ Subtyping is reflexive and transitive, as usual:
     {\tau_1 \leq \tau_3}
 \end{mathpar}
 
-Here are some rules for subtyping on base types:
+Here are some rules for subtyping on base types.  Note that we want to use vectors and 1x$n$ matrices interchangeably:
 %
 \begin{mathpar}
 \inferrule
@@ -93,12 +91,12 @@ This rule has the usual reflexivity and transitivity
     {\Delta|-\mu_1 \leq_\Delta \mu_3}
 \end{mathpar}
 
-Vectors have a top type representing general vectors of dimension $n$ as $\topv$.  Similarly, we can give the top type of transformation matrices, whose type is always given by $\mu_1->\mu_2$, to be $\topm$:
+Vectors have a top type representing general vectors of dimension $n$ as $\vv{n}$.  Similarly, we can give the top type of transformation matrices, whose type is always given by $\mu_1->\mu_2$, to be $\mat$:
 %
 \begin{mathpar}
 \inferrule
     {\Delta|-\mu_1\leq_\Delta\vv{n_1}\qquad\Delta|-\mu_2\leq_\Delta\vv{n_2}}
-    {\Delta|-\mu_1->\mu_2\leq_\Delta\topm}
+    {\Delta|-\mu_1->\mu_2\leq_\Delta\mat}
 \end{mathpar}
 
 We also have standard partial order for functions under $\Delta$:
@@ -110,6 +108,8 @@ We also have standard partial order for functions under $\Delta$:
 \end{mathpar}
 
 \section{Static Semantics}
+
+This typing judgement is a map from an expression to the type of that expression under some variable context $\Gamma$, from variable names to types, and some tag context $\Delta$ defined above.
 
 \subsection{Subsumption}
 Any type in a given context can be cast ``up'' at any time.
@@ -153,23 +153,23 @@ Declaring variables requires an immediate assignment -- as a result, there is no
 %
 \begin{mathpar}
 \inferrule
-	{\Gamma,\Delta|-e:\tau,\Gamma}
-	{\Gamma,\Delta|-\tau\;x:=e:\mathsf{unit},\Gamma(x):=\tau}
+	{\Gamma,\Delta|-e:\tau,\Gamma'}
+	{\Gamma,\Delta|-\tau\;x:=e:\mathsf{unit},\Gamma'(x):=\tau}
 \end{mathpar}
 
 \subsection{Binary Operations}
 
-All operators on scalars and ints work as one might expect (recall that $\mathsf{int}\leq\mathsf{scalar}$).
+All operators on scalars work as one might expect.
 
-Tags and spaces are closed under addition and scalar multiplication
+Types are closed under addition and scalar multiplication
 %
 \begin{mathpar}
 \inferrule
-	{\Gamma,\Delta|-e_1:\tau,\Gamma\qquad\Gamma,\Delta|-e_2:\tau,\Gamma}
-	{\Gamma,\Delta|-e_1+e_2:\tau,\Gamma}
+	{\Gamma,\Delta|-e_1:\tau,\Gamma'\qquad\Gamma',\Delta|-e_2:\tau,\Gamma''}
+	{\Gamma,\Delta|-e_1+e_2:\tau,\Gamma''}
 
 \inferrule
-	{\Gamma,\Delta|-e_1:\tau_1\qquad\Gamma,\Delta|-e_2:\mathsf{scalar}\qquad\tau_1\leq_\Delta\topm\qquad}
+	{\Gamma,\Delta|-e_1:\tau_1\qquad\Gamma,\Delta|-e_2:\mathsf{scalar}\qquad\tau_1\leq_\Delta\mat\qquad}
 	{\Gamma,\Delta|-e_1*e_2:\tau_1}
 \end{mathpar}
 
@@ -177,42 +177,53 @@ Component multiplication can be defined as a mathematical operation, but makes l
 %
 \begin{mathpar}
 \inferrule
-	{\Gamma,\Delta|-e_1:\mat,\Gamma\qquad\Gamma,\Delta|-e_2:\mat,\Gamma}
-	{\Gamma,\Delta|-e_1\;\mathsf{.*}\;e_2:\mat,\Gamma}
+	{\Gamma,\Delta|-e_1:\mat,\Gamma'\qquad\Gamma',\Delta|-e_2:\mat,\Gamma''}
+	{\Gamma,\Delta|-e_1\;\mathsf{.*}\;e_2:\mat,\Gamma''}
 \end{mathpar}
 
 Matrix multiplication is both a way of transforming from one tag to another and for composing two matrix functions together.
 %
 \begin{mathpar}
 \inferrule
-	{\Gamma,\Delta|-e_1:\tau_1,\Gamma\qquad\Gamma,\Delta|-e_2:\tau_1->\tau_2,\Gamma}
-	{\Gamma,\Delta|-e_1*e_2:\tau_2,\Gamma}
+	{\Gamma,\Delta|-e_1:\tau_1,\Gamma'\qquad\Gamma',\Delta|-e_2:\tau_1->\tau_2,\Gamma''}
+	{\Gamma,\Delta|-e_1*e_2:\tau_2,\Gamma''}
 
 \inferrule
-	{\Gamma,\Delta|-e_1:\tau_1->\tau_2,\Gamma\qquad\Gamma,\Delta|-e_2:\tau_2->\tau_3,\Gamma}
-	{\Gamma,\Delta|-\;e_1*e_2:\tau_1->\tau_3,\Gamma}
+	{\Gamma,\Delta|-e_1:\tau_1->\tau_2,\Gamma'\qquad\Gamma',\Delta|-e_2:\tau_2->\tau_3,\Gamma''}
+	{\Gamma,\Delta|-\;e_1*e_2:\tau_1->\tau_3,\Gamma''}
 
 \inferrule
-	{\Gamma,\Delta|-e_1:\mat,\Gamma\qquad\Gamma,\Delta|-e_2:\mathsf{mat}_{n_2{\times}n_3},\Gamma}
-	{\Gamma,\Delta|-\;e_1*e_2:\mathsf{mat}_{n_1{\times}n_3},\Gamma}
+	{\Gamma,\Delta|-e_1:\mat,\Gamma'\qquad\Gamma',\Delta|-e_2:\mathsf{mat}_{n_2{\times}n_3},\Gamma''}
+	{\Gamma,\Delta|-\;e_1*e_2:\mathsf{mat}_{n_1{\times}n_3},\Gamma''}
 \end{mathpar}
 
 \section{Dynamic Semantics}
+
+The operational semantics of this language map, in a single step, from a command to a constant and a state $\sigma$.  $\sigma$ itself is, as usual, a map from variable names to constants.
+
 \subsection{Substitution}
 Substitutions work as expected on the environment $\sigma$.
 %
 \begin{mathpar}
 \inferrule
 	{ }
-	{\env{\tau\;x:=c}->\mathsf{skip},\sigma[c/x]}
+	{\env{\tau\;x:=c}->(),\sigma[c/x]}
 
 \inferrule
 	{\env{e}->\env{e'}}
 	{\env{\tau\;x:=e}->\env{\tau\;x:=e'}}
+\end{mathpar}
+
+Type annotations are just thrown out at an operational level:
+%
+\begin{mathpar}
+\inferrule
+	{ }
+	{\env{v:\tau}->\env{v}}
 
 \inferrule
 	{ }
-	{\env{\tau\;x:=(\tau)\;m}->\mathsf{skip},\sigma[m/x]}
+	{\env{m:\tau}->\env{m}}
 \end{mathpar}
 
 \subsection{Mathematical Operations}
