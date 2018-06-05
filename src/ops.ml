@@ -63,12 +63,18 @@ let rec eval_bexp (e : bexp) (s : state) : bool =
     | And (b1, b2) -> (eval_bexp b1 s) && (eval_bexp b2 s)
     | Not b -> not (eval_bexp b s)
 
+let vec_to_string (v: vec) : string = 
+    "["^(String.concat ", " (List.map string_of_float v))^"]"
+
+let mat_to_string (m: mat) : string = 
+    "["^(String.concat ", " (List.map vec_to_string m))^"]"
+
 let rec string_of_avalue (a : avalue) : string =
     match a with 
     | Num i -> string_of_int i
     | Float f -> string_of_float f
-    | VecLit v -> failwith "Unimplemented"
-    | MatLit m -> failwith "Unimplemented"
+    | VecLit v -> vec_to_string v 
+    | MatLit m -> mat_to_string m
 
 let rec eval_print (e : exp) (s : state) : string =
     match e with
