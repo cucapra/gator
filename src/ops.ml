@@ -63,25 +63,30 @@ let rec eval_bexp (e : bexp) (s : state) : bool =
     | And (b1, b2) -> (eval_bexp b1 s) && (eval_bexp b2 s)
     | Not b -> not (eval_bexp b s)
 
-let eval_print (e : exp) (s : state) : unit =
+let rec string_of_avalue (a : avalue) : string =
+    match a with 
+    | Num i -> string_of_int i
+    | Float f -> string_of_float f
+    | VecLit v -> failwith "Unimplemented"
+    | MatLit m -> failwith "Unimplemented"
+
+let rec eval_print (e : exp) (s : state) : string =
     match e with
-    | Aexp a -> (match (eval_aexp a s) with 
-        | Num i -> print_int i
-        | Float f -> print_float f
-        | VecLit v -> failwith "Unimplemented"
-        | MatLit m -> failwith "Unimplemented")
-    | Bexp b -> (print_string (string_of_bool (eval_bexp b s)))   
+    | Aexp a -> string_of_avalue (eval_aexp a s)
+    | Bexp b -> string_of_bool (eval_bexp b s)
+    | Var v -> v ^ (string_of_avalue (lookup s v))
 
 let rec eval_comm (c : comm list) (s : state) : state =
     match c with
     | [] -> s
     | h::t -> eval_comm t (match h with
         | Skip -> s
-        | Print e -> eval_print e s; s
+        | Print e -> print_string ((eval_print e s) ^ "\n"); s
         | Decl (_, s, e) -> failwith "unimplemented"
         | If (e, c1, c2) -> (match e with 
             | Aexp a -> failwith "Bad if condition"
-            | Bexp b -> if (eval_bexp b s) then (eval_comm c1 s) else (eval_comm c2 s)))
+            | Bexp b -> if (eval_bexp b s) then (eval_comm c1 s) else (eval_comm c2 s)
+            | Var v -> failwith "Bad if condition"))
 
 let rec eval_prog (p : prog) : state =
     match p with
