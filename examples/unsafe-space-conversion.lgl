@@ -6,10 +6,6 @@
 tag clip2 is vec2;
 tag screen2 is vec2;
 
-screen2 a_position;
-
-screen2 u_resolution;
-screen2 u_translation;
 
 // add in the translation.
 // => SAFE - Adding vectors of the same space
@@ -18,10 +14,10 @@ screen2 position = a_position + u_translation;
 // convert the position from pixels to -1.0 to 1.0
 // => NOT SAFE - converting spaces without the use of explicit matrix transformation
 // 				 is not allowed
-clip2 badClipVector = position / u_resolution;
+clip2 badClipVector = position * u_resolution;
 
-screen2->clip2 screenToClip = [[-1.0, 1.0],[2.0, 2.0]]
+screen2->clip2 screenToClip = [[-1.0, 1.0],[2.0, 2.0]];
 
 // OCaml-esque piping for matrix manipulations
 // => SAFE
-clip2 clipVector = position |> screenToClip;
+clip2 clipVector = position * screenToClip;

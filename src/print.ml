@@ -5,13 +5,8 @@ open Ast
 let print_vec (v: vec) : string = 
     "["^(String.concat ", " (List.map string_of_float v))^"]"
 
-let rec print_mat_helper (m: mat) : string = 
-    match m with
-    | [] -> ""
-    | h::t -> (print_vec h)^", "^(print_mat_helper t)
-
 let print_mat (m: mat) : string = 
-    "["^(print_mat_helper m)^"]"
+    "["^(String.concat ", " (List.map print_vec m))^"]"
 
 let rec print_ltyp (lt: ltyp) : string =
     match lt with
