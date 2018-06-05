@@ -8,7 +8,7 @@ let white = [' ' '\t' '\n' '\r']+
 let digit = ['0'-'9']
 let num = ['0'-'9'] ['0'-'9']*
 let letter = ['a'-'z' 'A'-'Z']
-let id = letter+
+let id = ['a'-'z' 'A'-'Z' '0'-'9' '_']+
 let floatval = ['+' '-']? (['0'-'9']*['.'])?['0'-'9']+
 let newline = ('\010' | '\013' | "\013\010")
 let comment = "//" [^ '\010' '\013']* newline
@@ -27,7 +27,6 @@ rule read = parse
   | "true" { TRUE }
   | "false" { FALSE }
   | "if" { IF }
-  | "then" { THEN }
   | "else" { ELSE }
   | "skip" { SKIP }
   | "print" { PRINT }
@@ -43,6 +42,8 @@ rule read = parse
   | ":"   { COLON }
   | "["   { LBRACK }
   | "]"   { RBRACK }
+  | "{"   { LBRACE }
+  | "}"   { RBRACE }
   | "("   { LPAREN }
   | ")"   { RPAREN }
   | "->"  { TRANS }

@@ -69,18 +69,24 @@ let rec print_exp (e: exp) : string =
 
 let rec print_comm (c: comm) : string =
     match c with
-    | Skip -> "skip"
-    | Print e -> "print " ^ (print_exp e)
-    | Decl (t, s, e) -> (print_typ t)^" "^s^" = "^(print_exp e)
-    | Seq (c1, c2) -> (print_comm c1)^";\n"^(print_comm c2)
-    | If (b, c1, c2) -> "if ("^(print_bexp b)^") then \n"^(print_comm c1)^
-        "\nelse\n"^(print_comm c2)
+    | Skip -> "skip;"
+    | Print e -> "print " ^ (print_exp e)^";"
+    | Decl (t, s, e) -> (print_typ t)^" "^s^" = "^(print_exp e)^";"
+    | If (b, c1, c2) -> "if ("^(print_exp b)^") {\n"^(print_comm_lst c1)^
+        "} else {\n"^(print_comm_lst c2)^"}"
+
+and 
+
+print_comm_lst (cl : comm list) : string = 
+    match cl with
+    | [] -> ""
+    | h::t -> (print_comm h)^"\n"^(print_comm_lst t)
 
 let rec print_tags (t : tagdecl list) : string =
     match t with 
     | [] -> ""
-    | TagDecl(s, a)::t -> "tag "^s^"is"^(print_atyp a)^";\n"^(print_tags t)
+    | TagDecl(s, a)::t -> "tag "^s^" is "^(print_atyp a)^";\n"^(print_tags t)
 
 let print_prog (e : prog) : string =
     match e with
-    | Prog (t, c) -> (print_tags t) ^ (print_comm c) 
+    | Prog (t, c) -> (print_tags t) ^ (print_comm_lst c) 

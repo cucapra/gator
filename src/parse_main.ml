@@ -1,6 +1,7 @@
 (* Main driver for parsing, for unit testing*)
 
 open Ast
+open Print
 
 (* Current program file and parsed program. *)
 let file : string option ref = ref None
@@ -18,7 +19,9 @@ let load (filename : string) : unit =
   let lexbuf = Lexing.from_channel ch in
   try
     let parse = Parser.main Lexer.read lexbuf in
-    program := Some parse;
+    let prog = parse in
+    let prog_str = print_prog prog in
+    print_endline prog_str;
     close_in ch
   with
   | _ ->

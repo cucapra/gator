@@ -36,7 +36,6 @@ open Ast
 %token TRUE
 %token FALSE
 %token IF
-%token THEN
 %token ELSE
 %token SKIP
 %token PRINT
@@ -44,6 +43,8 @@ open Ast
 %token INTTYP
 %token FLOATTYP 
 %token BOOLTYP
+%token LBRACE
+%token RBRACE
 
 (* Precedences *)
 %nonassoc COMMA
@@ -55,10 +56,8 @@ open Ast
 %left AND OR
 %nonassoc DOT
 %nonassoc NORM
-%nonassoc NOT
 
-%nonassoc SEMI
-%nonassoc ELSE 
+%nonassoc NOT
 
 %left TRANS
 %left COLON
@@ -78,21 +77,31 @@ open Ast
 %%
    
 main:
-  | t = tags; e = comm; EOL { Prog(t, e) }
-  | e = comm; EOL {Prog([], e)}
-  | t = tags; EOL {Prog(t, Skip)}
+  | t = taglst; e = commlst; EOL { Prog(t, e) }
+  | e = commlst; EOL {Prog([], e)}
+  | t = taglst; EOL {Prog(t, [])}
 ;
 
-tags:
-  | TAG; x = ID; IS; e1 = ltyp { TagDecl(x, LTyp(e1))::[] }
-  | t1 = tags; SEMI; t2 = tags { t1@t2@[] }
-  
+taglst: 
+  | t = tag { t::[] }
+  | t1 = taglst; t2 = tag { t1@(t2::[])@[] }
+; 
+
+tag:
+  | TAG; x = ID; IS; e1 = ltyp; SEMI; { TagDecl(x, LTyp(e1)) }
+;
+
+commlst:
+  | c = comm { c::[] }
+  | c1 = comm; c2 = commlst { c1::c2@[] }
+;
+
 comm:
-  | c1 = comm; SEMI; c2 = comm { Seq(c1, c2) }
-  | SKIP { Skip } 
-  | t = typ; x = ID; GETS; e1 = exp { Decl(t, x, e1) }
-  | IF; LPAREN; b1 = bexp; RPAREN; THEN; c1 = comm; ELSE; c2 = comm { If(b1,c1,c2) }
-  | PRINT; e = exp { Print(e) }
+  | SKIP; SEMI;{ Skip } 
+  | t = typ; x = ID; GETS; e1 = exp; SEMI; { Decl(t, x, e1) }
+  | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; 
+    ELSE; LBRACE; c2 = commlst; RBRACE { If(b1,c1,c2) }
+  | PRINT; e = exp; SEMI; { Print(e) }
 ;
 
 typ:
@@ -109,7 +118,7 @@ atyp:
 ltyp: 
   | VEC; i = NUM { VecTyp(i) }
   | MAT; i1 = NUM; TIMES; i2 = NUM { MatTyp(i1,i2) }
-  | TAG; x = ID { TagTyp(x) }
+  | x = ID { TagTyp(x) }
   | x1 = ltyp; TRANS; x2 = ltyp { TransTyp(x1,x2) }
 ;
 
@@ -125,6 +134,7 @@ exp:
 aval: 
   | i = NUM { Num i }
   | f = FLOAT { Float f }
+  | LBRACK; RBRACK {VecLit([])}
   | LBRACK; v = veclit; RBRACK { VecLit(v@[]) }
   | LBRACK; m = matlit; RBRACK { MatLit(m@[]) }
 ;

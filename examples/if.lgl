@@ -1,0 +1,7 @@
+bool b = false; 
+if (b) { 
+    vec2 x = 2.2; 
+}
+else {
+    vec4 y = 3.2;
+}

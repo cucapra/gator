@@ -62,13 +62,12 @@ type comm =
     Skip
     | Print of exp
     | Decl of typ * string * exp
-    | Seq of comm * comm
-    | If of bexp * comm * comm
+    | If of exp * comm list * comm list
     
 type tagdecl = 
     TagDecl of string * atyp
 
 type prog =
-    | Prog of tagdecl list * comm
+    | Prog of tagdecl list * comm list
 
 

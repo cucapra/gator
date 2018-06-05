@@ -3,9 +3,7 @@
 
 // Defining screen tag, where user expects vectors with positive components
 // There is no option to provide these kind of bounds for tags in LinGL
-tag screen2 is vec2;
-
-screen2 a_position;
+tag screen is vec2;
 
 // Negative values totally passes through!
-a_position = [-3234, -123];
+screen pos = [-3234.0, -123.0];
