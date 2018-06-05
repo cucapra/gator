@@ -3,7 +3,7 @@ open Ast
 
 let _ =
     let lexbuf = Lexing.from_channel stdin in
-    let prog = Parser.main Lexer.token lexbuf in
-    print_endline (Print.pretty prog);
+    let prog = Parser.main Lexer.read lexbuf in
+    print_endline (Print.print_prog prog);
     print_string "= ";
-    print_endline (Print.eval_comm (snd prog) State.create).to_string
+    Ops.eval_prog prog
