@@ -70,7 +70,7 @@ open Ast
    value of type [Ast.expr]. *)
 
 %start main
-%type <Ast.comm> main
+%type <Ast.prog> main
 
 
 (* The following %% ends the declarations section of the grammar definition. *)
@@ -78,12 +78,17 @@ open Ast
 %%
    
 main:
-  | e = comm; SEMI; EOL { e }
+  | t = tags; e = comm; EOL { Prog(t, e) }
+  | e = comm; EOL {Prog([], e)}
+  | t = tags; EOL {Prog(t, Skip)}
 ;
+
+tags:
+  | TAG; x = ID; IS; e1 = ltyp { TagDecl(x, LTyp(e1))::[] }
+  | t1 = tags; SEMI; t2 = tags { t1@t2@[] }
   
 comm:
   | c1 = comm; SEMI; c2 = comm { Seq(c1, c2) }
-  | TAG; x = ID; IS; e1 = ltyp { TagDecl(x, LTyp(e1)) }
   | SKIP { Skip } 
   | t = typ; x = ID; GETS; e1 = exp { Decl(t, x, e1) }
   | IF; LPAREN; b1 = bexp; RPAREN; THEN; c1 = comm; ELSE; c2 = comm { If(b1,c1,c2) }

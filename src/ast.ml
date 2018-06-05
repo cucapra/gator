@@ -64,6 +64,11 @@ type comm =
     | Decl of typ * string * exp
     | Seq of comm * comm
     | If of bexp * comm * comm
-    | TagDecl of string * atyp
+    
+type tagdecl = 
+    TagDecl of string * atyp
+
+type prog =
+    | Prog of tagdecl list * comm
 
 

@@ -1,15 +1,16 @@
-(* A main read-eval-print loop for the parsing. *)
+(* A main driver for the parsing. *)
+(* Mainly for unit testing parser *)
 
 open Ast
 
 (* Current program file and parsed program. *)
 let file : string option ref = ref None
-let program : comm option ref = ref None
+let program : prog option ref = ref None
 
 let open_in (file : string) : in_channel =
   try open_in file
-  with Sys_error s -> failwith ("Cannot open file: " ^ s)
-
+  with | Sys_error s -> failwith ("Cannot open file: " ^ s)
+  | _ -> failwith ("Cannot open file")
 
 (* Command handlers. *)
 let load (filename : string) : unit =
@@ -21,18 +22,14 @@ let load (filename : string) : unit =
     program := Some parse;
     close_in ch
   with
-  | Parsing.Parse_error ->
+  | _ ->
     close_in ch;
     let pos = lexbuf.Lexing.lex_curr_p in
     let line = pos.Lexing.pos_lnum in
     let col = pos.Lexing.pos_cnum in
     let tok = Lexing.lexeme lexbuf in
     failwith (Format.sprintf "Syntax error on line %d, column %d near %s" line col tok)
-  (* | Error msg ->
-    fprintf stderr "%s\n" lexbuf msg;
-    close_in ch;
-    failwith "Cannot parse program" *)
 
-let _ =
+let _ = 
   print_endline "parse tester";
-  load Sys.argv.(0)
+  load Sys.argv.(1)
