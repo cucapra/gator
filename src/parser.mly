@@ -47,7 +47,6 @@ open Ast
 %token RBRACE
 
 (* Precedences *)
-%nonassoc COMMA
 %left PLUS MINUS
 %left TIMES
 %left CTIMES
@@ -141,17 +140,20 @@ aval:
 
 veclit:
   | f = FLOAT { f::[] }
-  | v1 = veclit; COMMA; v2 = veclit { v1@v2@[] }
+  | f = FLOAT; COMMA; v2 = veclit { f::v2@[] }
 ;
 
 matlit:
   | LBRACK; v = veclit; RBRACK { [v] }
-  | m1 = matlit; COMMA; m2 = matlit { m1@m2@[] }
+  | LBRACK; RBRACK { [[]] }
+  | LBRACK; v = veclit; RBRACK; COMMA; m2 = matlit { [v]@m2@[] }
+  | LBRACK; RBRACK; COMMA; m2 = matlit { [[]]@m2@[] }
 ;
 
 aexp:
   | v = aval { Const v }  
   | x = ID { Var x }
+  | LPAREN; a = aexp; RPAREN { a }
   | e = aexp; COLON; t = ltyp { LExp(e, t) }
   | DOT; e1 = aexp; e2 = aexp { Dot(e1, e2) }
   | NORM; e = aexp { Norm(e) } (* Normie *)
@@ -164,6 +166,7 @@ aexp:
 bexp:
   | TRUE { True }
   | FALSE { False }
+  | LPAREN; b = bexp; RPAREN { b }
   | e1 = aexp; EQ; e2 = aexp { Eq(e1,e2) }
   | e1 = aexp; LEQ; e2 = aexp { Leq(e1,e2) }
   | e1 = bexp; OR; e2 = bexp { Or(e1,e2) }
