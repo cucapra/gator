@@ -38,12 +38,8 @@ let rec print_aval (av: avalue) : string =
 let rec print_aexp (a: aexp) : string = 
     match a with
     | Const av -> print_aval av
-<<<<<<< HEAD
     | Var v -> v
     | Lexp (a',l) -> (print_aexp a')^":"^(print_ltyp l)
-=======
-    | LExp (a',l) -> (print_aexp a')^":"^(print_ltyp l)
->>>>>>> 667e3b57bc5946c3fae4d9264a4dab93d49f8d81
     | Dot (a1, a2) -> "dot "^(print_aexp a1)^" "^(print_aexp a2)
     | Norm a -> "norm "^(print_aexp a)
     | Plus (a1, a2) -> (print_aexp a1)^" + "^(print_aexp a2)
