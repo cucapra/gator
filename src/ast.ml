@@ -3,7 +3,7 @@
 (* Standard type definitions*)
 type id = string
 type vec = float list
-type mat = float list list
+type mat = vec list
 
 (* linear types *)
 type ltyp = 

@@ -1,5 +1,4 @@
-(* A main driver for the parsing. *)
-(* Mainly for unit testing parser *)
+(* Main driver for parsing, for unit testing*)
 
 open Ast
 
@@ -12,7 +11,7 @@ let open_in (file : string) : in_channel =
   with | Sys_error s -> failwith ("Cannot open file: " ^ s)
   | _ -> failwith ("Cannot open file")
 
-(* Command handlers. *)
+(* Load, lex & parse a file *)
 let load (filename : string) : unit =
   let ch = open_in filename in
   file := Some filename;
@@ -31,5 +30,5 @@ let load (filename : string) : unit =
     failwith (Format.sprintf "Syntax error on line %d, column %d near %s" line col tok)
 
 let _ = 
-  print_endline "parse tester";
+  print_endline "Parser tester";
   load Sys.argv.(1)
