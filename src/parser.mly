@@ -128,6 +128,8 @@ btyp:
 exp:
   | a = aexp { Aexp(a) }
   | b = bexp { Bexp(b) }
+  | x = ID { Var x }
+
 ;
 
 aval: 
@@ -152,7 +154,6 @@ matlit:
 
 aexp:
   | v = aval { Const v }  
-  | x = ID { Var x }
   | LPAREN; a = aexp; RPAREN { a }
   | e = aexp; COLON; t = ltyp { LExp(e, t) }
   | DOT; e1 = aexp; e2 = aexp { Dot(e1, e2) }

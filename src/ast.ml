@@ -9,7 +9,7 @@ type mat = vec list
 type ltyp = 
     VecTyp of int
     | MatTyp of int * int
-    | TagTyp of string
+    | TagTyp of id
     | TransTyp of ltyp * ltyp
 
 (* arithmetic types *)
@@ -35,7 +35,6 @@ type avalue =
 (* arithmetic expressions *)
 type aexp = 
     Const of avalue
-    | Var of string
     | LExp of aexp * ltyp (* Linear exp *)
     | Dot of aexp * aexp
     | Norm of aexp
@@ -57,6 +56,7 @@ type bexp =
 type exp =
     Aexp of aexp
     | Bexp of bexp
+    | Var of id
 
 type comm = 
     Skip
@@ -69,5 +69,4 @@ type tagdecl =
 
 type prog =
     | Prog of tagdecl list * comm list
-
 
