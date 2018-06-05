@@ -61,7 +61,7 @@ let rec check_aexp (a: aexp) : unit =
     match a with
     | Const av -> ()
     | Var v -> ()
-    | LExp (a',l) -> failwith "Unimplemented"
+    | Lexp (a',l) -> failwith "Unimplemented"
     | Norm a -> check_aexp a
     | Dot (a1, a2)
     | Plus (a1, a2)
