@@ -5,7 +5,7 @@ open Ast
 
 (* Tokens *)
 
-%token EOL
+%token EOL 
 
 %token <int> NUM
 %token <float> FLOAT
