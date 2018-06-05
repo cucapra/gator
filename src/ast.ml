@@ -36,7 +36,7 @@ type avalue =
 type aexp = 
     Const of avalue
     | Var of string
-    | LExp of aexp * ltyp (* Linear exp *)
+    | Lexp of aexp * ltyp (* Linear exp *)
     | Dot of aexp * aexp
     | Norm of aexp
     | Plus of aexp * aexp

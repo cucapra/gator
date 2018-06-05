@@ -4,21 +4,17 @@ open Ast
 
 (* A state is a finite map from variables to values. *)
 (* This implementation uses association lists. *)
-type state = (id * value) list
-(* Values are ints, bools, and closures. *)
-and value = Number of int | Boolean of bool | Closure of exp * state | Error
+type state = (id * avalue) list
 
 let merge = (@)
 
 (* Produce bindings as an association list. *)
-let bindings (s : state) : (id * value) list = s
+let bindings (s : state) : (id * avalue) list = s
 
-let to_string (v : value) : string =
+let to_string (v : avalue) : string =
   match v with
-    | Number n -> string_of_int n
-    | Boolean b -> string_of_bool b
-    | Closure (e, s) -> "<function>"
-    | Error -> "*** ERROR ***"
+    | Num i -> string_of_int i
+    | _ -> failwith "Unimplemented"
 
 let state_to_string (s:state) : string =
   List.fold_left
@@ -31,21 +27,21 @@ let make () = []
 
 (* Look up a variable by name and return the associated value. *)
 (* Raises Not_found if no binding *)
-let lookup (s : state) (var : id) : value =
+let lookup (s : state) (var : id) : avalue =
   try List.assoc var s
   with Not_found -> failwith ("Uninitialized variable " ^ var)
 
 (* Rebind var to value in state. *)
-let update (s : state) (var : id) (value : value) : state =
+let update (s : state) (var : id) (value : avalue) : state =
   (var, value) :: s
 
 (* Recursive update: assuming v is a closure of the form (e, s), *)
 (* return s', an extension of s that rebinds f to (e, s'). *)
 (* In this way, f can refer to itself. *)
 (* This is useful for implementing `let rec`. *)
-let rec_update (v : value) (f : id) : state =
+(*let rec_update (v : avalue) (f : id) : state =
   match v with
     | Closure (g, s) ->
        let rec u = (f, Closure (g, u)) :: s in u
     | _ ->
-       failwith "Improper value for let rec"
+       failwith "Improper value for let rec"*)

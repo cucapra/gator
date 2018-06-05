@@ -39,7 +39,7 @@ let rec print_aexp (a: aexp) : string =
     match a with
     | Const av -> print_aval av
     | Var v -> v
-    | LExp (a',l) -> (print_aexp a')^":"^(print_ltyp l)
+    | Lexp (a',l) -> (print_aexp a')^":"^(print_ltyp l)
     | Dot (a1, a2) -> "dot "^(print_aexp a1)^" "^(print_aexp a2)
     | Norm a -> "norm "^(print_aexp a)
     | Plus (a1, a2) -> (print_aexp a1)^" + "^(print_aexp a2)

@@ -154,7 +154,7 @@ aexp:
   | v = aval { Const v }  
   | x = ID { Var x }
   | LPAREN; a = aexp; RPAREN { a }
-  | e = aexp; COLON; t = ltyp { LExp(e, t) }
+  | e = aexp; COLON; t = ltyp { Lexp(e, t) }
   | DOT; e1 = aexp; e2 = aexp { Dot(e1, e2) }
   | NORM; e = aexp { Norm(e) } (* Normie *)
   | e1 = aexp; PLUS; e2 = aexp { Plus(e1,e2) }
