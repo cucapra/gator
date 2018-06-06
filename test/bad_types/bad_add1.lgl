@@ -1,0 +1,3 @@
+int x = 5;
+bool b = true;
+print x + b;
