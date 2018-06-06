@@ -1,5 +1,4 @@
-Type checker
-
+(* Type checker *)
 open Printf
 open Ast
 
@@ -57,33 +56,23 @@ let rec check_typ (t: typ) : typ =
     | ATyp at -> check_atyp at
     | BTyp bt -> check_btyp bt
 
-let rec check_aexp (a: aexp) : unit = 
-    match a with
-    | Const av -> ()
+let rec check_exp (e: exp) : unit = 
+    match e with
+    | Bool b -> failwith "Unimplemented"
+    | Aval a -> failwith "Unimplemented"
     | Var v -> ()
     | Lexp (a',l) -> failwith "Unimplemented"
-    | Norm a -> check_aexp a
+    | Norm a -> check_exp a
     | Dot (a1, a2)
     | Plus (a1, a2)
     | Times (a1, a2)
     | Minus (a1, a2)
-    | CTimes (a1, a2) -> check_aexp a1; check_aexp a2
-
-and check_bexp (b: bexp) : unit = 
-    match b with 
-    | True -> ()
-    | False -> ()
+    | CTimes (a1, a2) -> check_exp a1; check_exp a2 
     | Eq (a1, a2)
-    | Leq (a1, a2) -> check_aexp a1; check_aexp a2
+    | Leq (a1, a2) -> check_exp a1; check_exp a2
     | Or (b1, b2)
-    | And (b1, b2) -> check_bexp b1; check_bexp b2
-    | Not b' -> check_bexp b
-
-let rec check_exp (e: exp) : unit = 
-    match e with
-    | Aexp a -> check_aexp a
-    | Bexp b -> check_bexp b
-    | _ -> failwith "Unimplemented"
+    | And (b1, b2) -> check_exp b1; check_exp b2
+    | Not b' -> check_exp b'
 
 let rec check_comm (c: comm) : unit =
     match c with
@@ -91,8 +80,6 @@ let rec check_comm (c: comm) : unit =
     | Print e -> check_exp e
     | Decl (t, s, e) -> failwith "Unimplemented"
     | If (b, c1, c2) -> failwith "Unimplemented"
-    | _ -> failwith "Unimplemented" (* TODO - comment out *)
- 
 
 let rec check_comm_lst (cl : comm list) : unit = 
     match cl with
