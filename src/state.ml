@@ -4,16 +4,15 @@ open Ast
 
 (* A state is a finite map from variables to values. *)
 (* This implementation uses association lists. *)
-type state = (id * avalue) list
+type state = (id * value) list
 
 let merge = (@)
 
 (* Produce bindings as an association list. *)
-let bindings (s : state) : (id * avalue) list = s
+let bindings (s : state) : (id * value) list = s
 
-let to_string (v : avalue) : string =
+let to_string (v : value) : string =
   match v with
-    | Num i -> string_of_int i
     | _ -> failwith "Unimplemented"
 
 let state_to_string (s:state) : string =
@@ -27,12 +26,12 @@ let make () = []
 
 (* Look up a variable by name and return the associated value. *)
 (* Raises Not_found if no binding *)
-let lookup (s : state) (var : id) : avalue =
+let lookup (s : state) (var : id) : value =
   try List.assoc var s
   with Not_found -> failwith ("Uninitialized variable " ^ var)
 
 (* Rebind var to value in state. *)
-let update (s : state) (var : id) (value : avalue) : state =
+let update (s : state) (var : id) (value : value) : state =
   (var, value) :: s
 
 (* Recursive update: assuming v is a closure of the form (e, s), *)

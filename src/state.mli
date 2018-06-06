@@ -12,10 +12,10 @@ val merge : state -> state -> state
 
 (* Look up a variable by name and return the associated value. *)
 (* Raises Not_found if no binding *)
-val lookup : state -> id -> avalue
+val lookup : state -> id -> value
 
 (* Rebind var to value in state. *)
-val update : state -> id -> avalue -> state
+val update : state -> id -> value -> state
 
 (* Recursive update: assuming v is a closure of the form (e, s), *)
 (* return s', an extension of s that rebinds f to (e, s'). *)
@@ -24,8 +24,8 @@ val update : state -> id -> avalue -> state
 (*val rec_update : value -> id -> state*)
 
 (* Produce bindings as an association list. *)
-val bindings : state -> (id * avalue) list
+val bindings : state -> (id * value) list
 
-val to_string : avalue -> string
+val to_string : value -> string
 
 val state_to_string : state -> string

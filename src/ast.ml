@@ -32,6 +32,12 @@ type avalue =
     | VecLit of vec
     | MatLit of mat
 
+type bvalue = bool
+
+type value =
+    | Avalue of avalue
+    | Bvalue of bvalue
+
 (* arithmetic expressions *)
 type aexp = 
     Const of avalue
@@ -48,6 +54,7 @@ type aexp =
 type bexp =
     True
     | False
+    | Var of string
     | Eq of aexp * aexp
     | Leq of aexp * aexp
     | Or of bexp * bexp
