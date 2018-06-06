@@ -1,0 +1,18 @@
+bool b = true;
+bool b_in = false;
+if (b) { 
+    if (b_in) {
+        print -2;
+    }
+    else {
+        print 1;
+    }
+}
+else {
+    if (b_in) {
+        print -1;
+    }
+    else {
+        print -3;
+    }
+}
