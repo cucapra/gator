@@ -90,7 +90,7 @@ let eval_print (e : exp) (s : state) : string =
     match e with
     | Aexp a -> string_of_avalue (eval_aexp a s)
     | Bexp b -> string_of_bool (eval_bexp b s)
-    | Var v -> v ^ (string_of_value (lookup s v))
+    | Var v -> v ^ " = " ^ (string_of_value (lookup s v))
 
 let eval_declare (x : id) (e : exp) (s : state) : value =
     match e with 
