@@ -1,0 +1,17 @@
+print 1 == 2;
+print 1 == 1;
+print 3 <= 2;
+print 2 <= 3;
+print true && false;
+print false || false;
+print 3 <= 3 && 3 <= 3;
+print !true;
+bool b = true;
+print b && !b;
+
+false
+true
+false
+true
+false
+false

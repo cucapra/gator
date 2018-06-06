@@ -1,0 +1,3 @@
+vec2 v = [2., 3.]:vec2;
+print v * v;
+

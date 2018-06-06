@@ -1,0 +1,9 @@
+bool b = false;
+if (b) {
+print 2.2;
+} else {
+print 3.2;
+}
+
+3.2
+

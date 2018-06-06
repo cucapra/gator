@@ -38,9 +38,8 @@ type value =
     | Avalue of avalue
     | Bvalue of bvalue
 
-
 type exp =
-    | Bool of bool
+    | Bool of bvalue
     | Aval of avalue 
     | Var of id
     | Eq of exp * exp
