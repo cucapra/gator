@@ -2,5 +2,5 @@ int a = 3;
 bool b = true;
 bool c = false;
 float d = 2.300;
-mat3*3 e = [2.3, 2.1]; // will fail type checking
+mat3*3 e = [[2.3], [2.1]]; // will fail type checking
 vec2 f = [];
