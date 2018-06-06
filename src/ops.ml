@@ -2,9 +2,9 @@ open Ast
 open State
 open Lin_ops
 
-let rec eval_aexp (e : aexp) (s : state) : avalue =
+let rec eval_aexp (e : exp) (s : state) : avalue =
     match e with
-    | Const c -> c
+    | Aval a -> a
     | Var x -> (match (State.lookup s x) with
         | Avalue a -> a
         | Bvalue b -> failwith ("Invalid use of non-avalue " ^ x))
@@ -46,11 +46,11 @@ let rec eval_aexp (e : aexp) (s : state) : avalue =
         | (VecLit v1, VecLit v2) -> VecLit (vc_mult v1 v2)
         | (MatLit m1, MatLit m2) -> MatLit (mc_mult m1 m2)
         | _ -> failwith "Invalid component multiplication")
+    | _ -> failwith "Not an arithmetic expression"
 
-let rec eval_bexp (e : bexp) (s : state) : bvalue =
+let rec eval_bexp (e : exp) (s : state) : bvalue =
     match e with
-    | True -> true 
-    | False -> false
+    | Bool b -> b 
     | Var x -> (match (State.lookup s x) with
         | Avalue a -> failwith ("Invalid use of non-bvalue " ^ x)
         | Bvalue b -> b)
@@ -67,19 +67,20 @@ let rec eval_bexp (e : bexp) (s : state) : bvalue =
     | Or (b1, b2) -> (eval_bexp b1 s) || (eval_bexp b2 s)
     | And (b1, b2) -> (eval_bexp b1 s) && (eval_bexp b2 s)
     | Not b -> not (eval_bexp b s)
+    | _ -> failwith "Not a boolean expression"
 
-let vec_to_string (v: vec) : string = 
+let string_of_vec (v: vec) : string = 
     "["^(String.concat ", " (List.map string_of_float v))^"]"
 
-let mat_to_string (m: mat) : string = 
-    "["^(String.concat ", " (List.map vec_to_string m))^"]"
+let string_of_mat (m: mat) : string = 
+    "["^(String.concat ", " (List.map string_of_vec m))^"]"
 
 let string_of_avalue (a : avalue) : string =
     match a with 
     | Num i -> string_of_int i
     | Float f -> string_of_float f
-    | VecLit v -> vec_to_string v 
-    | MatLit m -> mat_to_string m
+    | VecLit v -> string_of_vec v 
+    | MatLit m -> string_of_mat m
 
 let string_of_value (v : value) : string =
     match v with
@@ -88,15 +89,17 @@ let string_of_value (v : value) : string =
 
 let eval_print (e : exp) (s : state) : string =
     match e with
-    | Aexp a -> string_of_avalue (eval_aexp a s)
-    | Bexp b -> string_of_bool (eval_bexp b s)
     | Var v -> v ^ " = " ^ (string_of_value (lookup s v))
+    | _ -> (try string_of_avalue (eval_aexp e s) with
+        | _ -> (try string_of_bool (eval_bexp e s) with
+            | _ -> failwith "very bad printing shenanigans"))
 
 let eval_declare (x : id) (e : exp) (s : state) : value =
     match e with 
-    | Aexp a -> Avalue (eval_aexp a s)
-    | Bexp b -> Bvalue (eval_bexp b s)
     | Var v -> lookup s v
+    | _ -> (try Avalue (eval_aexp e s) with
+        | _ -> (try Bvalue (eval_bexp e s) with
+            | _ -> failwith "very bad declaration shenanigans"))
 
 let rec eval_comm (c : comm list) (s : state) : state =
     match c with
@@ -106,11 +109,11 @@ let rec eval_comm (c : comm list) (s : state) : state =
         | Print e -> print_string ((eval_print e s) ^ "\n"); s
         | Decl (_, x, e) -> update s x (eval_declare x e s)
         | If (e, c1, c2) -> (match e with 
-            | Aexp a -> failwith "Bad if condition"
-            | Bexp b -> if (eval_bexp b s) then (eval_comm c1 s) else (eval_comm c2 s)
-            | Var v -> match (lookup s v) with
+            | Var v -> (match (lookup s v) with
                 | Avalue a -> failwith "Bad if condition"
-                | Bvalue b -> if b then (eval_comm c1 s) else (eval_comm c2 s)))
+                | Bvalue b -> if b then (eval_comm c1 s) else (eval_comm c2 s))
+            | _ -> (try (if (eval_bexp e s) then (eval_comm c1 s) else (eval_comm c2 s)) with
+                | _ -> failwith "very bad if shenanigans")))
 
 let rec eval_prog (p : prog) : unit =
     match p with
