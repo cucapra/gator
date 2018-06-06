@@ -91,15 +91,17 @@ let eval_print (e : exp) (s : state) : string =
     match e with
     | Var v -> v ^ " = " ^ (string_of_value (lookup s v))
     | _ -> (try string_of_avalue (eval_aexp e s) with
-        | _ -> (try string_of_bool (eval_bexp e s) with
-            | _ -> failwith "very bad printing shenanigans"))
+        | Failure "Not an arithmetic expression" -> (try string_of_bool (eval_bexp e s) with
+            | Failure s -> failwith s)
+        | Failure s -> failwith s)
 
 let eval_declare (x : id) (e : exp) (s : state) : value =
     match e with 
     | Var v -> lookup s v
     | _ -> (try Avalue (eval_aexp e s) with
-        | _ -> (try Bvalue (eval_bexp e s) with
-            | _ -> failwith "very bad declaration shenanigans"))
+        | Failure "Not an arithmetic expression" -> (try Bvalue (eval_bexp e s) with
+            | Failure s -> failwith s)
+        | Failure s -> failwith s)
 
 let rec eval_comm (c : comm list) (s : state) : state =
     match c with
@@ -113,7 +115,7 @@ let rec eval_comm (c : comm list) (s : state) : state =
                 | Avalue a -> failwith "Bad if condition"
                 | Bvalue b -> if b then (eval_comm c1 s) else (eval_comm c2 s))
             | _ -> (try (if (eval_bexp e s) then (eval_comm c1 s) else (eval_comm c2 s)) with
-                | _ -> failwith "very bad if shenanigans")))
+                | Failure s -> failwith s)))
 
 let rec eval_prog (p : prog) : unit =
     match p with
