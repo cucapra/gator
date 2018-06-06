@@ -5,8 +5,7 @@ open Parser
 (* Regex definitons *)
 
 let white = [' ' '\t' '\n' '\r']+
-let digit = ['0'-'9']
-let num = ['0'-'9'] ['0'-'9']*
+let num = ['+' '-']? ['0'-'9']+
 let letter = ['a'-'z' 'A'-'Z']
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let floatval = ['+' '-']? ((['0'-'9']*['.']['0'-'9']+)|(['0'-'9']+['.']['0'-'9']*))
@@ -18,6 +17,8 @@ let comment = "//" [^ '\r' '\n']* newline
 rule read = parse
   | comment { read lexbuf }
   | white { read lexbuf }
+  | num as num  { NUM (int_of_string num) }
+
   | "tag" { TAG }
   | "is"  { IS }
   | "mat" { MAT }
@@ -33,8 +34,9 @@ rule read = parse
   | "int" { INTTYP }
   | "float" { FLOATTYP }
   | "bool" { BOOLTYP }
-  | "x"   { DIM }
+  
   | "+"   { PLUS }
+  | "-"   { MINUS }
   | "*"   { TIMES }
   | ".*"  { CTIMES }
   | ":"   { COLON }
@@ -54,6 +56,6 @@ rule read = parse
   | ","   { COMMA } 
   | ";"   { SEMI }
   | id  as id { ID id }
-  | num as num  { NUM (int_of_string num) }
+  | "x"   { DIM }
   | floatval as floatval  { FLOAT (float_of_string floatval) }
   | eof   { EOL }

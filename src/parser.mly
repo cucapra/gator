@@ -47,12 +47,14 @@ open Ast
 %token DIM
 
 (* Precedences *)
-%left PLUS MINUS
+
 %left TIMES CTIMES 
+%nonassoc PLUS MINUS
 
 %left NOT EQ LEQ
 %left AND OR
 %nonassoc DOT
+
 %nonassoc NORM
 %left TRANS
 %left COLON
@@ -144,11 +146,12 @@ matlit:
 bool:
   | TRUE { true }
   | FALSE { false }
+;
 
 exp:
   | LPAREN; a = exp; RPAREN { a }
-  | b = bool { Bool b }
   | a = aval { Aval a }
+  | b = bool { Bool b }
   | x = ID { Var x }
   | e = exp; COLON; t = ltyp { Lexp(e, t) }
   | DOT; e1 = exp; e2 = exp { Dot(e1, e2) }
@@ -162,7 +165,6 @@ exp:
   | e1 = exp; LEQ; e2 = exp { Leq(e1,e2) }
   | e1 = exp; OR; e2 = exp { Or(e1,e2) }
   | e1 = exp; AND; e2 = exp { And(e1,e2) }
-  
 ;
 
 %%
