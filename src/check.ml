@@ -1,4 +1,4 @@
-(* Type checker *)
+Type checker
 
 open Printf
 open Ast

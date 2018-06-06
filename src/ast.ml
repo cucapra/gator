@@ -38,33 +38,23 @@ type value =
     | Avalue of avalue
     | Bvalue of bvalue
 
-(* arithmetic expressions *)
-type aexp = 
-    Const of avalue
-    | Var of string
-    | Lexp of aexp * ltyp (* Linear exp *)
-    | Dot of aexp * aexp
-    | Norm of aexp
-    | Plus of aexp * aexp
-    | Times of aexp * aexp
-    | Minus of aexp * aexp
-    | CTimes of aexp * aexp (* Component-wise multiplication*)
-
-(* boolean expressions *)
-type bexp =
-    True
-    | False
-    | Var of string
-    | Eq of aexp * aexp
-    | Leq of aexp * aexp
-    | Or of bexp * bexp
-    | And of bexp * bexp
-    | Not of bexp    
 
 type exp =
-    Aexp of aexp
-    | Bexp of bexp
+    | Bool of bool
+    | Aval of avalue 
     | Var of id
+    | Eq of exp * exp
+    | Leq of exp * exp
+    | Or of exp * exp
+    | And of exp * exp
+    | Not of exp    
+    | Lexp of exp * ltyp (* Linear exp *)
+    | Dot of exp * exp
+    | Norm of exp
+    | Plus of exp * exp
+    | Times of exp * exp
+    | Minus of exp * exp
+    | CTimes of exp * exp (* Component-wise multiplication*)
 
 type comm = 
     Skip

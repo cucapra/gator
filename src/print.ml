@@ -35,34 +35,25 @@ let rec print_aval (av: avalue) : string =
     | VecLit v -> print_vec v
     | MatLit m -> print_mat m
   
-let rec print_aexp (a: aexp) : string = 
-    match a with
-    | Const av -> print_aval av
-    | Var v -> v
-    | Lexp (a',l) -> (print_aexp a')^":"^(print_ltyp l)
-    | Dot (a1, a2) -> "dot "^(print_aexp a1)^" "^(print_aexp a2)
-    | Norm a -> "norm "^(print_aexp a)
-    | Plus (a1, a2) -> (print_aexp a1)^" + "^(print_aexp a2)
-    | Times (a1, a2) -> (print_aexp a1)^" * "^(print_aexp a2)
-    | Minus (a1, a2) -> (print_aexp a1)^" - "^(print_aexp a2)
-    | CTimes (a1, a2) -> (print_aexp a1)^" .* "^(print_aexp a2)
-
-let rec print_bexp (b: bexp) : string = 
-    match b with 
-    | True -> "true"
-    | False -> "false"
-    | Eq (a1, a2) -> (print_aexp a1)^" == "^(print_aexp a2)
-    | Leq (a1, a2) -> (print_aexp a1)^" <= "^(print_aexp a2)
-    | Or (b1, b2) -> (print_bexp b1)^" || "^(print_bexp b2)
-    | And (b1, b2) -> (print_bexp b1)^" && "^(print_bexp b2)
-    | Not b' -> "!"^(print_bexp b')
-
-let rec print_exp (e: exp) : string = 
+let rec print_exp (e:exp) : string = 
     match e with
-    | Aexp a -> print_aexp a
-    | Bexp b -> print_bexp b
+    | Aval av -> print_aval av
+    | Bool b -> (match b with
+            | true -> "true"
+            | false -> "false")
     | Var v -> v
-
+    | Lexp (a',l) -> (print_exp a')^":"^(print_ltyp l)
+    | Dot (a1, a2) -> "dot "^(print_exp a1)^" "^(print_exp a2)
+    | Norm a -> "norm "^(print_exp a)
+    | Plus (a1, a2) -> (print_exp a1)^" + "^(print_exp a2)
+    | Times (a1, a2) -> (print_exp a1)^" * "^(print_exp a2)
+    | Minus (a1, a2) -> (print_exp a1)^" - "^(print_exp a2)
+    | CTimes (a1, a2) -> (print_exp a1)^" .* "^(print_exp a2)
+    | Eq (a1, a2) -> (print_exp a1)^" == "^(print_exp a2)
+    | Leq (a1, a2) -> (print_exp a1)^" <= "^(print_exp a2)
+    | Or (b1, b2) -> (print_exp b1)^" || "^(print_exp b2)
+    | And (b1, b2) -> (print_exp b1)^" && "^(print_exp b2)
+    | Not b' -> "!"^(print_exp b')
 
 let rec print_comm (c: comm) : string =
     match c with

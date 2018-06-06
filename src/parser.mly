@@ -6,7 +6,8 @@ open Ast
 (* Tokens *)
 
 %token EOL 
-
+%token MAT
+%token VEC
 %token <int> NUM
 %token <float> FLOAT
 %token <string> ID
@@ -29,8 +30,6 @@ open Ast
 %token COMMA
 %token TAG
 %token IS
-%token MAT
-%token VEC
 %token DOT
 %token NORM
 %token TRUE
@@ -45,19 +44,16 @@ open Ast
 %token BOOLTYP
 %token LBRACE
 %token RBRACE
+%token DIM
 
 (* Precedences *)
 %left PLUS MINUS
-%left TIMES
-%left CTIMES
+%left TIMES CTIMES 
 
-
+%left NOT EQ LEQ
 %left AND OR
 %nonassoc DOT
 %nonassoc NORM
-
-%nonassoc NOT
-
 %left TRANS
 %left COLON
 
@@ -116,20 +112,13 @@ atyp:
 
 ltyp: 
   | VEC; i = NUM { VecTyp(i) }
-  | MAT; i1 = NUM; TIMES; i2 = NUM { MatTyp(i1,i2) }
+  | MAT; i1 = NUM; DIM; i2 = NUM { MatTyp(i1,i2) }
   | x = ID { TagTyp(x) }
   | x1 = ltyp; TRANS; x2 = ltyp { TransTyp(x1,x2) }
 ;
 
 btyp:
   | BOOLTYP { BoolTyp }
-;
-
-exp:
-  | a = aexp { Aexp(a) }
-  | b = bexp { Bexp(b) }
-  | x = ID { Var x }
-
 ;
 
 aval: 
@@ -152,27 +141,28 @@ matlit:
   | LBRACK; RBRACK; COMMA; m2 = matlit { [[]]@m2@[] }
 ;
 
-aexp:
-  | v = aval { Const v }  
-  | LPAREN; a = aexp; RPAREN { a }
-  | e = aexp; COLON; t = ltyp { Lexp(e, t) }
-  | DOT; e1 = aexp; e2 = aexp { Dot(e1, e2) }
-  | NORM; e = aexp { Norm(e) } (* Normie *)
-  | e1 = aexp; PLUS; e2 = aexp { Plus(e1,e2) }
-  | e1 = aexp; TIMES; e2 = aexp { Times(e1,e2) }
-  | e1 = aexp; MINUS; e2 = aexp { Minus(e1,e2) }
-  | e1 = aexp; CTIMES; e2 = aexp { CTimes(e1,e2) }
-;
+bool:
+  | TRUE { true }
+  | FALSE { false }
 
-bexp:
-  | TRUE { True }
-  | FALSE { False }
-  | LPAREN; b = bexp; RPAREN { b }
-  | e1 = aexp; EQ; e2 = aexp { Eq(e1,e2) }
-  | e1 = aexp; LEQ; e2 = aexp { Leq(e1,e2) }
-  | e1 = bexp; OR; e2 = bexp { Or(e1,e2) }
-  | e1 = bexp; AND; e2 = bexp { And(e1,e2) }
-  | NOT; e1 = bexp;{ Not(e1) }
+exp:
+  | LPAREN; a = exp; RPAREN { a }
+  | b = bool { Bool b }
+  | a = aval { Aval a }
+  | x = ID { Var x }
+  | e = exp; COLON; t = ltyp { Lexp(e, t) }
+  | DOT; e1 = exp; e2 = exp { Dot(e1, e2) }
+  | NORM; e = exp { Norm(e) } (* Normie *)
+  | e1 = exp; PLUS; e2 = exp { Plus(e1,e2) }
+  | e1 = exp; TIMES; e2 = exp { Times(e1,e2) }
+  | e1 = exp; MINUS; e2 = exp { Minus(e1,e2) }
+  | e1 = exp; CTIMES; e2 = exp { CTimes(e1,e2) }
+  | NOT; e1 = exp;{ Not(e1) }
+  | e1 = exp; EQ; e2 = exp { Eq(e1,e2) }
+  | e1 = exp; LEQ; e2 = exp { Leq(e1,e2) }
+  | e1 = exp; OR; e2 = exp { Or(e1,e2) }
+  | e1 = exp; AND; e2 = exp { And(e1,e2) }
+  
 ;
 
 %%

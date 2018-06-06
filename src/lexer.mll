@@ -10,13 +10,13 @@ let num = ['0'-'9'] ['0'-'9']*
 let letter = ['a'-'z' 'A'-'Z']
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let floatval = ['+' '-']? ((['0'-'9']*['.']['0'-'9']+)|(['0'-'9']+['.']['0'-'9']*))
-let newline = ('\010' | '\013' | "\013\010")
-let comment = "//" [^ '\010' '\013']* newline
+let newline = ('\r' | '\n' | "\r\n" | eof)
+let comment = "//" [^ '\r' '\n']* newline
 
 (* Lexer definition *)
 
 rule read = parse
-  | comment 
+  | comment { read lexbuf }
   | white { read lexbuf }
   | "tag" { TAG }
   | "is"  { IS }
@@ -33,9 +33,7 @@ rule read = parse
   | "int" { INTTYP }
   | "float" { FLOATTYP }
   | "bool" { BOOLTYP }
-  | id  as id { ID id }
-  | num as num  { NUM (int_of_string num) }
-  | floatval as floatval  { FLOAT (float_of_string floatval) }
+  | "x"   { DIM }
   | "+"   { PLUS }
   | "*"   { TIMES }
   | ".*"  { CTIMES }
@@ -55,4 +53,7 @@ rule read = parse
   | "!"   { NOT }
   | ","   { COMMA } 
   | ";"   { SEMI }
+  | id  as id { ID id }
+  | num as num  { NUM (int_of_string num) }
+  | floatval as floatval  { FLOAT (float_of_string floatval) }
   | eof   { EOL }
