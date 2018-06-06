@@ -52,3 +52,6 @@ setup.log
 # BibTeX
 *.bbl
 *.blg
+
+# Testing files
+*.out
