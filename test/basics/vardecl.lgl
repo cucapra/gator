@@ -2,5 +2,5 @@ int a = 3;
 bool b = true;
 bool c = false;
 float d = 2.300;
-mat3*3 e = [[2.3], [2.1]]; // will fail type checking
-vec2 f = [];
+mat2x2 e = [[2.3, 1.3], [2.1, 1.7]]:mat2x2; // will fail type checking
+vec2 f = [1.1, 1.2]:vec2;

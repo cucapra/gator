@@ -1,8 +1,8 @@
 print 1;
 print 4.;
 print .3;
-print [1.];
-print [1.,2.,3.];
-print [[1.,2.],[3.,4.]];
-print [];
-print [[],[]];
+print [1.]:vec1;
+print [1.,2.,3.]:vec3;
+print [[1.,2.],[3.,4.]]:mat2x2;
+print []:vec0;
+print [[],[]]:mat2x0;
