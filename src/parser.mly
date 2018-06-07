@@ -48,8 +48,9 @@ open Ast
 
 (* Precedences *)
 
+%right PRINT
 %left TIMES CTIMES 
-%nonassoc PLUS MINUS
+%left PLUS MINUS
 
 %left AND OR
 %left NOT EQ LEQ
