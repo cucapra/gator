@@ -18,4 +18,4 @@ print x * v2_v3;
 print z * c_a + x;
 print (z * v3_v2) * v2_v3 + z;
 print v2_v3 * v3_v2;
-print x * (a_b * vec2->vec3);
+print x * (a_b * v3_v2);
