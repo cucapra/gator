@@ -20,6 +20,16 @@ let rec ltyp_dim_equals (t1: ltyp) (t2: ltyp) : bool =
         ltyp_dim_equals lt1 lt3 && ltyp_dim_equals lt2 lt4
     | _ -> false
 
+(* Checks dimensions of ltyp for transformations*)
+let rec ltyp_dim_trans (t1: ltyp) (t2: ltyp) : bool =
+    match (t1, t2) with 
+    | (VecTyp n1, VecTyp n2) -> n1 = n2
+    | (MatTyp (n1, n2), MatTyp (n3, n4)) -> n2 == n3
+    | (TagTyp i1, TagTyp i2) -> failwith "Unimplemented"
+    | (TransTyp (lt1, lt2), TransTyp (lt3, lt4)) -> 
+        ltyp_dim_equals lt1 lt3 && ltyp_dim_equals lt2 lt4
+    | _ -> false
+
 let rec check_ltyp (lt: ltyp) : typ = 
     match lt with
     | VecTyp n -> if n < 0 then 

@@ -48,7 +48,6 @@ open Ast
 
 (* Precedences *)
 
-%right PRINT
 %left TIMES CTIMES 
 %left PLUS MINUS
 
@@ -58,7 +57,6 @@ open Ast
 
 %nonassoc NORM
 %left TRANS
-%left COLON
 
 (* After declaring associativity and precedence, we need to declare what
    the starting point is for parsing the language.  The following
