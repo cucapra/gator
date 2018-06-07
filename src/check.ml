@@ -144,18 +144,21 @@ and check_exp (e: exp) : typ =
 let rec check_comm (c: comm) : typ = 
     match c with
     | Skip -> UnitTyp
-    | Print e -> check_exp e
+    | Print e -> check_exp e (* throw away this type *)
     | Decl (t, s, e) -> failwith "Unimplemented"
-    | If (b, c1, c2) -> failwith "Unimplemented"
+    | If (b, c1, c2) -> check_comm_lst c1; check_comm_lst c2; 
+        (match check_exp b with 
+        | BTyp -> BTyp
+        | _ -> raise (TypeException "expected boolean expression for if condition"))
 
-let rec check_comm_lst (cl : comm list) : unit = 
+and check_comm_lst (cl : comm list) : unit = 
     match cl with
-    | [] -> failwith "Unimplemented"
+    | [] -> ()
     | h::t -> failwith "Unimplemented"
 
 let rec check_tags (t : tagdecl list) : unit =
     match t with 
-    | [] -> failwith "Unimplemented"
+    | [] -> ()
     | TagDecl(s, a)::t -> failwith "Unimplemented"
 
 let check_prog (e : prog) : unit =
