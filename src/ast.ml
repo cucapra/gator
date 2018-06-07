@@ -30,8 +30,8 @@ type typ =
 type avalue =
     Num of int
     | Float of float
-    | VecLit of vec
-    | MatLit of mat
+    | VecLit of vec * ltyp
+    | MatLit of mat * ltyp
 
 type bvalue = bool
 
@@ -43,14 +43,13 @@ type exp =
     | Bool of bvalue
     | Aval of avalue 
     | Var of id
+    | Norm of exp
+    | Not of exp   
     | Eq of exp * exp
     | Leq of exp * exp
     | Or of exp * exp
     | And of exp * exp
-    | Not of exp    
-    | Lexp of exp * ltyp (* Linear exp *)
     | Dot of exp * exp
-    | Norm of exp
     | Plus of exp * exp
     | Times of exp * exp
     | Minus of exp * exp

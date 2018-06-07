@@ -122,9 +122,9 @@ ltyp:
 aval: 
   | i = NUM { Num i }
   | f = FLOAT { Float f }
-  | LBRACK; RBRACK {VecLit([])}
-  | LBRACK; v = veclit; RBRACK { VecLit(v@[]) }
-  | LBRACK; m = matlit; RBRACK { MatLit(m@[]) }
+  | LBRACK; RBRACK; COLON; t = ltyp{VecLit([], t)}
+  | LBRACK; v = veclit; RBRACK; COLON; t = ltyp{ VecLit(v@[], t) }
+  | LBRACK; m = matlit; RBRACK; COLON; t = ltyp { MatLit(m@[], t) }
 ;
 
 veclit:
@@ -149,7 +149,6 @@ exp:
   | a = aval { Aval a }
   | b = bool { Bool b }
   | x = ID { Var x }
-  | e = exp; COLON; t = ltyp { Lexp(e, t) }
   | DOT; e1 = exp; e2 = exp { Dot(e1, e2) }
   | NORM; e = exp { Norm(e) } (* Normie *)
   | e1 = exp; PLUS; e2 = exp { Plus(e1,e2) }

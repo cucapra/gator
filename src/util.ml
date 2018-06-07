@@ -1,3 +1,4 @@
+open Ast
 (* Some utilities, from CS6110 assignments *)
 
 (*****************************************************
