@@ -47,11 +47,13 @@ open Ast
 %token DIM
 
 (* Precedences *)
-%left PLUS MINUS
-%left TIMES CTIMES 
 
 %left AND OR
 %left NOT EQ LEQ
+
+%left PLUS MINUS
+%left TIMES CTIMES 
+
 %nonassoc DOT
 
 %nonassoc NORM
