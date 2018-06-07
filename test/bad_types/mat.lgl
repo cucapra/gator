@@ -1,1 +1,2 @@
-mat3x3 e = [2.3, 2.1]:mat3x3; // will fail type checking
+mat3x3 e = [2.3, 2.1]:mat3x3;
+print e;

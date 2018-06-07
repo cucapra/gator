@@ -38,11 +38,12 @@ let rec transpose (m : mat) : mat =
       (x :: List.map List.hd xss) :: transpose (xs :: List.map List.tl xss)
 
 let vec_mult (v : vec) (m : mat) : vec =
-  mat_to_vec (List.map (fun mv ->
-    [List.fold_left2 (fun acc x y -> acc +. (x *. y)) 0. v mv]) m)
+  List.rev (List.fold_left 
+    (fun vacc mv -> (List.fold_left2 (fun acc x y -> acc +. (x *. y)) 0. v mv)::vacc)
+    [] (transpose m))
 
 let mat_mult (m1 : mat) (m2 : mat) : mat =
-  transpose (List.map (fun mv1 -> (vec_mult mv1 m2)) m1)
+  List.rev (List.fold_left (fun acc v -> (vec_mult v m2)::acc) [] m1)
 
 let dot (v1 : vec) (v2 : vec) : float =
   List.fold_left2 (fun acc x y -> acc +. (x *. y)) 0. v1 v2
