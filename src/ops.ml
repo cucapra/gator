@@ -8,43 +8,42 @@ let rec eval_aexp (e : exp) (s : state) : avalue =
     | Var x -> (match (State.lookup s x) with
         | Avalue a -> a
         | Bvalue b -> failwith ("Invalid use of non-avalue " ^ x))
-    | Lexp (a, _) -> eval_aexp a s
     | Dot (a1, a2) -> (match ((eval_aexp a1 s), (eval_aexp a2 s)) with
-        | (VecLit v1, VecLit v2) -> Float (dot v1 v2)
+        | (VecLit (v1, _), VecLit (v2, _)) -> Float (dot v1 v2)
         | _ -> failwith "Invalid dot product")
 
     | Norm a -> (match (eval_aexp a s) with
-        | VecLit v -> Float (norm v)
+        | VecLit (v, _) -> Float (norm v)
         | _ -> failwith "Invalid norm")
 
     | Plus (a1, a2) -> (match ((eval_aexp a1 s), (eval_aexp a2 s)) with
         | (Num i1, Num i2) -> Num (i1 + i2)
         | (Float f1, Float f2) -> Float (f1 +. f2)
-        | (VecLit v1, VecLit v2) -> VecLit (vec_add v1 v2)
-        | (MatLit m1, MatLit m2) -> MatLit (mat_add m1 m2)
+        | (VecLit (v1, t), VecLit (v2, _)) -> VecLit (vec_add v1 v2, t)
+        | (MatLit (m1, t), MatLit (m2, _)) -> MatLit (mat_add m1 m2, t)
         | _ -> failwith "Invalid addition")
 
     | Times (a1, a2) -> (match ((eval_aexp a1 s), (eval_aexp a2 s)) with
         | (Num i1, Num i2) -> Num (i1 * i2)
         | (Float f1, Float f2) -> Float (f1 *. f2)
-        | (VecLit v, Float s) -> VecLit (sv_mult s v)
-        | (Float s, VecLit v) -> VecLit (sv_mult s v)
-        | (MatLit m, Float s) -> MatLit (sm_mult s m)
-        | (Float s, MatLit m) -> MatLit (sm_mult s m)
-        | (VecLit v, MatLit m) -> VecLit (vec_mult v m)
-        | (MatLit m1, MatLit m2) -> MatLit (mat_mult m1 m2)
+        | (VecLit (v, t), Float s) -> VecLit (sv_mult s v, t)
+        | (Float s, VecLit (v, t)) -> VecLit (sv_mult s v, t)
+        | (MatLit (m, t), Float s) -> MatLit (sm_mult s m, t)
+        | (Float s, MatLit (m, t)) -> MatLit (sm_mult s m, t)
+        | (VecLit (v, t), MatLit (m, _)) -> VecLit (vec_mult v m, t)
+        | (MatLit (m1, t), MatLit (m2, _)) -> MatLit (mat_mult m1 m2, t)
         | _ -> failwith "Invalid multiplication")
 
     | Minus (a1, a2) -> (match ((eval_aexp a1 s), (eval_aexp a2 s)) with
         | (Num i1, Num i2) -> Num (i1 - i2)
         | (Float f1, Float f2) -> Float (f1 -. f2)
-        | (VecLit v1, VecLit v2) -> VecLit (vec_sub v1 v2)
-        | (MatLit m1, MatLit m2) -> MatLit (mat_sub m1 m2)
+        | (VecLit (v1, t), VecLit (v2, _)) -> VecLit (vec_sub v1 v2, t)
+        | (MatLit (m1, t), MatLit (m2, _)) -> MatLit (mat_sub m1 m2, t)
         | _ -> failwith "Invalid subtraction")
 
     | CTimes (a1, a2) -> (match ((eval_aexp a1 s), (eval_aexp a2 s)) with
-        | (VecLit v1, VecLit v2) -> VecLit (vc_mult v1 v2)
-        | (MatLit m1, MatLit m2) -> MatLit (mc_mult m1 m2)
+        | (VecLit (v1, t), VecLit (v2, _)) -> VecLit (vc_mult v1 v2, t)
+        | (MatLit (m1, t), MatLit (m2, _)) -> MatLit (mc_mult m1 m2, t)
         | _ -> failwith "Invalid component multiplication")
     | _ -> failwith "Not an arithmetic expression"
 
@@ -57,8 +56,8 @@ let rec eval_bexp (e : exp) (s : state) : bvalue =
     | Eq (a1, a2) -> (match ((eval_aexp a1 s), (eval_aexp a2 s)) with
         | (Num i1, Num i2) -> i1 = i2
         | (Float f1, Float f2) -> f1 = f2
-        | (VecLit v1, VecLit v2) -> vec_eq v1 v2
-        | (MatLit m1, MatLit m2) -> mat_eq m1 m2
+        | (VecLit (v1, _), VecLit (v2, _)) -> vec_eq v1 v2
+        | (MatLit (m1, _), MatLit (m2, _)) -> mat_eq m1 m2
         | _ -> false)
     | Leq (a1, a2) -> (match ((eval_aexp a1 s), (eval_aexp a2 s)) with
         | (Num i1, Num i2) -> i1 <= i2
@@ -79,8 +78,8 @@ let string_of_avalue (a : avalue) : string =
     match a with 
     | Num i -> string_of_int i
     | Float f -> string_of_float f
-    | VecLit v -> string_of_vec v 
-    | MatLit m -> string_of_mat m
+    | VecLit (v, _) -> string_of_vec v 
+    | MatLit (m, _) -> string_of_mat m
 
 let string_of_value (v : value) : string =
     match v with
