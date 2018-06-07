@@ -18,7 +18,6 @@ rule read = parse
   | comment { read lexbuf }
   | white { read lexbuf }
   | num as num  { NUM (int_of_string num) }
-
   | "tag" { TAG }
   | "is"  { IS }
   | "mat" { MAT }
@@ -34,7 +33,6 @@ rule read = parse
   | "int" { INTTYP }
   | "float" { FLOATTYP }
   | "bool" { BOOLTYP }
-  
   | "+"   { PLUS }
   | "-"   { MINUS }
   | "*"   { TIMES }

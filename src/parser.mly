@@ -51,8 +51,8 @@ open Ast
 %left TIMES CTIMES 
 %nonassoc PLUS MINUS
 
-%left NOT EQ LEQ
 %left AND OR
+%left NOT EQ LEQ
 %nonassoc DOT
 
 %nonassoc NORM
