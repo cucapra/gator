@@ -46,13 +46,13 @@ let rec print_exp (e:exp) : string =
     | Not b' -> "!"^(print_exp b')
     | Dot (e1, e2) -> "dot "^(print_exp e1)^" "^(print_exp e2)
     | Plus (a1, a2) -> (print_exp a1)^" + "^(print_exp a2)
-    | Times (a1, a2) -> (print_exp a1)^" * "^(print_exp a2)
+    | Times (a1, a2) -> "("^(print_exp a1)^") * ("^(print_exp a2)^")"
     | Minus (a1, a2) -> (print_exp a1)^" - "^(print_exp a2)
-    | CTimes (a1, a2) -> (print_exp a1)^" .* "^(print_exp a2)
+    | CTimes (a1, a2) -> "("^(print_exp a1)^") .* ("^(print_exp a2)^")"
     | Eq (a1, a2) -> (print_exp a1)^" == "^(print_exp a2)
     | Leq (a1, a2) -> (print_exp a1)^" <= "^(print_exp a2)
     | Or (b1, b2) -> (print_exp b1)^" || "^(print_exp b2)
-    | And (b1, b2) -> "["^(print_exp b1)^"] && ["^(print_exp b2)^"]"
+    | And (b1, b2) -> "("^(print_exp b1)^"] && ["^(print_exp b2)^")"
 
 let rec print_comm (c: comm) : string =
     match c with

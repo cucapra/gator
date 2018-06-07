@@ -20,28 +20,31 @@ let rec ltyp_dim_equals (t1: ltyp) (t2: ltyp) : bool =
         ltyp_dim_equals lt1 lt3 && ltyp_dim_equals lt2 lt4
     | _ -> false
 
-(* Checks dimensions of ltyp for transformations*)
+(* Checks dimensions of ltyp for transformations *)
+(* Returns true if dimensions are valid *)
 let rec ltyp_dim_trans (t1: ltyp) (t2: ltyp) : bool =
     match (t1, t2) with 
     | (VecTyp n1, VecTyp n2) -> n1 = n2
     | (MatTyp (n1, n2), MatTyp (n3, n4)) -> n2 == n3
     | (TagTyp i1, TagTyp i2) -> failwith "Unimplemented"
-    | (TransTyp (lt1, lt2), TransTyp (lt3, lt4)) -> 
-        ltyp_dim_equals lt1 lt3 && ltyp_dim_equals lt2 lt4
+    | (TransTyp (lt1, lt2), TransTyp (lt3, lt4)) -> ltyp_dim_equals lt2 lt3
     | _ -> false
 
 let rec check_ltyp (lt: ltyp) : typ = 
     match lt with
-    | VecTyp n -> if n < 0 then 
-        (raise (TypeException "vec dimensions must be positive"));
-        ATyp(LTyp(lt))
+    | VecTyp n -> if n < 0 
+        then (raise (TypeException "vec dimensions must be positive"))
+        else ATyp(LTyp(lt))
     | MatTyp (n1, n2) -> if n1 < 0 || n2 < 0 then
-        (raise (TypeException "mat dimensions must be positive"));
-         ATyp(LTyp(lt))
-    | TagTyp s -> (let is_mem = HashSet.mem gamma s in 
-        if not is_mem then (raise (TypeException "tag must be defined")
-        )); ATyp(LTyp(lt))
-    | TransTyp (lt1, lt2) -> failwith "Unimplemented"
+        (raise (TypeException "mat dimensions must be positive"))
+        else ATyp(LTyp(lt))
+    | TagTyp s -> let is_mem = HashSet.mem gamma s in 
+        if not is_mem 
+        then (raise (TypeException "tag must be defined"))
+        else ATyp(LTyp(lt))
+    | TransTyp (lt1, lt2) -> if ltyp_dim_trans lt1 lt2 |> not
+        then (raise (TypeException "transformation dimension mismatch"))
+        else  ATyp(LTyp(lt))
 
 let rec check_atyp (at: atyp) : typ = 
     match at with
@@ -98,7 +101,7 @@ let check_scalar_binop (t1: typ) (t2: typ) : typ =
     | (ATyp(a), ATyp(FloatTyp)) -> ATyp a
     | _ -> (raise (TypeException "invalid expressions for arithmetic operation"))
 
-(* Type cheking times operator - on scalar mult & matrix transformations *)
+(* Type checking times operator - on scalar mult & matrix transformations *)
 let rec check_times_exp (t1: typ) (t2: typ) : typ = 
     match (t1, t2) with
     | (ATyp(LTyp(MatTyp(n1, n2))), ATyp(LTyp(MatTyp(n3, n4)))) -> 
@@ -126,11 +129,17 @@ and check_exp (e: exp) : typ =
     | Minus (e1, e2) -> check_scalar_binop (check_exp e1) (check_exp e2)
     | Times (e1, e2) -> check_times_exp (check_exp e1) (check_exp e2)
     | CTimes (e1, e2) -> failwith "Unimplemented"
-    | Eq (e1, e2) -> failwith "Unimplemented"
+    | Eq (e1, e2)
     | Leq (e1, e2) -> failwith "Unimplemented"
-    | Or (e1, e2) -> failwith "Unimplemented"
-    | And (e2, e1) -> failwith "Unimplemented"
-    | Not e1 -> check_exp e1
+    | Or (e1, e2)
+    | And (e1, e2) -> 
+        (match (check_exp e1, check_exp e2) with 
+        | (BTyp, BTyp) -> BTyp
+        | _ -> raise (TypeException "expected boolean expression for binop"))
+    | Not e1 -> 
+        (match check_exp e1 with 
+        | BTyp -> BTyp
+        | _ -> raise (TypeException "expected boolean expression for !"))
 
 let rec check_comm (c: comm) : typ = 
     match c with
