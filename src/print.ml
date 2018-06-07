@@ -52,7 +52,7 @@ let rec print_exp (e:exp) : string =
     | Eq (a1, a2) -> (print_exp a1)^" == "^(print_exp a2)
     | Leq (a1, a2) -> (print_exp a1)^" <= "^(print_exp a2)
     | Or (b1, b2) -> (print_exp b1)^" || "^(print_exp b2)
-    | And (b1, b2) -> (print_exp b1)^" && "^(print_exp b2)
+    | And (b1, b2) -> "["^(print_exp b1)^"] && ["^(print_exp b2)^"]"
 
 let rec print_comm (c: comm) : string =
     match c with
