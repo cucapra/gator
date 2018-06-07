@@ -21,12 +21,10 @@ let rec print_atyp (at: atyp) : string =
     | FloatTyp -> "float"
     | LTyp lt -> print_ltyp lt
 
-let rec print_btyp (bt: btyp) : string = "bool"
-
 let rec print_typ (t: typ) : string = 
     match t with
     | ATyp at -> print_atyp at 
-    | BTyp bt -> print_btyp bt
+    | BTyp -> "bool"
 
 let rec print_aval (av: avalue) : string = 
     match av with 

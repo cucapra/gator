@@ -23,7 +23,8 @@ type btyp = BoolTyp
 
 (* types *)
 type typ = 
-    | BTyp of btyp
+    | UnitTyp
+    | BTyp
     | ATyp of atyp
 
 type avalue =

@@ -103,7 +103,7 @@ comm:
 
 typ:
   | a = atyp { ATyp(a) }
-  | b = btyp { BTyp(b) }
+  | BOOLTYP { BTyp }
 ;
 
 atyp:
@@ -117,10 +117,6 @@ ltyp:
   | MAT; i1 = NUM; DIM; i2 = NUM { MatTyp(i1,i2) }
   | x = ID { TagTyp(x) }
   | x1 = ltyp; TRANS; x2 = ltyp { TransTyp(x1,x2) }
-;
-
-btyp:
-  | BOOLTYP { BoolTyp }
 ;
 
 aval: 
