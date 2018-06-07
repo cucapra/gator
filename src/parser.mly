@@ -47,9 +47,8 @@ open Ast
 %token DIM
 
 (* Precedences *)
-
-%left TIMES CTIMES 
 %left PLUS MINUS
+%left TIMES CTIMES 
 
 %left AND OR
 %left NOT EQ LEQ

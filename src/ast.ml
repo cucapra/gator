@@ -18,9 +18,6 @@ type atyp =
     | FloatTyp
     | LTyp of ltyp
 
-(* bool types *)
-type btyp = BoolTyp
-
 (* types *)
 type typ = 
     | UnitTyp
