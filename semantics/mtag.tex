@@ -16,6 +16,7 @@
 \newenvironment{leftalign}%
     {\fleqn[5pt]\csname align*\endcsname}%
     {\csname endalign*\endcsname\endfleqn}
+\newcommand{\alt}{\:|\:}
 
 \mathlig{->}{\rightarrow}
 \mathlig{|-}{\vdash}
@@ -39,8 +40,16 @@ Expressions can be variables, literals (with tags as defined below), or operator
 %
 \begin{leftalign}
 x &\in \text{variables} \\
-c &\defas s\;|\;m\;|\;v\;|\;() \\
-e &\defas \cdots\;|\;s\;|\;()\;|\;\tau\;x:=e\;|\;v:\mu\;|\;m:\mu_1->\mu_2\;|\;e_1+e_2\;|\;e_1*e_2\;|\;e_1\;\mathsf{.*}\;e_2
+c &\defas s \alt m \alt v \alt () \\
+e &\defas \cdots \alt
+    s \alt
+    () \alt
+    \tau\;x:=e \alt
+    v:\mu \alt
+    m:\mu_1->\mu_2 \alt
+    e_1+e_2 \alt
+    e_1*e_2 \alt
+    e_1\;\mathsf{.*}\;e_2
 \end{leftalign}
 \xxx{What's in that $\cdots$ in the expression syntax?}
 %
@@ -50,8 +59,12 @@ Our type system consists of user-defined \emph{tags}, $T$, alongside built-in ty
 \begin{leftalign}
 n &\in \mathbb{N} \\
 T &\in \text{tags} \\
-\mu &\defas \mat \;|\;\vv{n}\;|\;T \\
-\tau &\defas \mathsf{unit}\;|\;\mathsf{scalar}\;|\; \mu \;|\; \mu_1->\mu_2
+\mu &\defas \mat \alt
+    \vv{n} \alt T \\
+\tau &\defas \mathsf{unit} \alt
+    \mathsf{scalar} \alt
+    \mu \alt
+    \mu_1->\mu_2
 \end{leftalign}
 %
 Function types $\mu_1 -> \mu_2$ are not ordinary functions; they are matrices used to map from one vector space to another using matrix--vector multiplication.
