@@ -5,7 +5,7 @@ open Lin_ops
 let rec eval_aexp (e : exp) (s : state) : avalue =
     match e with
     | Aval a -> a
-    | Var x -> (match (State.lookup s x) with
+    | Var x -> (match (HashSet.mem s x) with
         | Avalue a -> a
         | Bvalue b -> failwith ("Invalid use of non-avalue " ^ x))
     | Dot (a1, a2) -> (match ((eval_aexp a1 s), (eval_aexp a2 s)) with
