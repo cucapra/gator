@@ -16,6 +16,7 @@
 \newcommand{\mat}{\mathsf{mat}_{n_1{\times}n_2}}
 \newcommand{\vv}[1]{\mathsf{vec}_{#1}}
 \newcommand{\env}[1]{#1,\sigma}
+\newcommand{\defas}{\mathrel{::=}}
 
 \mathlig{->}{\rightarrow}
 \mathlig{|-}{\vdash}
@@ -27,18 +28,18 @@
 
 \section{Syntax}
 
-$\begin{array}{rcl}
-x &\in& \text{variables} \\
-n &\in& \mathbb{N} \\
-s &\in& \mathbb{R}\\
-T &\in& \text{tags}\\
-v &::=& [s_1,s_2,\dots] \\
-m &::=& [[s_{11},s_{12},\dots],[s_{21},s_{22},\dots],\dots] \\
-\mu&::=& \mat \;|\;\vv{n}\;|\;T\\
-\tau&::=&\mathsf{unit}\;|\;\mathsf{scalar}\;|\; \mu \;|\; \mu_1->\mu_2\\
-c&::=&s\;|\;m\;|\;v\;|\;()\\
-e&::=&\dots\;|\;s\;|\;()\;|\;\tau\;x:=e\;|\;v:\mu\;|\;m:\mu_1->\mu_2\;|\;e_1+e_2\;|\;e_1*e_2\;|\;e_1\;\mathsf{.*}\;e_2
-\end{array}$
+\begin{align*}
+x &\in \text{variables} \\
+n &\in \mathbb{N} \\
+s &\in \mathbb{R} \\
+T &\in \text{tags} \\
+v &\defas [s_1,s_2,\dots] \\
+m &\defas [[s_{11},s_{12},\dots],[s_{21},s_{22},\dots],\dots] \\
+\mu &\defas \mat \;|\;\vv{n}\;|\;T \\
+\tau &\defas \mathsf{unit}\;|\;\mathsf{scalar}\;|\; \mu \;|\; \mu_1->\mu_2 \\
+c &\defas s\;|\;m\;|\;v\;|\;() \\
+e &\defas \cdots\;|\;s\;|\;()\;|\;\tau\;x:=e\;|\;v:\mu\;|\;m:\mu_1->\mu_2\;|\;e_1+e_2\;|\;e_1*e_2\;|\;e_1\;\mathsf{.*}\;e_2
+\end{align*}
 
 \section{Subtype Ordering}
 
