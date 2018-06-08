@@ -42,6 +42,7 @@ x &\in \text{variables} \\
 c &\defas s\;|\;m\;|\;v\;|\;() \\
 e &\defas \cdots\;|\;s\;|\;()\;|\;\tau\;x:=e\;|\;v:\mu\;|\;m:\mu_1->\mu_2\;|\;e_1+e_2\;|\;e_1*e_2\;|\;e_1\;\mathsf{.*}\;e_2
 \end{leftalign}
+\xxx{What's in that $\cdots$ in the expression syntax?}
 %
 Our type system consists of user-defined \emph{tags}, $T$, alongside built-in types:
 %
@@ -56,6 +57,7 @@ T &\in \text{tags} \\
 
 We define a judgment $\tau_1 \leq \tau_2$ for subtyping.
 Subtyping is reflexive and transitive, as usual:
+%
 \begin{mathpar}
 \inferrule
     { }
