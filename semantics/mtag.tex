@@ -182,12 +182,12 @@ When declaring vectors and matrices, we must provide a tag, causing a tagged val
 	{\Gamma,\Delta|-(m:\mu_1->\mu_2):\mu_1->\mu_2,\Gamma}
 \end{mathpar}
 
-Declaring variables requires an immediate assignment -- as a result, there is no mutation in this language.
+Declaring variables requires an immediate assignment---i.e., there is no mutation in this language:
 %
 \begin{mathpar}
 \inferrule
 	{\Gamma,\Delta|-e:\tau,\Gamma'}
-	{\Gamma,\Delta|-\tau\;x:=e:\mathsf{unit},\Gamma'(x):=\tau}
+	{\Gamma,\Delta|-\tau\;x:=e:\mathsf{unit}, \Gamma', x \mapsto \tau}
 \end{mathpar}
 
 \subsection{Binary Operations}
