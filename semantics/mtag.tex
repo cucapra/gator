@@ -52,7 +52,6 @@ T &\in \text{tags} \\
 
 \section{Subtype Ordering}
 
-% Including some English-language context for rules is important.
 We define a judgment $\tau_1 \leq \tau_2$ for subtyping.
 Subtyping is reflexive and transitive, as usual:
 \begin{mathpar}
@@ -64,8 +63,8 @@ Subtyping is reflexive and transitive, as usual:
     {\tau_1 \leq \tau_2 \and \tau_2 \leq \tau_3}
     {\tau_1 \leq \tau_3}
 \end{mathpar}
-
-Here are some rules for subtyping on base types.  Note that we want to use vectors and 1x$n$ matrices interchangeably:
+%
+Here are some rules for subtyping on base types.  Note that we want to use vectors and $1 \times n$ matrices interchangeably:
 %
 \begin{mathpar}
 \inferrule
@@ -80,7 +79,7 @@ Here are some rules for subtyping on base types.  Note that we want to use vecto
     { }
     {\mathsf{mat}_{1{\times}n}\leq\vv{n}}
 \end{mathpar}
-
+%
 We also introduce another partial ordering for tags $\mu_1\leq_\Delta \mu_2$.  This ordering refers to a context $\Delta$, which maps $T$ to $T$:
 %
 \begin{mathpar}
@@ -88,7 +87,7 @@ We also introduce another partial ordering for tags $\mu_1\leq_\Delta \mu_2$.  T
     {\Delta|-\Delta(\mu_1)=\mu_2}
     {\Delta|-\mu_1\leq_\Delta \mu_2}
 \end{mathpar}
-
+%
 This rule has the usual reflexivity and transitivity
 %
 \begin{mathpar}
@@ -100,7 +99,7 @@ This rule has the usual reflexivity and transitivity
     {\Delta|-\mu_1 \leq_\Delta \mu_2 \and \Delta|-\mu_2 \leq_\Delta \mu_3}
     {\Delta|-\mu_1 \leq_\Delta \mu_3}
 \end{mathpar}
-
+%
 Vectors have a top type representing general vectors of dimension $n$ as $\vv{n}$.  Similarly, we can give the top type of transformation matrices, whose type is always given by $\mu_1->\mu_2$, to be $\mat$:
 %
 \begin{mathpar}
@@ -108,7 +107,7 @@ Vectors have a top type representing general vectors of dimension $n$ as $\vv{n}
     {\Delta|-\mu_1\leq_\Delta\vv{n_1}\qquad\Delta|-\mu_2\leq_\Delta\vv{n_2}}
     {\Delta|-\mu_1->\mu_2\leq_\Delta\mat}
 \end{mathpar}
-
+%
 We also have standard partial order for functions under $\Delta$:
 %
 \begin{mathpar}
