@@ -71,7 +71,7 @@ Function types $\mu_1 -> \mu_2$ are not ordinary functions; they are matrices us
 
 \section{Subtype Ordering}
 
-We define a judgment $\tau_1 \leq \tau_2$ for subtyping.
+We define a judgment $\tau_1 \leq \tau_2$ for subtyping on ordinary types.
 Subtyping is reflexive and transitive, as usual:
 %
 \begin{mathpar}
@@ -84,13 +84,17 @@ Subtyping is reflexive and transitive, as usual:
     {\tau_1 \leq \tau_3}
 \end{mathpar}
 %
-Here are some rules for subtyping on base types.  Note that we want to use vectors and $1 \times n$ matrices interchangeably:
+The null type \textsf{unit} acts as a top type:
 %
 \begin{mathpar}
 \inferrule
     { }
     {\tau\leq\mathsf{unit}}
-
+\end{mathpar}
+%
+We want to use vectors and $1 \times n$ matrices interchangeably:
+%
+\begin{mathpar}
 \inferrule
     { }
     {\vv{n}\leq\mathsf{mat}_{1{\times}n}}
@@ -99,8 +103,8 @@ Here are some rules for subtyping on base types.  Note that we want to use vecto
     { }
     {\mathsf{mat}_{1{\times}n}\leq\vv{n}}
 \end{mathpar}
-%
-We also introduce another partial ordering for tags $\mu_1\leq_\Delta \mu_2$.  This ordering refers to a context $\Delta$, which maps $T$ to $T$:
+
+We also introduce a second partial order on tags, of the form $\Delta |- \mu_1 \leq_\Delta \mu_2$.  This ordering refers to a context $\Delta$, which is a map from tags $T$ to matrix types $\mu$:
 %
 \begin{mathpar}
 \inferrule
