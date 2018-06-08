@@ -44,14 +44,17 @@ e &\defas \cdots\;|\;s\;|\;()\;|\;\tau\;x:=e\;|\;v:\mu\;|\;m:\mu_1->\mu_2\;|\;e_
 \end{leftalign}
 \xxx{What's in that $\cdots$ in the expression syntax?}
 %
+The \textsf{.*} operator represents elementwise multiplication (whereas $*$ is proper linear algebra multiplication).
 Our type system consists of user-defined \emph{tags}, $T$, alongside built-in types:
 %
 \begin{leftalign}
 n &\in \mathbb{N} \\
 T &\in \text{tags} \\
 \mu &\defas \mat \;|\;\vv{n}\;|\;T \\
-\tau &\defas \mathsf{unit}\;|\;\mathsf{scalar}\;|\; \mu \;|\; \mu_1->\mu_2 \\
+\tau &\defas \mathsf{unit}\;|\;\mathsf{scalar}\;|\; \mu \;|\; \mu_1->\mu_2
 \end{leftalign}
+%
+Function types $\mu_1 -> \mu_2$ are not ordinary functions; they are matrices used to map from one vector space to another using matrix--vector multiplication.
 
 \section{Subtype Ordering}
 
