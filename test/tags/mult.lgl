@@ -10,7 +10,7 @@ a->b a_b = [[1., 1., 1.], [1., 1., 1.]]:a->b;
 vec2->vec3 v2_v3 = a_b;
 mat2x3 m = a_b;
 c->a c_a = [[1., 1.], [1., 1.], [1., 1.]]:c->a;
-vec2->vec3 v3_v2 = c_a;
+vec3->vec2 v3_v2 = c_a;
 
 print x * a_b + y;
 print x * m;
