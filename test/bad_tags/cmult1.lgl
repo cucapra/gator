@@ -1,0 +1,4 @@
+tag a is vec2;
+
+a x = [1., 2.]:a;
+a bad = x .* x; // Component multiplication goes to the most general type

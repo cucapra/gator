@@ -1,0 +1,4 @@
+tag a is vec2;
+
+a->a x = [[1., 2.], [1., 2.]]:a;
+a->a bad = x + [[5., 5.], [5., 5.]]:vec2->a; // Can't downcast for addition

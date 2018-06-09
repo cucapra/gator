@@ -1,0 +1,7 @@
+tag a is vec2;
+tag b is vec2;
+tag c is vec2;
+
+a->b x = [[1., 2.], [1., 2.]]:a->b;
+b->c y = [[1., 2.], [1., 2.]]:b->c;
+a->c bad = x + y; // Addition cannot generate new maps

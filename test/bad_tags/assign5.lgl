@@ -1,3 +1,4 @@
 tag a is vec2;
+tag b is vec3;
 
-int a = 5;  // Can't use a tag as a variable name
+vec2->b x = [[1., 1.], [1., 1.], [1., 1.]]:a->b; // Bad downcast
