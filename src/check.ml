@@ -2,7 +2,8 @@
 open Printf
 open Ast
 open Util
-
+open Print
+open Str
 exception TypeException of string
 
 (* Variable defs *)
@@ -31,7 +32,7 @@ let rec ltyp_top_dim (t: ltyp) : int * int =
     | TransTyp (lt1, lt2) -> (ltyp_top_dim lt1 |> fst, 
         ltyp_top_dim lt2 |> snd)  (* TODO - need to consider vec/mat *)
 
-(* Gets bottom type of ltyp *)
+(* Gets top type of ltyp *)
 let ltyp_top_typ (t: ltyp) : ltyp = 
     match t with 
     | TagTyp _ 
@@ -39,20 +40,20 @@ let ltyp_top_typ (t: ltyp) : ltyp =
         MatTyp (fst dim, snd dim)
     | _ -> t
 
-
+(* let's ignore subtyping for now *)
 (* Infix subtype operator for types *)
 (* Following <Section 2. Subtype Ordering> of semantics *)
 (* TODO - tag type subtyping is janky (not a string match) *)
-let rec (<~) (t1: ltyp) (t2: ltyp) : bool = 
+(* let rec (<~) (t1: ltyp) (t2: ltyp) : bool = 
     match (t1, t2) with 
     | (VecTyp n1, MatTyp(1, n2))
     | (MatTyp(1, n1), VecTyp n2) -> n1 = n2
     | (TagTyp i1, TagTyp i2) -> ltyp_equals (HashSet.find delta i1) (HashSet.find delta i2) 
     | (l1, l2) -> (ltyp_equals l1 l2) || 
-        (ltyp_equals (ltyp_top_typ l1) l2) 
+        (ltyp_equals (ltyp_top_typ l1) l2)  *)
 
 (* Checks ltyp equality *)
-and ltyp_equals (t1: ltyp) (t2: ltyp) : bool = t1 <~ t2 && t2 <~ t1
+(* and ltyp_equals (t1: ltyp) (t2: ltyp) : bool = t1 <~ t2 && t2 <~ t1 *)
    
 (* Checks dimensions of ltyp for transformations *)
 (* Returns true if dimensions are valid *)
@@ -120,14 +121,18 @@ let rec check_aval (av: avalue) : typ =
     match av with
     | Num n -> ATyp(IntTyp)
     | Float f -> ATyp(FloatTyp)
-    | VecLit (v, t) -> let littyp = veclit_type v in 
+    | VecLit (v, t) -> 
+        (* let littyp = veclit_type v in  *)
+        (* if littyp <~ t *)
+        (* then  *)
+        ATyp(LTyp(t)) 
+        (* else (raise (TypeException "vec literal tag mismatch")) *)
+    | MatLit (m, t) -> 
+        (* let littyp = matlit_type m in 
         if littyp <~ t
-        then ATyp(LTyp(t)) 
-        else (raise (TypeException "vec literal tag mismatch"))
-    | MatLit (m, t) -> let littyp = matlit_type m in 
-        if littyp <~ t
-        then ATyp(LTyp(t)) 
-        else (raise (TypeException "mat literal tag mismatch"))
+        then  *)
+        ATyp(LTyp(t)) 
+        (* else (raise (TypeException "mat literal tag mismatch")) *)
 
 (* Type checking binary operations on scalar (int, float) expressions *)
 (* Types are closed under addition and scalar multiplication *)
@@ -137,7 +142,10 @@ let check_scalar_binop (t1: typ) (t2: typ) : typ =
     | (ATyp(a), ATyp(IntTyp)) 
     | (ATyp(FloatTyp), ATyp(a)) 
     | (ATyp(a), ATyp(FloatTyp)) -> ATyp a
-    | _ -> (raise (TypeException "invalid expressions for arithmetic operation"))
+    | (ATyp(LTyp a1), ATyp(LTyp a2)) -> if ltyp_dim_equals a1 a2 then t1 
+        else (raise (TypeException ("dimension mismatch for arithmetic operation")))
+    | _ -> 
+        (raise (TypeException ("invalid expressions for arithmetic operation: "^(print_typ t1)^", "^(print_typ t2))))
 
 (* "scalar linear exp", (i.e. dot and ctimes) returns generalized MatTyp *)
 let check_scalar_linear_exp (t1: typ) (t2: typ) : typ = 
@@ -174,6 +182,11 @@ let check_comp_binop (t1: typ) (t2: typ) : typ =
     | (ATyp(FloatTyp), ATyp(FloatTyp)) -> BTyp
     | _ -> raise (TypeException "unexpected type for binary comparator operations")
 
+let check_dot_exp (t1: typ) (t2: typ) : typ = 
+    match (t1, t2) with 
+    | (ATyp(LTyp _ ), ATyp(LTyp _)) -> ATyp(IntTyp)
+    | _ -> raise (TypeException "unexpected type for dot product exp")
+
 (* Type checking times operator - on scalar mult & matrix transformations *)
 let rec check_times_exp (t1: typ) (t2: typ) : typ = 
     match (t1, t2) with
@@ -182,22 +195,25 @@ let rec check_times_exp (t1: typ) (t2: typ) : typ =
         then ATyp(LTyp(MatTyp(n1, n4))) 
         else (raise (TypeException "matrix multiplication dimension mismatch"))
     | (ATyp(LTyp(TransTyp(lt1, lt2))), ATyp(LTyp(TransTyp(lt3, lt4)))) ->
-        if ltyp_equals lt2 lt3
-        then ATyp(LTyp(TransTyp(lt1, lt4)))
-        else (raise (TypeException "linear transformation type mismatch"))
+        (* if ltyp_equals lt2 lt3
+        then  *)
+        ATyp(LTyp(TransTyp(lt1, lt4)))
+        (* else (raise (TypeException "linear transformation type mismatch")) *)
     | (ATyp(LTyp a), ATyp(LTyp(TransTyp(lt1, lt2)))) ->
-        if ltyp_equals a lt1 
-        then ATyp(LTyp(lt2))
-        else (raise (TypeException "linear transformation type mismatch"))
+        (* if ltyp_equals a lt1 
+        then  *)
+        ATyp(LTyp(lt2))
+        (* else (raise (TypeException "linear transformation type mismatch")) *)
     | _ -> check_scalar_binop t1 t2
 
 and check_exp (e: exp) : typ = 
     match e with
     | Bool b -> BTyp
     | Aval a -> check_aval a
-    | Var v -> HashSet.find gamma v
+    | Var v -> 
+        HashSet.find gamma v
     | Norm a -> check_norm_exp (check_exp a)
-    | Dot (e1, e2) -> check_scalar_linear_exp (check_exp e1) (check_exp e2)
+    | Dot (e1, e2) -> check_dot_exp (check_exp e1) (check_exp e2)
     | Plus (e1, e2)
     | Minus (e1, e2) -> check_scalar_binop (check_exp e1) (check_exp e2)
     | Times (e1, e2) -> check_times_exp (check_exp e1) (check_exp e2)
@@ -213,9 +229,10 @@ let rec check_decl (t: typ) (s: string) (e: exp) : typ =
     let t' = check_typ t in
     match (etyp, t') with
     | (ATyp(LTyp a1), ATyp(LTyp a2)) -> 
-        if a1 <~ a2 
-        then (HashSet.add gamma (s, t'); UnitTyp)
-        else raise (TypeException "mismatched linear type for var decl")
+        (* if a1 <~ a2 
+        then  *)
+        (HashSet.add gamma (s, t'); UnitTyp)
+        (* else raise (TypeException "mismatched linear type for var decl") *)
     | (ATyp(IntTyp), ATyp(IntTyp))
     | (ATyp(FloatTyp), ATyp(FloatTyp))
     | (BTyp, BTyp) -> (HashSet.add gamma (s, t'); UnitTyp)
@@ -236,11 +253,12 @@ and check_comm_lst (cl : comm list) : unit =
     | [] -> ()
     | h::t -> ignore(check_comm h); check_comm_lst t
 
-(* TODO - maybe check tags for duplicates *)
+(* TODO - maybe check vars for duplicates with tags *)
 let rec check_tags (t : tagdecl list) : unit =
     match t with 
     | [] -> ()
     | TagDecl(s, a)::t -> 
+        ignore(check_atyp a);
         match a with 
         | (LTyp l) -> HashSet.add delta (s, l); check_tags t
         | _ -> raise (TypeException "expected linear type for tag declaration")

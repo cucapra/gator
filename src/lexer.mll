@@ -20,8 +20,6 @@ rule read = parse
   | num as num  { NUM (int_of_string num) }
   | "tag" { TAG }
   | "is"  { IS }
-  | "mat" { MAT }
-  | "vec" { VEC }
   | "dot" { DOT }
   | "norm" { NORM }
   | "true" { TRUE }

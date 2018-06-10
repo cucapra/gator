@@ -6,8 +6,6 @@ open Ast
 (* Tokens *)
 
 %token EOL 
-%token MAT
-%token VEC
 %token <int> NUM
 %token <float> FLOAT
 %token <string> ID
@@ -113,8 +111,6 @@ atyp:
 ;
 
 ltyp: 
-  | VEC; i = NUM { VecTyp(i) }
-  | MAT; i1 = NUM; DIM; i2 = NUM { MatTyp(i1,i2) }
   | x = ID { TagTyp(x) }
   | x1 = ltyp; TRANS; x2 = ltyp { TransTyp(x1,x2) }
 ;
