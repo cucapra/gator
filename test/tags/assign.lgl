@@ -9,7 +9,10 @@ c z = [3., 3., 3.]:c;
 vec3 z2 = z;
 
 a->b t = [[1., 1., 1.], [1., 1., 1.]]:a->b;
-mat2x3 m = t;
-vec2->vec3 t2 = t;
+mat2x3 m = [[1., 1., 1.], [1., 1., 1.]]:mat2x3;
+vec2->vec3 t2 = m;
+mat2x3 m2 = t2; // partial order makes vec2->vec3 = mat2x3
 c->a c_a = [[1., 1.], [1., 1.], [1., 1.]]:c->a;
-mat3x2 m2 = c_a;
+mat3x2 m3 = c_a;
+
+print 1;

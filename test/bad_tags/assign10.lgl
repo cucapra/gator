@@ -1,0 +1,1 @@
+vec2 x = [[1., 1.]]:vec2; // No implicit cast from matrices to vectors

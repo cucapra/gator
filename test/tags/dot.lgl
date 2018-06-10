@@ -1,0 +1,9 @@
+tag a is vec2;
+tag b is vec2;
+
+a x = [1., 2.]:a;
+b y = [2., 1.]:b;
+
+float res = dot x y;
+
+print 1;

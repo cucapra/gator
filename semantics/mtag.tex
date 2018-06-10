@@ -1,50 +1,83 @@
+\newcount\draft\draft=1 % set to 0 for submission or publication
 \documentclass{article}
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath,amsthm,amssymb,bbm,amsfonts,syntax}
 \usepackage[ligature, inference]{semantic}
 \usepackage[T1]{fontenc}
 \usepackage{mathpartir}
-\textwidth 7.0 truein
-\oddsidemargin -0.25in %left-hand edge
-\evensidemargin -0.5 truein %right-hand edge
-\topmargin -0.85in %top of paper to top of head, pulls whole unit
-\textheight 9.5in
-\setlength\parindent{0pt}
-\setlength{\parskip}{.5em}
+\usepackage{nccmath}
+\usepackage{xxx}
 
-\begin{document}
+\title{Unnamed Language with Linear Algebra Types: \\ Syntax and Semantics}
+\author{Dietrich Geisler \and Irene Yoon \and Adrian Sampson}
+\date{}
+
 \newcommand{\mat}{\mathsf{mat}_{n_1{\times}n_2}}
 \newcommand{\vv}[1]{\mathsf{vec}_{#1}}
 \newcommand{\env}[1]{#1,\sigma}
+\newcommand{\defas}{\mathrel{::=}}
+\newenvironment{leftalign}%
+    {\fleqn[5pt]\csname align*\endcsname}%
+    {\csname endalign*\endcsname\endfleqn}
+\newcommand{\alt}{\:|\:}
 
 \mathlig{->}{\rightarrow}
 \mathlig{|-}{\vdash}
 \mathlig{=>}{\Rightarrow}
-\mathligson
 
-\title{Matrix Tagging Syntax and Semantics}
-\author{Dietrich Geisler and Irene Yoon}
+\begin{document}
+\maketitle
+
+\mathligson
 
 \section{Syntax}
 
-$\begin{array}{rcl}
-x &\in& \text{variables} \\
-n &\in& \mathbb{N} \\
-s &\in& \mathbb{R}\\
-T &\in& \text{tags}\\
-v &::=& [s_1,s_2,\dots] \\
-m &::=& [[s_{11},s_{12},\dots],[s_{21},s_{22},\dots],\dots] \\
-\mu&::=& \mat \;|\;\vv{n}\;|\;T\\
-\tau&::=&\mathsf{unit}\;|\;\mathsf{scalar}\;|\; \mu \;|\; \mu_1->\mu_2\\
-c&::=&s\;|\;m\;|\;v\;|\;()\\
-e&::=&\dots\;|\;s\;|\;()\;|\;\tau\;x:=e\;|\;v:\mu\;|\;m:\mu_1->\mu_2\;|\;e_1+e_2\;|\;e_1*e_2\;|\;e_1\;\mathsf{.*}\;e_2
-\end{array}$
+Literals in our language can be scalar numbers, vectors, or matrices:
+%
+\begin{leftalign}
+s &\in \mathbb{R} \\
+v &\defas [s_1,s_2,\dots] \\
+m &\defas [[s_{11},s_{12},\dots],[s_{21},s_{22},\dots],\dots]
+\end{leftalign}
+%
+Expressions can be variables, literals (with tags as defined below), or operators:
+%
+\begin{leftalign}
+x &\in \text{variables} \\
+c &\defas s \alt m \alt v \alt () \\
+e &\defas \cdots \alt
+    s \alt
+    () \alt
+    \tau\;x:=e \alt
+    v:\mu \alt
+    m:\mu_1->\mu_2 \alt
+    e_1+e_2 \alt
+    e_1*e_2 \alt
+    e_1\;\mathsf{.*}\;e_2
+\end{leftalign}
+\xxx{What's in that $\cdots$ in the expression syntax?}
+%
+The \textsf{.*} operator represents elementwise multiplication (whereas $*$ is proper linear algebra multiplication).
+Our type system consists of user-defined \emph{tags}, $T$, alongside built-in types:
+%
+\begin{leftalign}
+n &\in \mathbb{N} \\
+T &\in \text{tags} \\
+\mu &\defas \mat \alt
+    \vv{n} \alt T \\
+\tau &\defas \mathsf{unit} \alt
+    \mathsf{scalar} \alt
+    \mu \alt
+    \mu_1->\mu_2
+\end{leftalign}
+%
+Function types $\mu_1 -> \mu_2$ are not ordinary functions; they are matrices used to map from one vector space to another using matrix--vector multiplication.
 
 \section{Subtype Ordering}
 
-% Including some English-language context for rules is important.
-We define a judgment $\tau_1 \leq \tau_2$ for subtyping.
+We define a judgment $\tau_1 \leq \tau_2$ for subtyping on ordinary types.
 Subtyping is reflexive and transitive, as usual:
+%
 \begin{mathpar}
 \inferrule
     { }
@@ -54,14 +87,18 @@ Subtyping is reflexive and transitive, as usual:
     {\tau_1 \leq \tau_2 \and \tau_2 \leq \tau_3}
     {\tau_1 \leq \tau_3}
 \end{mathpar}
-
-Here are some rules for subtyping on base types.  Note that we want to use vectors and 1x$n$ matrices interchangeably:
+%
+The null type \textsf{unit} acts as a top type:
 %
 \begin{mathpar}
 \inferrule
     { }
     {\tau\leq\mathsf{unit}}
-
+\end{mathpar}
+%
+We want to use vectors and $1 \times n$ matrices interchangeably:
+%
+\begin{mathpar}
 \inferrule
     { }
     {\vv{n}\leq\mathsf{mat}_{1{\times}n}}
@@ -71,15 +108,15 @@ Here are some rules for subtyping on base types.  Note that we want to use vecto
     {\mathsf{mat}_{1{\times}n}\leq\vv{n}}
 \end{mathpar}
 
-We also introduce another partial ordering for tags $\mu_1\leq_\Delta \mu_2$.  This ordering refers to a context $\Delta$, which maps $T$ to $T$:
+We also introduce a second partial order on tags, of the form $\Delta |- \mu_1 \leq_\Delta \mu_2$.  This ordering refers to a context $\Delta$, which is a map from tags $T$ to matrix types $\mu$:
 %
 \begin{mathpar}
 \inferrule
     {\Delta|-\Delta(\mu_1)=\mu_2}
     {\Delta|-\mu_1\leq_\Delta \mu_2}
 \end{mathpar}
-
-This rule has the usual reflexivity and transitivity
+%
+This relation has the usual reflexivity and transitivity properties:
 %
 \begin{mathpar}
 \inferrule
@@ -90,7 +127,7 @@ This rule has the usual reflexivity and transitivity
     {\Delta|-\mu_1 \leq_\Delta \mu_2 \and \Delta|-\mu_2 \leq_\Delta \mu_3}
     {\Delta|-\mu_1 \leq_\Delta \mu_3}
 \end{mathpar}
-
+%
 Vectors have a top type representing general vectors of dimension $n$ as $\vv{n}$.  Similarly, we can give the top type of transformation matrices, whose type is always given by $\mu_1->\mu_2$, to be $\mat$:
 %
 \begin{mathpar}
@@ -98,8 +135,8 @@ Vectors have a top type representing general vectors of dimension $n$ as $\vv{n}
     {\Delta|-\mu_1\leq_\Delta\vv{n_1}\qquad\Delta|-\mu_2\leq_\Delta\vv{n_2}}
     {\Delta|-\mu_1->\mu_2\leq_\Delta\mat}
 \end{mathpar}
-
-We also have standard partial order for functions under $\Delta$:
+%
+The function-like transformation matrix types, $\mu_1 -> \mu_2$, have the same standard subtyping relationship as ordinary function types:
 %
 \begin{mathpar}
 \inferrule
@@ -149,12 +186,12 @@ When declaring vectors and matrices, we must provide a tag, causing a tagged val
 	{\Gamma,\Delta|-(m:\mu_1->\mu_2):\mu_1->\mu_2,\Gamma}
 \end{mathpar}
 
-Declaring variables requires an immediate assignment -- as a result, there is no mutation in this language.
+Declaring variables requires an immediate assignment---i.e., there is no mutation in this language:
 %
 \begin{mathpar}
 \inferrule
 	{\Gamma,\Delta|-e:\tau,\Gamma'}
-	{\Gamma,\Delta|-\tau\;x:=e:\mathsf{unit},\Gamma'(x):=\tau}
+	{\Gamma,\Delta|-\tau\;x:=e:\mathsf{unit}, \Gamma', x \mapsto \tau}
 \end{mathpar}
 
 \subsection{Binary Operations}

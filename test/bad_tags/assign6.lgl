@@ -1,0 +1,4 @@
+tag a is vec2;
+tag b is vec3;
+
+a->b x = [[1., 1.], [1., 1.], [1., 1.]]:a->vec3; // Bad downcast

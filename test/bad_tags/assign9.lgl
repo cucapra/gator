@@ -1,0 +1,1 @@
+mat1x2 x = [1., 1.]:mat1x2; // No implicit cast from vectors to matrices

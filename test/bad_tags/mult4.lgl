@@ -1,0 +1,6 @@
+tag a is vec2;
+tag b is vec2;
+
+a x = [1., 1.]:a;
+b->a b_a = [[1., 1.], [1., 1.]]:b->a;
+vec2 bad = x * b_a; // No possible cast

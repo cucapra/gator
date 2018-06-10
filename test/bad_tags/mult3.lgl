@@ -1,0 +1,5 @@
+tag a is vec2;
+
+a x = [1., 1.]:a;
+vec2->a v2_a = [[1., 1.], [1., 1.]]:vec2->a;
+vec2 bad = v2_a * x; // Out of order
