@@ -6,4 +6,6 @@
 (ocamllex (lexer))
 
 (library
-  ((name langstart)))
+  ((name langstart)
+  (libraries (str))))
+

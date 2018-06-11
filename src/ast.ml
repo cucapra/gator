@@ -39,6 +39,7 @@ type value =
 type exp =
     | Bool of bvalue
     | Aval of avalue 
+    | Typ of typ
     | Var of id
     | Norm of exp
     | Not of exp   

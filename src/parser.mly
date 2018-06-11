@@ -1,6 +1,11 @@
 
 %{
 open Ast
+open Str
+
+let matr = Str.regexp "mat\\([0-9]+\\)x\\([0-9]+\\)"
+let vec = Str.regexp "vec\\([0-9]+\\)"
+
 %}
 
 (* Tokens *)
@@ -111,7 +116,16 @@ atyp:
 ;
 
 ltyp: 
-  | x = ID { TagTyp(x) }
+  | x = ID { if (Str.string_match matr x 0) then (
+              let len = String.length x in 
+              let dim = String.sub x 3 (len-3) in
+              let dim_lst = Str.split_delim (regexp "x") dim in
+              MatTyp (int_of_string(List.nth dim_lst 0),int_of_string(List.nth dim_lst 1))
+            ) else if (Str.string_match vec x 0) then (
+              let len = String.length x in 
+              let dim = String.sub x 3 (len-3)in
+              VecTyp (int_of_string(dim))
+            ) else TagTyp(x) }
   | x1 = ltyp; TRANS; x2 = ltyp { TransTyp(x1,x2) }
 ;
 
@@ -144,7 +158,17 @@ exp:
   | LPAREN; a = exp; RPAREN { a }
   | a = aval { Aval a }
   | b = bool { Bool b }
-  | x = ID { Var x }
+  | x = ID { if (Str.string_match matr x 0) then (
+              let len = String.length x in 
+              let dim = String.sub x 3 (len-3) in
+              let dim_lst = Str.split_delim (regexp "x") dim in
+              Typ(ATyp(LTyp(MatTyp (int_of_string(List.nth dim_lst 0),int_of_string(List.nth dim_lst 1)))))
+            ) else if (Str.string_match vec x 0) then (
+              let len = String.length x in 
+              let dim = String.sub x 3 (len-3)in
+              Typ(ATyp(LTyp(VecTyp (int_of_string(dim)))))
+            ) else Var x
+           }
   | DOT; e1 = exp; e2 = exp { Dot(e1, e2) }
   | NORM; e = exp { Norm(e) } (* Normie *)
   | e1 = exp; PLUS; e2 = exp { Plus(e1,e2) }

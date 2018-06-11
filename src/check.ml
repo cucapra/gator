@@ -12,6 +12,9 @@ let gamma = HashSet.make ()
 (* Tags defs *)
 let delta = HashSet.make ()
 
+let matr = Str.regexp "mat\\([0-9]+\\)x\\([0-9]+\\)"
+let vec = Str.regexp "vec\\([0-9]+\\)"
+
 (* Checks equality of the dimensions of ltyp *)
 let rec ltyp_dim_equals (t1: ltyp) (t2: ltyp) : bool =
     match (t1, t2) with 
@@ -76,9 +79,13 @@ let rec check_ltyp (lt: ltyp) : typ =
         (raise (TypeException "mat dimensions must be positive"))
         else ATyp(LTyp(lt))
     | TagTyp s -> let is_mem = HashSet.mem delta s in 
-        if not is_mem 
-        then (raise (TypeException "tag must be defined"))
-        else ATyp(LTyp(lt))
+        if not is_mem then (
+            if (Str.string_match matr s 0) then (
+                ATyp(LTyp(MatTyp (2,2)))
+            ) else if (Str.string_match vec s 0) then (
+                ATyp(LTyp (VecTyp 2))
+            ) else (raise (TypeException ("tag "^s^" must be defined")))
+        ) else ATyp(LTyp(lt))
     | TransTyp (lt1, lt2) -> if ltyp_dim_trans lt1 lt2 |> not
         then (raise (TypeException "transformation dimension mismatch"))
         else  ATyp(LTyp(lt))
@@ -210,8 +217,7 @@ and check_exp (e: exp) : typ =
     match e with
     | Bool b -> BTyp
     | Aval a -> check_aval a
-    | Var v -> 
-        HashSet.find gamma v
+    | Var v -> HashSet.find gamma v
     | Norm a -> check_norm_exp (check_exp a)
     | Dot (e1, e2) -> check_dot_exp (check_exp e1) (check_exp e2)
     | Plus (e1, e2)
@@ -223,6 +229,7 @@ and check_exp (e: exp) : typ =
     | Or (e1, e2)
     | And (e1, e2) -> check_bool_binop (check_exp e1) (check_exp e2)  
     | Not e1 -> check_bool_unop (check_exp e1)
+    | Typ typ -> check_typ typ
 
 let rec check_decl (t: typ) (s: string) (e: exp) : typ =
     let etyp = check_exp e in
