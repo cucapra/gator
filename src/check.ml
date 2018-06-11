@@ -12,13 +12,13 @@ let gamma = HashSet.make ()
 (* Tags defs *)
 let delta = HashSet.make ()
 
-let matr = Str.regexp "mat\\([0-9]+\\)x\\([0-9]+\\)"
-let vec = Str.regexp "vec\\([0-9]+\\)"
 
 (* Checks equality of the dimensions of ltyp *)
 let rec ltyp_dim_equals (t1: ltyp) (t2: ltyp) : bool =
     match (t1, t2) with 
     | (VecTyp n1, VecTyp n2) -> n1 = n2
+    | (VecTyp n1, MatTyp (n2, n3)) -> n1 = n2
+    | (MatTyp (n1, n2), VecTyp n3) -> n2 = n3
     | (MatTyp (n1, n2), MatTyp (n3, n4)) -> n1 = n3 && n2 = n4
     | (TagTyp i1, TagTyp i2) -> 
         ltyp_dim_equals (HashSet.find delta i1) (HashSet.find delta i2)
@@ -80,11 +80,7 @@ let rec check_ltyp (lt: ltyp) : typ =
         else ATyp(LTyp(lt))
     | TagTyp s -> let is_mem = HashSet.mem delta s in 
         if not is_mem then (
-            if (Str.string_match matr s 0) then (
-                ATyp(LTyp(MatTyp (2,2)))
-            ) else if (Str.string_match vec s 0) then (
-                ATyp(LTyp (VecTyp 2))
-            ) else (raise (TypeException ("tag "^s^" must be defined")))
+            (raise (TypeException ("tag "^s^" must be defined")))
         ) else ATyp(LTyp(lt))
     | TransTyp (lt1, lt2) -> if ltyp_dim_trans lt1 lt2 |> not
         then (raise (TypeException "transformation dimension mismatch"))

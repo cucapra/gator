@@ -3,6 +3,8 @@
 open Ast
 open Str
 
+exception ParseException of string
+
 let matr = Str.regexp "mat\\([0-9]+\\)x\\([0-9]+\\)"
 let vec = Str.regexp "vec\\([0-9]+\\)"
 
@@ -98,7 +100,9 @@ commlst:
 
 comm:
   | SKIP; SEMI;{ Skip } 
-  | t = typ; x = ID; GETS; e1 = exp; SEMI; { Decl(t, x, e1) }
+  | t = typ; x = ID; GETS; e1 = exp; SEMI; {  if (Str.string_match matr x 0) || (Str.string_match vec x 0) then (
+      raise (ParseException "invalid id specified for variable declaration")
+    ) else Decl(t, x, e1) }
   | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; 
     ELSE; LBRACE; c2 = commlst; RBRACE { If(b1,c1,c2) }
   | PRINT; e = exp; SEMI; { Print(e) }
@@ -120,7 +124,7 @@ ltyp:
               let len = String.length x in 
               let dim = String.sub x 3 (len-3) in
               let dim_lst = Str.split_delim (regexp "x") dim in
-              MatTyp (int_of_string(List.nth dim_lst 0),int_of_string(List.nth dim_lst 1))
+              Printf.printf "%s" (List.nth dim_lst 0) ;MatTyp (int_of_string(List.nth dim_lst 0),int_of_string(List.nth dim_lst 1))
             ) else if (Str.string_match vec x 0) then (
               let len = String.length x in 
               let dim = String.sub x 3 (len-3)in
