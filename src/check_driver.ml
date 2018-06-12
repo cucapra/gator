@@ -25,5 +25,5 @@ let load (filename : string) : unit =
     close_in ch
   
 let _ = 
-  print_endline "Parser tester";
+  print_endline "Type checker tester";
   load Sys.argv.(1)

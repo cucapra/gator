@@ -15,15 +15,19 @@ let delta = HashSet.make ()
 
 (* Gets dimension for top type of ltyp *)
 let rec ltyp_top_dim (t: ltyp) : int * int = 
+    debug_print ">> ltyp_top_dim";
     match t with
     | VecTyp n -> (n, n)
     | MatTyp (n1, n2) -> (n1, n2)
-    | TagTyp a -> Printf.printf "Tagtyp - [ %s ]" (a^(HashSet.find delta a |> ltyp_top_dim |> snd |> string_of_int)); HashSet.find delta a |> ltyp_top_dim
-    | TransTyp (lt1, lt2) -> Printf.printf "Transtyp - [ %s ]" (ltyp_top_dim lt1 |> snd |> string_of_int); (ltyp_top_dim lt1 |> snd, 
+    | TagTyp a -> "\tTagtyp - [ "^a^(HashSet.find delta a |> ltyp_top_dim |> snd |> string_of_int)^" ]" |> debug_print; 
+        HashSet.find delta a |> ltyp_top_dim
+    | TransTyp (lt1, lt2) -> "\tTranstyp - [ "^(ltyp_top_dim lt1 |> snd |> string_of_int)^" ]" |> debug_print; 
+        (ltyp_top_dim lt1 |> snd, 
         ltyp_top_dim lt2 |> fst)  (* TODO - need to consider vec/mat *)
 
 (* Checks equality of the dimensions of ltyp *)
 let rec ltyp_dim_equals (t1: ltyp) (t2: ltyp) : bool =
+    debug_print ">> ltyp_dim_equals";
     match (t1, t2) with 
     | (VecTyp n1, VecTyp n2) -> n1 = n2
     | (VecTyp n1, MatTyp (n2, n3)) -> n1 = n2
@@ -44,6 +48,7 @@ let rec ltyp_dim_equals (t1: ltyp) (t2: ltyp) : bool =
 
 (* Gets top type of ltyp *)
 let ltyp_top_typ (t: ltyp) : ltyp = 
+    debug_print ">> ltyp_top_typ";
     match t with 
     | TagTyp _ 
     | TransTyp _ -> let dim = ltyp_top_dim t in 
@@ -55,6 +60,7 @@ let ltyp_top_typ (t: ltyp) : ltyp =
 (* Following <Section 2. Subtype Ordering> of semantics *)
 (* TODO - tag type subtyping is janky (not a string match) *)
 let rec (<~) (t1: ltyp) (t2: ltyp) : bool = 
+    debug_print ">> (<~)";
     match (t1, t2) with 
     | (VecTyp n1, MatTyp(1, n2))
     | (MatTyp(1, n1), VecTyp n2) -> n1 = n2
@@ -71,6 +77,7 @@ let rec (<~) (t1: ltyp) (t2: ltyp) : bool =
 
 (* Checks ltyp equality *)
 and ltyp_equals (t1: ltyp) (t2: ltyp) : bool = 
+    debug_print ">> ltyp_equals";
     match (t1, t2) with
     | (TagTyp i1, TagTyp i2) -> i1 = i2
     | _ -> ltyp_dim_equals t1 t2
@@ -79,18 +86,20 @@ and ltyp_equals (t1: ltyp) (t2: ltyp) : bool =
 (* Checks dimensions of ltyp for transformations *)
 (* Returns true if dimensions are valid *)
 let rec ltyp_dim_trans (t1: ltyp) (t2: ltyp) : bool =
+    debug_print ">> ltyp_dim_trans";
     match (t1, t2) with 
     | (VecTyp n1, VecTyp n2) -> true
     | (MatTyp (n1, n2), MatTyp (n3, n4)) -> n2 == n3
     | (TagTyp i1, TagTyp i2) -> 
         ltyp_dim_trans (HashSet.find delta i1) (HashSet.find delta i2)
-    | (TagTyp i1, _)    
-    | (_, TagTyp i1) -> ltyp_dim_trans (HashSet.find delta i1) t2
+    | (TagTyp i1, _) -> ltyp_dim_trans (HashSet.find delta i1) t2
+    | (_, TagTyp i1) -> ltyp_dim_trans (HashSet.find delta i1) t1
     | (TransTyp (lt1, lt2), TransTyp (lt3, lt4)) -> ltyp_dim_equals lt2 lt3
     | _ -> ltyp_dim_equals t1 t2
 
 (* Type check linear types *)
 let rec check_ltyp (lt: ltyp) : typ = 
+    debug_print ">> check_ltyp";
     match lt with
     | VecTyp n -> if n < 0 
         then (raise (TypeException "vec dimensions must be positive"))
@@ -108,6 +117,7 @@ let rec check_ltyp (lt: ltyp) : typ =
 
 (* Type check arithmetic types *)
 let rec check_atyp (at: atyp) : typ = 
+    debug_print ">> check_atyp";
     match at with
     | IntTyp
     | FloatTyp -> ATyp at
@@ -115,23 +125,28 @@ let rec check_atyp (at: atyp) : typ =
 
 (* Type check types *)
 let rec check_typ (t: typ) : typ = 
+    debug_print ">> check_typ";
     match t with
     | ATyp at -> check_atyp at
     | BTyp
     | UnitTyp -> t
 
 (* Gets type of vector literals *)
-let veclit_type (v: vec) : ltyp = VecTyp (List.length v)
+let veclit_type (v: vec) : ltyp = 
+    debug_print ">> veclit_type";
+    VecTyp (List.length v)
 
 (* Helper function for matrix literals
    Every vec in a mat needs to be of the same dimension  *)
 let rec matlit_type_helper (m: mat) (dim: int) : bool =
+    debug_print ">> matlit_type_helper";
     match m with
     | [] -> true
     | h::t -> dim = List.length h && matlit_type_helper t dim 
    
 (* Gets type of matrix literals *)
 let matlit_type (m: mat) : ltyp =  
+    debug_print ">> matlit_type";
     match m with 
     | [] -> MatTyp(0,0)
     | _ -> let dim = (List.hd m |> List.length) in
@@ -141,6 +156,7 @@ let matlit_type (m: mat) : ltyp =
 
 (* Type checking arithmetic literals *)
 let rec check_aval (av: avalue) : typ = 
+    debug_print ">> check_aval";
     match av with
     | Num n -> ATyp(IntTyp)
     | Float f -> ATyp(FloatTyp)
@@ -156,6 +172,7 @@ let rec check_aval (av: avalue) : typ =
 (* Type checking binary operations on scalar (int, float) expressions *)
 (* Types are closed under addition and scalar multiplication *)
 let check_scalar_binop (t1: typ) (t2: typ) : typ =
+    debug_print ">> check_scalar_binop";
     match (t1, t2) with 
     | (ATyp(IntTyp), ATyp(a))
     | (ATyp(a), ATyp(IntTyp)) 
@@ -168,6 +185,7 @@ let check_scalar_binop (t1: typ) (t2: typ) : typ =
 
 (* "scalar linear exp", (i.e. dot and ctimes) returns generalized MatTyp *)
 let check_scalar_linear_exp (t1: typ) (t2: typ) : typ = 
+    debug_print ">> check_scalar_linear_exp";
     match (t1, t2) with 
     | (ATyp(LTyp l1), ATyp(LTyp l2)) -> if ltyp_dim_equals l1 l2 
         then ATyp(LTyp(ltyp_top_typ l1))
@@ -176,18 +194,21 @@ let check_scalar_linear_exp (t1: typ) (t2: typ) : typ =
 
 (* Type check norm expressions *)
 let check_norm_exp (a: typ) : typ = 
+    debug_print ">> check_norm_exp";
     match a with
     | ATyp(LTyp l) -> ATyp(LTyp(ltyp_top_typ l))
     | _ -> (raise (TypeException "expected linear type for norm operator"))
 
 (* Type check binary bool operators (i.e. &&, ||) *)
 let check_bool_binop (t1: typ) (t2: typ) : typ = 
+    debug_print ">> check_bool_binop";
     match (t1, t2) with 
     | (BTyp, BTyp) -> BTyp
     | _ -> raise (TypeException "expected boolean expression for binop")
 
 (* Type check unary bool operators (i.e. !) *)
 let check_bool_unop (t1: typ) : typ =
+    debug_print ">> check_bool_unop";
     match t1 with 
     | BTyp -> BTyp
     | _ -> raise (TypeException "expected boolean expression for !")
@@ -195,6 +216,7 @@ let check_bool_unop (t1: typ) : typ =
 (* Type check comparative binary operators (i.e. <. <=) *)
 (* Only bool, int, float are comparable *)
 let check_comp_binop (t1: typ) (t2: typ) : typ = 
+    debug_print ">> check_comp_binop";
     match (t1, t2) with
     | (BTyp, BTyp) -> BTyp
     | (ATyp(IntTyp), ATyp(IntTyp)) -> BTyp
@@ -208,6 +230,7 @@ let check_dot_exp (t1: typ) (t2: typ) : typ =
 
 (* Type checking times operator - on scalar mult & matrix transformations *)
 let rec check_times_exp (t1: typ) (t2: typ) : typ = 
+    debug_print ">> check_times_exp";
     match (t1, t2) with
     | (ATyp(LTyp(MatTyp(n1, n2))), ATyp(LTyp(MatTyp(n3, n4)))) -> 
         if n2 = n3 
@@ -226,6 +249,7 @@ let rec check_times_exp (t1: typ) (t2: typ) : typ =
     | _ -> check_scalar_binop t1 t2
 
 and check_exp (e: exp) : typ = 
+    debug_print ">> check_exp";
     match e with
     | Bool b -> BTyp
     | Aval a -> check_aval a
@@ -244,6 +268,7 @@ and check_exp (e: exp) : typ =
     | Typ typ -> check_typ typ
 
 let rec check_decl (t: typ) (s: string) (e: exp) : typ =
+    debug_print ">> check_decl";
     if HashSet.mem delta s then 
         raise (TypeException "variable declared as tag")
     else (
@@ -260,6 +285,7 @@ let rec check_decl (t: typ) (s: string) (e: exp) : typ =
     )
 
 let rec check_comm (c: comm) : typ = 
+    debug_print ">> check_comm";
     match c with
     | Skip -> UnitTyp
     | Print e -> ignore(check_exp e); UnitTyp
@@ -270,11 +296,13 @@ let rec check_comm (c: comm) : typ =
         | _ -> raise (TypeException "expected boolean expression for if condition"))
 
 and check_comm_lst (cl : comm list) : unit = 
+    debug_print ">> check_comm_lst";
     match cl with
     | [] -> ()
     | h::t -> ignore(check_comm h); check_comm_lst t
 
 let rec check_tags (t : tagdecl list) : unit =
+    debug_print ">> check_tags";
     match t with 
     | [] -> ()
     | TagDecl(s, a)::t -> 
@@ -285,5 +313,6 @@ let rec check_tags (t : tagdecl list) : unit =
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
 let check_prog (e : prog) : unit =
+    debug_print ">> check_prog";
     match e with
     | Prog (t, c) -> check_tags t; check_comm_lst c
