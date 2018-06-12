@@ -14,6 +14,11 @@
 *.conflicts
 *.automaton
 
+# Jbulider
+./src/parser.ml
+./src/parser.mli
+./src/lexer.ml
+
 # ocamlbuild working directory
 _build/
 
