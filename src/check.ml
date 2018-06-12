@@ -34,7 +34,8 @@ let rec ltyp_dim_equals (t1: ltyp) (t2: ltyp) : bool =
     | (MatTyp (n1, n2), VecTyp n3) -> n2 = n3
     | (MatTyp (n1, n2), MatTyp (n3, n4)) -> n1 = n3 && n2 = n4
     | (TagTyp i, VecTyp _)
-    | (TagTyp i, MatTyp _) -> Printf.printf "%s" ((ATyp(LTyp(t2)) |> print_typ));  ltyp_dim_equals (HashSet.find delta i) t2
+    | (TagTyp i, MatTyp _) -> debug_print ("\t"^(ATyp(LTyp(t2)) |> print_typ));  
+        ltyp_dim_equals (HashSet.find delta i) t2
     | (VecTyp _, TagTyp i)
     | (MatTyp _, TagTyp i) -> ltyp_dim_equals (HashSet.find delta i) t1
     | (TagTyp i1, TagTyp i2) -> 
@@ -71,17 +72,10 @@ let rec (<~) (t1: ltyp) (t2: ltyp) : bool =
     | (TransTyp _, MatTyp _)
     | (MatTyp _, TransTyp _)
     | (TagTyp _, VecTyp _) -> ltyp_dim_equals t1 t2
-    | (TagTyp i1, TagTyp i2) -> ltyp_equals (HashSet.find delta i1) (HashSet.find delta i2) 
-    | (l1, l2) -> (ltyp_equals l1 l2) || 
-        (ltyp_equals (ltyp_top_typ l1) l2) 
+    | (TagTyp i1, TagTyp i2) -> (HashSet.find delta i1) <~ (HashSet.find delta i2) 
+    | (l1, l2) -> (ltyp_dim_equals l1 l2) || 
+        (ltyp_dim_equals (ltyp_top_typ l1) l2) 
 
-(* Checks ltyp equality *)
-and ltyp_equals (t1: ltyp) (t2: ltyp) : bool = 
-    debug_print ">> ltyp_equals";
-    match (t1, t2) with
-    | (TagTyp i1, TagTyp i2) -> i1 = i2
-    | _ -> ltyp_dim_equals t1 t2
-     
    
 (* Checks dimensions of ltyp for transformations *)
 (* Returns true if dimensions are valid *)
@@ -233,18 +227,18 @@ let rec check_times_exp (t1: typ) (t2: typ) : typ =
     debug_print ">> check_times_exp";
     match (t1, t2) with
     | (ATyp(LTyp(MatTyp(n1, n2))), ATyp(LTyp(MatTyp(n3, n4)))) -> 
-        if n2 = n3 
-        then ATyp(LTyp(MatTyp(n1, n4))) 
+        if n2 = n3 then ATyp(LTyp(MatTyp(n1, n4))) 
+        else (raise (TypeException "matrix multiplication dimension mismatch"))
+    | (ATyp(LTyp(VecTyp(n1))), ATyp(LTyp(MatTyp(n3, n4)))) -> 
+        if n1 = n3 then ATyp(LTyp(MatTyp(n1, n4))) 
         else (raise (TypeException "matrix multiplication dimension mismatch"))
     | (ATyp(LTyp(TransTyp(lt1, lt2))), ATyp(LTyp(TransTyp(lt3, lt4)))) ->
-        if ltyp_equals lt2 lt3
-        then 
-        ATyp(LTyp(TransTyp(lt1, lt4)))
+        debug_print "\ttrans, trans";
+        if ltyp_dim_equals lt2 lt3 then ATyp(LTyp(TransTyp(lt1, lt4)))
         else (raise (TypeException "linear transformation type mismatch"))
-    | (ATyp(LTyp a), ATyp(LTyp(TransTyp(lt1, lt2)))) ->
-        if ltyp_equals a lt1 
-        then 
-        ATyp(LTyp(lt2))
+    | (ATyp(LTyp(a)), ATyp(LTyp(TransTyp(lt1, lt2)))) ->
+        debug_print "\tvec, trans";
+        if ltyp_dim_equals a lt1 then ATyp(LTyp(lt2))
         else (raise (TypeException "linear transformation type mismatch"))
     | _ -> check_scalar_binop t1 t2
 
@@ -277,7 +271,7 @@ let rec check_decl (t: typ) (s: string) (e: exp) : typ =
         match (etyp, t') with
         | (ATyp(LTyp a1), ATyp(LTyp a2)) -> 
             if a1 <~ a2 then (HashSet.add gamma (s, t'); UnitTyp)
-            else raise (TypeException "mismatched linear type for var decl")
+            else raise (TypeException ("mismatched linear type for var decl: "^s))
         | (ATyp(IntTyp), ATyp(IntTyp))
         | (ATyp(FloatTyp), ATyp(FloatTyp))
         | (BTyp, BTyp) -> (HashSet.add gamma (s, t'); UnitTyp)
