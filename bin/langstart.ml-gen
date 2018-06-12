@@ -1,0 +1,29 @@
+(** @canonical Langstart.Ast *)
+module Ast = Langstart__Ast
+
+(** @canonical Langstart.Check *)
+module Check = Langstart__Check
+
+(** @canonical Langstart.Lexer *)
+module Lexer = Langstart__Lexer
+
+(** @canonical Langstart.Lin_ops *)
+module Lin_ops = Langstart__Lin_ops
+
+(** @canonical Langstart.Ops *)
+module Ops = Langstart__Ops
+
+(** @canonical Langstart.Parse_main *)
+module Parse_main = Langstart__Parse_main
+
+(** @canonical Langstart.Parser *)
+module Parser = Langstart__Parser
+
+(** @canonical Langstart.Print *)
+module Print = Langstart__Print
+
+(** @canonical Langstart.State *)
+module State = Langstart__State
+
+(** @canonical Langstart.Util *)
+module Util = Langstart__Util

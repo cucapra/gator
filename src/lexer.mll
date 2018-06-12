@@ -52,6 +52,5 @@ rule read = parse
   | ","   { COMMA } 
   | ";"   { SEMI }
   | id  as id { ID id }
-  | "x"   { DIM }
   | floatval as floatval  { FLOAT (float_of_string floatval) }
   | eof   { EOL }

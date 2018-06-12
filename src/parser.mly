@@ -49,7 +49,6 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %token BOOLTYP
 %token LBRACE
 %token RBRACE
-%token DIM
 
 (* Precedences *)
 
