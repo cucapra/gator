@@ -1,0 +1,14 @@
+{
+  "name": "linguine-examples",
+  "private": true,
+  "version": "1.0.0",
+  "main": "trivial.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "webpack"
+  },
+  "devDependencies": {
+    "webpack-command": "^0.2.1",
+    "webpack": "^4.12.0"
+  }
+}
