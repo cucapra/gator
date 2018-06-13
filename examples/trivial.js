@@ -1,5 +1,7 @@
 "use strict";
 
+var teapot = require('teapot');
+
 var VERTEX_SHADER =
     "attribute vec4 a_position;" +
     "void main() {" +
