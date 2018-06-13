@@ -17,9 +17,10 @@ let delta = HashSet.make ()
 let rec ltyp_top_dim (t: ltyp) : int * int = 
     debug_print ">> ltyp_top_dim";
     match t with
-    | VecTyp n -> (n, n)
+    | VecTyp n -> (1, n)
     | MatTyp (n1, n2) -> (n1, n2)
-    | TagTyp a -> "\tTagtyp - [ "^a^(HashSet.find delta a |> ltyp_top_dim |> snd |> string_of_int)^" ]" |> debug_print; 
+    | TagTyp a -> 
+        "\tTagTyp - [ "^a^", top dim: ("^(HashSet.find delta a |> ltyp_top_dim |> snd |> string_of_int)^", "^(HashSet.find delta a |> ltyp_top_dim |> snd |> string_of_int)^") ]" |> debug_print; 
         HashSet.find delta a |> ltyp_top_dim
     | TransTyp (lt1, lt2) -> "\tTranstyp - [ "^(ltyp_top_dim lt1 |> snd |> string_of_int)^" ]" |> debug_print; 
         (ltyp_top_dim lt1 |> snd, 
@@ -29,12 +30,17 @@ let rec ltyp_top_dim (t: ltyp) : int * int =
 let rec ltyp_dim_equals (t1: ltyp) (t2: ltyp) : bool =
     debug_print ">> ltyp_dim_equals";
     match (t1, t2) with 
-    | (VecTyp n1, VecTyp n2) -> n1 = n2
-    | (VecTyp n1, MatTyp (n2, n3)) -> n1 = n2
-    | (MatTyp (n1, n2), VecTyp n3) -> n2 = n3
-    | (MatTyp (n1, n2), MatTyp (n3, n4)) -> n1 = n3 && n2 = n4
+    | (VecTyp n1, VecTyp n2) -> debug_print "\tvec, vec"; 
+        n1 = n2
+    | (VecTyp n1, MatTyp (n2, n3)) -> debug_print "\tvec, mat";
+        n1 = n2
+    | (MatTyp (n1, n2), VecTyp n3) -> debug_print "\tmat, vec";
+        n2 = n3
+    | (MatTyp (n1, n2), MatTyp (n3, n4)) -> debug_print "\tmat, mat";
+        n1 = n3 && n2 = n4
     | (TagTyp i, VecTyp _)
-    | (TagTyp i, MatTyp _) -> debug_print ("\t"^(ATyp(LTyp(t2)) |> print_typ));  
+    | (TagTyp i, MatTyp _) -> 
+        debug_print ("\t"^(ATyp(LTyp(t2)) |> print_typ));  
         ltyp_dim_equals (HashSet.find delta i) t2
     | (VecTyp _, TagTyp i)
     | (MatTyp _, TagTyp i) -> ltyp_dim_equals (HashSet.find delta i) t1
@@ -227,10 +233,12 @@ let rec check_times_exp (t1: typ) (t2: typ) : typ =
     debug_print ">> check_times_exp";
     match (t1, t2) with
     | (ATyp(LTyp(MatTyp(n1, n2))), ATyp(LTyp(MatTyp(n3, n4)))) -> 
+        debug_print "\tmat, mat";
         if n2 = n3 then ATyp(LTyp(MatTyp(n1, n4))) 
         else (raise (TypeException "matrix multiplication dimension mismatch"))
     | (ATyp(LTyp(VecTyp(n1))), ATyp(LTyp(MatTyp(n3, n4)))) -> 
-        if n1 = n3 then ATyp(LTyp(MatTyp(n1, n4))) 
+        debug_print "\tvec, mat";
+        if n1 = n3 then ATyp(LTyp(MatTyp(1, n4))) 
         else (raise (TypeException "matrix multiplication dimension mismatch"))
     | (ATyp(LTyp(TransTyp(lt1, lt2))), ATyp(LTyp(TransTyp(lt3, lt4)))) ->
         debug_print "\ttrans, trans";
@@ -247,7 +255,8 @@ and check_exp (e: exp) : typ =
     match e with
     | Bool b -> BTyp
     | Aval a -> check_aval a
-    | Var v -> HashSet.find gamma v
+    | Var v -> "\tVar "^v |> debug_print;
+        HashSet.find gamma v
     | Norm a -> check_norm_exp (check_exp a)
     | Dot (e1, e2) -> check_dot_exp (check_exp e1) (check_exp e2)
     | Plus (e1, e2)
@@ -262,7 +271,7 @@ and check_exp (e: exp) : typ =
     | Typ typ -> check_typ typ
 
 let rec check_decl (t: typ) (s: string) (e: exp) : typ =
-    debug_print ">> check_decl";
+    debug_print (">> check_decl <<"^s^">>");
     if HashSet.mem delta s then 
         raise (TypeException "variable declared as tag")
     else (
