@@ -1,5 +1,8 @@
 "use strict";
 
+var fit = require('canvas-fit');
+var mat4 = require('gl-mat4');
+var normals = require('normals');
 var teapot = require('teapot');
 
 var VERTEX_SHADER =
@@ -56,6 +59,37 @@ function createProgram(gl, vertexShader, fragmentShader) {
     return program;
 };
 
+function make_buffer(gl, data, mode) {
+    // Initialize a buffer.
+    var buf = gl.createBuffer();
+
+    // Flatten the data to a packed array.
+    var arr = new Float32Array([].concat.apply([], data));
+
+    console.log(arr);
+
+    // Insert the data into the buffer.
+    gl.bindBuffer(mode, buf);
+    gl.bufferData(mode, arr, gl.STATIC_DRAW);
+
+    return buf;
+};
+
+// Given a mesh, with the fields `positions` and `cells`, create three buffers
+// for drawing the thing. Return an object with the fields:
+// - `cells`, a 3-dimensional uint16 element array buffer
+// - `positions`, a 3-dimensional float32 array buffer
+// - `normals`, ditto
+function mesh_buffers(gl, obj) {
+    var norm = normals.vertexNormals(bunny.cells, bunny.positions);
+
+    return {
+        cells: make_buffer(gl, obj.cells, 'uint16', gl.ELEMENT_ARRAY_BUFFER),
+        positions: make_buffer(gl, obj.positions, 'float32', gl.ARRAY_BUFFER),
+        normals: make_buffer(gl, norm, 'float32', gl.ARRAY_BUFFER),
+    }
+};
+
 function main() {
     var canvas = document.getElementById("c");
     var gl = canvas.getContext("webgl");
@@ -72,18 +106,12 @@ function main() {
     // look up where the vertex data needs to go.
     var positionAttributeLocation = gl.getAttribLocation(program, "a_position");
 
-    // Create a buffer and put three 2d clip space points in it
-    var positionBuffer = gl.createBuffer();
-
-    // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
     var positions = [
-        0, 0,
-        0, 0.5,
-        0.7, 0,
+        [0, 0],
+        [0, 0.5],
+        [0.7, 0],
     ];
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+    var positionBuffer = make_buffer(gl, positions, gl.ARRAY_BUFFER);
 
     var width = gl.drawingBufferWidth;
     var height = gl.drawingBufferHeight;
@@ -112,10 +140,8 @@ function main() {
     var offset = 0;        // start at the beginning of the buffer
     gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
 
-    var primitiveType = gl.TRIANGLES;
-    var offset = 0;
     var count = 3;
-    gl.drawArrays(primitiveType, offset, count);
+    gl.drawArrays(gl.TRIANGLES, 0, count);
 }
 
 main();
