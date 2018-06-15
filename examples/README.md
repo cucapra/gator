@@ -1,10 +1,13 @@
-Dependencies:
-    npm: https://www.npmjs.com/
-    yarn: https://yarnpkg.com/lang/en/docs/install/
+## Dependencies
 
-Installation:
+You will need [Node][] and [Yarn][] (or [npm][] if you like).
 
-After installing the dependencies, get the package dependencies by running:
-`make install`
+[node]: https://nodejs.org/en/
+[yarn]: https://yarnpkg.com/en/
+[npm]: https://www.npmjs.com
 
-Once these have been installed, run `make view` to load the example script in your default browser.
+## Installation
+
+First, install our JavaScript dependencies by typing `yarn` (or `make install`).
+
+Then, run `make view` to build the program and load the appropriate page in your default browser.
