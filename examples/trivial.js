@@ -2,13 +2,17 @@
 
 var fit = require('canvas-fit');
 var mat4 = require('gl-mat4');
-var normals = require('normals');
 var teapot = require('teapot');
+var normals = require('normals');
+var pack = require('array-pack-2d');
 
 var VERTEX_SHADER =
-    "attribute vec4 a_position;" +
+    "attribute vec3 aPosition;" +
+    "uniform mat4 uProjection;" +
+    "uniform mat4 uModel;" +
+    "uniform mat4 uView;" +
     "void main() {" +
-    "    gl_Position = a_position;" +
+    "    gl_Position = vec4(aPosition, 1.0);" +
     "}";
 
 var FRAGMENT_SHADER =
@@ -59,14 +63,12 @@ function createProgram(gl, vertexShader, fragmentShader) {
     return program;
 };
 
-function make_buffer(gl, data, mode) {
+function make_buffer(gl, data, type, mode) {
     // Initialize a buffer.
     var buf = gl.createBuffer();
 
     // Flatten the data to a packed array.
-    var arr = new Float32Array([].concat.apply([], data));
-
-    console.log(arr);
+    var arr = pack(data, type);
 
     // Insert the data into the buffer.
     gl.bindBuffer(mode, buf);
@@ -75,13 +77,27 @@ function make_buffer(gl, data, mode) {
     return buf;
 };
 
+// Set a buffer as an attribute array.
+function bind_attrib_buffer(gl, location, buffer) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.vertexAttribPointer(location, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(location);
+}
+
+// Set a buffer as the element array.
+function bind_element_buffer(gl, buffer) {
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer);
+}
+
 // Given a mesh, with the fields `positions` and `cells`, create three buffers
 // for drawing the thing. Return an object with the fields:
 // - `cells`, a 3-dimensional uint16 element array buffer
 // - `positions`, a 3-dimensional float32 array buffer
 // - `normals`, ditto
 function mesh_buffers(gl, obj) {
-    var norm = normals.vertexNormals(bunny.cells, bunny.positions);
+    var norm = normals.vertexNormals(obj.cells, obj.positions);
+    console.log(norm.length);
+    console.log(obj.cells.length);
 
     return {
         cells: make_buffer(gl, obj.cells, 'uint16', gl.ELEMENT_ARRAY_BUFFER),
@@ -100,21 +116,28 @@ function main() {
     var vertexShader = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
     var fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
 
-    // Link the two shaders into a program
+    // Compile the shader program.
     var program = createProgram(gl, vertexShader, fragmentShader);
+    var locations = {
+        'uProjection': gl.getUniformLocation(program, 'uProjection'),
+        'uView': gl.getUniformLocation(program, 'uView'),
+        'uModel': gl.getUniformLocation(program, 'uModel'),
+        'aPosition': gl.getAttribLocation(program, 'aPosition'),
+        'aNormal': gl.getAttribLocation(program, 'aNormal'),
+    };
 
     // look up where the vertex data needs to go.
-    var positionAttributeLocation = gl.getAttribLocation(program, "a_position");
-
-    var positions = [
-        [0, 0],
-        [0, 0.5],
-        [0.7, 0],
-    ];
-    var positionBuffer = make_buffer(gl, positions, gl.ARRAY_BUFFER);
+    var shape_buffers = mesh_buffers(gl, teapot);
 
     var width = gl.drawingBufferWidth;
     var height = gl.drawingBufferHeight;
+
+    // Create the base matrices to be used
+    // when rendering the object. Alternatively, can
+    // be created using `new Float32Array(16)`
+    var projection = mat4.create();
+    var model = mat4.create();
+    var view = mat4.create();
 
     // Tell WebGL how to convert from clip space to pixels
     gl.viewport(0, 0, width, height);
@@ -126,22 +149,21 @@ function main() {
     // Tell it to use our program (pair of shaders)
     gl.useProgram(program);
 
-    // Turn on the attribute
-    gl.enableVertexAttribArray(positionAttributeLocation);
+    // Set the shader "uniform" parameters.
+    gl.uniformMatrix4fv(locations.uProjection, false, projection);
+    gl.uniformMatrix4fv(locations.uView, false, view);
+    gl.uniformMatrix4fv(locations.uModel, false, model);
 
-    // Bind the position buffer.
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    // Set the attribute arrays.
+    bind_attrib_buffer(gl, locations.aNormal, shape_buffers.normals);
+    bind_attrib_buffer(gl, locations.aPosition, shape_buffers.positions);
 
-    // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
-    var size = 2;          // 2 components per iteration
-    var type = gl.FLOAT;   // the data is 32bit floats
-    var normalize = false; // don't normalize the data
-    var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
-    var offset = 0;        // start at the beginning of the buffer
-    gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
+    // And the element array.
+    // TODO What is an element array?
+    bind_element_buffer(gl, shape_buffers.cells);
 
-    var count = 3;
-    gl.drawArrays(gl.TRIANGLES, 0, count);
+    var count = teapot.cells.length * teapot.cells[0].length;
+    gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_SHORT, 0);
 }
 
 main();
