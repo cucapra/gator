@@ -2,7 +2,7 @@ dist/trivial.bundle.js: trivial.js
 	yarn run build
 
 install:
-	npm install
+	yarn
 
 # Command to open a file in a browser.
 OPEN := explorer  # Windows.
