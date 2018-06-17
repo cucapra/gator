@@ -1,12 +1,10 @@
-"use strict";
-
-var fit = require('canvas-fit');
-var mat4 = require('gl-mat4');
-var teapot = require('teapot');
-var normals = require('normals');
-var canvasOrbitCamera = require('canvas-orbit-camera');
-var glContext = require('gl-context');
-var pack = require('array-pack-2d');
+import fit from 'canvas-fit';
+import { mat4 } from 'gl-matrix';
+import * as teapot from 'teapot';
+import * as normals from 'normals';
+import * as canvasOrbitCamera from 'canvas-orbit-camera';
+import * as glContext from 'gl-context';
+import * as pack from 'array-pack-2d';
 
 var VERTEX_SHADER =
   "precision mediump float;" +
