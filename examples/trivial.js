@@ -183,7 +183,7 @@ function main() {
     gl.uniformMatrix4fv(locations.uModel, false, model);
 
     // Set the attribute arrays.
-    // Note that attributes not used in a shader do not have a bound location 
+    // Note that attributes not used in a shader do not have a bound location
     // bind_attrib_buffer(gl, locations.aNormal, shape_buffers.normals);
     bind_attrib_buffer(gl, locations.aPosition, shape_buffers.positions);
 
