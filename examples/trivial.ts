@@ -6,7 +6,7 @@ import * as canvasOrbitCamera from 'canvas-orbit-camera';
 import * as glContext from 'gl-context';
 import * as pack from 'array-pack-2d';
 
-var VERTEX_SHADER =
+const VERTEX_SHADER =
   "precision mediump float;" +
   "attribute vec3 aPosition;" +
   "attribute vec3 aNormal;" +
@@ -19,14 +19,14 @@ var VERTEX_SHADER =
   "gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.0);" +
   "}";
 
-var FRAGMENT_SHADER =
+const FRAGMENT_SHADER =
   "precision mediump float;" +
   "varying vec3 vNormal;" +
   "void main() {" +
   "gl_FragColor = vec4(1.0, .5, .5, 1.0);" +
   "}";
 
-function compileShader(gl, shaderType, shaderSource) {
+function compileShader(gl: WebGLRenderingContext, shaderType: number, shaderSource: string) {
   // Create the shader object
   var shader = gl.createShader(shaderType);
 
@@ -46,7 +46,7 @@ function compileShader(gl, shaderType, shaderSource) {
   return shader;
 }
 
-function createProgram(gl, vertexShader, fragmentShader) {
+function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader) {
   // create a program.
   var program = gl.createProgram();
 
@@ -69,7 +69,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
 
 // Compute a project matrix (placed in the `out` matrix allocation) given the
 // width and height of a viewport.
-function projection_matrix(out, width, height) {
+function projection_matrix(out: mat4, width: number, height: number) {
   var aspectRatio = width / height;
   var fieldOfView = Math.PI / 4;
   var near = 0.01;
@@ -78,7 +78,7 @@ function projection_matrix(out, width, height) {
   mat4.perspective(out, fieldOfView, aspectRatio, near, far)
 };
 
-function make_buffer(gl, data, type, mode) {
+function make_buffer(gl: WebGLRenderingContext, data: number[][], type: string, mode: number) {
   // Initialize a buffer.
   var buf = gl.createBuffer();
 
@@ -93,14 +93,14 @@ function make_buffer(gl, data, type, mode) {
 };
 
 // Set a buffer as an attribute array.
-function bind_attrib_buffer(gl, location, buffer) {
+function bind_attrib_buffer(gl: WebGLRenderingContext, location: number, buffer: WebGLBuffer) {
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
   gl.vertexAttribPointer(location, 3, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(location);
 }
 
 // Set a buffer as the element array.
-function bind_element_buffer(gl, buffer) {
+function bind_element_buffer(gl: WebGLRenderingContext, buffer: WebGLBuffer) {
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer);
 }
 
@@ -109,7 +109,7 @@ function bind_element_buffer(gl, buffer) {
 // - `cells`, a 3-dimensional uint16 element array buffer
 // - `positions`, a 3-dimensional float32 array buffer
 // - `normals`, ditto
-function mesh_buffers(gl, obj) {
+function mesh_buffers(gl: WebGLRenderingContext, obj: {cells: any, positions: any}) {
   var norm = normals.vertexNormals(obj.cells, obj.positions);
 
   return {
