@@ -115,7 +115,7 @@ function bind_element_buffer(gl: WebGLRenderingContext, buffer: WebGLBuffer) {
 // - `cells`, a 3-dimensional uint16 element array buffer
 // - `positions`, a 3-dimensional float32 array buffer
 // - `normals`, ditto
-function mesh_buffers(gl: WebGLRenderingContext, obj: {cells: any, positions: any}) {
+function mesh_buffers(gl: WebGLRenderingContext, obj: {cells: [number, number, number][], positions: [number, number, number][]}) {
   let norm = normals.vertexNormals(obj.cells, obj.positions);
 
   return {
