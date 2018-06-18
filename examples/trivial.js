@@ -72,12 +72,41 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // Compute a project matrix (placed in the `out` matrix allocation) given the
 // width and height of a viewport.
 function projection_matrix(out, width, height) {
+  // arbitrary constants designed to give a wide field of view
   var aspectRatio = width / height;
   var fieldOfView = Math.PI / 4;
-  var near = 0.01;
+  var near = .5;
   var far = 100;
 
-  mat4.perspective(out, fieldOfView, aspectRatio, near, far)
+  // mat4.perspective(out, fieldOfView, aspectRatio, near, far)
+  // Do the above manually for my sanity for now
+  var f = 1.0 / Math.tan(fieldOfView / 2),
+    rangeInv = 1.0 / (near - far);
+
+  // doesn't work?
+  // out = [
+  //   f / aspectRatio, 0, 0, 0,
+  //   0, f, 0, 0,
+  //   0, 0, (near + far) * rangeInv, -1,
+  //   0, 0, (2 * near * far) * rangeInv, 0
+  // ];
+
+  out[0] = f / aspectRatio;
+  out[1] = 0;
+  out[2] = 0;
+  out[3] = 0;
+  out[4] = 0;
+  out[5] = f;
+  out[6] = 0;
+  out[7] = 0;
+  out[8] = 0;
+  out[9] = 0;
+  out[10] = (far + near) * rangeInv;
+  out[11] = -1;
+  out[12] = 0;
+  out[13] = 0;
+  out[14] = (2 * far * near) * rangeInv;
+  out[15] = 0;
 };
 
 function make_buffer(gl, data, type, mode) {
