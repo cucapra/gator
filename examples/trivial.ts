@@ -26,9 +26,12 @@ const FRAGMENT_SHADER =
   "gl_FragColor = vec4(1.0, .5, .5, 1.0);" +
   "}";
 
-function compileShader(gl: WebGLRenderingContext, shaderType: number, shaderSource: string) {
+function compileShader(gl: WebGLRenderingContext, shaderType: number, shaderSource: string): WebGLShader {
   // Create the shader object
   let shader = gl.createShader(shaderType);
+  if (!shader) {
+    throw "could not create shader";
+  }
 
   // Set the shader source code.
   gl.shaderSource(shader, shaderSource);
@@ -78,9 +81,12 @@ function projection_matrix(out: mat4, width: number, height: number) {
   mat4.perspective(out, fieldOfView, aspectRatio, near, far)
 };
 
-function make_buffer(gl: WebGLRenderingContext, data: number[][], type: string, mode: number) {
+function make_buffer(gl: WebGLRenderingContext, data: number[][], type: string, mode: number): WebGLBuffer {
   // Initialize a buffer.
   let buf = gl.createBuffer();
+  if (!buf) {
+    throw "could not create WebGL buffer";
+  }
 
   // Flatten the data to a packed array.
   let arr = pack(data, type);
