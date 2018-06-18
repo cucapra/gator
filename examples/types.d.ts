@@ -6,9 +6,13 @@ declare module 'canvas-orbit-camera';
 declare module 'canvas-fit';
 declare module 'gl-context';
 declare module 'array-pack-2d';
-declare module 'normals';
 
 declare module 'teapot' {
   const positions: [number, number, number][];
   const cells: [number, number, number][];
+}
+
+declare module 'normals' {
+  function vertexNormals(cells: [number, number, number][], positions: [number, number, number][]): [number, number, number][];
+  function faceNormals(cells: [number, number, number][], positions: [number, number, number][]): [number, number, number][];
 }
