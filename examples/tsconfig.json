@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "sourceMap": true
+    },
+    "files": [
+        "trivial.ts"
+    ]
+}

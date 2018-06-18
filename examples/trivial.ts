@@ -1,14 +1,12 @@
-"use strict";
+import fit from 'canvas-fit';
+import { mat4 } from 'gl-matrix';
+import * as teapot from 'teapot';
+import * as normals from 'normals';
+import * as canvasOrbitCamera from 'canvas-orbit-camera';
+import * as glContext from 'gl-context';
+import * as pack from 'array-pack-2d';
 
-var fit = require('canvas-fit');
-var mat4 = require('gl-mat4');
-var teapot = require('teapot');
-var normals = require('normals');
-var canvasOrbitCamera = require('canvas-orbit-camera');
-var glContext = require('gl-context');
-var pack = require('array-pack-2d');
-
-var VERTEX_SHADER =
+const VERTEX_SHADER =
   "precision mediump float;" +
   "attribute vec3 aPosition;" +
   "attribute vec3 aNormal;" +
@@ -21,16 +19,16 @@ var VERTEX_SHADER =
   "gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.0);" +
   "}";
 
-var FRAGMENT_SHADER =
+const FRAGMENT_SHADER =
   "precision mediump float;" +
   "varying vec3 vNormal;" +
   "void main() {" +
   "gl_FragColor = vec4(1.0, .5, .5, 1.0);" +
   "}";
 
-function compileShader(gl, shaderType, shaderSource) {
+function compileShader(gl: WebGLRenderingContext, shaderType: number, shaderSource: string) {
   // Create the shader object
-  var shader = gl.createShader(shaderType);
+  let shader = gl.createShader(shaderType);
 
   // Set the shader source code.
   gl.shaderSource(shader, shaderSource);
@@ -39,7 +37,7 @@ function compileShader(gl, shaderType, shaderSource) {
   gl.compileShader(shader);
 
   // Check if it compiled
-  var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+  let success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
   if (!success) {
     // Something went wrong during compilation; get the error
     throw "could not compile shader:" + gl.getShaderInfoLog(shader);
@@ -48,9 +46,9 @@ function compileShader(gl, shaderType, shaderSource) {
   return shader;
 }
 
-function createProgram(gl, vertexShader, fragmentShader) {
+function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader) {
   // create a program.
-  var program = gl.createProgram();
+  let program = gl.createProgram();
 
   // attach the shaders.
   gl.attachShader(program, vertexShader);
@@ -60,7 +58,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
   gl.linkProgram(program);
 
   // Check if it linked.
-  var success = gl.getProgramParameter(program, gl.LINK_STATUS);
+  let success = gl.getProgramParameter(program, gl.LINK_STATUS);
   if (!success) {
     // something went wrong with the link
     throw ("program filed to link:" + gl.getProgramInfoLog(program));
@@ -71,12 +69,20 @@ function createProgram(gl, vertexShader, fragmentShader) {
 
 // Compute a project matrix (placed in the `out` matrix allocation) given the
 // width and height of a viewport.
+<<<<<<< HEAD:examples/trivial.js
 function projection_matrix(out, width, height) {
   // arbitrary constants designed to give a wide field of view
   var aspectRatio = width / height;
   var fieldOfView = Math.PI / 4;
   var near = .5;
   var far = 100;
+=======
+function projection_matrix(out: mat4, width: number, height: number) {
+  let aspectRatio = width / height;
+  let fieldOfView = Math.PI / 4;
+  let near = 0.01;
+  let far = 100;
+>>>>>>> ts:examples/trivial.ts
 
   // mat4.perspective(out, fieldOfView, aspectRatio, near, far)
   // Do the above manually for my sanity for now
@@ -109,12 +115,12 @@ function projection_matrix(out, width, height) {
   out[15] = 0;
 };
 
-function make_buffer(gl, data, type, mode) {
+function make_buffer(gl: WebGLRenderingContext, data: number[][], type: string, mode: number) {
   // Initialize a buffer.
-  var buf = gl.createBuffer();
+  let buf = gl.createBuffer();
 
   // Flatten the data to a packed array.
-  var arr = pack(data, type);
+  let arr = pack(data, type);
 
   // Insert the data into the buffer.
   gl.bindBuffer(mode, buf);
@@ -124,14 +130,14 @@ function make_buffer(gl, data, type, mode) {
 };
 
 // Set a buffer as an attribute array.
-function bind_attrib_buffer(gl, location, buffer) {
+function bind_attrib_buffer(gl: WebGLRenderingContext, location: number, buffer: WebGLBuffer) {
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
   gl.vertexAttribPointer(location, 3, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(location);
 }
 
 // Set a buffer as the element array.
-function bind_element_buffer(gl, buffer) {
+function bind_element_buffer(gl: WebGLRenderingContext, buffer: WebGLBuffer) {
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer);
 }
 
@@ -140,8 +146,8 @@ function bind_element_buffer(gl, buffer) {
 // - `cells`, a 3-dimensional uint16 element array buffer
 // - `positions`, a 3-dimensional float32 array buffer
 // - `normals`, ditto
-function mesh_buffers(gl, obj) {
-  var norm = normals.vertexNormals(obj.cells, obj.positions);
+function mesh_buffers(gl: WebGLRenderingContext, obj: {cells: any, positions: any}) {
+  let norm = normals.vertexNormals(obj.cells, obj.positions);
 
   return {
     cells: make_buffer(gl, obj.cells, 'uint16', gl.ELEMENT_ARRAY_BUFFER),
@@ -151,20 +157,20 @@ function mesh_buffers(gl, obj) {
 };
 
 function main() {
-  var canvas = document.getElementById('c');
+  let canvas = document.getElementById('c');
   //window.addEventListener('resize', fit(canvas), false);
-  var camera = canvasOrbitCamera(canvas);
-  var gl = glContext(canvas, render);
+  let camera = canvasOrbitCamera(canvas);
+  let gl = glContext(canvas, render);
   if (!gl) {
     return;
   }
 
-  var vertexShader = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
-  var fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
+  let vertexShader = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
+  let fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
 
   // Compile the shader program.
-  var program = createProgram(gl, vertexShader, fragmentShader);
-  var locations = {
+  let program = createProgram(gl, vertexShader, fragmentShader);
+  let locations = {
     'uProjection': gl.getUniformLocation(program, 'uProjection'),
     'uView': gl.getUniformLocation(program, 'uView'),
     'uModel': gl.getUniformLocation(program, 'uModel'),
@@ -173,14 +179,14 @@ function main() {
   };
 
   // look up where the vertex data needs to go.
-  var shape_buffers = mesh_buffers(gl, teapot);
+  let shape_buffers = mesh_buffers(gl, teapot);
 
   // Create the base matrices to be used
   // when rendering the object. Alternatively, can
   // be created using `new Float32Array(16)`
-  var projection = mat4.create();
-  var model = mat4.create();
-  var view = mat4.create();
+  let projection = mat4.create();
+  let model = mat4.create();
+  let view = mat4.create();
 
   // Clear the canvas
   gl.clearColor(0, 0, 0, 0);
@@ -188,8 +194,8 @@ function main() {
 
   function render() {
 
-    var width = gl.drawingBufferWidth;
-    var height = gl.drawingBufferHeight;
+    let width = gl.drawingBufferWidth;
+    let height = gl.drawingBufferHeight;
 
     camera.view(view);
     camera.tick();
@@ -220,7 +226,7 @@ function main() {
     // TODO What is an element array?
     bind_element_buffer(gl, shape_buffers.cells);
 
-    var count = teapot.cells.length * teapot.cells[0].length;
+    let count = teapot.cells.length * teapot.cells[0].length;
     gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_SHORT, 0);
   }
 }

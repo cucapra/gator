@@ -1,4 +1,4 @@
-dist/trivial.bundle.js: trivial.js
+dist/trivial.bundle.js: trivial.ts
 	yarn run build
 
 install:
