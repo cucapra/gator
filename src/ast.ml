@@ -24,18 +24,22 @@ type typ =
     | BTyp
     | ATyp of atyp
 
+(* arithmetic values *)
 type avalue =
     Num of int
     | Float of float
     | VecLit of vec * ltyp
     | MatLit of mat * ltyp
 
+(* boolean values *)
 type bvalue = bool
 
+(* values *)
 type value =
     | Avalue of avalue
     | Bvalue of bvalue
 
+(* expressions *)
 type exp =
     | Bool of bvalue
     | Aval of avalue 
@@ -53,15 +57,18 @@ type exp =
     | Minus of exp * exp
     | CTimes of exp * exp (* Component-wise multiplication*)
 
+(* commands *)
 type comm = 
     Skip
     | Print of exp
     | Decl of typ * string * exp
     | If of exp * comm list * comm list
     
+(* tag declaration statements *)
 type tagdecl = 
     TagDecl of string * atyp
 
+(* program *)
 type prog =
     | Prog of tagdecl list * comm list
 
