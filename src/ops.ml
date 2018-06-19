@@ -2,7 +2,7 @@ open Ast
 open Context
 open Lin_ops
 
-type sigma = value context
+type sigma = (id, value) context
 
 let rec eval_aexp (e : exp) (s : sigma) : avalue =
     match e with

@@ -1,8 +1,8 @@
 (* A representation for a general context *)
-(* A context is a finite map from 'a to 'b   *)
+(* A context is simply a finite map from 'a to 'b  *)
 (* This implementation uses association lists. *)
 Module Context = struct
-  type 'a context = (string * 'a) list
+  type ('a, 'b) context = ('a * 'b) list
   
   (* Make a new empty context. *)
   let empty = []
