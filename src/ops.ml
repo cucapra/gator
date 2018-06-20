@@ -1,6 +1,7 @@
 open Ast
 open Context
 open Lin_ops
+open Util
 
 type sigma = (id, value) context
 
@@ -69,12 +70,6 @@ let rec eval_bexp (e : exp) (s : sigma) : bvalue =
     | And (b1, b2) -> (eval_bexp b1 s) && (eval_bexp b2 s)
     | Not b -> not (eval_bexp b s)
     | _ -> failwith "Not a boolean expression"
-
-let string_of_vec (v: vec) : string = 
-    "["^(String.concat ", " (List.map string_of_float v))^"]"
-
-let string_of_mat (m: mat) : string = 
-    "["^(String.concat ", " (List.map string_of_vec m))^"]"
 
 let string_of_avalue (a : avalue) : string =
     match a with 

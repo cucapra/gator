@@ -1,5 +1,5 @@
 open Ast
-open State
+open Context
 open Lin_ops
 open Util
 
@@ -31,7 +31,7 @@ let rec comp_comm (c : comm list) (d : delta) : string =
     match c with
     | [] -> ""
     | h::t -> comp_comm t (match h with
-        | Skip -> comp_comm c d
+        | Skip -> d
         | Print e -> failwith "Unimplemented"
         | Decl (t, x, e) -> failwith "Unimplemented"
         | If (e, c1, c2) -> failwith "Unimplemented")
