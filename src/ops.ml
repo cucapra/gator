@@ -3,7 +3,7 @@ open Context
 open Lin_ops
 open Util
 
-type sigma = (id, value) context
+type sigma = (id, value) Context.context
 
 let rec eval_aexp (e : exp) (s : sigma) : avalue =
     match e with
@@ -85,7 +85,7 @@ let string_of_value (v : value) : string =
 
 let eval_print (e : exp) (s : sigma) : string =
     match e with
-    | Var v -> v ^ " = " ^ (string_of_value (lookup s v))
+    | Var v -> v ^ " = " ^ (string_of_value (Context.lookup s v))
     | _ -> (try string_of_avalue (eval_aexp e s) with
         | Failure "Not an arithmetic expression" -> (try string_of_bool (eval_bexp e s) with
             | Failure s -> failwith s)

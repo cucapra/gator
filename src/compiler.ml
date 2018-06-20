@@ -3,7 +3,7 @@ open Context
 open Lin_ops
 open Util
 
-type delta = (ltyp, ltyp) context
+type delta = (ltyp, ltyp) Context.context
 
 let rec comp_exp (e : exp) (d : delta) : string =
     match e with

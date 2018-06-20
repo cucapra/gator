@@ -1,4 +1,4 @@
-module type Context = sig
+module type ContextSig = sig
   
   (* A context must be a map from 'a to 'b *)
   type ('a, 'b) context
@@ -25,7 +25,7 @@ end
 (* A representation for a general context *)
 (* A context is simply a finite map from 'a to 'b  *)
 (* This implementation uses association lists. *)
-module Context = struct
+module Context : ContextSig = struct
   type ('a, 'b) context = ('a * 'b) list
   
   (* Make a new empty context. *)
@@ -39,7 +39,7 @@ module Context = struct
   let lookup c x = List.assoc x c
 
   (* Rebind var to letue in context. *)
-  let update c (x, v) = if List.mem_assoc x c then failwith "Duplicate" else (x, v) :: c
+  let update c x v = if List.mem_assoc x c then failwith "Duplicate" else (x, v) :: c
 
   (* Produce bindings as an association list. *)
   let bindings c = c
