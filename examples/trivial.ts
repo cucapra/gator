@@ -26,9 +26,12 @@ const FRAGMENT_SHADER =
   "gl_FragColor = vec4(1.0, .5, .5, 1.0);" +
   "}";
 
-function compileShader(gl: WebGLRenderingContext, shaderType: number, shaderSource: string) {
+function compileShader(gl: WebGLRenderingContext, shaderType: number, shaderSource: string): WebGLShader {
   // Create the shader object
   let shader = gl.createShader(shaderType);
+  if (!shader) {
+    throw "could not create shader";
+  }
 
   // Set the shader source code.
   gl.shaderSource(shader, shaderSource);
@@ -107,9 +110,12 @@ function projection_matrix(out, width, height) {
   out[15] = 0;
 };
 
-function make_buffer(gl: WebGLRenderingContext, data: number[][], type: string, mode: number) {
+function make_buffer(gl: WebGLRenderingContext, data: number[][], type: string, mode: number): WebGLBuffer {
   // Initialize a buffer.
   let buf = gl.createBuffer();
+  if (!buf) {
+    throw "could not create WebGL buffer";
+  }
 
   // Flatten the data to a packed array.
   let arr = pack(data, type);
@@ -138,7 +144,7 @@ function bind_element_buffer(gl: WebGLRenderingContext, buffer: WebGLBuffer) {
 // - `cells`, a 3-dimensional uint16 element array buffer
 // - `positions`, a 3-dimensional float32 array buffer
 // - `normals`, ditto
-function mesh_buffers(gl: WebGLRenderingContext, obj: { cells: any, positions: any }) {
+function mesh_buffers(gl: WebGLRenderingContext, obj: { cells: [number, number, number][], positions: [number, number, number][] }) {
   let norm = normals.vertexNormals(obj.cells, obj.positions);
 
   return {
