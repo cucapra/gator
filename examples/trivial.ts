@@ -69,20 +69,12 @@ function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fra
 
 // Compute a project matrix (placed in the `out` matrix allocation) given the
 // width and height of a viewport.
-<<<<<<< HEAD:examples/trivial.js
 function projection_matrix(out, width, height) {
   // arbitrary constants designed to give a wide field of view
   var aspectRatio = width / height;
   var fieldOfView = Math.PI / 4;
-  var near = .5;
-  var far = 100;
-=======
-function projection_matrix(out: mat4, width: number, height: number) {
-  let aspectRatio = width / height;
-  let fieldOfView = Math.PI / 4;
-  let near = 0.01;
-  let far = 100;
->>>>>>> ts:examples/trivial.ts
+  var near = .1;
+  var far = 2000;
 
   // mat4.perspective(out, fieldOfView, aspectRatio, near, far)
   // Do the above manually for my sanity for now
@@ -146,7 +138,7 @@ function bind_element_buffer(gl: WebGLRenderingContext, buffer: WebGLBuffer) {
 // - `cells`, a 3-dimensional uint16 element array buffer
 // - `positions`, a 3-dimensional float32 array buffer
 // - `normals`, ditto
-function mesh_buffers(gl: WebGLRenderingContext, obj: {cells: any, positions: any}) {
+function mesh_buffers(gl: WebGLRenderingContext, obj: { cells: any, positions: any }) {
   let norm = normals.vertexNormals(obj.cells, obj.positions);
 
   return {
