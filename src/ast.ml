@@ -65,8 +65,7 @@ type comm =
     | If of exp * comm list * comm list
     
 (* tag declaration statements *)
-type tagdecl = 
-    TagDecl of string * atyp
+type tagdecl = string * atyp
 
 (* program *)
 type prog =

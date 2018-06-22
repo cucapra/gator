@@ -89,7 +89,7 @@ taglst:
 ; 
 
 tag:
-  | TAG; x = ID; IS; e1 = ltyp; SEMI; { TagDecl(x, LTyp(e1)) }
+  | TAG; x = ID; IS; e1 = ltyp; SEMI; { (x, LTyp(e1)) }
 ;
 
 commlst:

@@ -73,7 +73,7 @@ print_comm_lst (cl : comm list) : string =
 let rec print_tags (t : tagdecl list) : string =
     match t with 
     | [] -> ""
-    | TagDecl(s, a)::t -> "tag "^s^" is "^(print_atyp a)^";\n"^(print_tags t)
+    | (s, a)::t -> "tag "^s^" is "^(print_atyp a)^";\n"^(print_tags t)
 
 let print_prog (e : prog) : string =
     match e with

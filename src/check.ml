@@ -277,7 +277,7 @@ and check_comm_lst (cl : comm list) : unit =
 let rec check_tags (t : tagdecl list) : unit =
     match t with 
     | [] -> ()
-    | TagDecl(s, a)::t -> 
+    | (s, a)::t -> 
         ignore(check_atyp a);
         match a with 
         | (LTyp l) -> 
