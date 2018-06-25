@@ -1,10 +1,11 @@
-open Langstart
+open Lingl
 open Ast
 
 let _ =
     let lexbuf = Lexing.from_channel stdin in
     let prog = Parser.main Lexer.read lexbuf in
-    let _ = Check.check_prog prog in
-    if (Array.length Sys.argv > 1) then print_endline (Print.print_prog prog) else ();
+    (* let _ = Check.check_prog prog in *)
+    (* if (Array.length Sys.argv > 1) then print_endline (Print.print_prog prog) else (); *)
+    print_string ((Compiler.compile_program prog) ^ "\n\n------------------\n\n");
     Ops.eval_prog prog;
     print_string "\n"

@@ -1,0 +1,26 @@
+{
+  "name": "linguine-examples",
+  "private": true,
+  "version": "1.0.0",
+  "main": "trivial.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "webpack"
+  },
+  "devDependencies": {
+    "ts-loader": "^4.4.1",
+    "typescript": "^2.9.2",
+    "webpack": "^4.12.0",
+    "webpack-command": "^0.2.1"
+  },
+  "dependencies": {
+    "@types/gl-matrix": "^2.4.0",
+    "array-pack-2d": "^1.0.0",
+    "canvas-fit": "^1.5.0",
+    "canvas-orbit-camera": "^1.0.0",
+    "gl-context": "^0.1.1",
+    "gl-matrix": "^2.6.1",
+    "normals": "^0.1.0",
+    "teapot": "^1.0.0"
+  }
+}

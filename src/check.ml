@@ -308,7 +308,7 @@ let rec check_tags (t : tagdecl list) : unit =
     debug_print ">> check_tags";
     match t with 
     | [] -> ()
-    | TagDecl(s, a)::t -> 
+    | (s, a)::t -> 
         ignore(check_atyp a);
         match a with 
         | (LTyp l) -> 

@@ -89,7 +89,7 @@ taglst:
 ; 
 
 tag:
-  | TAG; x = ID; IS; e1 = ltyp; SEMI; { TagDecl(x, LTyp(e1)) }
+  | TAG; x = ID; IS; e1 = ltyp; SEMI; { (x, LTyp(e1)) }
 ;
 
 commlst:
@@ -122,8 +122,8 @@ ltyp:
   | x = ID { if (Str.string_match matr x 0) then (
               let len = String.length x in 
               let dim = String.sub x 3 (len-3) in
-              let dim_lst = Str.split_delim (regexp "x") dim in
-              Printf.printf "%s" (List.nth dim_lst 0) ;MatTyp (int_of_string(List.nth dim_lst 0),int_of_string(List.nth dim_lst 1))
+              let dim_lst = Str.split_delim (regexp "x") dim in ()
+              (*Printf.printf "%s" (List.nth dim_lst 0)*) ;MatTyp (int_of_string(List.nth dim_lst 0),int_of_string(List.nth dim_lst 1))
             ) else if (Str.string_match vec x 0) then (
               let len = String.length x in 
               let dim = String.sub x 3 (len-3)in

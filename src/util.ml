@@ -3,7 +3,12 @@ open Ast
 
 exception ElementNotFoundException of string
 
+let string_of_vec (v: vec) : string = 
+  "["^(String.concat ", " (List.map string_of_float v))^"]"
 
+let string_of_mat (m: mat) : string = 
+  "["^(String.concat ", " (List.map string_of_vec m))^"]"
+  
 (*****************************************************
  * HashSet, like in Java!
  *****************************************************)
