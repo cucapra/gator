@@ -25,3 +25,20 @@ Explore the implementation in a [utop][] REPL:
 [dune]: https://github.com/ocaml/dune
 [menhir]: http://gallium.inria.fr/~fpottier/menhir/
 [utop]: https://github.com/diml/utop
+
+
+Run
+---
+
+You can run the interpreter by piping source code into the program.
+For example:
+
+    $ echo 'print 4.2;' | jbuilder exec bin/ex.bc
+
+
+Tests
+-----
+
+There are a bunch of tests under the `test` directory.
+You can run them all by typing `./test/test.sh`.
+(But it's not clear how to tell whether they passed.)
