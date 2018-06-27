@@ -19,12 +19,7 @@ const VERTEX_SHADER =
   "gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.0);" +
   "}";
 
-const FRAGMENT_SHADER =
-  "precision mediump float;" +
-  "varying vec3 vNormal;" +
-  "void main() {" +
-  "gl_FragColor = vec4(1.0, .5, .5, 1.0);" +
-  "}";
+const FRAGMENT_SHADER = JSON.parse("../coloring.json")
 
 function compileShader(gl: WebGLRenderingContext, shaderType: number, shaderSource: string): WebGLShader {
   // Create the shader object
