@@ -3,7 +3,6 @@ import { mat4 } from 'gl-matrix';
 import * as teapot from 'teapot';
 import * as normals from 'normals';
 import * as canvasOrbitCamera from 'canvas-orbit-camera';
-import * as glContext from 'gl-context';
 import * as pack from 'array-pack-2d';
 import data from '../color.json'; //not sure?
 
@@ -150,14 +149,37 @@ function mesh_buffers(gl: WebGLRenderingContext, obj: { cells: [number, number, 
   }
 };
 
+/**
+ * Get the WebGL rendering context for a <canvas> element.
+ * 
+ * Thow an error if the browser does not support WebGL. If provided,
+ * also attach a rendering function that will be called to paint each
+ * frame.
+ */
+function glContext(canvas: HTMLCanvasElement, render?: () => void): WebGLRenderingContext {
+  let gl = canvas.getContext('webgl');
+  if (!gl) {
+    throw "WebGL not available";
+  }
+
+  // Register the animation function.
+  if (render) {
+    const r = render;  // Avoid funky JavaScript scoping problems.
+    let tick = () => {
+      r();
+      requestAnimationFrame(tick);  // Call us back on the next frame.
+    }
+    requestAnimationFrame(tick);  // Kick off the first frame.
+  }
+
+  return gl;
+}
+
 function main() {
-  let canvas = document.getElementById('c');
+  let canvas = document.getElementById('c') as HTMLCanvasElement;
   //window.addEventListener('resize', fit(canvas), false);
   let camera = canvasOrbitCamera(canvas);
   let gl = glContext(canvas, render);
-  if (!gl) {
-    return;
-  }
 
   let vertexShader = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
   let fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
