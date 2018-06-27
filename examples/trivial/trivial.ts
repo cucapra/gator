@@ -3,7 +3,7 @@ import { mat4 } from 'gl-matrix';
 import * as teapot from 'teapot';
 import * as normals from 'normals';
 import canvasOrbitCamera from 'canvas-orbit-camera';
-import * as pack from 'array-pack-2d';
+import pack from 'array-pack-2d';
 import data from '../color.json'; //not sure?
 
 const VERTEX_SHADER =
