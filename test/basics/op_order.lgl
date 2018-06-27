@@ -1,9 +1,22 @@
-print 1 + 2 * 3 + 4;
-print ([3., 6.]:vec2 - 3. * [1., 2.]:vec2 .* [2., 2.]:vec2);
-print ([[1., 1.], [1., 1.]]:mat2x2 * 
-[[1., 1., 1.], [1., 1., 1.]]:mat2x3 * 
-[[1., 1.], [1., 1.], [1., 1.]]:mat3x2);
-print false && false || true;
-print ! true || true;
-print 1 == 2;
-print 2 + 3 <= 5;
+int r1 = 1 + 2 * 3 + 4;
+print r1
+
+vec2 r2 = ([3., 6.]:vec2 - 3. * [1., 2.]:vec2 .* [2., 2.]:vec2);
+print r2
+
+mat2x2 r3 = ([[1., 1.], [1., 1.]]:mat2x2 * 
+  [[1., 1., 1.], [1., 1., 1.]]:mat2x3 * 
+  [[1., 1.], [1., 1.], [1., 1.]]:mat3x2);
+print r3
+
+bool r4 = false && false || true;
+print r4
+
+bool r5 = ! true || true;
+print r5
+
+bool r6 = 1 == 2;
+print r6
+
+bool r7 = 2 + 3 <= 5;
+print r7
