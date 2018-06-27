@@ -1,5 +1,5 @@
 module.exports = {
-  entry: './trivial.ts',
+  entry: './build/trivial/trivial.js',
   mode: 'development',
   output: {
     filename: 'trivial.bundle.js'

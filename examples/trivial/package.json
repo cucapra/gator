@@ -5,7 +5,7 @@
   "main": "trivial.js",
   "license": "MIT",
   "scripts": {
-    "build": "webpack"
+    "build": "tsc && webpack"
   },
   "devDependencies": {
     "ts-loader": "^4.4.2",
