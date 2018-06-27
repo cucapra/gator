@@ -5,6 +5,7 @@ import * as normals from 'normals';
 import * as canvasOrbitCamera from 'canvas-orbit-camera';
 import * as glContext from 'gl-context';
 import * as pack from 'array-pack-2d';
+import * as data from '../color.json'; //not sure?
 
 const VERTEX_SHADER =
   "precision mediump float;" +
@@ -19,7 +20,7 @@ const VERTEX_SHADER =
   "gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.0);" +
   "}";
 
-const FRAGMENT_SHADER = JSON.parse("../coloring.json")
+const FRAGMENT_SHADER = JSON.parse(data)["main"]
 
 function compileShader(gl: WebGLRenderingContext, shaderType: number, shaderSource: string): WebGLShader {
   // Create the shader object

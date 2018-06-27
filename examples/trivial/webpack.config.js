@@ -4,6 +4,9 @@ module.exports = {
   output: {
     filename: 'trivial.bundle.js'
   },
+  node: {
+    fs: 'empty'
+  },
   module: {
     rules: [
       {
@@ -14,6 +17,6 @@ module.exports = {
     ]
   },
   resolve: {
-    extensions: [ '.tsx', '.ts', '.js' ]
+    extensions: ['.tsx', '.ts', '.js']
   },
 };
