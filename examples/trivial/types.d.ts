@@ -12,12 +12,33 @@ declare module 'canvas-orbit-camera' {
     scale: boolean;
     rotate: boolean;
   }
+
+  /**
+   * The original `orbit-camera` object.
+   */
   class OrbitCamera {
     rotation: Float32Array;
     center: Float32Array;
     distance: number;
+
+    view(out?: Float32Array): Float32Array;
+    lookAt(eye: Float32Array, center: Float32Array, up: Float32Array): void;
+    pan(translation: number[]): void;
+    zoom(delta: number): void;
+    rotate(cur: Float32Array, prev: Float32Array): void;
   }
-  export default function attachCamera(canvas: HTMLCanvasElement, opts?: Options): OrbitCamera;
+
+  /**
+   * A camera from `canvas-orbit-camera` augmented with a `tick` method.
+   */
+  class CanvasOrbitCamera extends OrbitCamera {
+    /**
+     * Update the camera position based on input events.
+     */
+    tick(): void;
+  }
+
+  export default function attachCamera(canvas: HTMLCanvasElement, opts?: Options): CanvasOrbitCamera;
 }
 
 declare module 'teapot' {
