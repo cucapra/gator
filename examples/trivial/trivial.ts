@@ -2,7 +2,7 @@ import fit from 'canvas-fit';
 import { mat4 } from 'gl-matrix';
 import * as teapot from 'teapot';
 import * as normals from 'normals';
-import * as canvasOrbitCamera from 'canvas-orbit-camera';
+import canvasOrbitCamera from 'canvas-orbit-camera';
 import * as pack from 'array-pack-2d';
 import data from '../color.json'; //not sure?
 
