@@ -2,7 +2,8 @@
     "compilerOptions": {
         "allowJs": true,
         "sourceMap": true,
-        "strict": true
+        "strict": true,
+        "resolveJsonModule": true
     },
     "files": [
         "trivial.ts",
