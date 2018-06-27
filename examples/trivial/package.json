@@ -21,7 +21,6 @@
     "gl-context": "^0.1.1",
     "gl-matrix": "^2.6.1",
     "normals": "^0.1.0",
-    "teapot": "^1.0.0",
-    "fs": "^0.0.1-security"
+    "teapot": "^1.0.0"
   }
 }
