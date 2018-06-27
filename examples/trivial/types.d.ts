@@ -4,7 +4,20 @@
 
 declare module 'canvas-fit';
 declare module 'gl-context';
-declare module 'array-pack-2d';
+
+declare module 'array-pack-2d' {
+  function pack(array: number[][], type: "int8"): Int8Array;
+  function pack(array: number[][], type: "int16"): Int16Array;
+  function pack(array: number[][], type: "int32"): Int32Array;
+  function pack(array: number[][], type: "uint8"): Uint8Array;
+  function pack(array: number[][], type: "uint16"): Uint16Array;
+  function pack(array: number[][], type: "uint32"): Uint32Array;
+  function pack(array: number[][], type?: "float32"): Float32Array;  // Default.
+  function pack(array: number[][], type: "float64"): Float64Array;
+  function pack(array: number[][], type: "array"): Array<{}>;
+  function pack(array: number[][], type: "uint8_clamped"): Uint8ClampedArray;
+  export default pack;
+}
 
 declare module 'canvas-orbit-camera' {
   interface Options {

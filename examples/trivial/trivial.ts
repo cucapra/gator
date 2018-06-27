@@ -105,7 +105,7 @@ function projection_matrix(out: any, width: any, height: any) {
   out[15] = 0;
 };
 
-function make_buffer(gl: WebGLRenderingContext, data: number[][], type: string, mode: number): WebGLBuffer {
+function make_buffer(gl: WebGLRenderingContext, data: number[][], type: 'uint8' | 'uint16' | 'float32', mode: number): WebGLBuffer {
   // Initialize a buffer.
   let buf = gl.createBuffer();
   if (!buf) {
