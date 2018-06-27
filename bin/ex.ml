@@ -1,4 +1,4 @@
-open Langstart
+open Lingl
 open Ast
 
 let _ =

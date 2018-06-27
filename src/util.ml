@@ -38,3 +38,12 @@ module HashSet = struct
   let find (h : ('a, 'b) t) (x: 'a) : 'b = try Hashtbl.find h x
     with Not_found -> raise (ElementNotFoundException "cannot find var in set")
 end
+
+
+(*****************************************************
+ * Debug-printer
+ *****************************************************)
+
+ let debug = true
+
+ let debug_print (s: string) : unit = if debug then Printf.printf "\n%s" s

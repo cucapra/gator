@@ -12,18 +12,18 @@ b->a b_a = [[1., 1.], [1., 1.], [1., 1.]]:b->a;
 b->c b_c = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]]:b->c;
 
 // Maps
-//a s11 = x * a_a;
-//b s12 = x * a_b;
-//a s13 = z * b_a * a_a;
-//c s14 = y * (b_c + b_c);
-//vec2 s15 = z * (b_a .* b_a); // Ugh, should this work?
-//a s16 = (x * a_b) * b_a;
+a s11 = x * a_a;
+b s12 = x * a_b;
+a s13 = z * b_a * a_a; 
+c s14 = y * (b_c + b_c);
+vec2 s15 = z * (b_a .* b_a); // Ugh, should this work?
+a s16 = (x * a_b) * b_a;
 
 // Composition
-//a->a s21 = a_b * b_a;
-//a->c s22 = a_b * b_c;
-//b->c s23 = b_a * a_b * b_c;
-//a s24 = x * (a_b * b_a);
-//a->b s25 = a_b + a_a * a_b;
+a->a s21 = a_b * b_a;
+a->c s22 = a_b * b_c;
+b->c s23 = b_a * a_b * b_c;
+a s24 = x * (a_b * b_a);
+a->b s25 = a_b + a_a * a_b;
 
 //print 1;
