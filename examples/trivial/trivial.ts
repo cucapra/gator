@@ -20,7 +20,7 @@ const VERTEX_SHADER =
   "gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.0);" +
   "}";
 
-const FRAGMENT_SHADER = JSON.parse(data)["main"]
+const FRAGMENT_SHADER = data["main"];
 
 function compileShader(gl: WebGLRenderingContext, shaderType: number, shaderSource: string): WebGLShader {
   // Create the shader object
