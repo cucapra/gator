@@ -5,7 +5,7 @@ import * as normals from 'normals';
 import * as canvasOrbitCamera from 'canvas-orbit-camera';
 import * as glContext from 'gl-context';
 import * as pack from 'array-pack-2d';
-import * as data from '../color.json'; //not sure?
+import data from './color.json'; //not sure?
 
 const VERTEX_SHADER =
   "precision mediump float;" +
