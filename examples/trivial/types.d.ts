@@ -2,7 +2,22 @@
 // when it seems too hard to write reasonable type declarations, an empty
 // `declare module` represents "giving up."
 
-declare module 'canvas-fit';
+declare module 'canvas-fit' {
+  /**
+   * Create a resize function for a canvas that makes it fit its parent
+   * element.
+   *
+   * @param canvas The canvas to resize.
+   * @param parent Either the parent element or a function that returns the
+   *               desired dimensions.
+   * @param scale A factor to multiply the dimensions by (1.0 by default).
+   */
+  export default function fit(
+    canvas: HTMLCanvasElement,
+    parent?: Element | (() => [number, number]),
+    scale?: number,
+  ): () => void;
+}
 
 /**
  * The typed array type names from the `dtype` module on npm.
