@@ -4,7 +4,7 @@ import * as teapot from 'teapot';
 import * as normals from 'normals';
 import canvasOrbitCamera from 'canvas-orbit-camera';
 import pack from 'array-pack-2d';
-import data from '../color.json'; //not sure?
+import data from '../color.json';
 
 const VERTEX_SHADER =
   "precision mediump float;" +

@@ -1,2 +1,2 @@
-vec4 gl_FragColor = [1.0, .5, .5, 1.0]:vec4;
+vec4 gl_FragColor = [1.0, .25, .5, .5]:vec4;
 print gl_FragColor;
