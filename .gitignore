@@ -62,4 +62,4 @@ setup.log
 *.out
 
 # Color file to avoid annoying updates
-/examples/color.json
+examples/color.json
