@@ -5,17 +5,34 @@
 declare module 'canvas-fit';
 declare module 'gl-context';
 
+/**
+ * The typed array type names from the `dtype` module on npm.
+ *
+ * This mapping is only used for type lookups (i.e., TypeScript's `keyof`).
+ */
+interface _DType {
+  int8: Int8Array;
+  int16: Int16Array;
+  int32: Int32Array;
+  uint8: Uint8Array;
+  uint16: Uint16Array;
+  uint32: Uint32Array;
+  float32: Float32Array;
+  float64: Float64Array;
+  array: Array<{}>;
+  uint8_clamped: Uint8ClampedArray;
+}
+
 declare module 'array-pack-2d' {
-  function pack(array: number[][], type: "int8"): Int8Array;
-  function pack(array: number[][], type: "int16"): Int16Array;
-  function pack(array: number[][], type: "int32"): Int32Array;
-  function pack(array: number[][], type: "uint8"): Uint8Array;
-  function pack(array: number[][], type: "uint16"): Uint16Array;
-  function pack(array: number[][], type: "uint32"): Uint32Array;
-  function pack(array: number[][], type?: "float32"): Float32Array;  // Default.
-  function pack(array: number[][], type: "float64"): Float64Array;
-  function pack(array: number[][], type: "array"): Array<{}>;
-  function pack(array: number[][], type: "uint8_clamped"): Uint8ClampedArray;
+  /**
+   * Flatten a 2D JavaScript array of numbers (i.e., an array of array of
+   * numbers) into a typed array.
+   *
+   * The array is a Float32Array by default. Otherwise, you can specify a
+   * different kind of array using a string.
+   */
+  function pack<K extends keyof _DType>(array: number[][], type: K): _DType[K];
+  function pack(array: number[][]): Float32Array;  // Default.
   export default pack;
 }
 
