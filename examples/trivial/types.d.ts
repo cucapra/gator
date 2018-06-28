@@ -3,7 +3,6 @@
 // `declare module` represents "giving up."
 
 declare module 'canvas-fit';
-declare module 'gl-context';
 
 /**
  * The typed array type names from the `dtype` module on npm.
