@@ -67,7 +67,7 @@ function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fra
 
 // Compute a project matrix (placed in the `out` matrix allocation) given the
 // width and height of a viewport.
-function projection_matrix(out: any, width: any, height: any) {
+function projection_matrix(out: mat4, width: number, height: number) {
   // arbitrary constants designed to give a wide field of view
   var aspectRatio = width / height;
   var fieldOfView = Math.PI / 4;
