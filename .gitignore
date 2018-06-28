@@ -60,3 +60,6 @@ setup.log
 
 # Testing files
 *.out
+
+# Color file to avoid annoying updates
+/examples/color.json
