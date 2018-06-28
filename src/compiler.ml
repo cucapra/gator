@@ -37,8 +37,8 @@ let check_name (var_name : string) : bool =
         Str.string_match decl_reg var_name 0
 
 (* Don't write the type of gl_Position or gl_FragColor *)
-let is_core (var_name : string) : bool =
-    var_name == "gl_Position" || var_name == "gl_FragColor"
+let is_core (var_name : string) : bool = 
+    var_name = "gl_Position" || var_name = "gl_FragColor"
 
 let rec comp_exp (e : exp) (d : delta) : string =
     let op_wrap (op : exp) (d : delta) : string =
@@ -95,4 +95,4 @@ let rec build_delta (tl : tagdecl list) (d : delta) : delta =
 let rec compile_program (p : prog) : string =
     match p with
     | Prog (tl, c) -> let d = build_delta tl Context.empty in
-        "{ \"main\": \"main(" ^ comp_comm c d ^ ")\" }"
+        "{ \n    \"main\": \"void main() { " ^ comp_comm c d ^ " }\"\n}"
