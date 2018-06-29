@@ -1,2 +1,8 @@
-vec4 gl_FragColor = [1.0, .25, .5, .5]:vec4;
+vec4->vec4 id = [
+                [1., 0., 0., 0.],
+                [0., 1., 0., 0.],
+                [0., 0., 1., 0.],
+                [0., 0., 0., 1.]
+                ]:vec4->vec4;
+vec4 gl_FragColor = [1.0, .25, .5, .5]:vec4 * id;
 print gl_FragColor;
