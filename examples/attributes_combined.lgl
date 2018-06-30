@@ -1,0 +1,28 @@
+tag color is vec3;
+tag alphaColor is vec4;
+
+vec3 vNormal = [1., 1., 1.]:vec3;
+vec3 vPosition = [1., 1., 1.]:vec3;
+color->alphaColor extend = [
+                    [1., 0., 0., 0.],
+                    [0., 1., 0., 0.],
+                    [0., 0., 1., 0.]
+                    ]:color->alphaColor;
+
+vec3->color highlightRed = [
+                    [.75, 0., 0.],
+                    [.125, 0., 0.],
+                    [.125, 0., 0.]
+                    ]:vec3->color;
+
+vec3->color highlightBlue = [
+                    [0., 0., .125],
+                    [0., 0., .125],
+                    [0., 0., .75]
+                    ]:vec3->color;
+
+color redNormal = norm(vNormal) * highlightRed;
+color bluePosition = norm(vPosition) * highlightBlue;
+alphaColor opaque = [0., 0., 0., 1.]:alphaColor;
+alphaColor gl_FragColor = ((redNormal + bluePosition) * extend) + opaque;
+print gl_FragColor;

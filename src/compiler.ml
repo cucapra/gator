@@ -137,7 +137,7 @@ let rec comp_exp (e : exp) (d : delta) (eps : epsilon) : string =
     | Typ _ -> failwith "Cannot evaluate a type expression?"
     | Var x -> x
     | Dot (e1, e2) -> "dot(" ^ (comp_exp e1 d eps) ^ ", " ^ (comp_exp e2 d eps) ^ ")"
-    | Norm e -> "norm(" ^ (comp_exp e d eps) ^ ")"
+    | Norm e -> "normalize(" ^ (comp_exp e d eps) ^ ")"
     | Plus (e1, e2) -> (op_wrap e1 d eps) ^ " + " ^ (op_wrap e2 d eps)
     | Times (e1, e2) -> padded_mult e1 e2 d eps
     | Minus (e1, e2) -> (op_wrap e1 d eps) ^ " - " ^ (op_wrap e2 d eps)
@@ -179,7 +179,7 @@ let rec decl_attribs (c : comm list) (d : delta) : string =
     | h::t -> match h with
         (* Super janky, but we need to have rules for weird glsl declarations and variables *)
         | Decl (ty, x, e) -> if check_name x then 
-            (attrib_type x) ^ " " ^ (string_of_typ ty d) ^ " " ^ x ^ ";" else
+            (attrib_type x) ^ " " ^ (string_of_typ ty d) ^ " " ^ x ^ ";" ^ (decl_attribs t d) else
             decl_attribs t d
         | _ -> decl_attribs t d
 
@@ -194,5 +194,5 @@ let rec build_delta (tl : tagdecl list) (d : delta) : delta =
 let rec compile_program (p : prog) : string =
     match p with
     | Prog (tl, c) -> let d = build_delta tl Context.empty in
-        "{ \n    \"main\": \"precision mediump float;" 
+        "{ \n    \"main\": \"precision highp float;" 
             ^ (decl_attribs c d) ^ " void main() { " ^ (comp_comm c d Context.empty) ^ " }\"\n}"
