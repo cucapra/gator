@@ -8,6 +8,9 @@ let string_of_vec (v: vec) : string =
 
 let string_of_mat (m: mat) : string = 
   "("^(String.concat ", " (List.map string_of_vec m))^")"
+
+let rec repeat (s : string) (count : int) : string = 
+  if count <= 0 then "" else (if count > 1 then (s ^ (repeat s (count-1))) else s)
   
 (*****************************************************
  * HashSet, like in Java!
