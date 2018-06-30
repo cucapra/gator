@@ -235,7 +235,7 @@ function main() {
 
     // Set the attribute arrays.
     // Note that attributes not used in a shader do not have a bound location
-    // bind_attrib_buffer(gl, locations.aNormal, shape_buffers.normals);
+    bind_attrib_buffer(gl, locations.aNormal, shape_buffers.normals);
     bind_attrib_buffer(gl, locations.aPosition, shape_buffers.positions);
 
     // And the element array.
