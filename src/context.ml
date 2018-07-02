@@ -36,7 +36,7 @@ module Context : ContextSig = struct
 
   (* Look up a variable by name and return the associated letue. *)
   (* Raises Not_found if no binding *)
-  let lookup c x = List.assoc x c
+  let lookup c x = try List.assoc x c with | Not_found -> failwith "Undeclared variable"
 
   (* Rebind var to letue in context. *)
   let update c x v = if List.mem_assoc x c then failwith "Duplicate" else (x, v) :: c

@@ -20,9 +20,11 @@ let string_of_mat_padded (m: mat) (max_dim: int) : string =
     (repeat (string_of_no_paren_vec [] max_dim) (max_dim - List.length m)) ^ ")")
 
 let string_of_gl_mat (m: mat) : string = 
-    let r = (List.length m) in
+    (* Note the transpose to match the glsl column-oriented style *)
+    let tm = Lin_ops.transpose m in
+    let r = (List.length tm) in
     let c = (if r = 0 then 0 else List.length (List.hd m)) in
-    string_of_mat_padded m (max r c)
+    string_of_mat_padded tm (max r c)
 
 let rec get_dim (lt : ltyp) (d : delta) : int =
     match lt with

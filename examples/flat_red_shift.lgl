@@ -1,0 +1,19 @@
+tag color is vec3;
+tag alphaColor is vec4;
+
+color->alphaColor extend = [
+                    [1., 0., 0., 0.],
+                    [0., 1., 0., 0.],
+                    [0., 0., 1., 0.]
+                    ]:color->alphaColor;
+
+color->color red_shift = [
+                    [1., 0., 0.],
+                    [1., 0., 0.],
+                    [1., 0., 0.]
+                    ]:color->color;
+
+color c = [1., 0.0, 0.0]:color;
+alphaColor opaque = [0., 0., 0., 1.]:alphaColor;
+alphaColor gl_FragColor = (c * red_shift) * extend + opaque;
+print gl_FragColor;
