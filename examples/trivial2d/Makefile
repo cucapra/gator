@@ -12,5 +12,5 @@ endif
 
 .PHONY: view
 view: 
-	tsc f.ts
+	tsc trivial2d.ts
 	$(OPEN) index.html
