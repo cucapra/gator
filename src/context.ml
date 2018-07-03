@@ -19,6 +19,8 @@ module type ContextSig = sig
   (* Produce bindings as an association list. *)
   val bindings : ('a, 'b) context -> ('a * 'b) list
 
+  (* Checks if variable is in context *)
+  val mem : ('a, 'b) context -> 'a ->  bool
   (* val state_to_string : ('a, 'b) context -> string *)
 end
 
@@ -43,4 +45,6 @@ module Context : ContextSig = struct
 
   (* Produce bindings as an association list. *)
   let bindings c = c
+
+  let mem c x = List.mem_assoc x c
 end
