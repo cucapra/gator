@@ -42,11 +42,11 @@ type value =
 (* expressions *)
 type exp =
     | Bool of bvalue
-    | Aval of avalue 
+    | Aval of avalue
     | Typ of typ
     | Var of id
     | Norm of exp
-    | Not of exp   
+    | Not of exp
     | Eq of exp * exp
     | Leq of exp * exp
     | Or of exp * exp
