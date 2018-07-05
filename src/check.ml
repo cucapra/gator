@@ -202,7 +202,7 @@ let check_scalar_linear_exp (t1: typ) (t2: typ) (d: delta) : typ =
 let check_norm_exp (a: typ) (d: delta) : typ = 
     debug_print ">> check_norm_exp";
     match a with
-    | ATyp(LTyp l) -> ATyp(LTyp(ltyp_top_typ l d))
+    | ATyp(LTyp l) -> ATyp(FloatTyp)
     | _ -> (raise (TypeException "expected linear type for norm operator"))
 
 (* Type check binary bool operators (i.e. &&, ||) *)
@@ -266,6 +266,7 @@ and check_exp (e: exp) (d: delta) (g: gamma) : typ =
     | Norm a -> check_norm_exp (check_exp a d g) d
     | Dot (e1, e2) -> check_dot_exp (check_exp e1 d g) (check_exp e2 d g)
     | Plus (e1, e2)
+    | Div (e1, e2)
     | Minus (e1, e2) -> check_scalar_binop (check_exp e1 d g) (check_exp e2 d g) d
     | Times (e1, e2) -> check_times_exp (check_exp e1 d g) (check_exp e2 d g) d
     | CTimes (e1, e2) -> check_scalar_linear_exp (check_exp e1 d g) (check_exp e2 d g) d
@@ -275,6 +276,7 @@ and check_exp (e: exp) (d: delta) (g: gamma) : typ =
     | And (e1, e2) -> check_bool_binop (check_exp e1 d g) (check_exp e2 d g)  
     | Not e1 -> check_bool_unop (check_exp e1 d g)
     | Typ typ -> check_typ typ d
+    
 
 let rec check_decl (t: typ) (s: string) (e: exp) (d: delta) (g: gamma) : delta * gamma =
     debug_print (">> check_decl <<"^s^">>");
@@ -314,15 +316,9 @@ and check_comm_lst (cl : comm list) (d: delta) (g: gamma): delta * gamma =
 let rec check_tags (t : tagdecl list) (d: delta): delta =
     debug_print ">> check_tags";
     match t with 
-<<<<<<< HEAD
     | [] -> d
     | (s, a)::t -> 
         ignore (check_atyp a d);
-=======
-    | [] -> ()
-    | (s, a)::t -> 
-        ignore(check_atyp a);
->>>>>>> b19cca15e03878ebb4c7483675979f6d0ae09a41
         match a with 
         | (LTyp l) -> 
             Context.update d s l |> check_tags t

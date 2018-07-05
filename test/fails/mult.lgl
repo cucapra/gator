@@ -16,6 +16,7 @@ a s11 = x * a_a;
 b s12 = x * a_b;
 a s13 = z * b_a * a_a; 
 c s14 = y * (b_c + b_c);
+vec2 s15 = z * (b_a .* b_a); // Ugh, should this work?
 a s16 = (x * a_b) * b_a;
 
 // Composition
