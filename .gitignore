@@ -63,3 +63,8 @@ setup.log
 
 # Color file to avoid annoying updates
 examples/color.json
+
+# Menhir/Parsing
+parser.ml
+lexer.ml
+parser.mli
