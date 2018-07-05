@@ -17,4 +17,6 @@ val update : ('a, 'b) context -> 'a -> 'b -> ('a, 'b) context
 (* Produce bindings as an association list. *)
 val bindings : ('a, 'b) context -> ('a * 'b) list
 
+(* Checks if variable is in context *)
+val mem : ('a, 'b) context -> 'a ->  bool
 (* val state_to_string : ('a, 'b) context -> string *)
