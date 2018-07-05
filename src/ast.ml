@@ -54,6 +54,7 @@ type exp =
     | Dot of exp * exp
     | Plus of exp * exp
     | Times of exp * exp
+    | Div of exp * exp
     | Minus of exp * exp
     | CTimes of exp * exp (* Component-wise multiplication*)
 

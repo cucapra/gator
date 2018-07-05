@@ -44,6 +44,13 @@ let rec eval_aexp (e : exp) (s : sigma) : avalue =
         | (MatLit (m1, t), MatLit (m2, _)) -> MatLit (mat_sub m1 m2, t)
         | _ -> failwith "Invalid subtraction")
 
+    | Div (a1, a2) -> (match ((eval_aexp a1 s), (eval_aexp a2 s)) with
+        | (Num i1, Num i2) -> Num (i1 / i2)
+        | (Float f1, Float f2) -> Float (f1 /. f2)
+        | (VecLit (v, t), Float s) -> VecLit (sv_mult (1. /. s) v, t)
+        | (MatLit (m, t), Float s) -> MatLit (sm_mult (1. /. s) m, t)
+        | _ -> failwith "Invalid division")
+
     | CTimes (a1, a2) -> (match ((eval_aexp a1 s), (eval_aexp a2 s)) with
         | (VecLit (v1, t), VecLit (v2, _)) -> VecLit (vc_mult v1 v2, t)
         | (MatLit (m1, t), MatLit (m2, _)) -> MatLit (mc_mult m1 m2, t)

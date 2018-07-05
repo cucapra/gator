@@ -34,6 +34,7 @@ rule read = parse
   | "+"   { PLUS }
   | "-"   { MINUS }
   | "*"   { TIMES }
+  | "/"   { DIV }
   | ".*"  { CTIMES }
   | ":"   { COLON }
   | "["   { LBRACK }

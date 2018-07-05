@@ -19,6 +19,7 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %token PLUS
 %token MINUS
 %token TIMES
+%token DIV
 %token CTIMES
 %token COLON
 %token LBRACK
@@ -56,7 +57,7 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %left NOT EQ LEQ
 
 %left PLUS MINUS
-%left TIMES CTIMES 
+%left TIMES DIV CTIMES 
 
 %nonassoc DOT
 
@@ -177,6 +178,7 @@ exp:
   | e1 = exp; PLUS; e2 = exp { Plus(e1,e2) }
   | e1 = exp; TIMES; e2 = exp { Times(e1,e2) }
   | e1 = exp; MINUS; e2 = exp { Minus(e1,e2) }
+  | e1 = exp; DIV; e2 = exp { Div(e1,e2) }
   | e1 = exp; CTIMES; e2 = exp { CTimes(e1,e2) }
   | NOT; e1 = exp;{ Not(e1) }
   | e1 = exp; EQ; e2 = exp { Eq(e1,e2) }
