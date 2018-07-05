@@ -1,10 +1,10 @@
 int r1 = 1;
 print r1;
 
-int r2 = 4.;
+float r2 = 4.;
 print r2;
 
-int r3 = .3;
+float r3 = .3;
 print r3;
 
 vec1 r4 = [1.]:vec1;
