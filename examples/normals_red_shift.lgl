@@ -1,0 +1,21 @@
+tag color is vec3;
+tag alphaColor is vec4;
+
+color vNormal = [.5, .5, .5]:color;
+
+color->alphaColor extend = [
+                    [1., 0., 0.],
+                    [0., 1., 0.],
+                    [0., 0., 1.],
+                    [0., 0., 0.]
+                    ]:color->alphaColor;
+
+color->color red_shift = [
+                    [.5, .5, .5],
+                    [0., .3, 0.],
+                    [0., 0., .3]
+                    ]:color->color;
+
+alphaColor opaque = [0., 0., 0., 1.]:alphaColor;
+alphaColor gl_FragColor = extend * (red_shift * vNormal) + opaque;
+print gl_FragColor;

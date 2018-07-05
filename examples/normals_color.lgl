@@ -1,9 +1,10 @@
 vec3 vNormal = [1., 1., 1.]:vec3;
 vec3->vec4 extend = [
-                    [1., 0., 0., 0.],
-                    [0., 1., 0., 0.],
-                    [0., 0., 1., 0.]
+                    [1., 0., 0.],
+                    [0., 1., 0.],
+                    [0., 0., 1.],
+                    [0., 0., 0.]
                     ]:vec3->vec4;
 
-vec4 gl_FragColor = (vNormal * extend) + [0., 0., 0., 1.]:vec4;
+vec4 gl_FragColor = (extend * vNormal) + [0., 0., 0., 1.]:vec4;
 print gl_FragColor;

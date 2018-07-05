@@ -37,7 +37,7 @@ let rec reduce_ltyp (l : ltyp) (d : delta) : ltyp_top =
     | VecTyp s -> VecDim s
     | MatTyp (r, c) -> MatDim (r, c)
     | TagTyp t -> VecDim (get_dim l d)
-    | TransTyp (t1, t2) -> MatDim ((get_dim t1 d), (get_dim t2 d))
+    | TransTyp (t1, t2) -> MatDim ((get_dim t2 d), (get_dim t1 d))
 
 let string_of_ltyp_top (lt : ltyp_top) : string =
     match lt with
@@ -95,11 +95,9 @@ let rec exp_ltyp (e : exp) (d : delta) (eps : epsilon) : ltyp_top option =
         | Some left -> (match (exp_ltyp e2 d eps) with
             | None -> None
             | Some right -> (match left with
-                | VecDim _ -> (match right with
-                    | VecDim _ -> failwith "Typechecker failure (cannot multiply 2 vectors)"
-                    | MatDim (_, c) -> Some (VecDim c))
+                | VecDim _ -> failwith "Typechecker failure (cannot multiply a vector by a matrix/vector)"
                 | MatDim (r, _) -> (match right with
-                    | VecDim _ -> failwith "Typechecker failure (cannot multiply matrix by vector)"
+                    | VecDim _ -> Some (VecDim r)
                     | MatDim (_, c) -> Some (MatDim (r, c))))))
     | Plus (e1, e2) -> ltyp_meet (exp_ltyp e1 d eps) (exp_ltyp e2 d eps)
     | Minus (e1, e2) -> ltyp_meet (exp_ltyp e1 d eps) (exp_ltyp e2 d eps)
@@ -117,19 +115,18 @@ let rec comp_exp (e : exp) (d : delta) (eps : epsilon) : string =
     (* Handles the string shenanigans for padding during multiplication *)
     let padded_mult (left : exp) (right : exp) (d : delta) (eps : epsilon) : string =
         match ((exp_ltyp left d eps), (exp_ltyp right d eps)) with
-        | (Some lt, Some rt) -> (match rt with
-            | VecDim _ -> failwith "Strange Failure: cannot multiply by a vector"
-            | MatDim (_, dim) -> (match lt with
-                | VecDim ldim -> (if ldim = dim then 
+        | (Some lt, Some rt) -> (match lt with
+            | VecDim _ -> failwith "Strange Failure: cannot multiply a vector by a vector or matrix"
+            | MatDim (dim, _) -> (match rt with
+                | VecDim rdim -> (if dim = rdim then 
                         (op_wrap left d eps) ^ " * " ^ (op_wrap right d eps)
-                        else if ldim < dim then 
-                        ("vec" ^ (string_of_int dim) ^ "(" ^ 
-                        (comp_exp left d eps) ^ (repeat ", 0." (dim - ldim)) ^ ")"
-                        ^ " * " ^ (op_wrap right d eps)) 
-                        else  (* ldim > dim *)
-                        ("vec" ^ (string_of_int dim) ^ "(" ^ 
-                        (comp_exp left d eps) ^ (repeat ", 0." (dim - ldim))
-                        ^ " * " ^ (op_wrap right d eps) ^ ")"))
+                        else if dim > rdim then 
+                        (op_wrap left d eps) ^ " * " ^ "vec" ^ (string_of_int dim) ^ "(" ^ 
+                        (comp_exp right d eps) ^ (repeat ", 0." (dim - rdim)) ^ ")"
+                        else  (* dim < rdim *)
+                        "vec" ^ (string_of_int dim) ^ "(" ^ 
+                        (op_wrap left d eps) ^ ")" ^ " * " ^ 
+                        (comp_exp right d eps) ^ (repeat ", 0." (rdim - dim)))
                     
                 | MatDim (_, ldim) -> 
                     (if dim = ldim then ((op_wrap left d eps) ^ " * " ^ (op_wrap right d eps))

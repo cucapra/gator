@@ -30,11 +30,27 @@ Explore the implementation in a [utop][] REPL:
 Run
 ---
 
-You can run the interpreter by piping source code into the program.
+You can run the compiler against an lgl file by running
 For example:
 
-    $ echo 'print 4.2;' | jbuilder exec bin/ex.bc
+    $  jbuilder exec bin/ex.bc 'filename'
 
+To also print interpreter output, include an additional argument v
+
+    $  jbuilder exec bin/ex.bc 'filename' v
+
+Examples
+---
+
+To see examples of shaders in action, simply pipe compiler output into the examples/color.json
+
+    $ jbuilder exec bin/ex.bc 'filename' > color.json
+
+And then run the appropriate typescript file (either examples/trivial or examples/lighting)
+
+    $ cd examples/trivial; make view
+
+See the Makefile in examples/trivial for details on setting up your typescript environment
 
 Tests
 -----
