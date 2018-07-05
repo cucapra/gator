@@ -60,7 +60,6 @@ let rec ltyp_dim_equals (t1: ltyp) (t2: ltyp) (d: delta) : bool =
         ltyp_dim_equals lt1 lt3 d && ltyp_dim_equals lt2 lt4 d
     | _ -> false
 
-
 (* Gets top type of ltyp *)
 let ltyp_top_typ (t: ltyp) (d: delta) : ltyp = 
     debug_print ">> ltyp_top_typ";
@@ -69,7 +68,6 @@ let ltyp_top_typ (t: ltyp) (d: delta) : ltyp =
     | TransTyp _ -> let dim = ltyp_top_dim t d in 
         MatTyp (fst dim, snd dim)
     | _ -> t
-
 
 (* let's ignore subtyping for now *)
 (* Infix subtype operator for types *)
@@ -278,7 +276,7 @@ and check_exp (e: exp) (d: delta) (g: gamma) : typ =
     | Not e1 -> check_bool_unop (check_exp e1 d g)
     | Typ typ -> check_typ typ d
 
-let rec check_decl (t: typ) (s: string) (e: exp) (d: delta) (g: gamma): typ =
+let rec check_decl (t: typ) (s: string) (e: exp) (d: delta) (g: gamma) : delta * gamma =
     debug_print (">> check_decl <<"^s^">>");
     if Context.mem d s then 
         raise (TypeException "variable declared as tag")
@@ -287,44 +285,45 @@ let rec check_decl (t: typ) (s: string) (e: exp) (d: delta) (g: gamma): typ =
         let t' = check_typ t d in
         match (etyp, t') with
         | (ATyp(LTyp a1), ATyp(LTyp a2)) -> 
-            if is_subtype a1 a2 d then (ignore(Context.update g s t'); UnitTyp)
+            if is_subtype a1 a2 d then (d, Context.update g s t')
             else raise (TypeException ("mismatched linear type for var decl: "^s))
         | (ATyp(IntTyp), ATyp(IntTyp))
         | (ATyp(FloatTyp), ATyp(FloatTyp))
-        | (BTyp, BTyp) -> (ignore(Context.update g s t'); UnitTyp)
+        | (BTyp, BTyp) -> (d, Context.update g s t')
         | _ -> raise (TypeException "mismatched types for var decl")
     )
 
-let rec check_comm (c: comm) (d: delta) (g: gamma) : typ = 
+let rec check_comm (c: comm) (d: delta) (g: gamma) : delta * gamma = 
     debug_print ">> check_comm";
     match c with
-    | Skip -> UnitTyp
-    | Print e -> ignore(check_exp e d g); UnitTyp
+    | Skip -> (d, g)
+    | Print e -> ignore (check_exp e d g); (d, g)
     | Decl (t, s, e) -> check_decl t s e d g
-    | If (b, c1, c2) -> check_comm_lst c1 d g; check_comm_lst c2 d g; 
+    | If (b, c1, c2) -> check_comm_lst c1 d g |> ignore; check_comm_lst c2 d g |> ignore; 
         (match check_exp b d g with 
-        | BTyp -> UnitTyp
+        | BTyp -> (d, g)
         | _ -> raise (TypeException "expected boolean expression for if condition"))
 
-and check_comm_lst (cl : comm list) (d: delta) (g: gamma): unit = 
+and check_comm_lst (cl : comm list) (d: delta) (g: gamma): delta * gamma = 
     debug_print ">> check_comm_lst";
     match cl with
-    | [] -> ()
-    | h::t -> ignore(check_comm h d g); check_comm_lst t d g
+    | [] -> (d, g)
+    | h::t -> let context = check_comm h d g 
+        in check_comm_lst t (fst context) (snd context)
 
-let rec check_tags (t : tagdecl list) (d: delta): unit =
+let rec check_tags (t : tagdecl list) (d: delta): delta =
     debug_print ">> check_tags";
     match t with 
-    | [] -> ()
+    | [] -> d
     | (s, a)::t -> 
         ignore (check_atyp a d);
         match a with 
         | (LTyp l) -> 
-            ignore (Context.update d s l) ; check_tags t d
+            Context.update d s l |> check_tags t
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
 let check_prog (e : prog) : unit =
     debug_print ">> check_prog";
     match e with
     | Prog (t, c) -> let d = Context.empty in 
-        check_tags t d; check_comm_lst c d Context.empty
+        let d' = check_tags t d in check_comm_lst c d' Context.empty |> ignore
