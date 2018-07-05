@@ -28,9 +28,9 @@ let rec ltyp_top_dim (t: ltyp) (d : delta) : int * int =
             (* ", "^(HashSet.find delta a |> ltyp_top_dim |> snd |> string_of_int)^") ]" |> debug_print;  *)
         ltyp_top_dim (Context.lookup d a) d
     | TransTyp (lt1, lt2) -> 
-    (* "\tTranstyp - [ "^(ltyp_top_dim lt1 |> snd |> string_of_int)^" ]" |> debug_print;  *)
+    "\tTranstyp - [ "^(ltyp_top_dim lt1 d |> snd |> string_of_int)^","^(ltyp_top_dim lt2 d |> fst |> string_of_int)^" ]" |> debug_print; 
         (ltyp_top_dim lt1 d |> snd, 
-        ltyp_top_dim lt2 d |> fst)  (* TODO - need to consider vec/mat *)
+        ltyp_top_dim lt2 d |> snd) 
 
 (* Checks equality of the dimensions of ltyp *)
 let rec ltyp_dim_equals (t1: ltyp) (t2: ltyp) (d: delta) : bool =
@@ -39,7 +39,7 @@ let rec ltyp_dim_equals (t1: ltyp) (t2: ltyp) (d: delta) : bool =
     | (VecTyp n1, VecTyp n2) -> debug_print "\tvec, vec"; 
         n1 = n2
     | (VecTyp n1, MatTyp (n2, n3)) -> debug_print "\tvec, mat";
-        n1 = n2
+        n2 = 1 && n1 = n3
     | (MatTyp (n1, n2), VecTyp n3) -> debug_print "\tmat, vec";
         n2 = n3
     | (MatTyp (n1, n2), MatTyp (n3, n4)) -> debug_print "\tmat, mat";
@@ -54,7 +54,7 @@ let rec ltyp_dim_equals (t1: ltyp) (t2: ltyp) (d: delta) : bool =
         ltyp_dim_equals (Context.lookup d i1) (Context.lookup d i2) d
     | (MatTyp (n1, n2), TransTyp (lt1, lt2))
     | (TransTyp (lt1, lt2), MatTyp (n1, n2)) -> let top_dim = ltyp_top_dim (TransTyp (lt1, lt2)) d in 
-        (* Printf.printf "Transtyp %s" (string_of_int(n2));  *)
+        Printf.printf "Transtyp %s" (string_of_int(n2)); 
         top_dim |> fst = n1 && top_dim |> snd = n2
     | (TransTyp (lt1, lt2), TransTyp (lt3, lt4)) -> 
         ltyp_dim_equals lt1 lt3 d && ltyp_dim_equals lt2 lt4 d
@@ -195,8 +195,8 @@ let check_scalar_linear_exp (t1: typ) (t2: typ) (d: delta) : typ =
     match (t1, t2) with 
     | (ATyp(LTyp l1), ATyp(LTyp l2)) -> if ltyp_dim_equals l1 l2 d
         then ATyp(LTyp(ltyp_top_typ l1 d))
-        else (raise (TypeException "dimension mismatch in dot operator"))
-    | _ -> (raise (TypeException "expected linear types for dot operator"))
+        else (raise (TypeException "dimension mismatch in dot/ctimes operator"))
+    | _ -> (raise (TypeException "expected linear types for dot/ctimes operator"))
 
 (* Type check norm expressions *)
 let check_norm_exp (a: typ) (d: delta) : typ = 
