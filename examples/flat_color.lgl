@@ -4,6 +4,6 @@ vec4->vec4 id = [
                 [0., 0., 1., 0.],
                 [0., 0., 0., 1.]
                 ]:vec4->vec4;
-vec3->vec2 test = [[1., 1.], [1., 1.], [1., 1.]]:vec3->vec2;
-vec4 gl_FragColor = [.15, 0.4, 0.25, 1.0]:vec4 * id;
+vec3->vec2 test = [[1., 1., 1.], [1., 1., 1.]]:vec3->vec2;
+vec4 gl_FragColor = id * [.15, 0.4, 0.25, 1.0]:vec4;
 print gl_FragColor;

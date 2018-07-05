@@ -7,7 +7,7 @@ import pack from 'array-pack-2d';
 import data from '../color.json';
 
 const VERTEX_SHADER =
-  "precision mediump float;" +
+  "precision highp float;" +
   "attribute vec3 aPosition;" +
   "attribute vec3 aNormal;" +
   "varying vec3 vPosition;" +
