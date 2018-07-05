@@ -1,23 +1,23 @@
 int r1 = 1;
-print r1
+print r1;
 
 int r2 = 4.;
-print r2
+print r2;
 
 int r3 = .3;
-print r3
+print r3;
 
 vec1 r4 = [1.]:vec1;
-print r4
+print r4;
 
 vec3 r5 = [1.,2.,3.]:vec3;
-print r5
+print r5;
 
 mat2x2 r6 = [[1.,2.],[3.,4.]]:mat2x2;
-print r6
+print r6;
 
 vec0 r7 = []:vec0;
-print r7
+print r7;
 
 mat2x0 r8 = [[],[]]:mat2x0;
-print r8
+print r8;

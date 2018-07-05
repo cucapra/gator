@@ -1,27 +1,27 @@
 bool b1 = 1 == 2;
-print b1
+print b1;
 
 bool b2 = 1 == 1;
-print b2
+print b2;
 
 bool b3 = 3 <= 2;
-print b3
+print b3;
 
 bool b4 = 2 <= 3;
-print b4
+print b4;
 
 bool b5 = true && false;
-print b5
+print b5;
 
 bool b6 = false || false;
-print b6
+print b6;
 
 bool b7 = 3 <= 3 && 3 <= 3;
-print b7
+print b7;
 
 bool b8 = !true;
-print b8
+print b8;
 
 bool b = true;
 bool b9 = b && !b;
-print b9
+print b9;
