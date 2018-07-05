@@ -314,9 +314,15 @@ and check_comm_lst (cl : comm list) (d: delta) (g: gamma): delta * gamma =
 let rec check_tags (t : tagdecl list) (d: delta): delta =
     debug_print ">> check_tags";
     match t with 
+<<<<<<< HEAD
     | [] -> d
     | (s, a)::t -> 
         ignore (check_atyp a d);
+=======
+    | [] -> ()
+    | (s, a)::t -> 
+        ignore(check_atyp a);
+>>>>>>> b19cca15e03878ebb4c7483675979f6d0ae09a41
         match a with 
         | (LTyp l) -> 
             Context.update d s l |> check_tags t

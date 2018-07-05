@@ -23,7 +23,7 @@ let string_of_gl_mat (m: mat) : string =
     (* Note the transpose to match the glsl column-oriented style *)
     let tm = Lin_ops.transpose m in
     let r = (List.length tm) in
-    let c = (if r = 0 then 0 else List.length (List.hd m)) in
+    let c = (if r = 0 then 0 else List.length (List.hd tm)) in
     string_of_mat_padded tm (max r c)
 
 let rec get_dim (lt : ltyp) (d : delta) : int =
@@ -120,13 +120,20 @@ let rec comp_exp (e : exp) (d : delta) (eps : epsilon) : string =
         | (Some lt, Some rt) -> (match rt with
             | VecDim _ -> failwith "Strange Failure: cannot multiply by a vector"
             | MatDim (_, dim) -> (match lt with
-                | VecDim ldim -> (if dim = ldim then (op_wrap left d eps) 
-                        else ("vec" ^ (string_of_int dim) ^ "(" ^ 
-                        (comp_exp left d eps) ^ (repeat ", 0." (dim - ldim)) ^ ")") )
-                    ^ " * " ^ (op_wrap right d eps)
+                | VecDim ldim -> (if ldim = dim then 
+                        (op_wrap left d eps) ^ " * " ^ (op_wrap right d eps)
+                        else if ldim < dim then 
+                        ("vec" ^ (string_of_int dim) ^ "(" ^ 
+                        (comp_exp left d eps) ^ (repeat ", 0." (dim - ldim)) ^ ")"
+                        ^ " * " ^ (op_wrap right d eps)) 
+                        else  (* ldim > dim *)
+                        ("vec" ^ (string_of_int dim) ^ "(" ^ 
+                        (comp_exp left d eps) ^ (repeat ", 0." (dim - ldim))
+                        ^ " * " ^ (op_wrap right d eps) ^ ")"))
+                    
                 | MatDim (_, ldim) -> 
                     (if dim = ldim then ((op_wrap left d eps) ^ " * " ^ (op_wrap right d eps))
-                    else failwith "Not sure how to handle matrix padding tbh")))
+                    else (op_wrap left d eps) ^ " * " ^ (comp_exp right d eps))))
         | _ -> (op_wrap left d eps) ^ " * " ^ (comp_exp right d eps)
     in
     match e with
@@ -143,6 +150,7 @@ let rec comp_exp (e : exp) (d : delta) (eps : epsilon) : string =
     | Plus (e1, e2) -> (op_wrap e1 d eps) ^ " + " ^ (op_wrap e2 d eps)
     | Times (e1, e2) -> padded_mult e1 e2 d eps
     | Minus (e1, e2) -> (op_wrap e1 d eps) ^ " - " ^ (op_wrap e2 d eps)
+    | Div (e1, e2) -> (op_wrap e1 d eps) ^ " / " ^ (op_wrap e2 d eps)
     | CTimes (e1, e2) -> (op_wrap e1 d eps) ^ " * " ^ (op_wrap e2 d eps)
     | Eq (e1, e2) -> (op_wrap e1 d eps) ^ " == " ^ (op_wrap e2 d eps)
     | Leq (e1, e2) -> (op_wrap e1 d eps) ^ " <= " ^ (op_wrap e2 d eps)

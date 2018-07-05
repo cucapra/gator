@@ -1,4 +1,4 @@
-#!/bin/sh
+!/bin/sh
 for folder in test/*/; do
     for filename in $folder*.lgl; do
         echo $filename
