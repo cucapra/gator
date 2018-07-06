@@ -1,0 +1,91 @@
+// WebGL reference:
+// http://www.mathematik.uni-marburg.de/~thormae/lectures/graphics1/code/WebGLShaderLightMat/ShaderLightMat.html
+// Note that some varying values are baked in differently here (e.g. vNormal is just given to us)
+// Also using Braid example as a reference
+// https://capra.cs.cornell.edu/braid/dingus/#example=phong
+
+tag position is vec3;
+tag homogeneous is vec4;
+tag direction is vec3;
+tag color is vec3;
+tag alphaColor is vec4;
+
+position vPosition = [0., 0., 0.]:position;
+direction vNormal = [0., 0., 0.]:direction;
+vec4->vec4 uModel = [
+  [0., 0., 0., 0.],
+  [0., 0., 0., 0.],
+  [0., 0., 0., 0.],
+  [0., 0., 0., 0.]
+]:vec4->vec4;
+vec4->vec4 uView = [
+  [0., 0., 0., 0.],
+  [0., 0., 0., 0.],
+  [0., 0., 0., 0.],
+  [0., 0., 0., 0.]
+]:vec4->vec4;
+
+position->homogeneous extendPos = [
+  [1., 0., 0.],
+  [0., 1., 0.],
+  [0., 0., 1.],
+  [0., 0., 0.]
+]:position->homogeneous;
+homogeneous noScale = [0., 0., 0., 1.]:homogeneous;
+
+homogeneous->position collapsePos = [ 
+  [1., 0., 0., 0.],
+  [0., 1., 0., 0.], 
+  [0., 0., 1., 0.]
+]:homogeneous->position;
+
+color->alphaColor extendColor = [
+  [1., 0., 0.],
+  [0., 1., 0.],
+  [0., 0., 1.],
+  [0., 0., 0.]
+]:color->alphaColor;
+alphaColor opaque = [0., 0., 0., 1.]:alphaColor;
+
+vec4 getW = [0., 0., 0., 1.]:vec4;
+
+position->direction posDirId = [
+  [1., 0., 0.],
+  [0., 1., 0.],
+  [0., 0., 1.]
+]:position->direction;
+
+position lightPos = [1.0, 1.0, 1.0]:position;
+color diffuse = [0.5, 0.0, 0.0]:color;
+color spec = [1.0, 1.0, 1.0]:color;
+
+vec4->vec4 modelView = uModel * uView;
+homogeneous vertH = uView * uModel * ((extendPos * vPosition) + noScale);
+position vert = (collapsePos * vertH) / (dot vertH getW);
+
+direction light = posDirId * norm(lightPos - vert);
+direction negLight = [0., 0., 0.]:direction - light;
+// See glsl reflect definition
+direction reflected = negLight - (2. * (dot vNormal negLight) * vNormal);
+
+direction view = norm([0., 0., 0.]:position - vert);
+
+float lambertian = 0.0;
+float lDot = dot light vNormal;
+bool lDotCheck = (0. <= lDot);
+if (lDotCheck) { lambertian = lDot; } else { skip; }
+float specular = 0.0;
+bool lCheck = (0.0 <= lambertian && !(lambertian == 0.0));
+
+if(lCheck) {
+  float specAngle = 0.;
+  float specDot = dot reflected view;
+  bool specCheck = (0. <= specDot);
+  if (specCheck) { specAngle = specDot; } else { skip; }
+  float specular = specAngle * specAngle * specAngle * specAngle;
+}
+else { skip; }
+
+color fragColor = lambertian * diffuse + specular * spec;
+alphaColor gl_FragColor = (extendColor * fragColor) + opaque;
+print gl_FragColor;
