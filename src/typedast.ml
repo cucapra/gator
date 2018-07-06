@@ -26,6 +26,3 @@ type comm =
     | Print of texp
     | Decl of typ * string * texp
     | If of texp * comm list * comm list
-
-
-

@@ -42,7 +42,6 @@ module HashSet = struct
     with Not_found -> raise (ElementNotFoundException "cannot find var in set")
 end
 
-
 (*****************************************************
  * Debug-printer
  *****************************************************)
