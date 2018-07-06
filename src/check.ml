@@ -172,14 +172,6 @@ let rec check_aval (av: avalue) (d: delta) : typ =
         if is_subtype littyp t d then ATyp(LTyp(t)) 
         else (raise (TypeException ("mat literal tag mismatch :" ^(print_typ (ATyp(LTyp(t))))^", "^(print_typ (ATyp(LTyp(littyp)))))))
 
-(* Finding least common "parent" for linear types, *)
-(* Used for scalar binary operations on linear types *)
-(* let least_common_parent (t1: ltyp) (t2: ltyp) (d: delta) : ltyp = 
-    if is_subtype t1 t2 d then t2 
-    else if is_subtype t2 t1 d then t1 
-    else if ltyp_dim_equals t1 t2 d then ltyp_top_typ t1 d
-    else (raise (TypeException ("cannot find least common parent"))) *)
-
 (* Get list of ancestors for a linear type *)
 (* Helper function for least_common_parent *)
 let rec get_ancestor_list (t1: ltyp) (acc: ltyp list) (d: delta) : ltyp list =
@@ -217,7 +209,7 @@ let rec least_common_parent (t1: ltyp) (t2: ltyp) (d: delta) : ltyp =
     | (TransTyp (l1, r1), TransTyp (l2, r2)) -> 
         if ltyp_equals l1 l2 d && ltyp_equals r1 r2 d then t1
         else if ltyp_dim_equals t1 t2 d then ltyp_top_typ t1 d 
-        else raise (TypeException("common parent type not found for TransTyp "))
+        else raise (TypeException("common parent type not found for TransTyp"))
     | (TransTyp _, _)
     | (_, TransTyp _) -> if ltyp_dim_equals t1 t2 d 
         then ltyp_top_typ t1 d else raise (TypeException("common parent type not found for TransTyp "))

@@ -19,10 +19,10 @@ c s14 = (b_c + b_c) * y;
 a s16 = b_a * (a_b * x) ;
 
 // Composition
-//mat3x3 s21 = a_b * b_a;
-//a->c s22 = a_b * b_c;
-//b->c s23 = b_a * a_b * b_c;
-//a s24 = x * (a_b * b_a);
-//a->b s25 = a_b + a_a * a_b;
+mat2x2 s21 = a_b * b_a;
+a->c s22 = a_b * b_c;
+b->c s23 = b_a * a_b * b_c;
+a s24 = (a_b * b_a) * x;
+a->b s25 = a_b + a_a * a_b;
 
-//print 1;
+print 1;
