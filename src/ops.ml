@@ -98,7 +98,7 @@ let eval_print (e : exp) (s : sigma) : string =
             | Failure s -> failwith s)
         | Failure s -> failwith s)
 
-let eval_declare (x : id) (e : exp) (s : sigma) : value =
+let eval_assign (x : id) (e : exp) (s : sigma) : value =
     match e with 
     | Var v -> Context.lookup s v
     | _ -> (try Avalue (eval_aexp e s) with
@@ -112,7 +112,8 @@ let rec eval_comm (c : comm list) (s : sigma) : sigma =
     | h::t -> eval_comm t (match h with
         | Skip -> s
         | Print e -> print_string ((eval_print e s) ^ "\n"); s
-        | Decl (_, x, e) -> Context.update s x (eval_declare x e s)
+        | Decl (_, x, e)
+        | Assign (x, e) -> Context.update s x (eval_assign x e s)
         | If (e, c1, c2) -> (match e with 
             | Var v -> (match (Context.lookup s v) with
                 | Avalue a -> failwith "Bad if condition"
