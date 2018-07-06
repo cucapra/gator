@@ -47,6 +47,6 @@ end
  * Debug-printer
  *****************************************************)
 
- let debug = true
+ let debug = false
 
  let debug_print (s: string) : unit = if debug then Printf.printf "\n%s" s
