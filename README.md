@@ -30,7 +30,7 @@ Explore the implementation in a [utop][] REPL:
 Run
 ---
 
-You can run the compiler against an lgl file by running
+You can run the compiler against an lgl file by executing 'exec' with a single additional argument
 For example:
 
     $  jbuilder exec bin/ex.bc 'filename'

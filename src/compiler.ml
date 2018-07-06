@@ -88,7 +88,8 @@ let rec exp_ltyp (e : exp) (d : delta) (eps : epsilon) : ltyp_top option =
         | VecLit (_, t) -> Some (reduce_ltyp t d)
         | MatLit (_, t) -> Some (reduce_ltyp t d)
         | _ -> None)
-    | Var x -> Some (reduce_ltyp (Context.lookup eps x) d)
+    | Var x -> (try Some (reduce_ltyp (Context.lookup eps x) d)
+                with | Not_found -> None)
     | Typ _ -> failwith "Cannot evaluate a type expression?"
     | Times (e1, e2) -> (match (exp_ltyp e1 d eps) with
         | None -> None
@@ -125,8 +126,8 @@ let rec comp_exp (e : exp) (d : delta) (eps : epsilon) : string =
                         (comp_exp right d eps) ^ (repeat ", 0." (dim - rdim)) ^ ")"
                         else  (* dim < rdim *)
                         "vec" ^ (string_of_int dim) ^ "(" ^ 
-                        (op_wrap left d eps) ^ ")" ^ " * " ^ 
-                        (comp_exp right d eps) ^ (repeat ", 0." (rdim - dim)))
+                        (op_wrap left d eps) ^ " * " ^ 
+                        (comp_exp right d eps) ^ ")")
                     
                 | MatDim (_, ldim) -> 
                     (if dim = ldim then ((op_wrap left d eps) ^ " * " ^ (op_wrap right d eps))
@@ -201,5 +202,5 @@ let rec build_delta (tl : tagdecl list) (d : delta) : delta =
 let rec compile_program (p : prog) : string =
     match p with
     | Prog (tl, c) -> let d = build_delta tl Context.empty in
-        "{ \n    \"main\": \"precision highp float;" 
+        "{\n    \"main\": \"precision highp float;" 
             ^ (decl_attribs c d) ^ " void main() { " ^ (comp_comm c d Context.empty) ^ " }\"\n}"

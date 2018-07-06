@@ -11,7 +11,7 @@ let merge c1 c2 = c1 @ c2
 
 (* Look up a variable by name and return the associated letue. *)
 (* Raises Not_found if no binding *)
-let lookup c x = try List.assoc x c with | Not_found -> failwith "Undeclared variable"
+let lookup c x = List.assoc x c
 
 (* Rebind var to value in context. *)
 let update c x v = if List.mem_assoc x c then failwith "Duplicate" else (x, v) :: c
