@@ -29,8 +29,7 @@ let rec ltyp_top_dim (t: ltyp) (d : delta) : int * int =
         ltyp_top_dim (Context.lookup d a) d
     | TransTyp (lt1, lt2) -> 
     "\tTranstyp - [ "^(ltyp_top_dim lt1 d |> snd |> string_of_int)^","^(ltyp_top_dim lt2 d |> fst |> string_of_int)^" ]" |> debug_print; 
-        (ltyp_top_dim lt1 d |> snd, 
-        ltyp_top_dim lt2 d |> snd) 
+        (ltyp_top_dim lt2 d |> snd, ltyp_top_dim lt1 d |> snd) 
 
 (* Checks equality of the dimensions of ltyp *)
 let rec ltyp_dim_equals (t1: ltyp) (t2: ltyp) (d: delta) : bool =
@@ -55,7 +54,7 @@ let rec ltyp_dim_equals (t1: ltyp) (t2: ltyp) (d: delta) : bool =
     | (MatTyp (n1, n2), TransTyp (lt1, lt2))
     | (TransTyp (lt1, lt2), MatTyp (n1, n2)) -> let top_dim = ltyp_top_dim (TransTyp (lt1, lt2)) d in 
         Printf.printf "Transtyp %s" (string_of_int(n2)); 
-        top_dim |> fst = n1 && top_dim |> snd = n2
+        top_dim |> snd = n1 && top_dim |> fst = n2
     | (TransTyp (lt1, lt2), TransTyp (lt3, lt4)) -> 
         ltyp_dim_equals lt1 lt3 d && ltyp_dim_equals lt2 lt4 d
     | _ -> false
@@ -244,8 +243,11 @@ let rec check_times_exp (t1: typ) (t2: typ) (d: delta) : typ =
         else (raise (TypeException "matrix multiplication dimension mismatch"))
     | (ATyp(LTyp(VecTyp(n1))), ATyp(LTyp(MatTyp(n3, n4)))) -> 
         debug_print "\tvec, mat";
-        if n1 = n3 then ATyp(LTyp(MatTyp(1, n4))) 
-        else (raise (TypeException "matrix multiplication dimension mismatch"))
+        (raise (TypeException "vector * matrix is illegal"))
+    | (ATyp(LTyp(MatTyp(n1, n2))), ATyp(LTyp(VecTyp(n3)))) -> 
+        debug_print "\tmat, vec";
+        if n2 = n3 then ATyp(LTyp(MatTyp(n1, 1))) 
+        else (raise (TypeException "vector * matrix is illegal"))
     | (ATyp(LTyp(TransTyp(lt1, lt2))), ATyp(LTyp(TransTyp(lt3, lt4)))) ->
         debug_print "\ttrans, trans";
         if ltyp_dim_equals lt2 lt3 d then ATyp(LTyp(TransTyp(lt1, lt4)))
@@ -276,7 +278,6 @@ and check_exp (e: exp) (d: delta) (g: gamma) : typ =
     | And (e1, e2) -> check_bool_binop (check_exp e1 d g) (check_exp e2 d g)  
     | Not e1 -> check_bool_unop (check_exp e1 d g)
     | Typ typ -> check_typ typ d
-    
 
 let rec check_decl (t: typ) (s: string) (e: exp) (d: delta) (g: gamma) : delta * gamma =
     debug_print (">> check_decl <<"^s^">>");
@@ -310,7 +311,7 @@ and check_comm_lst (cl : comm list) (d: delta) (g: gamma): delta * gamma =
     debug_print ">> check_comm_lst";
     match cl with
     | [] -> (d, g)
-    | h::t -> let context = check_comm h d g 
+    | h::t -> let context = check_comm h d g
         in check_comm_lst t (fst context) (snd context)
 
 let rec check_tags (t : tagdecl list) (d: delta): delta =
