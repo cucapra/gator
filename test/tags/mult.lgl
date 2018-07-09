@@ -16,7 +16,7 @@ a s11 = a_a * x;
 b s12 = a_b * x;
 a s13 = b_a * a_a * y; 
 c s14 = (b_c + b_c) * y;
-a s16 = b_a * (a_b * x) ;
+a s16 = b_a * (a_b * x);
 
 // Composition
 mat2x2 s21 = a_b * b_a;

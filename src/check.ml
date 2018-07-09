@@ -38,9 +38,9 @@ let rec ltyp_dim_equals (t1: ltyp) (t2: ltyp) (d: delta) : bool =
     | (VecTyp n1, VecTyp n2) -> debug_print "\tvec, vec"; 
         n1 = n2
     | (VecTyp n1, MatTyp (n2, n3)) -> debug_print "\tvec, mat";
-        n2 = 1 && n1 = n3
+        n3 = 1 && n1 = n2
     | (MatTyp (n1, n2), VecTyp n3) -> debug_print "\tmat, vec";
-        n2 = n3
+        n1 = n3 && n2 = 1
     | (MatTyp (n1, n2), MatTyp (n3, n4)) -> debug_print "\tmat, mat";
         n1 = n3 && n2 = n4
     | (TagTyp i, VecTyp _)
@@ -73,16 +73,18 @@ let ltyp_top_typ (t: ltyp) (d: delta) : ltyp =
 let rec is_subtype (t1: ltyp) (t2: ltyp) (d: delta) : bool = 
     debug_print ">> (<~)";
     match (t1, t2) with 
-    | (VecTyp n1, MatTyp(1, n2))
+    (* | (VecTyp n1, MatTyp(1, n2)) *)
+    | (VecTyp n1, VecTyp n2)
     | (MatTyp(1, n1), VecTyp n2) -> n1 = n2
     | (MatTyp _, MatTyp _)
-    | (VecTyp _, TagTyp _) 
-    | (MatTyp _, TagTyp _) 
-    | (TagTyp _, MatTyp _)
+    | (TagTyp _, MatTyp _) 
     | (TransTyp _, MatTyp _)
-    | (MatTyp _, TransTyp _)
     | (TagTyp _, VecTyp _) -> ltyp_dim_equals t1 t2 d
-    | (TagTyp i1, TagTyp i2) -> is_subtype (Context.lookup d i1) (Context.lookup d i2) d
+    | (MatTyp _, _) 
+    | (VecTyp _, _) -> 
+        (* Printf.printf "%s" (print_typ (ATyp(LTyp(t2)))); *)
+        raise (TypeException "Cannot cast down top type")
+    | (TagTyp i1, TagTyp i2) -> if i1 = i2 then true else is_subtype (Context.lookup d i1) t2 d
     | (l1, l2) -> (ltyp_dim_equals l1 l2 d) || 
         (ltyp_dim_equals (ltyp_top_typ l1 d) l2 d) 
 
@@ -165,11 +167,11 @@ let rec check_aval (av: avalue) (d: delta) : typ =
     | Float f -> ATyp(FloatTyp)
     | VecLit (v, t) -> 
         let littyp = veclit_type v in 
-        if is_subtype littyp t d then ATyp(LTyp(t)) 
+        if is_subtype t littyp d then ATyp(LTyp(t)) 
         else (raise (TypeException "vec literal tag mismatch"))
     | MatLit (m, t) -> 
         let littyp = matlit_type m in 
-        if is_subtype littyp t d then ATyp(LTyp(t)) 
+        if is_subtype t littyp d then ATyp(LTyp(t)) 
         else (raise (TypeException ("mat literal tag mismatch :" ^(print_typ (ATyp(LTyp(t))))^", "^(print_typ (ATyp(LTyp(littyp)))))))
 
 (* Get list of ancestors for a linear type *)
@@ -182,16 +184,6 @@ let rec get_ancestor_list (t1: ltyp) (acc: ltyp list) (d: delta) : ltyp list =
         get_ancestor_list t1' (t1::acc) d
     | _ -> failwith "FATAL ERROR - should not reach this line (get_ancestor of transtyp)"
 
-(* Get last match in two lists *)
-(* TODO - equals not defined for ltypes, the equality check probably does not work *)
-let rec get_last_match (l1: 'a list) (l2: 'a list) (m: 'a): 'a =
-    (* Printf.printf "%s" (m |> print_ltyp); *)
-    match l1, l2 with
-    | ([], []) -> m
-    | (hd1::tl1, hd2::tl2) -> 
-        if hd1 = hd2 then get_last_match tl1 tl2 hd1 else m 
-    | _ -> m
-
 (* Check equality between two ltyp's *)
 let rec ltyp_equals (t1: ltyp) (t2: ltyp) (d: delta) : bool = 
     match (t1, t2) with 
@@ -200,13 +192,27 @@ let rec ltyp_equals (t1: ltyp) (t2: ltyp) (d: delta) : bool =
     | (MatTyp _, MatTyp _)
     | (VecTyp _, VecTyp _) -> ltyp_dim_equals t1 t2 d
     | (TransTyp (l1, r1), TransTyp (l2, r2)) -> ltyp_equals l1 l2 d && ltyp_equals r1 r2 d
-    | (TagTyp i1, TagTyp i2) -> ltyp_equals (Context.lookup d i1) (Context.lookup d i2) d
+    | (TagTyp i1, TagTyp i2) -> i1 = i2
     | _ -> false
+
+(* Get last match in two lists *)
+let rec get_last_match (l1: 'a list) (l2: 'a list) (m: 'a) (d: delta): 'a =
+    (* Printf.printf "%s" (m |> print_ltyp); *)
+    match l1, l2 with
+    | ([], []) -> m
+    | (hd1::tl1, hd2::tl2) -> 
+        if ltyp_equals hd1 hd2 d then get_last_match tl1 tl2 hd1 d else m 
+    | _ -> m
 
 (* Find least common parent type between two linear types *)
 let rec least_common_parent (t1: ltyp) (t2: ltyp) (d: delta) : ltyp = 
+    (* Printf.printf "least common parent"; *)
     match t1, t2 with 
+    | (VecTyp n1, VecTyp n2) -> if n1 = n2 then (VecTyp (n1)) else 
+        raise (TypeException("common parent type not found for VecTyp"))
     | (TransTyp (l1, r1), TransTyp (l2, r2)) -> 
+        (* Printf.printf "Transeq %s -> %s %s -> %s" 
+        (print_ltyp l1) (print_ltyp r1) (print_ltyp l2) (print_ltyp r2); *)
         if ltyp_equals l1 l2 d && ltyp_equals r1 r2 d then t1
         else if ltyp_dim_equals t1 t2 d then ltyp_top_typ t1 d 
         else raise (TypeException("common parent type not found for TransTyp"))
@@ -214,8 +220,8 @@ let rec least_common_parent (t1: ltyp) (t2: ltyp) (d: delta) : ltyp =
     | (_, TransTyp _) -> if ltyp_dim_equals t1 t2 d 
         then ltyp_top_typ t1 d else raise (TypeException("common parent type not found for TransTyp "))
     | _ -> let l1 = get_ancestor_list t1 [] d in 
-        let l2 = get_ancestor_list t2 [] d in 
-        get_last_match l1 l2 (List.hd l1)
+        let l2 = get_ancestor_list t2 [] d in  (print_ltyp (get_last_match l1 l2 (List.hd l1) d )) |> debug_print;
+        get_last_match l1 l2 (List.hd l1) d 
 
 (* Type checking binary operations on scalar (int, float) expressions *)
 (* Types are closed under addition and scalar multiplication *)
@@ -226,7 +232,8 @@ let check_scalar_binop (t1: typ) (t2: typ) (d: delta) : typ =
     | (ATyp(a), ATyp(IntTyp)) 
     | (ATyp(FloatTyp), ATyp(a)) 
     | (ATyp(a), ATyp(FloatTyp)) -> ATyp a
-    | (ATyp(LTyp a1), ATyp(LTyp a2)) -> ATyp(LTyp(least_common_parent a1 a2 d))
+    | (ATyp(LTyp a1), ATyp(LTyp a2)) -> (print_typ (ATyp(LTyp(least_common_parent a1 a2 d)))) |> debug_print;
+        ATyp(LTyp(least_common_parent a1 a2 d))
     | _ -> 
         (raise (TypeException ("invalid expressions for arithmetic operation: "^(print_typ t1)^", "^(print_typ t2))))
 
@@ -279,6 +286,10 @@ let check_dot_exp (t1: typ) (t2: typ) : typ =
 let rec check_times_exp (t1: typ) (t2: typ) (d: delta) : typ = 
     debug_print ">> check_times_exp";
     match (t1, t2) with
+    | ATyp(IntTyp), t'
+    | t', ATyp(IntTyp)
+    | t', ATyp(FloatTyp)
+    | ATyp(FloatTyp), t' -> t'
     | (ATyp(LTyp(MatTyp(n1, n2))), ATyp(LTyp(MatTyp(n3, n4)))) -> 
         debug_print "\tmat, mat";
         if n2 = n3 then ATyp(LTyp(MatTyp(n1, n4))) 
@@ -361,6 +372,7 @@ let rec check_comm (c: comm) (d: delta) (g: gamma) : delta * gamma =
         (match check_exp b d g with 
         | BTyp -> (d, g)
         | _ -> raise (TypeException "expected boolean expression for if condition"))
+    | _ -> failwith "Unimplemented"
 
 and check_comm_lst (cl : comm list) (d: delta) (g: gamma): delta * gamma = 
     debug_print ">> check_comm_lst";
