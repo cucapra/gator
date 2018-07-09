@@ -74,17 +74,17 @@ let rec is_subtype (t1: ltyp) (t2: ltyp) (d: delta) : bool =
     debug_print ">> (<~)";
     match (t1, t2) with 
     (* | (VecTyp n1, MatTyp(1, n2)) *)
-    | (VecTyp n1, VecTyp n2)
-    | (MatTyp(1, n1), VecTyp n2) -> n1 = n2
+    | (VecTyp n1, VecTyp n2) -> n1 = n2
     | (MatTyp _, MatTyp _)
     | (TagTyp _, MatTyp _) 
     | (TransTyp _, MatTyp _)
     | (TagTyp _, VecTyp _) -> ltyp_dim_equals t1 t2 d
     | (MatTyp _, _) 
     | (VecTyp _, _) -> 
-        (* Printf.printf "%s" (print_typ (ATyp(LTyp(t2)))); *)
+        Printf.printf "%s" (print_typ (ATyp(LTyp(t2))));
         raise (TypeException "Cannot cast down top type")
     | (TagTyp i1, TagTyp i2) -> if i1 = i2 then true else is_subtype (Context.lookup d i1) t2 d
+    | (TransTyp (l1, r1), TransTyp (l2, r2)) -> is_subtype l2 l1 d && is_subtype r1 r2 d
     | (l1, l2) -> (ltyp_dim_equals l1 l2 d) || 
         (ltyp_dim_equals (ltyp_top_typ l1 d) l2 d) 
 
@@ -286,10 +286,10 @@ let check_dot_exp (t1: typ) (t2: typ) : typ =
 let rec check_times_exp (t1: typ) (t2: typ) (d: delta) : typ = 
     debug_print ">> check_times_exp";
     match (t1, t2) with
-    | ATyp(IntTyp), t'
-    | t', ATyp(IntTyp)
-    | t', ATyp(FloatTyp)
-    | ATyp(FloatTyp), t' -> t'
+    | ATyp(IntTyp), ATyp(LTyp(t'))
+    | ATyp(LTyp(t')), ATyp(IntTyp)
+    | ATyp(LTyp(t')), ATyp(FloatTyp)
+    | ATyp(FloatTyp), ATyp(LTyp(t')) -> ATyp(LTyp(t')) 
     | (ATyp(LTyp(MatTyp(n1, n2))), ATyp(LTyp(MatTyp(n3, n4)))) -> 
         debug_print "\tmat, mat";
         if n2 = n3 then ATyp(LTyp(MatTyp(n1, n4))) 
@@ -303,11 +303,11 @@ let rec check_times_exp (t1: typ) (t2: typ) (d: delta) : typ =
         else (raise (TypeException "vector * matrix is illegal"))
     | (ATyp(LTyp(TransTyp(lt1, lt2))), ATyp(LTyp(TransTyp(lt3, lt4)))) ->
         debug_print "\ttrans, trans";
-        if ltyp_dim_equals lt2 lt3 d then ATyp(LTyp(TransTyp(lt1, lt4)))
+        if ltyp_equals lt2 lt3 d then ATyp(LTyp(TransTyp(lt1, lt4)))
         else (raise (TypeException "linear transformation type mismatch"))
     | (ATyp(LTyp(TransTyp(lt1, lt2))), ATyp(LTyp(a))) ->
         debug_print "\ttrans, vec";
-        if ltyp_dim_equals a lt1 d then ATyp(LTyp(lt2))
+        if ltyp_equals a lt1 d then ATyp(LTyp(lt2))
         else (raise (TypeException "linear transformation type mismatch"))
 
     | (ATyp(LTyp(TagTyp a1)), ATyp(LTyp(TagTyp a2))) ->

@@ -3,3 +3,15 @@ tag b is vec3;
 tag c is b;
 
 a x = [1., 2.]:a;
+vec2 x2 = x;
+b y = [2., 1., 1.]:c;
+c z = [3., 3., 3.]:c;
+vec3 z2 = z;
+
+a->b t = [[1., 1.], [1., 1.], [1., 1.]]:a->b;
+mat2x3 m = [[1., 1., 1.], [1., 1., 1.]]:mat2x3;
+mat2x3 m2 = m; // partial order makes vec2->vec3 = mat2x3
+a->c a_c = [[1., 1.], [1., 1.], [1., 1.]]:a->c;
+mat3x2 m3 = a_c;
+
+print 1;
