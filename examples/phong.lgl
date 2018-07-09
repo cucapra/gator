@@ -60,7 +60,7 @@ color diffuse = [0.5, 0.0, 0.0]:color;
 color spec = [1.0, 1.0, 1.0]:color;
 
 vec4->vec4 modelView = uModel * uView;
-homogeneous vertH = uView * uModel * ((extendPos * vPosition) + noScale);
+homogeneous vertH = uView * uModel * ((extendPos * vPosition) + noScale); // type error
 position vert = (collapsePos * vertH) / (dot vertH getW);
 
 direction light = posDirId * norm(lightPos - vert);
