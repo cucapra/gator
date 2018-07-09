@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "sourceMap": true,
+        "strict": true,
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+        "outDir": "build"
+    },
+    "files": [
+        "lighting.ts",
+        "types.d.ts"
+    ]
+}

@@ -103,6 +103,9 @@ comm:
   | t = typ; x = ID; GETS; e1 = exp; SEMI; {  if (Str.string_match matr x 0) || (Str.string_match vec x 0) then (
       raise (ParseException "invalid id specified for variable declaration")
     ) else Decl(t, x, e1) }
+  | x = ID; GETS; e1 = exp; SEMI; {  if (Str.string_match matr x 0) || (Str.string_match vec x 0) then (
+      raise (ParseException "invalid id specified for variable declaration")
+    ) else Assign(x, e1) }
   | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; 
     ELSE; LBRACE; c2 = commlst; RBRACE { If(b1,c1,c2) }
   | PRINT; e = exp; SEMI; { Print(e) }

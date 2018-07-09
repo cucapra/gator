@@ -63,6 +63,7 @@ type comm =
     Skip
     | Print of exp
     | Decl of typ * string * exp
+    | Assign of string * exp
     | If of exp * comm list * comm list
     
 (* tag declaration statements *)

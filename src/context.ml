@@ -14,7 +14,7 @@ let merge c1 c2 = c1 @ c2
 let lookup c x = List.assoc x c
 
 (* Rebind var to value in context. *)
-let update c x v = if List.mem_assoc x c then failwith "Duplicate" else (x, v) :: c
+let update c x v = let c' = (if List.mem_assoc x c then List.remove_assoc x c else c) in (x, v) :: c'
 
 (* Produce bindings as an association list. *)
 let bindings c = c

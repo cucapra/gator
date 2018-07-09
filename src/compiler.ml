@@ -175,6 +175,7 @@ let rec comp_comm (c : comm list) (d : delta) (eps : epsilon) : string =
             (if is_core x then "" else string_of_typ ty d ^ " ")
             ^ x ^ " = " ^ (comp_exp e d eps') ^ ";"
             ^ (comp_comm t d eps'))
+        | Assign (x, e) -> x ^ " = " ^ (comp_exp e d eps) ^ ";" ^ (comp_comm t d eps)
         | If (e, c1, c2) -> ("if " ^ "(" ^ (comp_exp e d eps) ^ ")"
             ^ "{ " ^ (comp_comm c1 d eps) ^ " }"
             ^ "{ " ^ (comp_comm c2 d eps) ^ " }" 
