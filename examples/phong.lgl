@@ -4,40 +4,44 @@
 // Also using Braid example as a reference
 // https://capra.cs.cornell.edu/braid/dingus/#example=phong
 
-tag position is vec3;
-tag homogeneous is vec4;
-tag direction is vec3;
+tag modelPos is vec3;
+tag model is vec4;
+tag worldPos is vec3;
+tag world is vec4;
+tag cameraPos is vec3;
+tag camera is vec4;
 tag color is vec3;
 tag alphaColor is vec4;
 
 position vPosition = [0., 0., 0.]:position;
 direction vNormal = [0., 0., 0.]:direction;
-vec4->vec4 uModel = [
+position uLight = [1., 1., 1.]:position;
+model->world uModel = [
   [0., 0., 0., 0.],
   [0., 0., 0., 0.],
   [0., 0., 0., 0.],
   [0., 0., 0., 0.]
-]:vec4->vec4;
-vec4->vec4 uView = [
+]:model->world;
+world->camera uView = [
   [0., 0., 0., 0.],
   [0., 0., 0., 0.],
   [0., 0., 0., 0.],
   [0., 0., 0., 0.]
-]:vec4->vec4;
+]:world->camera;
 
-position->homogeneous extendPos = [
+modelPos->worldPos extendModel = [
   [1., 0., 0.],
   [0., 1., 0.],
   [0., 0., 1.],
   [0., 0., 0.]
-]:position->homogeneous;
-homogeneous noScale = [0., 0., 0., 1.]:homogeneous;
+]:modelPos->worldPos;
+worldPos noScale = [0., 0., 0., 1.]:worldPos;
 
-homogeneous->position collapsePos = [ 
+worldPos->modelPos collapseModel = [ 
   [1., 0., 0., 0.],
   [0., 1., 0., 0.], 
   [0., 0., 1., 0.]
-]:homogeneous->position;
+]:worldPos->modelPos;
 
 color->alphaColor extendColor = [
   [1., 0., 0.],
@@ -49,43 +53,35 @@ alphaColor opaque = [0., 0., 0., 1.]:alphaColor;
 
 vec4 getW = [0., 0., 0., 1.]:vec4;
 
-position->direction posDirId = [
-  [1., 0., 0.],
-  [0., 1., 0.],
-  [0., 0., 1.]
-]:position->direction;
+color diffuse = [1., 0., 0.]:color;
+color spec = [1.0, 0.0, 0.0]:color;
 
-position lightPos = [1.0, 1.0, 1.0]:position;
-color diffuse = [0.5, 0.0, 0.0]:color;
-color spec = [1.0, 1.0, 1.0]:color;
+//homogeneous vertH = uView * uModel * ((extendPos * vPosition) + noScale);
+//position vert = (collapsePos * vertH) / (dot vertH getW);
 
-vec4->vec4 modelView = uModel * uView;
-homogeneous vertH = uView * uModel * ((extendPos * vPosition) + noScale);
-position vert = (collapsePos * vertH) / (dot vertH getW);
-
-direction light = posDirId * norm(lightPos - vert);
-direction negLight = [0., 0., 0.]:direction - light;
+//direction light = posDirId * norm(uLight - vert);
+//direction negLight = [0., 0., 0.]:direction - light;
 // See glsl reflect definition
-direction reflected = negLight - (2. * (dot vNormal negLight) * vNormal);
+//direction reflected = negLight - (2. * (dot vNormal negLight) * vNormal);
 
-direction view = norm([0., 0., 0.]:position - vert);
+//direction view = norm([0., 0., 0.]:position - vert);
 
-float lambertian = 0.0;
-float lDot = dot light vNormal;
-bool lDotCheck = (0. <= lDot);
-if (lDotCheck) { lambertian = lDot; } else { skip; }
-float specular = 0.0;
-bool lCheck = (0.0 <= lambertian && !(lambertian == 0.0));
+//float lambertian = 0.0;
+//float lDot = dot light vNormal;
+//bool lDotCheck = (0. <= lDot);
+//if (lDotCheck) { lambertian = lDot; } else { skip; }
+//float specular = 0.0;
+//bool lCheck = (0.0 <= lambertian && !(lambertian == 0.0));
 
-if(lCheck) {
-  float specAngle = 0.;
-  float specDot = dot reflected view;
-  bool specCheck = (0. <= specDot);
-  if (specCheck) { specAngle = specDot; } else { skip; }
-  float specular = specAngle * specAngle * specAngle * specAngle;
-}
-else { skip; }
+//if(lCheck) {
+//  float specAngle = 0.;
+//  float specDot = dot reflected view;
+//  bool specCheck = (0. <= specDot);
+//  if (specCheck) { specAngle = specDot; } else { skip; }
+//  specular = specAngle * specAngle * specAngle * specAngle;
+//}
+//else { skip; }
 
-color fragColor = lambertian * diffuse + specular * spec;
-alphaColor gl_FragColor = (extendColor * fragColor) + opaque;
-print gl_FragColor;
+//color fragColor = lambertian * diffuse + specular * spec;
+//alphaColor gl_FragColor = (extendColor * fragColor) + opaque;
+//print gl_FragColor;
