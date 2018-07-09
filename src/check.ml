@@ -367,6 +367,8 @@ and check_exp (e: exp) (d: delta) (g: gamma) : typ =
     | Not e1 -> check_bool_unop (check_exp e1 d g)
     | Typ typ -> check_typ typ d
 
+
+
 let rec check_decl (t: typ) (s: string) (e: exp) (d: delta) (g: gamma) : delta * gamma =
     debug_print (">> check_decl <<"^s^">>");
     if Context.mem d s then 
@@ -389,12 +391,18 @@ let rec check_comm (c: comm) (d: delta) (g: gamma) : delta * gamma =
     match c with
     | Skip -> (d, g)
     | Print e -> ignore (check_exp e d g); (d, g)
-    | Decl (t, s, e) -> check_decl t s e d g
+    | Decl (t, s, e) -> 
+        if Context.mem g s then raise (TypeException "variable name shadowing is illegal")
+        else check_decl t s e d g
     | If (b, c1, c2) -> check_comm_lst c1 d g |> ignore; check_comm_lst c2 d g |> ignore; 
         (match check_exp b d g with 
         | BTyp -> (d, g)
         | _ -> raise (TypeException "expected boolean expression for if condition"))
-    | _ -> failwith "Unimplemented"
+    | Assign (s, e) -> 
+        if Context.mem g s then 
+            let t = Context.lookup g s in
+            check_decl t s e d g
+        else raise (TypeException "assignment to undeclared variable")
 
 and check_comm_lst (cl : comm list) (d: delta) (g: gamma): delta * gamma = 
     debug_print ">> check_comm_lst";
