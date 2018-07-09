@@ -90,6 +90,11 @@ declare module 'teapot' {
   const cells: [number, number, number][];
 }
 
+declare module 'bunny' {
+  const positions: [number, number, number][];
+  const cells: [number, number, number][];
+}
+
 declare module 'normals' {
   function vertexNormals(cells: [number, number, number][], positions: [number, number, number][]): [number, number, number][];
   function faceNormals(cells: [number, number, number][], positions: [number, number, number][]): [number, number, number][];

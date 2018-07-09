@@ -13,9 +13,9 @@ tag camera is vec4;
 tag color is vec3;
 tag alphaColor is vec4;
 
-position vPosition = [0., 0., 0.]:position;
-direction vNormal = [0., 0., 0.]:direction;
-position uLight = [1., 1., 1.]:position;
+modelPos vPosition = [0., 0., 0.]:modelPos;
+modelPos vNormal = [0., 0., 0.]:modelPos;
+worldPos uLight = [1., 1., 1.]:worldPos;
 model->world uModel = [
   [0., 0., 0., 0.],
   [0., 0., 0., 0.],
@@ -29,19 +29,31 @@ world->camera uView = [
   [0., 0., 0., 0.]
 ]:world->camera;
 
-modelPos->worldPos extendModel = [
+modelPos->model extendModel = [
   [1., 0., 0.],
   [0., 1., 0.],
   [0., 0., 1.],
   [0., 0., 0.]
-]:modelPos->worldPos;
-worldPos noScale = [0., 0., 0., 1.]:worldPos;
-
-worldPos->modelPos collapseModel = [ 
+]:modelPos->model;
+model modelScale = [0., 0., 0., 1.]:model;
+model->modelPos collapseModel = [ 
   [1., 0., 0., 0.],
   [0., 1., 0., 0.], 
   [0., 0., 1., 0.]
-]:worldPos->modelPos;
+]:model->modelPos;
+
+worldPos->world extendWorld = [
+  [1., 0., 0.],
+  [0., 1., 0.],
+  [0., 0., 1.],
+  [0., 0., 0.]
+]:worldPos->world;
+world worldScale = [0., 0., 0., 1.]:world;
+world->worldPos collapseWorld = [ 
+  [1., 0., 0., 0.],
+  [0., 1., 0., 0.], 
+  [0., 0., 1., 0.]
+]:world->worldPos;
 
 color->alphaColor extendColor = [
   [1., 0., 0.],
@@ -56,10 +68,10 @@ vec4 getW = [0., 0., 0., 1.]:vec4;
 color diffuse = [1., 0., 0.]:color;
 color spec = [1.0, 0.0, 0.0]:color;
 
-//homogeneous vertH = uView * uModel * ((extendPos * vPosition) + noScale);
-//position vert = (collapsePos * vertH) / (dot vertH getW);
+world vertH = uModel * ((extendModel * vPosition) + modelScale);
+worldPos vert = (collapseWorld * vertH) / (dot vertH getW);
 
-//direction light = posDirId * norm(uLight - vert);
+worldPos light = norm(uLight - vert);
 //direction negLight = [0., 0., 0.]:direction - light;
 // See glsl reflect definition
 //direction reflected = negLight - (2. * (dot vNormal negLight) * vNormal);

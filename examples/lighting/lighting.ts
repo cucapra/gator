@@ -1,5 +1,4 @@
-import fit from 'canvas-fit';
-import { mat4 } from 'gl-matrix';
+import { mat4, vec3 } from 'gl-matrix';
 import * as teapot from 'teapot';
 import * as normals from 'normals';
 import canvasOrbitCamera from 'canvas-orbit-camera';
@@ -15,6 +14,7 @@ const VERTEX_SHADER =
   "uniform mat4 uProjection;" +
   "uniform mat4 uModel;" +
   "uniform mat4 uView;" +
+  "uniform vec3 uLight;" +
   "void main() {" +
   "vNormal = aNormal;" +
   "vPosition = aPosition;" +
@@ -192,6 +192,7 @@ function main() {
     'uProjection': gl.getUniformLocation(program, 'uProjection'),
     'uView': gl.getUniformLocation(program, 'uView'),
     'uModel': gl.getUniformLocation(program, 'uModel'),
+    'uLight': gl.getUniformLocation(program, 'uLight'),
     'aPosition': gl.getAttribLocation(program, 'aPosition'),
     'aNormal': gl.getAttribLocation(program, 'aNormal'),
   };
@@ -205,6 +206,24 @@ function main() {
   let projection = mat4.create();
   let model = mat4.create();
   let view = mat4.create();
+  let light = vec3.create();
+
+  // center the teapot on the screen
+  let modelShift = vec3.create();
+  modelShift[1] = -10;
+  mat4.translate(model, model, modelShift);
+  let modelScale = vec3.create();
+  let scaleConstant = 1.8;
+  modelScale[0] = scaleConstant;
+  modelScale[1] = scaleConstant;
+  modelScale[2] = scaleConstant;
+  mat4.scale(model, model, modelScale);
+  mat4.rotateX(model, model, .2);
+
+  // place the light
+  light[0] = 0.;
+  light[1] = 0.;
+  light[2] = 0.;
 
   // Clear the canvas
   gl.clearColor(0, 0, 0, 0);
@@ -235,7 +254,9 @@ function main() {
     // Set the shader "uniform" parameters.
     gl.uniformMatrix4fv(locations.uProjection, false, projection);
     gl.uniformMatrix4fv(locations.uView, false, view);
+    mat4.rotateY(model, model, .01);
     gl.uniformMatrix4fv(locations.uModel, false, model);
+    gl.uniform3fv(locations.uLight, light);
 
     // Set the attribute arrays.
     // Note that attributes not used in a shader do not have a bound location
