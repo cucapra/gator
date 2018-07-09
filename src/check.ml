@@ -232,8 +232,11 @@ let check_scalar_binop (t1: typ) (t2: typ) (d: delta) : typ =
     | (ATyp(a), ATyp(IntTyp)) 
     | (ATyp(FloatTyp), ATyp(a)) 
     | (ATyp(a), ATyp(FloatTyp)) -> ATyp a
-    | (ATyp(LTyp a1), ATyp(LTyp a2)) -> (print_typ (ATyp(LTyp(least_common_parent a1 a2 d)))) |> debug_print;
-        ATyp(LTyp(least_common_parent a1 a2 d))
+    | (ATyp(LTyp a1), ATyp(LTyp a2)) -> 
+        if ltyp_dim_equals a1 a2 d then
+        ((print_typ (ATyp(LTyp(least_common_parent a1 a2 d)))) |> debug_print;
+        ATyp(LTyp(least_common_parent a1 a2 d)))
+        else raise (TypeException "dimension mismatch for scalar binop")
     | _ -> 
         (raise (TypeException ("invalid expressions for arithmetic operation: "^(print_typ t1)^", "^(print_typ t2))))
 
@@ -250,7 +253,7 @@ let check_scalar_linear_exp (t1: typ) (t2: typ) (d: delta) : typ =
 let check_norm_exp (a: typ) (d: delta) : typ = 
     debug_print ">> check_norm_exp";
     match a with
-    | ATyp(LTyp l) -> ATyp(FloatTyp)
+    | ATyp(LTyp(VecTyp _)) -> ATyp(FloatTyp)
     | _ -> (raise (TypeException "expected linear type for norm operator"))
 
 (* Type check binary bool operators (i.e. &&, ||) *)
@@ -277,15 +280,35 @@ let check_comp_binop (t1: typ) (t2: typ) : typ =
     | (ATyp(FloatTyp), ATyp(FloatTyp)) -> BTyp
     | _ -> raise (TypeException "unexpected type for binary comparator operations")
 
-let check_dot_exp (t1: typ) (t2: typ) : typ = 
+let check_dot_exp (t1: typ) (t2: typ) (d: delta): typ = 
     match (t1, t2) with 
-    | (ATyp(LTyp _ ), ATyp(LTyp _)) -> ATyp(FloatTyp)
+    | (ATyp(LTyp l1), ATyp(LTyp l2)) -> 
+        if ltyp_dim_equals l1 l2 d then ATyp(FloatTyp) else raise (TypeException "dot product lin expressions dimension mismatch")
     | _ -> raise (TypeException "unexpected type for dot product exp")
+
+(* Type checking addition operations on scalar (int, float) expressions *)
+(* Types are closed under addition and scalar multiplication *)
+let check_addition (t1: typ) (t2: typ) (d: delta) : typ =
+    debug_print ">> check_scalar_binop";
+    match (t1, t2) with 
+    | (ATyp(IntTyp), ATyp(IntTyp))
+    | (ATyp(FloatTyp), ATyp(FloatTyp)) -> t1
+    | (ATyp(FloatTyp), ATyp(IntTyp)) 
+    | (ATyp(IntTyp), ATyp(FloatTyp)) -> ATyp(FloatTyp)
+    | (ATyp(LTyp a1), ATyp(LTyp a2)) -> 
+        if ltyp_dim_equals a1 a2 d then
+        ((print_typ (ATyp(LTyp(least_common_parent a1 a2 d)))) |> debug_print;
+        ATyp(LTyp(least_common_parent a1 a2 d)))
+        else raise (TypeException "dimension mismatch for scalar binop")
+    | _ -> 
+        (raise (TypeException ("invalid expressions for arithmetic operation: "^(print_typ t1)^", "^(print_typ t2))))
+
 
 (* Type checking times operator - on scalar mult & matrix transformations *)
 let rec check_times_exp (t1: typ) (t2: typ) (d: delta) : typ = 
     debug_print ">> check_times_exp";
     match (t1, t2) with
+    | ATyp(LTyp(VecTyp _)), ATyp(LTyp(VecTyp _)) -> raise (TypeException "cannot multiply vectors together")
     | ATyp(IntTyp), ATyp(LTyp(t'))
     | ATyp(LTyp(t')), ATyp(IntTyp)
     | ATyp(LTyp(t')), ATyp(FloatTyp)
@@ -332,10 +355,9 @@ and check_exp (e: exp) (d: delta) (g: gamma) : typ =
     | Var v -> "\tVar "^v |> debug_print;
         Context.lookup g v
     | Norm a -> check_norm_exp (check_exp a d g) d
-    | Dot (e1, e2) -> check_dot_exp (check_exp e1 d g) (check_exp e2 d g)
-    | Plus (e1, e2)
-    | Div (e1, e2)
-    | Minus (e1, e2) -> check_scalar_binop (check_exp e1 d g) (check_exp e2 d g) d
+    | Dot (e1, e2) -> check_dot_exp (check_exp e1 d g) (check_exp e2 d g) d
+    | Plus (e1, e2) | Minus (e1, e2) -> check_addition (check_exp e1 d g) (check_exp e2 d g) d
+    | Div (e1, e2) -> check_scalar_binop (check_exp e1 d g) (check_exp e2 d g) d
     | Times (e1, e2) -> check_times_exp (check_exp e1 d g) (check_exp e2 d g) d
     | CTimes (e1, e2) -> check_scalar_linear_exp (check_exp e1 d g) (check_exp e2 d g) d
     | Eq (e1, e2)
@@ -388,8 +410,11 @@ let rec check_tags (t : tagdecl list) (d: delta): delta =
     | (s, a)::t -> 
         ignore (check_atyp a d);
         match a with 
+        | (LTyp(MatTyp _ )) -> raise (TypeException "cannot have matrix tags")
+        | (LTyp(TransTyp _)) -> raise (TypeException "cannot have transtyp tags")
         | (LTyp l) -> 
-            Context.update d s l |> check_tags t
+            if Context.mem d s then raise (TypeException "cannot redeclare tag")
+            else Context.update d s l |> check_tags t
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
 let check_prog (e : prog) : unit =
