@@ -70,9 +70,8 @@ color spec = [1.0, 0.0, 0.0]:color;
 
 world vertH = uModel * ((extendModel * vPosition) + modelScale);
 worldPos vert = (collapseWorld * vertH) / (dot vertH getW);
-
 worldPos light = norm(uLight - vert);
-//direction negLight = [0., 0., 0.]:direction - light;
+direction negLight = [0., 0., 0.]:direction - light;
 // See glsl reflect definition
 //direction reflected = negLight - (2. * (dot vNormal negLight) * vNormal);
 

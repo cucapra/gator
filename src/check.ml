@@ -249,12 +249,20 @@ let check_scalar_linear_exp (t1: typ) (t2: typ) (d: delta) : typ =
         else (raise (TypeException "dimension mismatch in dot/ctimes operator"))
     | _ -> (raise (TypeException "expected linear types for dot/ctimes operator"))
 
-(* Type check norm expressions *)
-let check_norm_exp (a: typ) (d: delta) : typ = 
-    debug_print ">> check_norm_exp";
+(* Check whether a typ is a vec type *)
+let rec is_vec (a: typ) (d: delta) : bool =
     match a with
-    | ATyp(LTyp(VecTyp _)) -> ATyp(FloatTyp)
-    | _ -> (raise (TypeException "expected linear type for norm operator"))
+    | ATyp(LTyp(VecTyp _)) -> true
+    | ATyp(LTyp(TagTyp t1)) -> 
+        let tag = Context.lookup d t1 in is_vec (ATyp(LTyp(tag))) d
+    | _ -> false
+
+(* Type check norm expressions *)
+let rec check_norm_exp (a: typ) (d: delta) : typ = 
+    debug_print ">> check_norm_exp";
+    (* Printf.printf "%s" (print_typ a); *)
+    if is_vec a d then a
+    else (raise (TypeException "expected linear type for norm operator"))
 
 (* Type check binary bool operators (i.e. &&, ||) *)
 let check_bool_binop (t1: typ) (t2: typ) : typ = 
@@ -291,6 +299,7 @@ let check_dot_exp (t1: typ) (t2: typ) (d: delta): typ =
 let check_addition (t1: typ) (t2: typ) (d: delta) : typ =
     debug_print ">> check_scalar_binop";
     match (t1, t2) with 
+    (* | (ATyp(LTyp(VecTyp n1)), ATyp(LTyp(VecTyp n2))) ->  *)
     | (ATyp(IntTyp), ATyp(IntTyp))
     | (ATyp(FloatTyp), ATyp(FloatTyp)) -> t1
     | (ATyp(FloatTyp), ATyp(IntTyp)) 
