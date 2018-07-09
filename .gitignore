@@ -68,3 +68,9 @@ examples/color.json
 parser.ml
 lexer.ml
 parser.mli
+
+# Node
+yarn.lock
+node_modules/
+*.json
+*.jsonecho

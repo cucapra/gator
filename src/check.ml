@@ -327,7 +327,7 @@ let rec check_times_exp (t1: typ) (t2: typ) (d: delta) : typ =
     | (ATyp(LTyp(TransTyp(lt1, lt2))), ATyp(LTyp(TransTyp(lt3, lt4)))) ->
         debug_print "\ttrans, trans";
         if ltyp_equals lt2 lt3 d then ATyp(LTyp(TransTyp(lt1, lt4)))
-        else (raise (TypeException "linear transformation type mismatch"))
+        else (raise (TypeException "linear transformation type mismatch for transtyps"))
     | (ATyp(LTyp(TransTyp(lt1, lt2))), ATyp(LTyp(a))) ->
         debug_print "\ttrans, vec";
         if ltyp_equals a lt1 d then ATyp(LTyp(lt2))
