@@ -73,9 +73,9 @@ worldPos vert = (collapseWorld * vertH) / (dot vertH getW);
 worldPos light = norm(uLight - vert);
 
 worldPos negLight = [0., 0., 0.]:worldPos - light;
-modelPos->worldPos mp_wp = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]:modelPos->worldPos;
+worldPos normalWorld = collapseWorld * (uModel * ((extendWorld * vNormal) + modelScale));
 // See glsl reflect definition
-worldPos reflected = negLight - mp_wp * (2. * (dot vNormal negLight) * vNormal);
+worldPos reflected = negLight - (2. * (dot normalWorld negLight) * normalWorld);
 worldPos view = norm([0., 0., 0.]:worldPos - vert);
 
 float lambertian = 0.0;
