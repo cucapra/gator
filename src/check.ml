@@ -81,8 +81,9 @@ let rec is_subtype (t1: ltyp) (t2: ltyp) (d: delta) : bool =
     | (TagTyp _, VecTyp _) -> ltyp_dim_equals t1 t2 d
     | (MatTyp _, _) 
     | (VecTyp _, _) -> 
-        Printf.printf "%s" (print_typ (ATyp(LTyp(t2))));
-        raise (TypeException "Cannot cast down top type")
+        (* Printf.printf "%s" (print_typ (ATyp(LTyp(t1))));
+        Printf.printf "%s" (print_typ (ATyp(LTyp(t2)))); *)
+        raise (TypeException "cannot cast down top type")
     | (TagTyp i1, TagTyp i2) -> if i1 = i2 then true else is_subtype (Context.lookup d i1) t2 d
     | (TransTyp (l1, r1), TransTyp (l2, r2)) -> is_subtype l2 l1 d && is_subtype r1 r2 d
     | (l1, l2) -> (ltyp_dim_equals l1 l2 d) || 
@@ -159,6 +160,17 @@ let matlit_type (m: mat) : ltyp =
         then (MatTyp(List.length m, dim))
         else (raise (TypeException "mat dimension inconsistent"))
 
+(* Check equality between two ltyp's *)
+let rec ltyp_equals (t1: ltyp) (t2: ltyp) (d: delta) : bool = 
+    match (t1, t2) with 
+    | (VecTyp n1, MatTyp(1, n2))
+    | (MatTyp(1, n1), VecTyp n2) -> n1 = n2
+    | (MatTyp _, MatTyp _)
+    | (VecTyp _, VecTyp _) -> ltyp_dim_equals t1 t2 d
+    | (TransTyp (l1, r1), TransTyp (l2, r2)) -> ltyp_equals l1 l2 d && ltyp_equals r1 r2 d
+    | (TagTyp i1, TagTyp i2) -> i1 = i2
+    | _ -> false
+
 (* Type checking arithmetic literals *)
 let rec check_aval (av: avalue) (d: delta) : typ = 
     debug_print ">> check_aval";
@@ -167,11 +179,11 @@ let rec check_aval (av: avalue) (d: delta) : typ =
     | Float f -> ATyp(FloatTyp)
     | VecLit (v, t) -> 
         let littyp = veclit_type v in 
-        if is_subtype t littyp d then ATyp(LTyp(t)) 
+        if ltyp_dim_equals t littyp d then ATyp(LTyp(t)) 
         else (raise (TypeException "vec literal tag mismatch"))
     | MatLit (m, t) -> 
         let littyp = matlit_type m in 
-        if is_subtype t littyp d then ATyp(LTyp(t)) 
+        if ltyp_dim_equals t littyp d then ATyp(LTyp(t))
         else (raise (TypeException ("mat literal tag mismatch :" ^(print_typ (ATyp(LTyp(t))))^", "^(print_typ (ATyp(LTyp(littyp)))))))
 
 (* Get list of ancestors for a linear type *)
@@ -183,17 +195,6 @@ let rec get_ancestor_list (t1: ltyp) (acc: ltyp list) (d: delta) : ltyp list =
     | TagTyp i -> let t1' = (Context.lookup d i) in 
         get_ancestor_list t1' (t1::acc) d
     | _ -> failwith "FATAL ERROR - should not reach this line (get_ancestor of transtyp)"
-
-(* Check equality between two ltyp's *)
-let rec ltyp_equals (t1: ltyp) (t2: ltyp) (d: delta) : bool = 
-    match (t1, t2) with 
-    | (VecTyp n1, MatTyp(1, n2))
-    | (MatTyp(1, n1), VecTyp n2) -> n1 = n2
-    | (MatTyp _, MatTyp _)
-    | (VecTyp _, VecTyp _) -> ltyp_dim_equals t1 t2 d
-    | (TransTyp (l1, r1), TransTyp (l2, r2)) -> ltyp_equals l1 l2 d && ltyp_equals r1 r2 d
-    | (TagTyp i1, TagTyp i2) -> i1 = i2
-    | _ -> false
 
 (* Get last match in two lists *)
 let rec get_last_match (l1: 'a list) (l2: 'a list) (m: 'a) (d: delta): 'a =

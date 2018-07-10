@@ -12,6 +12,7 @@ tag cameraPos is vec3;
 tag camera is vec4;
 tag color is vec3;
 tag alphaColor is vec4;
+tag direction is vec3;
 
 modelPos vPosition = [0., 0., 0.]:modelPos;
 modelPos vNormal = [0., 0., 0.]:modelPos;
