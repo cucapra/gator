@@ -68,31 +68,27 @@ vec4 getW = [0., 0., 0., 1.]:vec4;
 color diffuse = [1., 0., 0.]:color;
 color spec = [1.0, 0.0, 0.0]:color;
 
-world vertH = uModel * ((extendModel * vPosition) + modelScale);
-worldPos vert = (collapseWorld * vertH) / (dot vertH getW);
-worldPos light = norm(uLight - vert);
-
-worldPos negLight = [0., 0., 0.]:worldPos - light;
-worldPos normalWorld = collapseWorld * (uModel * ((extendModel * vNormal) + modelScale));
-// See glsl reflect definition
-worldPos reflected = negLight - (2. * (dot normalWorld negLight) * normalWorld);
-worldPos view = norm([0., 0., 0.]:worldPos - vert);
+worldPos vert = collapseWorld * (uModel * ((extendModel * vPosition) + modelScale));
+worldPos lightDir = norm(uLight - vert);
+worldPos normalWorld = norm(collapseWorld * (uModel * (extendModel * vNormal)));
 
 float lambertian = 0.0;
-float lDot = dot light vNormal;
+float lDot = dot lightDir normalWorld;
 bool lDotCheck = (0. <= lDot);
 if (lDotCheck) { lambertian = lDot; } else { skip; }
-float specular = 0.0;
-bool lCheck = (0.0 <= lambertian && !(lambertian == 0.0));
 
-if(lCheck) {
-  float specAngle = 0.;
-  float specDot = dot reflected view;
-  bool specCheck = (0. <= specDot);
-  if (specCheck) { specAngle = specDot; } else { skip; }
-  specular = specAngle * specAngle * specAngle * specAngle;
-}
-else { skip; }
+worldPos view = norm([0., 0., 0.]:worldPos - vert);
+bool lCheck = (0.0 <= lambertian && !(lambertian == 0.0));
+float specular = 0.0;
+
+//if(lCheck) {
+//  float specAngle = 0.;
+//  float specDot = dot reflected view;
+//  bool specCheck = (0. <= specDot);
+//  if (specCheck) { specAngle = specDot; } else { skip; }
+//  specular = specAngle * specAngle * specAngle * specAngle;
+//}
+//else { skip; }
 
 color fragColor = lambertian * diffuse + specular * spec;
 alphaColor gl_FragColor = (extendColor * fragColor) + opaque;
