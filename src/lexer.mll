@@ -1,5 +1,7 @@
 {
 open Parser
+exception SyntaxError of string
+
 }
 
 (* Regex definitons *)
@@ -55,3 +57,5 @@ rule read = parse
   | id  as id { ID id }
   | floatval as floatval  { FLOAT (float_of_string floatval) }
   | eof   { EOL }
+  | _ { raise (SyntaxError ("Unexpected char: " ^ Lexing.lexeme lexbuf)) }
+

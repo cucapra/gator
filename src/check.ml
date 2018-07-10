@@ -341,7 +341,7 @@ let rec check_times_exp (t1: typ) (t2: typ) (d: delta) : typ =
     | (ATyp(LTyp(TransTyp(lt1, lt2))), ATyp(LTyp(a))) ->
         debug_print "\ttrans, vec";
         if ltyp_equals a lt1 d then ATyp(LTyp(lt2))
-        else (raise (TypeException "linear transformation type mismatch"))
+        else (raise (TypeException ("linear transformation type mismatch for "^(print_typ t1)^", "^(print_typ t2))))
     | (ATyp(LTyp(TagTyp a1)), ATyp(LTyp(TagTyp a2))) ->
         let tagtyp1 = Context.lookup d a1 in 
         let tagtyp2 = Context.lookup d a2 in 

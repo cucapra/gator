@@ -72,11 +72,10 @@ world vertH = uModel * ((extendModel * vPosition) + modelScale);
 worldPos vert = (collapseWorld * vertH) / (dot vertH getW);
 worldPos light = norm(uLight - vert);
 
-
 worldPos negLight = [0., 0., 0.]:worldPos - light;
-vec3->worldPos v3_wp = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]];
+modelPos->worldPos mp_wp = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]]:modelPos->worldPos;
 // See glsl reflect definition
-worldPos reflected = negLight - v3_wp * (2. * (dot vNormal negLight) * vNormal);
+worldPos reflected = negLight - mp_wp * (2. * (dot vNormal negLight) * vNormal);
 worldPos view = norm([0., 0., 0.]:worldPos - vert);
 
 float lambertian = 0.0;
