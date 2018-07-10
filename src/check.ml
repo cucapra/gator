@@ -241,7 +241,7 @@ let check_scalar_binop (t1: typ) (t2: typ) (d: delta) : typ =
     | _ -> 
         (raise (TypeException ("invalid expressions for arithmetic operation: "^(print_typ t1)^", "^(print_typ t2))))
 
-(* "scalar linear exp", (i.e. dot and ctimes) returns generalized MatTyp *)
+(* "scalar linear exp", (i.e. ctimes) returns generalized MatTyp *)
 let check_scalar_linear_exp (t1: typ) (t2: typ) (d: delta) : typ = 
     debug_print ">> check_scalar_linear_exp";
     match (t1, t2) with 
@@ -292,7 +292,7 @@ let check_comp_binop (t1: typ) (t2: typ) : typ =
 let check_dot_exp (t1: typ) (t2: typ) (d: delta): typ = 
     match (t1, t2) with 
     | (ATyp(LTyp l1), ATyp(LTyp l2)) -> 
-        if ltyp_dim_equals l1 l2 d then ATyp(FloatTyp) else raise (TypeException "dot product lin expressions dimension mismatch")
+        if ltyp_equals l1 l2 d then ATyp(FloatTyp) else raise (TypeException "dot product lin expressions dimension mismatch")
     | _ -> raise (TypeException "unexpected type for dot product exp")
 
 (* Type checking addition operations on scalar (int, float) expressions *)
