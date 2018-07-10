@@ -4,6 +4,7 @@ import * as normals from 'normals';
 import canvasOrbitCamera from 'canvas-orbit-camera';
 import pack from 'array-pack-2d';
 import data from '../color.json';
+import eye from 'eye-vector';
 
 const VERTEX_SHADER =
   "precision highp float;" +
@@ -15,6 +16,7 @@ const VERTEX_SHADER =
   "uniform mat4 uModel;" +
   "uniform mat4 uView;" +
   "uniform vec3 uLight;" +
+  "uniform vec3 uCameraPosition;" +
   "void main() {" +
   "vNormal = aNormal;" +
   "vPosition = aPosition;" +
@@ -193,6 +195,7 @@ function main() {
     'uView': gl.getUniformLocation(program, 'uView'),
     'uModel': gl.getUniformLocation(program, 'uModel'),
     'uLight': gl.getUniformLocation(program, 'uLight'),
+    'uCameraPosition': gl.getUniformLocation(program, 'uSomething'),
     'aPosition': gl.getAttribLocation(program, 'aPosition'),
     'aNormal': gl.getAttribLocation(program, 'aNormal'),
   };
@@ -207,6 +210,7 @@ function main() {
   let model = mat4.create();
   let view = mat4.create();
   let light = vec3.create();
+  let cameraPosition = vec3.create();
 
   // center the bunny on the screen
   let modelShift = vec3.create();
@@ -221,9 +225,9 @@ function main() {
   mat4.rotateX(model, model, .2);
 
   // place the light
-  light[0] = 20.;
+  light[0] = 0.;
   light[1] = 20.;
-  light[2] = 20.;
+  light[2] = 30.;
 
   // Clear the canvas
   gl.clearColor(0, 0, 0, 0);
@@ -236,8 +240,7 @@ function main() {
 
     camera.view(view);
     camera.tick();
-
-    var rad = Math.PI / 180.0 * 0.;
+    cameraPosition = eye(view) as vec3;
 
     projection_matrix(projection, width, height);
 
@@ -257,6 +260,7 @@ function main() {
     mat4.rotateY(model, model, .01);
     gl.uniformMatrix4fv(locations.uModel, false, model);
     gl.uniform3fv(locations.uLight, light);
+    gl.uniform3fv(locations.uCameraPosition, cameraPosition);
 
     // Set the attribute arrays.
     // Note that attributes not used in a shader do not have a bound location

@@ -22,6 +22,7 @@
     "gl-matrix": "^2.6.1",
     "normals": "^0.1.0",
     "teapot": "^1.0.0",
-    "bunny": "^1.0.1"
+    "bunny": "^1.0.1",
+    "eye-vector": "^1.0.0"
   }
 }

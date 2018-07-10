@@ -95,6 +95,11 @@ declare module 'bunny' {
   const cells: [number, number, number][];
 }
 
+declare module 'eye-vector' {
+  function eye(view: Float32Array, out?: Float32Array): Float32Array;
+  export default eye;
+}
+
 declare module 'normals' {
   function vertexNormals(cells: [number, number, number][], positions: [number, number, number][]): [number, number, number][];
   function faceNormals(cells: [number, number, number][], positions: [number, number, number][]): [number, number, number][];
