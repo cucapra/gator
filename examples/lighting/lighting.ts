@@ -1,5 +1,5 @@
 import { mat4, vec3 } from 'gl-matrix';
-import * as teapot from 'teapot';
+import * as bunny from 'bunny';
 import * as normals from 'normals';
 import canvasOrbitCamera from 'canvas-orbit-camera';
 import pack from 'array-pack-2d';
@@ -198,7 +198,7 @@ function main() {
   };
 
   // look up where the vertex data needs to go.
-  let shape_buffers = mesh_buffers(gl, teapot);
+  let shape_buffers = mesh_buffers(gl, bunny);
 
   // Create the base matrices to be used
   // when rendering the object. Alternatively, can
@@ -208,7 +208,7 @@ function main() {
   let view = mat4.create();
   let light = vec3.create();
 
-  // center the teapot on the screen
+  // center the bunny on the screen
   let modelShift = vec3.create();
   modelShift[1] = -10;
   mat4.translate(model, model, modelShift);
@@ -267,7 +267,7 @@ function main() {
     // TODO What is an element array?
     bind_element_buffer(gl, shape_buffers.cells);
 
-    let count = teapot.cells.length * teapot.cells[0].length;
+    let count = bunny.cells.length * bunny.cells[0].length;
     gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_SHORT, 0);
   }
 }
