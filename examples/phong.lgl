@@ -4,57 +4,70 @@
 // Thus we sometimes use Braid example as a reference
 // https://capra.cs.cornell.edu/braid/dingus/#example=phong
 
-tag modelPos is vec3;
-tag model is vec4;
-tag worldPos is vec3;
-tag world is vec4;
-tag cameraPos is vec3;
-tag camera is vec4;
+tag model is vec3;
+tag modelHom is vec4;
+tag world is vec3;
+tag worldHom is vec4;
+tag camera is vec3;
+tag cameraHom is vec4;
 tag color is vec3;
 tag alphaColor is vec4;
 
-modelPos vPosition = [0., 0., 0.]:modelPos;
-modelPos vNormal = [0., 0., 0.]:modelPos;
-worldPos uLight = [1., 1., 1.]:worldPos;
-worldPos uCameraPosition = [0., 0., 0.]:worldPos;
-model->world uModel = [
+model vPosition = [0., 0., 0.]:model;
+model vNormal = [0., 0., 0.]:model;
+world uLight = [1., 1., 1.]:world;
+world uCameraPosition = [0., 0., 0.]:world;
+modelHom->worldHom uModel = [
   [0., 0., 0., 0.],
   [0., 0., 0., 0.],
   [0., 0., 0., 0.],
   [0., 0., 0., 0.]
-]:model->world;
-world->camera uView = [
+]:modelHom->worldHom;
+worldHom->cameraHom uView = [
   [0., 0., 0., 0.],
   [0., 0., 0., 0.],
   [0., 0., 0., 0.],
   [0., 0., 0., 0.]
-]:world->camera;
+]:worldHom->cameraHom;
 
-modelPos->model extendModel = [
+model->modelHom extendModel = [
   [1., 0., 0.],
   [0., 1., 0.],
   [0., 0., 1.],
   [0., 0., 0.]
-]:modelPos->model;
-model modelScale = [0., 0., 0., 1.]:model;
-model->modelPos collapseModel = [ 
+]:model->modelHom;
+modelHom modelScale = [0., 0., 0., 1.]:modelHom;
+modelHom->model collapseModel = [ 
   [1., 0., 0., 0.],
   [0., 1., 0., 0.], 
   [0., 0., 1., 0.]
-]:model->modelPos;
+]:modelHom->model;
 
-worldPos->world extendWorld = [
+world->worldHom extendWorld = [
   [1., 0., 0.],
   [0., 1., 0.],
   [0., 0., 1.],
   [0., 0., 0.]
-]:worldPos->world;
-world worldScale = [0., 0., 0., 1.]:world;
-world->worldPos collapseWorld = [ 
+]:world->worldHom;
+worldHom worldScale = [0., 0., 0., 1.]:worldHom;
+worldHom->world collapseWorld = [ 
   [1., 0., 0., 0.],
   [0., 1., 0., 0.], 
   [0., 0., 1., 0.]
-]:world->worldPos;
+]:worldHom->world;
+
+camera->cameraHom extendCamera = [
+  [1., 0., 0.],
+  [0., 1., 0.],
+  [0., 0., 1.],
+  [0., 0., 0.]
+]:camera->cameraHom;
+cameraHom cameraScale = [0., 0., 0., 1.]:cameraHom;
+cameraHom->camera collapseCamera = [ 
+  [1., 0., 0., 0.],
+  [0., 1., 0., 0.], 
+  [0., 0., 1., 0.]
+]:cameraHom->camera;
 
 color->alphaColor extendColor = [
   [1., 0., 0.],
@@ -64,35 +77,35 @@ color->alphaColor extendColor = [
 ]:color->alphaColor;
 alphaColor opaque = [0., 0., 0., 1.]:alphaColor;
 
-vec4 getW = [0., 0., 0., 1.]:vec4;
+worldHom getWorldW = [0., 0., 0., 1.]:worldHom;
 
 color diffuse = [1., 0., 0.]:color;
 color spec = [1.0, 1.0, 1.0]:color;
 
-worldPos vert = collapseWorld * (uModel * ((extendModel * vPosition) + modelScale));
-worldPos lightDir = norm(uLight - vert);
-worldPos normalWorld = norm(collapseWorld * (uModel * (extendModel * vNormal)));
+world vertWorld = collapseWorld * (uModel * ((extendModel * vPosition) + modelScale));
+world lightDir = norm(uLight - vertWorld);
+world normalWorld = norm(collapseWorld * (uModel * (extendModel * vNormal)));
 
 float lambertian = 0.0;
 float lDot = dot lightDir normalWorld;
 bool lDotCheck = (0. <= lDot);
 if (lDotCheck) { lambertian = lDot; } else { skip; }
 
-//bool lCheck = (0.0 <= lambertian && !(lambertian == 0.0));
-worldPos viewDir = norm(uCameraPosition - vert);
-worldPos negLight = [0., 0., 0.]:worldPos - lightDir;
+bool lCheck = (0.0 <= lambertian && !(lambertian == 0.0));
+world viewDir = norm(uCameraPosition - vertWorld);
+world negLight = [0., 0., 0.]:world - lightDir;
 //See glsl reflection definition
-worldPos reflectDir = negLight - (2. * (dot normalWorld negLight) * normalWorld);
+world reflectDir = negLight - (2. * (dot normalWorld negLight) * normalWorld);
 float specular = 0.0;
 
-//if(lCheck) {
+if(lCheck) {
   float specAngle = 0.;
-  float specDot = dot reflectDir viewDir;
+  float specDot = dot viewDir reflectDir;
   bool specDotCheck = (0. <= specDot);
   if (specDotCheck) { specAngle = specDot; } else { skip; }
   specular = specAngle * specAngle * specAngle * specAngle;
-//}
-//else { skip; }
+}
+else { skip; }
 
 color fragColor = lambertian * diffuse + specular * spec;
 alphaColor gl_FragColor = (extendColor * fragColor) + opaque;
