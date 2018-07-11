@@ -16,7 +16,7 @@ tag alphaColor is vec4;
 model vPosition = [0., 0., 0.]:model;
 model vNormal = [0., 0., 0.]:model;
 world uLight = [1., 1., 1.]:world;
-world uCameraPosition = [0., 0., 0.]:world;
+camera uCameraPosition = [0., 0., 0.]:camera;
 modelHom->worldHom uModel = [
   [0., 0., 0., 0.],
   [0., 0., 0., 0.],
@@ -79,34 +79,43 @@ alphaColor opaque = [0., 0., 0., 1.]:alphaColor;
 
 worldHom getWorldW = [0., 0., 0., 1.]:worldHom;
 
+model->color modelAsColor = [
+  [1., 0., 0.],
+  [0., 1., 0.],
+  [0., 0., 1.]
+]:model->color;
+
 color diffuse = [1., 0., 0.]:color;
 color spec = [1.0, 1.0, 1.0]:color;
 
-world vertWorld = collapseWorld * (uModel * ((extendModel * vPosition) + modelScale));
-world lightDir = norm(uLight - vertWorld);
-world normalWorld = norm(collapseWorld * (uModel * (extendModel * vNormal)));
+world worldPosition = collapseWorld * (uModel * ((extendModel * vPosition) + modelScale));
+world lightDir = norm(uLight - worldPosition);
+world worldNormal = norm(collapseWorld * (uModel * (extendModel * vNormal)));
 
 float lambertian = 0.0;
-float lDot = dot lightDir normalWorld;
+float lDot = dot lightDir worldNormal;
 bool lDotCheck = (0. <= lDot);
 if (lDotCheck) { lambertian = lDot; } else { skip; }
 
 bool lCheck = (0.0 <= lambertian && !(lambertian == 0.0));
-world viewDir = norm(uCameraPosition - vertWorld);
+//world viewDir = norm(uCameraPosition - worldPosition);
+camera cameraPosition = collapseCamera * (uView * ((extendWorld * worldPosition) + worldScale));
+camera viewDir = norm(uCameraPosition - cameraPosition);
 world negLight = [0., 0., 0.]:world - lightDir;
 //See glsl reflection definition
-world reflectDir = negLight - (2. * (dot normalWorld negLight) * normalWorld);
+world reflectDir = negLight - (2. * (dot worldNormal negLight) * worldNormal);
+camera cameraReflect = collapseCamera * (uView * ((extendWorld * reflectDir)));
 float specular = 0.0;
 
 if(lCheck) {
   float specAngle = 0.;
-  float specDot = dot viewDir reflectDir;
+  float specDot = dot viewDir cameraReflect;
   bool specDotCheck = (0. <= specDot);
   if (specDotCheck) { specAngle = specDot; } else { skip; }
-  specular = specAngle * specAngle * specAngle * specAngle;
+  specular = specAngle * specAngle * specAngle * specAngle * specAngle * specAngle * specAngle * specAngle;
 }
 else { skip; }
 
-color fragColor = lambertian * diffuse + specular * spec;
+color fragColor = (modelAsColor * vNormal) + lambertian * diffuse + specular * spec;
 alphaColor gl_FragColor = (extendColor * fragColor) + opaque;
 print gl_FragColor;

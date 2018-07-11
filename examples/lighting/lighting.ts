@@ -213,7 +213,7 @@ function main() {
   let cameraPosition = vec3.create();
 
   // center the bunny on the screen
-  /*let modelShift = vec3.create();
+  let modelShift = vec3.create();
   modelShift[1] = -10;
   mat4.translate(model, model, modelShift);
   let modelScale = vec3.create();
@@ -222,12 +222,12 @@ function main() {
   modelScale[1] = scaleConstant;
   modelScale[2] = scaleConstant;
   mat4.scale(model, model, modelScale);
-  mat4.rotateX(model, model, .2);*/
+  mat4.rotateX(model, model, .2);
 
   // place the light
-  light[0] = 0.;
+  light[0] = 20.;
   light[1] = 0.;
-  light[2] = 30.;
+  light[2] = 20.;
 
   // Clear the canvas
   gl.clearColor(0, 0, 0, 0);
