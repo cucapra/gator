@@ -16,7 +16,7 @@ tag alphaColor is vec4;
 model vPosition = [0., 0., 0.]:model;
 model vNormal = [0., 0., 0.]:model;
 world uLight = [1., 1., 1.]:world;
-camera uCameraPosition = [0., 0., 0.]:camera;
+world uCameraPosition = [0., 0., 0.]:world;
 modelHom->worldHom uModel = [
   [0., 0., 0., 0.],
   [0., 0., 0., 0.],
@@ -85,7 +85,14 @@ model->color modelAsColor = [
   [0., 0., 1.]
 ]:model->color;
 
-color diffuse = [1., 0., 0.]:color;
+world->color worldAsColor = [
+  [1., 0., 0.],
+  [0., 1., 0.],
+  [0., 0., 1.]
+]:world->color;
+
+color ambient = [.3, 0., 0.]:color;
+color diffuse = [.3, 0.0, 0.0]:color;
 color spec = [1.0, 1.0, 1.0]:color;
 
 world worldPosition = collapseWorld * (uModel * ((extendModel * vPosition) + modelScale));
@@ -98,24 +105,21 @@ bool lDotCheck = (0. <= lDot);
 if (lDotCheck) { lambertian = lDot; } else { skip; }
 
 bool lCheck = (0.0 <= lambertian && !(lambertian == 0.0));
-//world viewDir = norm(uCameraPosition - worldPosition);
-camera cameraPosition = collapseCamera * (uView * ((extendWorld * worldPosition) + worldScale));
-camera viewDir = norm(uCameraPosition - cameraPosition);
+world viewDir = norm(uCameraPosition - worldPosition);
 world negLight = [0., 0., 0.]:world - lightDir;
 //See glsl reflection definition
 world reflectDir = negLight - (2. * (dot worldNormal negLight) * worldNormal);
-camera cameraReflect = collapseCamera * (uView * ((extendWorld * reflectDir)));
 float specular = 0.0;
 
 if(lCheck) {
   float specAngle = 0.;
-  float specDot = dot viewDir cameraReflect;
+  float specDot = dot viewDir reflectDir;
   bool specDotCheck = (0. <= specDot);
   if (specDotCheck) { specAngle = specDot; } else { skip; }
   specular = specAngle * specAngle * specAngle * specAngle * specAngle * specAngle * specAngle * specAngle;
 }
 else { skip; }
 
-color fragColor = (modelAsColor * vNormal) + lambertian * diffuse + specular * spec;
+color fragColor = ambient + lambertian * diffuse + specular * spec;
 alphaColor gl_FragColor = (extendColor * fragColor) + opaque;
 print gl_FragColor;
