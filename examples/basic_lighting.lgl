@@ -1,0 +1,44 @@
+// Basic Linguine shader program, based off of https://shaderfrog.com/app/view/2417
+// with simple lighting effect
+// Currently only tagged with top types
+
+vec4->vec3 v4_v3 = [
+    [1.,0.,0.,0.],
+    [0.,1.,0.,0.],
+    [0.,0.,1.,0.]
+]:vec4->vec3;
+
+vec3->vec4 v3_v4 = [
+  [1., 0., 0.],
+  [0., 1., 0.],
+  [0., 0., 1.],
+  [0., 0., 1.]
+]:vec3->vec4;
+
+vec3 vPosition = [0., 0., 0.]:vec3;
+vec4->vec4 uModel = [
+  [0., 0., 0., 0.],
+  [0., 0., 0., 0.],
+  [0., 0., 0., 0.],
+  [0., 0., 0., 0.]
+]:vec4->vec4;
+
+vec3 vNormal = [0., 0., 0.]:vec3;
+vec3 uLight = [0., 0., 0.]:vec3;
+vec4 color = [0.4, 0.2, 0., 1.0]:vec4; // tasty orange
+
+// Calculate the real position of this pixel in 3d space
+vec3 worldPos = v4_v3 * (uModel * (v3_v4 * vPosition));
+
+// Calculate the normal including the model rotation and scale
+vec3 worldNorm = norm(v4_v3 * (uModel * (v3_v4 * vNormal)));
+
+vec3 lightVec = norm(uLight - worldPos);
+
+// An example simple lighting effect, taking the dot product of the normal
+// A constant float value is added to adjust light intensity
+float brightness = (dot worldNorm lightVec) + 2.0;
+
+vec4 gl_FragColor = color * brightness;
+
+print gl_FragColor;
