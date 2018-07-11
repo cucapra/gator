@@ -240,7 +240,7 @@ function main() {
 
     camera.view(view);
     camera.tick();
-    cameraPosition = eye(view) as vec3;
+    eye(view, cameraPosition);
 
     projection_matrix(projection, width, height);
 
