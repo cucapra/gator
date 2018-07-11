@@ -47,6 +47,7 @@ let rec print_exp (e:exp) : string =
     | Dot (e1, e2) -> "dot "^(print_exp e1)^" "^(print_exp e2)
     | Plus (a1, a2) -> (print_exp a1)^" + "^(print_exp a2)
     | Times (a1, a2) -> "("^(print_exp a1)^") * ("^(print_exp a2)^")"
+    | Div (a1, a2) -> "("^(print_exp a1)^") / ("^(print_exp a2)^")"
     | Minus (a1, a2) -> (print_exp a1)^" - "^(print_exp a2)
     | CTimes (a1, a2) -> "("^(print_exp a1)^") .* ("^(print_exp a2)^")"
     | Eq (a1, a2) -> (print_exp a1)^" == "^(print_exp a2)
@@ -62,6 +63,7 @@ let rec print_comm (c: comm) : string =
     | Decl (t, s, e) -> (print_typ t)^" "^s^" = "^(print_exp e)^";"
     | If (b, c1, c2) -> "if ("^(print_exp b)^") {\n"^(print_comm_lst c1)^
         "} else {\n"^(print_comm_lst c2)^"}"
+    | Assign (b, x) -> b^" = "^(print_exp x)^";"
 
 and 
 
