@@ -226,7 +226,7 @@ function main() {
 
   // place the light
   light[0] = 0.;
-  light[1] = 0.;
+  light[1] = 40.;
   light[2] = 30.;
 
   // Clear the canvas
