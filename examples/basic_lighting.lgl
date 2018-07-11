@@ -12,7 +12,7 @@ vec3->vec4 v3_v4 = [
   [1., 0., 0.],
   [0., 1., 0.],
   [0., 0., 1.],
-  [0., 0., 1.]
+  [0., 0., 0.]
 ]:vec3->vec4;
 
 vec3 vPosition = [0., 0., 0.]:vec3;
@@ -25,10 +25,10 @@ vec4->vec4 uModel = [
 
 vec3 vNormal = [0., 0., 0.]:vec3;
 vec3 uLight = [0., 0., 0.]:vec3;
-vec4 color = [0.4, 0.2, 0., 1.0]:vec4; // tasty orange
+vec3 color = [0.8, 0.4, 0.]:vec3; // tasty orange
 
 // Calculate the real position of this pixel in 3d space
-vec3 worldPos = v4_v3 * (uModel * (v3_v4 * vPosition));
+vec3 worldPos = v4_v3 * (uModel * ((v3_v4 * vPosition) + [0., 0., 0., 1.]:vec4));
 
 // Calculate the normal including the model rotation and scale
 vec3 worldNorm = norm(v4_v3 * (uModel * (v3_v4 * vNormal)));
@@ -36,9 +36,9 @@ vec3 worldNorm = norm(v4_v3 * (uModel * (v3_v4 * vNormal)));
 vec3 lightVec = norm(uLight - worldPos);
 
 // An example simple lighting effect, taking the dot product of the normal
-// A constant float value is added to adjust light intensity
-float brightness = (dot worldNorm lightVec) + 2.0;
+float brightness = (dot worldNorm lightVec);
 
-vec4 gl_FragColor = color * brightness;
+vec3 bright_color = (color * brightness); // precomputed due to compiler bug
+vec4 gl_FragColor = (v3_v4 * bright_color) + [0., 0., 0., 1.]:vec4;
 
 print gl_FragColor;

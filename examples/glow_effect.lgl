@@ -1,0 +1,9 @@
+  // Glow effect based off of https://shaderfrog.com/app/view/5
+  // Using normals of the object
+  
+  vec3 normal = normalize(fNormal);
+  vec3 eye = normalize(-fPosition.xyz);
+  float rim = smoothstep(start, end, 1.0 - dot(normal, eye));
+  vec4 gl_FragColor = clamp(rim, 0.0, 1.0) * alpha * color ;
+
+  print gl_FragColor;
