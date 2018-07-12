@@ -16,4 +16,4 @@ run:
 	cd examples/$(src); $(MAKE) view
 
 clean:
-	jbuilder clean
+	dune clean

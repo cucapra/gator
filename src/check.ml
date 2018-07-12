@@ -1,5 +1,5 @@
 open Ast
-open Context
+open Assoc
 open Util
 open Print
 open Printf
@@ -8,10 +8,10 @@ open Str
 exception TypeException of string
 
 (* Variable defs *)
-type gamma = (string, typ) Context.context
+type gamma = (string, typ) Assoc.context
 
 (* Tags defs *)
-type delta = (string, ltyp) Context.context
+type delta = (string, ltyp) Assoc.context
 
 type ltyp_top = 
     | VecDim of int
@@ -24,9 +24,9 @@ let rec ltyp_top_dim (t: ltyp) (d : delta) : int * int =
     | VecTyp n -> (1, n)
     | MatTyp (n1, n2) -> (n1, n2)
     | TagTyp a -> 
-        (* "\tTagTyp - [ "^a^", top dim: ("^(ltyp_top_dim (Context.lookup d t) d |> snd |> string_of_int)^
+        (* "\tTagTyp - [ "^a^", top dim: ("^(ltyp_top_dim (Assoc.lookup d t) d |> snd |> string_of_int)^
             ", "^(HashSet.find delta a |> ltyp_top_dim |> snd |> string_of_int)^") ]" |> debug_print;  *)
-        ltyp_top_dim (Context.lookup d a) d
+        ltyp_top_dim (Assoc.lookup d a) d
     | TransTyp (lt1, lt2) -> 
     "\tTranstyp - [ "^(ltyp_top_dim lt1 d |> snd |> string_of_int)^","^(ltyp_top_dim lt2 d |> fst |> string_of_int)^" ]" |> debug_print; 
         (ltyp_top_dim lt2 d |> snd, ltyp_top_dim lt1 d |> snd) 
@@ -46,11 +46,11 @@ let rec ltyp_dim_equals (t1: ltyp) (t2: ltyp) (d: delta) : bool =
     | (TagTyp i, VecTyp _)
     | (TagTyp i, MatTyp _) -> 
         debug_print ("\t"^(ATyp(LTyp(t2)) |> print_typ));  
-        ltyp_dim_equals (Context.lookup d i) t2 d
+        ltyp_dim_equals (Assoc.lookup d i) t2 d
     | (VecTyp _, TagTyp i)
-    | (MatTyp _, TagTyp i) -> ltyp_dim_equals (Context.lookup d i) t1 d
+    | (MatTyp _, TagTyp i) -> ltyp_dim_equals (Assoc.lookup d i) t1 d
     | (TagTyp i1, TagTyp i2) -> 
-        ltyp_dim_equals (Context.lookup d i1) (Context.lookup d i2) d
+        ltyp_dim_equals (Assoc.lookup d i1) (Assoc.lookup d i2) d
     | (MatTyp (n1, n2), TransTyp (lt1, lt2))
     | (TransTyp (lt1, lt2), MatTyp (n1, n2)) -> let top_dim = ltyp_top_dim (TransTyp (lt1, lt2)) d in 
         "\tTranstyp"^(string_of_int(n2)) |> debug_print; 
@@ -84,7 +84,7 @@ let rec is_subtype (t1: ltyp) (t2: ltyp) (d: delta) : bool =
         (* Printf.printf "%s" (print_typ (ATyp(LTyp(t1))));
         Printf.printf "%s" (print_typ (ATyp(LTyp(t2)))); *)
         raise (TypeException "cannot cast down top type")
-    | (TagTyp i1, TagTyp i2) -> if i1 = i2 then true else is_subtype (Context.lookup d i1) t2 d
+    | (TagTyp i1, TagTyp i2) -> if i1 = i2 then true else is_subtype (Assoc.lookup d i1) t2 d
     | (TransTyp (l1, r1), TransTyp (l2, r2)) -> is_subtype l2 l1 d && is_subtype r1 r2 d
     | (l1, l2) -> (ltyp_dim_equals l1 l2 d) || 
         (ltyp_dim_equals (ltyp_top_typ l1 d) l2 d) 
@@ -97,9 +97,9 @@ let rec ltyp_dim_trans (t1: ltyp) (t2: ltyp) (d: delta) : bool =
     | (VecTyp n1, VecTyp n2) -> true
     | (MatTyp (n1, n2), MatTyp (n3, n4)) -> n2 == n3
     | (TagTyp i1, TagTyp i2) -> 
-        ltyp_dim_trans (Context.lookup d i1) (Context.lookup d i2) d
-    | (TagTyp i1, _) -> ltyp_dim_trans (Context.lookup d i1) t2 d
-    | (_, TagTyp i1) -> ltyp_dim_trans t1 (Context.lookup d i1) d
+        ltyp_dim_trans (Assoc.lookup d i1) (Assoc.lookup d i2) d
+    | (TagTyp i1, _) -> ltyp_dim_trans (Assoc.lookup d i1) t2 d
+    | (_, TagTyp i1) -> ltyp_dim_trans t1 (Assoc.lookup d i1) d
     | (TransTyp (lt1, lt2), TransTyp (lt3, lt4)) -> ltyp_dim_equals lt2 lt3 d
     | _ -> ltyp_dim_equals t1 t2 d
 
@@ -113,7 +113,7 @@ let rec check_ltyp (lt: ltyp) (d: delta) : typ =
     | MatTyp (n1, n2) -> if n1 < 0 || n2 < 0 then
         (raise (TypeException "mat dimensions must be positive"))
         else ATyp(LTyp(lt))
-    | TagTyp s -> let is_mem = Context.mem d s in 
+    | TagTyp s -> let is_mem = Assoc.mem d s in 
         if not is_mem then (
             (raise (TypeException ("tag "^s^" must be defined")))
         ) else ATyp(LTyp(lt))
@@ -192,7 +192,7 @@ let rec get_ancestor_list (t1: ltyp) (acc: ltyp list) (d: delta) : ltyp list =
     match t1 with 
     | VecTyp _ 
     | MatTyp _-> t1::(ltyp_top_typ t1 d)::acc
-    | TagTyp i -> let t1' = (Context.lookup d i) in 
+    | TagTyp i -> let t1' = (Assoc.lookup d i) in 
         get_ancestor_list t1' (t1::acc) d
     | _ -> failwith "FATAL ERROR - should not reach this line (get_ancestor of transtyp)"
 
@@ -255,7 +255,7 @@ let rec is_vec (a: typ) (d: delta) : bool =
     match a with
     | ATyp(LTyp(VecTyp _)) -> true
     | ATyp(LTyp(TagTyp t1)) -> 
-        let tag = Context.lookup d t1 in is_vec (ATyp(LTyp(tag))) d
+        let tag = Assoc.lookup d t1 in is_vec (ATyp(LTyp(tag))) d
     | _ -> false
 
 (* Type check norm expressions *)
@@ -343,15 +343,15 @@ let rec check_times_exp (t1: typ) (t2: typ) (d: delta) : typ =
         if ltyp_equals a lt1 d then ATyp(LTyp(lt2))
         else (raise (TypeException ("linear transformation type mismatch for "^(print_typ t1)^", "^(print_typ t2))))
     | (ATyp(LTyp(TagTyp a1)), ATyp(LTyp(TagTyp a2))) ->
-        let tagtyp1 = Context.lookup d a1 in 
-        let tagtyp2 = Context.lookup d a2 in 
+        let tagtyp1 = Assoc.lookup d a1 in 
+        let tagtyp2 = Assoc.lookup d a2 in 
         check_times_exp (ATyp(LTyp(tagtyp1))) (ATyp(LTyp(tagtyp2))) d
     | (ATyp(LTyp(TagTyp a1)), ATyp a2) ->
-        let tagtyp = Context.lookup d a1 in (
+        let tagtyp = Assoc.lookup d a1 in (
         check_times_exp (ATyp(LTyp(tagtyp))) t2 d
         )
     | (ATyp(a1), ATyp(LTyp(TagTyp a2))) ->
-        let tagtyp = Context.lookup d a2 in (
+        let tagtyp = Assoc.lookup d a2 in (
         check_times_exp t1 (ATyp(LTyp(tagtyp))) d
         )
     | _ -> check_scalar_binop t1 t2 d
@@ -362,7 +362,7 @@ and check_exp (e: exp) (d: delta) (g: gamma) : typ =
     | Bool b -> BTyp
     | Aval a -> check_aval a d
     | Var v -> "\tVar "^v |> debug_print;
-        Context.lookup g v
+        Assoc.lookup g v
     | Norm a -> check_norm_exp (check_exp a d g) d
     | Dot (e1, e2) -> check_dot_exp (check_exp e1 d g) (check_exp e2 d g) d
     | Plus (e1, e2) | Minus (e1, e2) -> check_addition (check_exp e1 d g) (check_exp e2 d g) d
@@ -379,18 +379,18 @@ and check_exp (e: exp) (d: delta) (g: gamma) : typ =
 
 let rec check_decl (t: typ) (s: string) (e: exp) (d: delta) (g: gamma) : delta * gamma =
     debug_print (">> check_decl <<"^s^">>");
-    if Context.mem d s then 
+    if Assoc.mem d s then 
         raise (TypeException "variable declared as tag")
     else (
         let etyp = check_exp e d g in
         let t' = check_typ t d in
         match (etyp, t') with
         | (ATyp(LTyp a1), ATyp(LTyp a2)) -> 
-            if is_subtype a1 a2 d then (d, Context.update g s t')
+            if is_subtype a1 a2 d then (d, Assoc.update g s t')
             else raise (TypeException ("mismatched linear type for var decl: "^s))
         | (ATyp(IntTyp), ATyp(IntTyp))
         | (ATyp(FloatTyp), ATyp(FloatTyp))
-        | (BTyp, BTyp) -> (d, Context.update g s t')
+        | (BTyp, BTyp) -> (d, Assoc.update g s t')
         | _ -> raise (TypeException "mismatched types for var decl")
     )
 
@@ -400,20 +400,20 @@ let rec check_comm (c: comm) (d: delta) (g: gamma) : delta * gamma =
     | Skip -> (d, g)
     | Print e -> ignore (check_exp e d g); (d, g)
     | Decl (t, s, e) -> 
-        if Context.mem g s then raise (TypeException "variable name shadowing is illegal")
+        if Assoc.mem g s then raise (TypeException "variable name shadowing is illegal")
         else check_decl t s e d g
     | If (b, c1, c2) -> check_comm_lst c1 d g |> ignore; check_comm_lst c2 d g |> ignore; 
         (match check_exp b d g with 
         | BTyp -> (d, g)
         | _ -> raise (TypeException "expected boolean expression for if condition"))
     | Assign (s, e) -> 
-        if Context.mem g s then 
-            let t = Context.lookup g s in
+        if Assoc.mem g s then 
+            let t = Assoc.lookup g s in
             check_decl t s e d g
         else raise (TypeException "assignment to undeclared variable")
     | Store (q, t, s) -> 
-        if Context.mem g s then raise (TypeException "variable name shadowing is illegal for storage qualifier")
-        else (d, Context.update g s t)
+        if Assoc.mem g s then raise (TypeException "variable name shadowing is illegal for storage qualifier")
+        else (d, Assoc.update g s t)
 
 and check_comm_lst (cl : comm list) (d: delta) (g: gamma): delta * gamma = 
     debug_print ">> check_comm_lst";
@@ -432,12 +432,12 @@ let rec check_tags (t : tagdecl list) (d: delta): delta =
         | (LTyp(MatTyp _ )) -> raise (TypeException "cannot have matrix tags")
         | (LTyp(TransTyp _)) -> raise (TypeException "cannot have transtyp tags")
         | (LTyp l) -> 
-            if Context.mem d s then raise (TypeException "cannot redeclare tag")
-            else Context.update d s l |> check_tags t
+            if Assoc.mem d s then raise (TypeException "cannot redeclare tag")
+            else Assoc.update d s l |> check_tags t
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
 let check_prog (e : prog) : unit =
     debug_print ">> check_prog";
     match e with
-    | Prog (t, c) -> let d = Context.empty in 
-        let d' = check_tags t d in check_comm_lst c d' Context.empty |> ignore
+    | Prog (t, c) -> let d = Assoc.empty in 
+        let d' = check_tags t d in check_comm_lst c d' Assoc.empty |> ignore

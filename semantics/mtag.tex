@@ -37,27 +37,23 @@ Literals in our language can be scalar numbers, vectors, or matrices:
 %
 \begin{leftalign}
 s &\in \mathbb{R} \\
-v &\defas [s_1,s_2,\dots] \\
-m &\defas [[s_{11},s_{12},\dots],[s_{21},s_{22},\dots],\dots]
+v_n &\defas [s_1,s_2,\dots,s_n] \\
+m_{n_1\times n_2} &\defas [[s_{11},s_{12},\dots,s_{1n_2}],\dots,[s_{n_11},s_{n_12},\dots,s_{n_1n_2}]]
 \end{leftalign}
 %
 Expressions can be variables, literals (with tags as defined below), or operators:
 %
 \begin{leftalign}
 x &\in \text{variables} \\
-c &\defas s \alt m \alt v \alt () \\
-e &\defas \cdots \alt
-    s \alt
-    () \alt
-    \tau\;x:=e \alt
-    v:\mu \alt
-    m:\mu_1->\mu_2 \alt
+c &\defas s \alt v_n \alt m_{n_1\times n_2} \\
+e &\defas c \alt
+    \tau\;x=e \alt
+    x=e \alt
     e_1+e_2 \alt
     e_1*e_2 \alt
     e_1\;\mathsf{.*}\;e_2 \alt
-    \mathsf{dot} e
+    \mathsf{dot}\ e
 \end{leftalign}
-\xxx{What's in that $\cdots$ in the expression syntax?}
 %
 The \textsf{.*} operator represents elementwise multiplication (whereas $*$ is proper linear algebra multiplication).
 Our type system consists of user-defined \emph{tags}, $T$, alongside built-in types:
@@ -65,18 +61,19 @@ Our type system consists of user-defined \emph{tags}, $T$, alongside built-in ty
 \begin{leftalign}
 n &\in \mathbb{N} \\
 T &\in \text{tags} \\
-\mu &\defas \mat \alt
-    \vv{n} \alt T \\
+\nu &\defas \top_n \alt
+    \bot_n \alt T \\
 \tau &\defas \mathsf{unit} \alt
     \mathsf{scalar} \alt
-    \mu \alt
-    \mu_1->\mu_2
+    \nu \alt
+    \nu_1->\nu_2 \alt
+    \top_{n\times m} \alt
+    \bot_{n\times m}
 \end{leftalign}
 %
-Function types $\mu_1 -> \mu_2$ are not ordinary functions; they are matrices used to map from one vector space to another using matrix--vector multiplication.
+Function types $\nu_1 -> \nu_2$ are not ordinary functions; they are matrices used to map from one vector space to another using matrix--vector multiplication.  The top types $\top_n$ and $\top_{n\times m}$ can be written in code as $\mathsf{vec}n$ and $\mathsf{mat}n\mathsf{x}m$, respectively.  The bottom types $\bot_n$ and $\bot_{n\times m}$ are purely meant for use by the typechecker and so do not have an explicit code representation.
 
 \section{Subtype Ordering}
-
 We define a judgment $\tau_1 \leq \tau_2$ for subtyping on ordinary types.
 Subtyping is reflexive and transitive, as usual:
 %
@@ -90,32 +87,20 @@ Subtyping is reflexive and transitive, as usual:
     {\tau_1 \leq \tau_3}
 \end{mathpar}
 %
-The null type \textsf{unit} acts as a top type:
+The null type \textsf{unit} acts as a top type for all of $\tau$:
 %
 \begin{mathpar}
 \inferrule
     { }
     {\tau\leq\mathsf{unit}}
 \end{mathpar}
-%
-We want to use vectors and $1 \times n$ matrices interchangeably:
+
+We also introduce a partial order on tags $\nu$, of the form $\Delta |- \nu_1 \leq_\Delta \nu_2$.  This ordering refers to a context $\Delta$, which is a map from tags $T$ to matrix types $\nu$:
 %
 \begin{mathpar}
 \inferrule
-    { }
-    {\vv{n}\leq\mathsf{mat}_{1{\times}n}}
-
-\inferrule
-    { }
-    {\mathsf{mat}_{1{\times}n}\leq\vv{n}}
-\end{mathpar}
-
-We also introduce a second partial order on tags, of the form $\Delta |- \mu_1 \leq_\Delta \mu_2$.  This ordering refers to a context $\Delta$, which is a map from tags $T$ to matrix types $\mu$:
-%
-\begin{mathpar}
-\inferrule
-    {\Delta|-\Delta(\mu_1)=\mu_2}
-    {\Delta|-\mu_1\leq_\Delta \mu_2}
+    {\Delta|-\Delta(\nu_1)=\nu_2}
+    {\Delta|-\nu_1\leq_\Delta \nu_2}
 \end{mathpar}
 %
 This relation has the usual reflexivity and transitivity properties:
@@ -123,35 +108,66 @@ This relation has the usual reflexivity and transitivity properties:
 \begin{mathpar}
 \inferrule
     { }
-    {\Delta|-\mu\leq_\Delta \mu}
+    {\Delta|-\nu\leq_\Delta \nu}
 
 \inferrule
-    {\Delta|-\mu_1 \leq_\Delta \mu_2 \and \Delta|-\mu_2 \leq_\Delta \mu_3}
-    {\Delta|-\mu_1 \leq_\Delta \mu_3}
+    {\Delta|-\nu_1 \leq_\Delta \nu_2 \and \Delta|-\nu_2 \leq_\Delta \nu_3}
+    {\Delta|-\nu_1 \leq_\Delta \nu_3}
 \end{mathpar}
 %
-Vectors have a top type representing general vectors of dimension $n$ as $\vv{n}$.  Similarly, we can give the top type of transformation matrices, whose type is always given by $\mu_1->\mu_2$, to be $\mat$:
+Members of $\nu$, namely vectors and tagged vectors, have a top type representing general vectors of dimension $n$ as $\top_n$.  Additionally, we also introduce a bottom type $\bot_n$ for each vector dimension.  We naturally have the simple rule
 %
 \begin{mathpar}
 \inferrule
-    {\Delta|-\mu_1\leq_\Delta\vv{n_1}\qquad\Delta|-\mu_2\leq_\Delta\vv{n_2}}
-    {\Delta|-\mu_1->\mu_2\leq_\Delta\mat}
+    { }
+    {\Delta|-\bot_n\leq_\Delta\top_n}
 \end{mathpar}
 %
-The function-like transformation matrix types, $\mu_1 -> \mu_2$, have the same standard subtyping relationship as ordinary function types:
+Since there are a set of top and bottom types, we must require that for any $\Delta,\nu$, there exist a $\bot_n,\top_n$ with the same dimension $n$ such that:
 %
 \begin{mathpar}
 \inferrule
-	{\Delta|-\mu_1'\leq_\Delta \mu_1\qquad\Delta|-\mu_2\leq_\Delta \mu_2'}
-	{\mu_1\leq_\Delta \mu_1'->\mu_2'}
+    { }
+    {\Delta|-\bot_n\leq_\Delta\nu\leq_\Delta\top_n}
 \end{mathpar}
+%
+These constructions also require that there do not exist any $\Delta,\nu$ such that
+%
+$$\Delta|-\nu\leq_\Delta\bot_n
+\qquad\textnormal{or}\qquad
+\Delta|-\top_n\leq_\Delta\nu$$
+%
+The function-like transformation matrix types, $\nu_1 -> \nu_2$, have the same standard subtyping relationship as ordinary function types:
+%
+\begin{mathpar}
+\inferrule
+	{\Delta|-\nu_1'\leq_\Delta \nu_1\qquad\Delta|-\nu_2\leq_\Delta \nu_2'}
+	{\Delta|-\nu_1->\nu_2\leq_\Delta \nu_1'->\nu_2'}
+\end{mathpar}
+As with vectors, matrix functions have a $\top_{n_1\times n_2}$ and $\bot_{n_1\times n_2}$ for any pair of dimensions $n_1,n_2$.  These constructions are just maps $\nu_1->\nu_2$, namely:
+%
+\begin{mathpar}
+\inferrule
+	{}
+	{\top_{n_1\times n_2}=\bot_{n_1}->\top_{n_2}}
 
+\inferrule
+	{}
+	{\bot_{n_1\times n_2}=\top_{n_1}->\bot_{n_2}}
+\end{mathpar}
+%
+These constructions similarly require that there do not exist any $\Delta,\nu_1,\nu_2$ such that:
+%
+$$\Delta|-\nu_1->\nu_2\leq_\Delta\bot_{n_1\times n_2}
+\qquad\textnormal{or}\qquad
+\Delta|-\top_{n_1\times n_2}\leq_\Delta\nu_1->\nu_2$$
+%
 \section{Static Semantics}
 
 This typing judgement is a map from an expression to the type of that expression under some variable context $\Gamma$, from variable names to types, and some tag context $\Delta$ defined above.
 
 \subsection{Subsumption}
-Any type in a given context can be cast ``up'' at any time.
+Any type in a given context can be cast ``up'' at any time with one notable exception -- we impose a strictness condition on vectors which does not allow implicit subsumption into the top type $\top_n$.  This strictness allows the type system stronger control over regulating tag operation beyond simple dimension.
 %
 \begin{mathpar}
 \inferrule
@@ -159,8 +175,8 @@ Any type in a given context can be cast ``up'' at any time.
 	{\Gamma,\Delta|-e:\tau_2,\Gamma}
 
 \inferrule
-	{\Delta|-\mu_1\leq_\Delta \mu_2\qquad\Gamma,\Delta|-e:\mu_1,\Gamma}
-	{\Gamma,\Delta|-e:\mu_2,\Gamma}
+	{\Delta|-\nu_1\leq_\Delta \nu_2\qquad\Gamma,\Delta|-e:\nu_1,\Gamma\qquad(\nexists n)(\nu_2=\top_n)}
+	{\Gamma,\Delta|-e:\nu_2,\Gamma}
 \end{mathpar}
 
 \subsection{Constants and Variable Declarations}
@@ -176,24 +192,28 @@ Declaring constants produce the types one would expect:
 	{\Gamma,\Delta|-s:\mathsf{scalar},\Gamma}
 \end{mathpar}
 
-When declaring vectors and matrices, we must provide a tag, causing a tagged value to produce the appropriate type.
+Vector and matrix literals take on their respective bottom types of the appropriate dimension
 %
 \begin{mathpar}
 \inferrule
-	{\mu\leq_\Delta\vv{n}}
-	{\Gamma,\Delta|-(v:\mu):\mu,\Gamma}
+	{ }
+	{\Gamma,\Delta|-v_n:\bot_n,\Gamma}
 
 \inferrule
-	{\mu_1\leq_\Delta\vv{n_1}\qquad\mu_2\leq_\Delta\vv{n_2}}
-	{\Gamma,\Delta|-(m:\mu_1->\mu_2):\mu_1->\mu_2,\Gamma}
+	{ }
+	{\Gamma,\Delta|-m_{n_1\times n_2}:\bot_{n_1\times n_2},\Gamma}
 \end{mathpar}
 
-Declaring variables requires an immediate assignment---i.e., there is no mutation in this language:
+Variables can be declared and assigned.  Assignment is required at declaration time.  Note that the entire variable must be reassigned in the case of vectors and matrices:
 %
 \begin{mathpar}
 \inferrule
 	{\Gamma,\Delta|-e:\tau,\Gamma'}
 	{\Gamma,\Delta|-\tau\;x:=e:\mathsf{unit}, \Gamma', x \mapsto \tau}
+
+\inferrule
+	{\Gamma,\Delta|-\Gamma(x):\tau\qquad\Gamma,\Delta|-e:\tau,\Gamma'}
+	{\Gamma,\Delta|-x:=e:\mathsf{unit}, \Gamma'}
 \end{mathpar}
 
 \subsection{Binary Operations}
@@ -208,32 +228,40 @@ Types are closed under addition and scalar multiplication
 	{\Gamma,\Delta|-e_1+e_2:\tau,\Gamma''}
 
 \inferrule
-	{\Gamma,\Delta|-e_1:\tau_1\qquad\Gamma,\Delta|-e_2:\mathsf{scalar}\qquad\tau_1\leq_\Delta\mat\qquad}
-	{\Gamma,\Delta|-e_1*e_2:\tau_1}
+	{\Gamma,\Delta|-e_1:\tau\qquad\Gamma,\Delta|-e_2:\mathsf{scalar}}
+	{\Gamma,\Delta|-e_1*e_2:\tau}
 \end{mathpar}
 
 Component multiplication can be defined as a mathematical operation, but makes little formal sense.  Such operations are allowed, but don't interact with spaces and tags and result in a complete lack of information about a resulting matrix.
 %
 \begin{mathpar}
 \inferrule
-	{\Gamma,\Delta|-e_1:\mat,\Gamma'\qquad\Gamma',\Delta|-e_2:\mat,\Gamma''}
-	{\Gamma,\Delta|-e_1\;\mathsf{.*}\;e_2:\mat,\Gamma''}
+	{\Gamma,\Delta|-e_1:\top_n,\Gamma'\qquad\Gamma',\Delta|-e_2:\top_n,\Gamma''}
+	{\Gamma,\Delta|-e_1\;\mathsf{.*}\;e_2:\top_n,\Gamma''}
+
+\inferrule
+	{\Gamma,\Delta|-e_1:\top_{n_1\times n_2},\Gamma'\qquad\Gamma',\Delta|-e_2:\top_{n_1\times n_2},\Gamma''}
+	{\Gamma,\Delta|-e_1\;\mathsf{.*}\;e_2:\top_{n_1\times n_2},\Gamma''}
 \end{mathpar}
 
-Matrix multiplication is both a way of transforming from one tag to another and for composing two matrix functions together.
+Matrix multiplication is both a way of transforming from one tag to another and for composing two matrix functions together.  Note that these operations are NOT commutative and vectors are treated as column vectors with regards to matching dimensions.
 %
 \begin{mathpar}
 \inferrule
-	{\Gamma,\Delta|-e_1:\tau_1,\Gamma'\qquad\Gamma',\Delta|-e_2:\tau_1->\tau_2,\Gamma''}
+	{\Gamma,\Delta|-e_1:\tau_1->\tau_2,\Gamma'\qquad\Gamma',\Delta|-e_2:\tau_1,\Gamma''}
 	{\Gamma,\Delta|-e_1*e_2:\tau_2,\Gamma''}
 
 \inferrule
 	{\Gamma,\Delta|-e_1:\tau_1->\tau_2,\Gamma'\qquad\Gamma',\Delta|-e_2:\tau_2->\tau_3,\Gamma''}
 	{\Gamma,\Delta|-\;e_1*e_2:\tau_1->\tau_3,\Gamma''}
+\end{mathpar}
 
+The dot product function requires that each component is of the same tag (note the implicit use of the strictness condition not allowing vectors to be implicitely cast to the top type to maintain this invariant).
+
+\begin{mathpar}
 \inferrule
-	{\Gamma,\Delta|-e_1:\mat,\Gamma'\qquad\Gamma',\Delta|-e_2:\mathsf{mat}_{n_2{\times}n_3},\Gamma''}
-	{\Gamma,\Delta|-\;e_1*e_2:\mathsf{mat}_{n_1{\times}n_3},\Gamma''}
+	{\Gamma,\Delta|-e_1:\tau,\Gamma'\qquad\Gamma',\Delta|-e_2:\tau,\Gamma''}
+	{\Gamma,\Delta|-\mathsf{dot}\;e_1\;e_2:\mathsf{scalar},\Gamma''}
 \end{mathpar}
 
 \section{Dynamic Semantics}
@@ -251,18 +279,6 @@ Substitutions work as expected on the environment $\sigma$.
 \inferrule
 	{\env{e}->\env{e'}}
 	{\env{\tau\;x:=e}->\env{\tau\;x:=e'}}
-\end{mathpar}
-
-Type annotations are just thrown out at an operational level:
-%
-\begin{mathpar}
-\inferrule
-	{ }
-	{\env{v:\tau}->\env{v}}
-
-\inferrule
-	{ }
-	{\env{m:\tau}->\env{m}}
 \end{mathpar}
 
 \subsection{Mathematical Operations}
