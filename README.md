@@ -2,7 +2,7 @@ lingl
 =====
 
 This is a language with a type system that enforces the correctness of linear algebra operations.
-There is a parser, a pretty printer, and an interpreter.
+There is a compiler, pretty printer, and interpreter.
 
 
 Set Up
@@ -57,3 +57,7 @@ Tests
 There are a bunch of tests under the `test` directory.
 You can run them all by typing `./test/test.sh`.
 (But it's not clear how to tell whether they passed.)
+
+Versions
+-----
+OpenGL 1.1

@@ -7,9 +7,11 @@ examples/
 	tsconfig.json
 	types.d.ts
 	webpack.config.js
+	package.json
 	'example'/ (e.g. lighting/)
 	--> index.html
 		'example'.ts
 		types.d.ts (includes a reference to ../types.d.ts)
-		'example'_vert.lgl
-		'example'_frag.lgl
+		'example'_v.lgl
+		'example'_f.lgl
+		compiled_shaders.json

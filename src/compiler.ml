@@ -180,6 +180,7 @@ let rec comp_comm (c : comm list) (d : delta) (eps : epsilon) : string =
             ^ "{ " ^ (comp_comm c1 d eps) ^ " }"
             ^ "{ " ^ (comp_comm c2 d eps) ^ " }" 
             ^ (comp_comm t d eps))
+        | Store (q, t, s) -> failwith "Unimplemented"
 
 
 let rec decl_attribs (c : comm list) (d : delta) : string = 
