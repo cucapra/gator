@@ -1,0 +1,15 @@
+The file structure to use
+
+examples/
+--> .gitignore
+	Makefile
+	README.md
+	tsconfig.json
+	types.d.ts
+	webpack.config.js
+	'example'/ (e.g. lighting/)
+	--> index.html
+		'example'.ts
+		types.d.ts (includes a reference to ../types.d.ts)
+		'example'_vert.lgl
+		'example'_frag.lgl
