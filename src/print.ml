@@ -56,6 +56,11 @@ let rec print_exp (e:exp) : string =
     | And (b1, b2) -> "("^(print_exp b1)^"] && ["^(print_exp b2)^")"
     | Typ typ -> print_typ typ
     
+let print_qualtyp (q: qualtyp) : string = 
+    match q with 
+    | In -> "in"
+    | Out -> "out"
+
 let rec print_comm (c: comm) : string =
     match c with
     | Skip -> "skip;"
@@ -64,6 +69,7 @@ let rec print_comm (c: comm) : string =
     | If (b, c1, c2) -> "if ("^(print_exp b)^") {\n"^(print_comm_lst c1)^
         "} else {\n"^(print_comm_lst c2)^"}"
     | Assign (b, x) -> b^" = "^(print_exp x)^";"
+    | Store (q, t, s) -> (print_qualtyp q)^" "^(print_typ t)^" "^s
 
 and 
 
