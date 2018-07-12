@@ -235,15 +235,9 @@ function main() {
   mat4.rotateX(model, model, .2);*/
 
   // place the light
-<<<<<<< HEAD
-  light[0] = 0.;
-  light[1] = 40.;
-  light[2] = 30.;
-=======
   light[0] = 20.;
   light[1] = 0.;
   light[2] = 20.;
->>>>>>> 3df89f156ab8da50c9105ff5834d300132f485c7
 
   // Clear the canvas
   gl.clearColor(0, 0, 0, 0);
