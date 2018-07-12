@@ -1,5 +1,5 @@
 import { mat4, vec3 } from 'gl-matrix';
-import * as bunny from 'bunny';
+import * as model3D from 'teapot';
 import * as normals from 'normals';
 import canvasOrbitCamera from 'canvas-orbit-camera';
 import pack from 'array-pack-2d';
@@ -188,20 +188,30 @@ function main() {
   let vertexShader = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
   let fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
 
+  function check_null<T>(v: T | null): T {
+    if (v === null) {
+      throw "the value was null!";
+    }
+    return v;
+  }
+
   // Compile the shader program.
   let program = createProgram(gl, vertexShader, fragmentShader);
-  let locations = {
-    'uProjection': gl.getUniformLocation(program, 'uProjection'),
-    'uView': gl.getUniformLocation(program, 'uView'),
-    'uModel': gl.getUniformLocation(program, 'uModel'),
-    'uLight': gl.getUniformLocation(program, 'uLight'),
-    'uCameraPosition': gl.getUniformLocation(program, 'uSomething'),
-    'aPosition': gl.getAttribLocation(program, 'aPosition'),
-    'aNormal': gl.getAttribLocation(program, 'aNormal'),
+  let uniformLocations: { [key: string]: WebGLUniformLocation } = {
+    'uProjection': check_null(gl.getUniformLocation(program, 'uProjection')),
+    'uView': check_null(gl.getUniformLocation(program, 'uView')),
+    'uModel': check_null(gl.getUniformLocation(program, 'uModel')),
+    'uLight': check_null(gl.getUniformLocation(program, 'uLight')),
+    'uCameraPosition': check_null(gl.getUniformLocation(program, 'uCameraPosition')),
   };
 
+  let attributeLocations: { [key: string]: number } = {
+    'aPosition': check_null(gl.getAttribLocation(program, 'aPosition')),
+    'aNormal': check_null(gl.getAttribLocation(program, 'aNormal')),
+  }
+
   // look up where the vertex data needs to go.
-  let shape_buffers = mesh_buffers(gl, bunny);
+  let shape_buffers = mesh_buffers(gl, model3D);
 
   // Create the base matrices to be used
   // when rendering the object. Alternatively, can
@@ -212,7 +222,7 @@ function main() {
   let light = vec3.create();
   let cameraPosition = vec3.create();
 
-  // center the bunny on the screen
+  // center the model3D on the screen
   /*let modelShift = vec3.create();
   modelShift[1] = -10;
   mat4.translate(model, model, modelShift);
@@ -225,9 +235,15 @@ function main() {
   mat4.rotateX(model, model, .2);*/
 
   // place the light
+<<<<<<< HEAD
   light[0] = 0.;
   light[1] = 40.;
   light[2] = 30.;
+=======
+  light[0] = 20.;
+  light[1] = 0.;
+  light[2] = 20.;
+>>>>>>> 3df89f156ab8da50c9105ff5834d300132f485c7
 
   // Clear the canvas
   gl.clearColor(0, 0, 0, 0);
@@ -240,8 +256,8 @@ function main() {
 
     camera.view(view);
     camera.tick();
-    cameraPosition = eye(view) as vec3;
 
+    eye(view, cameraPosition);
     projection_matrix(projection, width, height);
 
     // Set the model to fill the canvas
@@ -255,23 +271,23 @@ function main() {
     gl.useProgram(program);
 
     // Set the shader "uniform" parameters.
-    gl.uniformMatrix4fv(locations.uProjection, false, projection);
-    gl.uniformMatrix4fv(locations.uView, false, view);
+    gl.uniformMatrix4fv(uniformLocations.uProjection, false, projection);
+    gl.uniformMatrix4fv(uniformLocations.uView, false, view);
     mat4.rotateY(model, model, .01);
-    gl.uniformMatrix4fv(locations.uModel, false, model);
-    gl.uniform3fv(locations.uLight, light);
-    gl.uniform3fv(locations.uCameraPosition, cameraPosition);
+    gl.uniformMatrix4fv(uniformLocations.uModel, false, model);
+    gl.uniform3fv(uniformLocations.uLight, light);
+    gl.uniform3fv(uniformLocations.uCameraPosition, cameraPosition);
 
     // Set the attribute arrays.
     // Note that attributes not used in a shader do not have a bound location
-    bind_attrib_buffer(gl, locations.aNormal, shape_buffers.normals);
-    bind_attrib_buffer(gl, locations.aPosition, shape_buffers.positions);
+    bind_attrib_buffer(gl, attributeLocations.aNormal, shape_buffers.normals);
+    bind_attrib_buffer(gl, attributeLocations.aPosition, shape_buffers.positions);
 
     // And the element array.
     // TODO What is an element array?
     bind_element_buffer(gl, shape_buffers.cells);
 
-    let count = bunny.cells.length * bunny.cells[0].length;
+    let count = model3D.cells.length * model3D.cells[0].length;
     gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_SHORT, 0);
   }
 }

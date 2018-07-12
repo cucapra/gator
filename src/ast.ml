@@ -61,7 +61,8 @@ type exp =
     | Times of exp * exp
     | Div of exp * exp
     | Minus of exp * exp
-    | CTimes of exp * exp (* Component-wise multiplication*)
+    | CTimes of exp * exp (* Component-wise multiplication *)
+    | VecTrans of int * ltyp (* vec3(<vec4>), vec4(<vec3>) *)
 
 (* commands *)
 type comm = 

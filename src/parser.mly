@@ -77,7 +77,6 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %start main
 %type <Ast.prog> main
 
-
 (* The following %% ends the declarations section of the grammar definition. *)
 
 %%
