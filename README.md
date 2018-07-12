@@ -60,4 +60,4 @@ You can run them all by typing `./test/test.sh`.
 
 Versions
 -----
-OpenGL 1.1
+OpenGL 1.0

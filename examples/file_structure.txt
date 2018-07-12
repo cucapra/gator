@@ -14,4 +14,4 @@ examples/
 		types.d.ts (includes a reference to ../types.d.ts)
 		'example'_v.lgl
 		'example'_f.lgl
-		compiled_shaders.json
+		'example'.json
