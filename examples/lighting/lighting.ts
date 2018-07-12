@@ -20,6 +20,8 @@ const VERTEX_SHADER =
   "void main() {" +
   "vNormal = aNormal;" +
   "vPosition = aPosition;" +
+  "vec3 dummy = uCameraPosition;" + // We include this to avoid shenanigans with frag uses
+  "dummy = uLight;" +
   "gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.0);" +
   "}";
 
