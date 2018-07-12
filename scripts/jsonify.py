@@ -17,10 +17,6 @@ def jsonify(path, filename):
     file.write(json) 
     file.close() 
 
-    # move Linguine source files under subfoler
-    call(["mv", "$@_f.lgl", "$@/"])
-	call(["mv", "$@_v.lgl", "$@/"])
-
 if __name__ == '__main__':
     path = sys.argv[1]
     filename = sys.argv[2]

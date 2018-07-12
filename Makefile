@@ -7,10 +7,13 @@ repl:
 	dune utop src
 
 examples/%:
-	[ -d $@ ] || mkdir $@
-	python3 scripts/jsonify.py $@ $* > $@/$*.json
+	python3 scripts/jsonify.py $@ $*
 
-# init: 
+init: 
+	[ -d $@ ] || mkdir $@
+	mv $@_f.lgl $@/
+	mv $@_v.lgl $@/
+	python3 scripts/init.py $@ $*
 
 run:
 	cd examples/$(src); $(MAKE) view
