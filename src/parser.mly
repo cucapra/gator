@@ -51,6 +51,10 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %token LBRACE
 %token RBRACE
 
+(* Storage qualifiers *)
+%token IN
+%token OUT
+
 (* Precedences *)
 
 %left AND OR
@@ -73,7 +77,6 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %start main
 %type <Ast.prog> main
 
-
 (* The following %% ends the declarations section of the grammar definition. *)
 
 %%
@@ -83,6 +86,7 @@ main:
   | e = commlst; EOL {Prog([], e)}
   | t = taglst; EOL {Prog(t, [])}
 ;
+
 
 taglst: 
   | t = tag { t::[] }
@@ -109,6 +113,8 @@ comm:
   | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; 
     ELSE; LBRACE; c2 = commlst; RBRACE { If(b1,c1,c2) }
   | PRINT; e = exp; SEMI; { Print(e) }
+  | IN; t = typ; x = ID; { Store(In, t, x) }
+  | OUT; t = typ; x = ID; { Store(Out, t, x) }
 ;
 
 typ:

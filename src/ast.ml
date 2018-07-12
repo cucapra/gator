@@ -24,6 +24,11 @@ type typ =
     | BTyp
     | ATyp of atyp
 
+(* qualifier types *)
+type qualtyp =
+    | In 
+    | Out
+
 (* arithmetic values *)
 type avalue =
     Num of int
@@ -56,7 +61,8 @@ type exp =
     | Times of exp * exp
     | Div of exp * exp
     | Minus of exp * exp
-    | CTimes of exp * exp (* Component-wise multiplication*)
+    | CTimes of exp * exp (* Component-wise multiplication *)
+    | VecTrans of int * ltyp (* vec3(<vec4>), vec4(<vec3>) *)
 
 (* commands *)
 type comm = 
@@ -65,6 +71,7 @@ type comm =
     | Decl of typ * string * exp
     | Assign of string * exp
     | If of exp * comm list * comm list
+    | Store of qualtyp * typ * string 
     
 (* tag declaration statements *)
 type tagdecl = string * atyp

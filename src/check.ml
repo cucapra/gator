@@ -411,6 +411,9 @@ let rec check_comm (c: comm) (d: delta) (g: gamma) : delta * gamma =
             let t = Context.lookup g s in
             check_decl t s e d g
         else raise (TypeException "assignment to undeclared variable")
+    | Store (q, t, s) -> 
+        if Context.mem g s then raise (TypeException "variable name shadowing is illegal for storage qualifier")
+        else (d, Context.update g s t)
 
 and check_comm_lst (cl : comm list) (d: delta) (g: gamma): delta * gamma = 
     debug_print ">> check_comm_lst";
