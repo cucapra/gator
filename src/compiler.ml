@@ -1,10 +1,10 @@
 open Ast
-open Context
+open Assoc
 open Lin_ops
 open Util
 
-type delta = (ltyp, ltyp) Context.context
-type epsilon = (id, ltyp) Context.context
+type delta = (ltyp, ltyp) Assoc.context
+type epsilon = (id, ltyp) Assoc.context
 
 type ltyp_top =
     | VecDim of int
@@ -29,7 +29,7 @@ let string_of_gl_mat (m: mat) : string =
 let rec get_dim (lt : ltyp) (d : delta) : int =
     match lt with
     | VecTyp i -> i
-    | TagTyp t -> get_dim (Context.lookup d lt) d
+    | TagTyp t -> get_dim (Assoc.lookup d lt) d
     | _ -> failwith "Bad use of get_dim"
 
 let rec reduce_ltyp (l : ltyp) (d : delta) : ltyp_top =
@@ -88,7 +88,7 @@ let rec exp_ltyp (e : exp) (d : delta) (eps : epsilon) : ltyp_top option =
         | VecLit (_, t) -> Some (reduce_ltyp t d)
         | MatLit (_, t) -> Some (reduce_ltyp t d)
         | _ -> None)
-    | Var x -> (try Some (reduce_ltyp (Context.lookup eps x) d)
+    | Var x -> (try Some (reduce_ltyp (Assoc.lookup eps x) d)
                 with | Not_found -> None)
     | Typ _ -> failwith "Cannot evaluate a type expression?"
     | Times (e1, e2) -> (match (exp_ltyp e1 d eps) with
@@ -160,7 +160,7 @@ let rec comp_comm (c : comm list) (d : delta) (eps : epsilon) : string =
     let update_eps (eps : epsilon) (ty : typ) (x : id) : epsilon =
         match ty with
         | ATyp a -> (match a with
-            | LTyp l -> (Context.update eps x l)
+            | LTyp l -> (Assoc.update eps x l)
             | _ -> eps)
         | _ -> eps
     in
@@ -196,12 +196,12 @@ let rec build_delta (tl : tagdecl list) (d : delta) : delta =
     match tl with
     | [] -> d
     | (tag,at)::t -> (match at with
-        | LTyp lt -> (build_delta t (Context.update d (TagTyp tag) lt))
+        | LTyp lt -> (build_delta t (Assoc.update d (TagTyp tag) lt))
         | _ -> failwith "Typechecker failure -- cannot tag a non-linear type"
     )
 
 let rec compile_program (p : prog) : string =
     match p with
-    | Prog (tl, c) -> let d = build_delta tl Context.empty in
+    | Prog (tl, c) -> let d = build_delta tl Assoc.empty in
         "{\n    \"main\": \"precision highp float;" 
-            ^ (decl_attribs c d) ^ " void main() { " ^ (comp_comm c d Context.empty) ^ " }\"\n}"
+            ^ (decl_attribs c d) ^ " void main() { " ^ (comp_comm c d Assoc.empty) ^ " }\"\n}"

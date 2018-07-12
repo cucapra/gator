@@ -1,14 +1,14 @@
 open Ast
-open Context
+open Assoc
 open Lin_ops
 open Util
 
-type sigma = (id, value) Context.context
+type sigma = (id, value) Assoc.context
 
 let rec eval_aexp (e : exp) (s : sigma) : avalue =
     match e with
     | Aval a -> a
-    | Var x -> (match (Context.lookup s x) with
+    | Var x -> (match (Assoc.lookup s x) with
         | Avalue a -> a
         | Bvalue b -> failwith ("Invalid use of non-avalue " ^ x))
     | Dot (a1, a2) -> (match ((eval_aexp a1 s), (eval_aexp a2 s)) with
@@ -60,7 +60,7 @@ let rec eval_aexp (e : exp) (s : sigma) : avalue =
 let rec eval_bexp (e : exp) (s : sigma) : bvalue =
     match e with
     | Bool b -> b 
-    | Var x -> (match (Context.lookup s x) with
+    | Var x -> (match (Assoc.lookup s x) with
         | Avalue a -> failwith ("Invalid use of non-bvalue " ^ x)
         | Bvalue b -> b)
     | Eq (a1, a2) -> (match ((eval_aexp a1 s), (eval_aexp a2 s)) with
@@ -92,7 +92,7 @@ let string_of_value (v : value) : string =
 
 let eval_print (e : exp) (s : sigma) : string =
     match e with
-    | Var v -> v ^ " = " ^ (string_of_value (Context.lookup s v))
+    | Var v -> v ^ " = " ^ (string_of_value (Assoc.lookup s v))
     | _ -> (try string_of_avalue (eval_aexp e s) with
         | Failure "Not an arithmetic expression" -> (try string_of_bool (eval_bexp e s) with
             | Failure s -> failwith s)
@@ -100,7 +100,7 @@ let eval_print (e : exp) (s : sigma) : string =
 
 let eval_assign (x : id) (e : exp) (s : sigma) : value =
     match e with 
-    | Var v -> Context.lookup s v
+    | Var v -> Assoc.lookup s v
     | _ -> (try Avalue (eval_aexp e s) with
         | Failure "Not an arithmetic expression" -> (try Bvalue (eval_bexp e s) with
             | Failure s -> failwith s)
@@ -113,9 +113,9 @@ let rec eval_comm (c : comm list) (s : sigma) : sigma =
         | Skip -> s
         | Print e -> print_string ((eval_print e s) ^ "\n"); s
         | Decl (_, x, e)
-        | Assign (x, e) -> Context.update s x (eval_assign x e s)
+        | Assign (x, e) -> Assoc.update s x (eval_assign x e s)
         | If (e, c1, c2) -> (match e with 
-            | Var v -> (match (Context.lookup s v) with
+            | Var v -> (match (Assoc.lookup s v) with
                 | Avalue a -> failwith "Bad if condition"
                 | Bvalue b -> if b then (eval_comm c1 s) else (eval_comm c2 s))
             | _ -> (try (if (eval_bexp e s) then (eval_comm c1 s) else (eval_comm c2 s)) with
@@ -123,4 +123,4 @@ let rec eval_comm (c : comm list) (s : sigma) : sigma =
 
 let rec eval_prog (p : prog) : unit =
     match p with
-    | Prog (_, c) -> let _ = eval_comm c Context.empty in ()
+    | Prog (_, c) -> let _ = eval_comm c Assoc.empty in ()
