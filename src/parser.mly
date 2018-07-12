@@ -114,6 +114,8 @@ comm:
   | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; 
     ELSE; LBRACE; c2 = commlst; RBRACE { If(b1,c1,c2) }
   | PRINT; e = exp; SEMI; { Print(e) }
+  | IN; t = typ; x = ID; { Store(In, t, x) }
+  | OUT; t = typ; x = ID; { Store(Out, t, x) }
 ;
 
 typ:
@@ -193,8 +195,6 @@ exp:
   | e1 = exp; LEQ; e2 = exp { Leq(e1,e2) }
   | e1 = exp; OR; e2 = exp { Or(e1,e2) }
   | e1 = exp; AND; e2 = exp { And(e1,e2) }
-  | IN; t = typ; x = ID; { Store(In, t, x) }
-  | OUT; t = typ; x = ID; { Store(Out, t, x)}
 
 ;
 
