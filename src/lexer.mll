@@ -33,6 +33,8 @@ rule read = parse
   | "int" { INTTYP }
   | "float" { FLOATTYP }
   | "bool" { BOOLTYP }
+  | "in" { IN }
+  | "out" { OUT }
   | "+"   { PLUS }
   | "-"   { MINUS }
   | "*"   { TIMES }

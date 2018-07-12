@@ -24,6 +24,11 @@ type typ =
     | BTyp
     | ATyp of atyp
 
+(* qualifier types *)
+type qualtyp =
+    | In 
+    | Out
+
 (* arithmetic values *)
 type avalue =
     Num of int
@@ -65,6 +70,7 @@ type comm =
     | Decl of typ * string * exp
     | Assign of string * exp
     | If of exp * comm list * comm list
+    | Store of qualtyp * typ * string 
     
 (* tag declaration statements *)
 type tagdecl = string * atyp

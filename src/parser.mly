@@ -51,6 +51,10 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %token LBRACE
 %token RBRACE
 
+(* Storage qualifiers *)
+%token IN
+%token OUT
+
 (* Precedences *)
 
 %left AND OR
@@ -83,6 +87,7 @@ main:
   | e = commlst; EOL {Prog([], e)}
   | t = taglst; EOL {Prog(t, [])}
 ;
+
 
 taglst: 
   | t = tag { t::[] }
@@ -188,6 +193,9 @@ exp:
   | e1 = exp; LEQ; e2 = exp { Leq(e1,e2) }
   | e1 = exp; OR; e2 = exp { Or(e1,e2) }
   | e1 = exp; AND; e2 = exp { And(e1,e2) }
+  | IN; t = typ; x = ID; { Store(In, t, x) }
+  | OUT; t = typ; x = ID; { Store(Out, t, x)}
+
 ;
 
 %%
