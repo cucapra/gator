@@ -12,6 +12,10 @@ let string_of_mat (m: mat) : string =
 let rec repeat (s : string) (count : int) : string = 
   if count <= 0 then "" else (if count > 1 then (s ^ (repeat s (count-1))) else s)
   
+let fst_tri ((f, _, _) : 'a * 'b * 'c) : 'a = f
+let snd_tri ((_, s, _) : 'a * 'b * 'c) : 'b = s
+let thd_tri ((_, _, t) : 'a * 'b * 'c) : 'c = t
+
 (*****************************************************
  * HashSet, like in Java!
  *****************************************************)

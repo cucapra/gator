@@ -5,36 +5,29 @@ type id = string
 type vec = float list
 type mat = vec list
 
-(* linear types *)
-type ltyp = 
-    VecTyp of int
-    | MatTyp of int * int
+(* tag types *)
+type tagtyp = 
+    | VecTyp of int
+    | TagBot of int
     | TagTyp of id
-    | TransTyp of ltyp * ltyp
-
-(* arithmetic types *)
-type atyp = 
-    | IntTyp
-    | FloatTyp
-    | LTyp of ltyp
 
 (* types *)
 type typ = 
     | UnitTyp
-    | BTyp
-    | ATyp of atyp
-
-(* qualifier types *)
-type qualtyp =
-    | In 
-    | Out
+    | BoolTyp
+    | IntTyp
+    | FloatTyp
+    | TagTyp of tagtyp
+    | MatTyp of int * int
+    | TransBot of int * int
+    | TransTyp of tagtyp * tagtyp
 
 (* arithmetic values *)
 type avalue =
     Num of int
     | Float of float
-    | VecLit of vec * ltyp
-    | MatLit of mat * ltyp
+    | VecLit of vec
+    | MatLit of mat
 
 (* boolean values *)
 type bvalue = bool
@@ -62,7 +55,7 @@ type exp =
     | Div of exp * exp
     | Minus of exp * exp
     | CTimes of exp * exp (* Component-wise multiplication *)
-    | VecTrans of int * ltyp (* vec3(<vec4>), vec4(<vec3>) *)
+    | VecTrans of int * tagtyp (* vec3(<vec4>), vec4(<vec3>) *)
 
 (* commands *)
 type comm = 
@@ -71,10 +64,9 @@ type comm =
     | Decl of typ * string * exp
     | Assign of string * exp
     | If of exp * comm list * comm list
-    | Store of qualtyp * typ * string 
     
 (* tag declaration statements *)
-type tagdecl = string * atyp
+type tagdecl = string * typ
 
 (* program *)
 type prog =

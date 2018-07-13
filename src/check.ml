@@ -1,5 +1,6 @@
 open Ast
 open Assoc
+open Typedast
 open Util
 open Print
 open Printf
@@ -11,14 +12,10 @@ exception TypeException of string
 type gamma = (string, typ) Assoc.context
 
 (* Tags defs *)
-type delta = (string, ltyp) Assoc.context
-
-type ltyp_top = 
-    | VecDim of int
-    | MatDim of int * int 
+type delta = (string, tagtyp) Assoc.context
 
 (* Gets dimension for top type of ltyp *)
-let rec ltyp_top_dim (t: ltyp) (d : delta) : int * int = 
+let rec ltyp_top_dim (t: tagtyp) (d : delta) : int * int = 
     debug_print ">> ltyp_top_dim";
     match t with
     | VecTyp n -> (1, n)
@@ -377,7 +374,7 @@ and check_exp (e: exp) (d: delta) (g: gamma) : typ =
     | Typ typ -> check_typ typ d
 
 
-let rec check_decl (t: typ) (s: string) (e: exp) (d: delta) (g: gamma) : delta * gamma =
+let rec check_decl (t: typ) (s: string) (e: exp) (d: delta) (g: gamma) : delta * gamma * texp =
     debug_print (">> check_decl <<"^s^">>");
     if Assoc.mem d s then 
         raise (TypeException "variable declared as tag")
@@ -394,11 +391,11 @@ let rec check_decl (t: typ) (s: string) (e: exp) (d: delta) (g: gamma) : delta *
         | _ -> raise (TypeException "mismatched types for var decl")
     )
 
-let rec check_comm (c: comm) (d: delta) (g: gamma) : delta * gamma = 
+let rec check_comm (c: comm) (d: delta) (g: gamma) : tcomm * delta * gamma = 
     debug_print ">> check_comm";
     match c with
-    | Skip -> (d, g)
-    | Print e -> ignore (check_exp e d g); (d, g)
+    | Skip -> (TSkip, d, g)
+    | Print e -> (TPrint (e, (check_exp e d g)), d, g)
     | Decl (t, s, e) -> 
         if Assoc.mem g s then raise (TypeException "variable name shadowing is illegal")
         else check_decl t s e d g
@@ -415,28 +412,27 @@ let rec check_comm (c: comm) (d: delta) (g: gamma) : delta * gamma =
         if Assoc.mem g s then raise (TypeException "variable name shadowing is illegal for storage qualifier")
         else (d, Assoc.update g s t)
 
-and check_comm_lst (cl : comm list) (d: delta) (g: gamma): delta * gamma = 
+and check_comm_lst (cl : comm list) (d: delta) (g: gamma): (tcomm list) * delta * gamma = 
     debug_print ">> check_comm_lst";
     match cl with
-    | [] -> (d, g)
-    | h::t -> let context = check_comm h d g
-        in check_comm_lst t (fst context) (snd context)
+    | [] -> ([], d, g)
+    | h::t -> let context = check_comm h d g in
+        let result = check_comm_lst t (snd_tri context) (thd_tri context) in
+        ((fst_tri context) :: (fst_tri result), (snd_tri context), (thd_tri context))
 
-let rec check_tags (t : tagdecl list) (d: delta): delta =
+let rec check_tags (t : tagdecl list) (d: delta): delta * texp =
     debug_print ">> check_tags";
     match t with 
     | [] -> d
     | (s, a)::t -> 
         ignore (check_atyp a d);
         match a with 
-        | (LTyp(MatTyp _ )) -> raise (TypeException "cannot have matrix tags")
-        | (LTyp(TransTyp _)) -> raise (TypeException "cannot have transtyp tags")
-        | (LTyp l) -> 
+        | (TagTyp l) -> 
             if Assoc.mem d s then raise (TypeException "cannot redeclare tag")
             else Assoc.update d s l |> check_tags t
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
-let check_prog (e : prog) : unit =
+let check_prog (e : prog) : texp =
     debug_print ">> check_prog";
     match e with
     | Prog (t, c) -> let d = Assoc.empty in 

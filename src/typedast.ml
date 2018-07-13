@@ -2,27 +2,27 @@
 open Ast
 
 (* expressions *)
-type texp = exp * typ
-and exp =
-    | Bool of bvalue
-    | Aval of avalue  
-    | Typ of typ
-    | Var of id
-    | Norm of texp
-    | Not of texp   
-    | Eq of texp * texp
-    | Leq of texp * texp
-    | Or of texp * texp
-    | And of texp * texp
-    | Dot of texp * texp
-    | Plus of texp * texp
-    | Times of texp * texp
-    | Minus of texp * texp
-    | CTimes of texp * texp (* Component-wise multiplication*)
+type typexp = exp * typ
+and texp =
+    | TBool of bvalue
+    | TAval of avalue  
+    | TTyp of typ
+    | TVar of id
+    | TNorm of typexp
+    | TNot of typexp   
+    | TEq of typexp * typexp
+    | TLeq of typexp * typexp
+    | TOr of typexp * typexp
+    | TAnd of typexp * typexp
+    | TDot of typexp * typexp
+    | TPlus of typexp * typexp
+    | TTimes of typexp * typexp
+    | TMinus of typexp * typexp
+    | TCTimes of typexp * typexp (* Component-wise multiplication*)
 
 (* commands *)
-type comm = 
-    Skip
-    | Print of texp
-    | Decl of typ * string * texp
-    | If of texp * comm list * comm list
+type tcomm = 
+    | TSkip
+    | TPrint of typexp
+    | TDecl of typ * string * typexp
+    | TIf of typexp * comm list * comm list
