@@ -66,9 +66,7 @@ T &\in \text{tags} \\
 \tau &\defas \mathsf{unit} \alt
     \mathsf{scalar} \alt
     \nu \alt
-    \nu_1->\nu_2 \alt
-    \top_{n\times m} \alt
-    \bot_{n\times m}
+    \nu_1->\nu_2
 \end{leftalign}
 %
 Function types $\nu_1 -> \nu_2$ are not ordinary functions; they are matrices used to map from one vector space to another using matrix--vector multiplication.  The top types $\top_n$ and $\top_{n\times m}$ can be written in code as $\mathsf{vec}n$ and $\mathsf{mat}n\mathsf{x}m$, respectively.  The bottom types $\bot_n$ and $\bot_{n\times m}$ are purely meant for use by the typechecker and so are not part of the surface syntax of the language.
@@ -123,19 +121,19 @@ Members of $\nu$, namely vectors and tagged vectors, have a top type representin
     {\Delta|-\bot_n\leq_\Delta\top_n}
 \end{mathpar}
 %
-Since there are a set of top and bottom types, we must require that for any $\Delta,\nu$, there exist a $\bot_n,\top_n$ with the same dimension $n$ such that:
+These constructions require the following rules for any provided context $\Delta$
+%
+$$\Delta(\nu)\neq\bot_n
+\qquad\textnormal{or}\qquad
+\Delta(\top_n)\neq\nu$$
+%
+As a result of this construction, we can easily see that for any $\nu,\Delta$, there exists a $\top_n$ and $\bot_n$ such that
 %
 \begin{mathpar}
 \inferrule
     { }
     {\Delta|-\bot_n\leq_\Delta\nu\qquad\Delta|-\nu\leq_\Delta\top_n}
 \end{mathpar}
-%
-These constructions also require that there do not exist any $\Delta,\nu$ such that
-%
-$$\Delta|-\nu\leq_\Delta\bot_n
-\qquad\textnormal{or}\qquad
-\Delta|-\top_n\leq_\Delta\nu$$
 %
 The function-like transformation matrix types, $\nu_1 -> \nu_2$, have the same standard subtyping relationship as ordinary function types:
 %
@@ -156,7 +154,7 @@ As with vectors, matrix functions have a $\top_{n_1\times n_2}$ and $\bot_{n_1\t
 	{\bot_{n_1\times n_2}=\top_{n_1}->\bot_{n_2}}
 \end{mathpar}
 %
-These constructions similarly require that there do not exist any $\Delta,\nu_1,\nu_2$ such that:
+These constructions similarly result in the fact that for any $\nu_1,\nu_2,\Delta$, there exists a $\top_{n_1\times n_2}$ and $\bot_{n_1\times n_2}$ such that:
 %
 $$\Delta|-\nu_1->\nu_2\leq_\Delta\bot_{n_1\times n_2}
 \qquad\textnormal{or}\qquad
