@@ -401,7 +401,7 @@ let rec check_comm (c: comm) (d: delta) (g: gamma) : tcomm * delta * gamma =
         else check_decl t s e d g
     | If (b, c1, c2) -> check_comm_lst c1 d g |> ignore; check_comm_lst c2 d g |> ignore; 
         (match check_exp b d g with 
-        | BTyp -> (d, g)
+        | BoolTyp -> (TIf ((b, BoolTyp), c1, c2), d, g)
         | _ -> raise (TypeException "expected boolean expression for if condition"))
     | Assign (s, e) -> 
         if Assoc.mem g s then 
