@@ -278,7 +278,7 @@ let check_bool_unop (t1: typ) (d: delta) : typ =
 
 (* Type check comparative binary operators (i.e. <. <=) *)
 (* Only bool, int, float are comparable *)
-let check_comp_binop (t1: typ) (t2: typ) : typ = 
+let check_comp_binop (t1: typ) (t2: typ) (d: delta) : typ = 
     debug_print ">> check_comp_binop";
     match (t1, t2) with
     | (BTyp, BTyp) -> BTyp
@@ -388,21 +388,20 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) : TypedAst.exp * typ =
     | Var v -> "\tVar "^v |> debug_print;
         (TypedAst.Var v, Assoc.lookup g v)
     | Unop (op, e') -> (match op with
-        | Norm -> build_unop Norm e' check_norm_exp
-        | Not -> build_unop Not e' check_bool_unop)
-    | Norm a -> (TypedAst.Norm a,  (check_exp a d g) d)
-    | Dot (e1, e2) -> check_dot_exp (check_exp e1 d g) (check_exp e2 d g) d
-    | Plus (e1, e2) | Minus (e1, e2) -> check_addition (check_exp e1 d g) (check_exp e2 d g) d
-    | Div (e1, e2) -> check_scalar_binop (check_exp e1 d g) (check_exp e2 d g) d
-    | Times (e1, e2) -> check_times_exp (check_exp e1 d g) (check_exp e2 d g) d
-    | CTimes (e1, e2) -> check_scalar_linear_exp (check_exp e1 d g) (check_exp e2 d g) d
-    | Eq (e1, e2)
-    | Leq (e1, e2) -> check_comp_binop (check_exp e1 d g) (check_exp e2 d g)
-    | Or (e1, e2)
-    | And (e1, e2) -> check_bool_binop (check_exp e1 d g) (check_exp e2 d g)  
-    | Not e1 -> check_bool_unop (check_exp e1 d g)
-    | Typ typ -> check_typ typ d
-    | VecTrans (e1, e2) -> failwith "Unimplemented"
+        | Norm -> build_unop op e' check_norm_exp
+        | Not -> build_unop op e' check_bool_unop)
+    | Binop (op, e1, e2) -> (match op with
+        | Eq | Leq -> build_binop op e1 e2 check_comp_binop
+        | Or | And -> build_binop op e1 e2 check_bool_binop
+        | Dot -> build_binop op e1 e2 check_dot_exp
+        | Plus | Minus -> build_binop op e1 e2 check_addition
+        | Times -> build_binop op e1 e2 check_times_exp
+        | Div  -> build_binop op e1 e2 check_scalar_binop
+        | CTimes -> build_binop op e1 e2 check_scalar_linear_exp
+    )
+    | Typ typ -> let result = (check_typ typ d) in
+        (TypedAst.Typ (tag_erase result d), result)
+    | VecTrans (i, tag) -> failwith "Unimplemented"
 
 
 let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gamma =
