@@ -1,5 +1,9 @@
 (* IR for typed AST *)
 
+type id = Ast.id
+type vec = Ast.vec
+type mat = Ast.mat
+
 (* Type with tags erased *)
 type etyp = 
     | UnitTyp
@@ -9,20 +13,9 @@ type etyp =
     | VecTyp of int
     | MatTyp of int * int
 
-(* expressions *)
-type unaryop =
-    | Norm
-    | Not
-type binop =
-    | Eq
-    | Leq
-    | Or
-    | And
-    | Dot
-    | Plus
-    | Times
-    | Minus
-    | CTimes (* Component-wise multiplication*)
+(* expressions  *)
+type unaryop = Ast.unaryop
+type binop = Ast.binop
 type texp = exp * etyp
 and exp =
     | Bool of Ast.bvalue
@@ -32,9 +25,16 @@ and exp =
     | UnaryOp of unaryop * texp
     | BinOp of binop * texp * texp
 
+type avalue = Ast.avalue
+type bvalue = Ast.bvalue
+type value = Ast.value
+
 (* commands *)
 type comm = 
     | Skip
     | Print of texp
     | Decl of etyp * string * texp
+    | Assign of string * texp
     | If of texp * comm list * comm list
+
+type prog = comm list
