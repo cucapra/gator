@@ -1,4 +1,4 @@
-open Ast
+open CoreAst
 (* Some utilities, modified from CS6110 assignments *)
 
 exception ElementNotFoundException of string

@@ -1,8 +1,6 @@
 (* IR for typed AST *)
 
-type id = Ast.id
-type vec = Ast.vec
-type mat = Ast.mat
+open CoreAst
 
 (* Type with tags erased *)
 type etyp = 
@@ -14,20 +12,14 @@ type etyp =
     | MatTyp of int * int
 
 (* expressions  *)
-type unaryop = Ast.unaryop
-type binop = Ast.binop
 type texp = exp * etyp
 and exp =
-    | Bool of Ast.bvalue
-    | Aval of Ast.avalue  
+    | Bool of bvalue
+    | Aval of avalue  
     | Typ of etyp
-    | Var of Ast.id 
-    | UnaryOp of unaryop * texp
-    | BinOp of binop * texp * texp
-
-type avalue = Ast.avalue
-type bvalue = Ast.bvalue
-type value = Ast.value
+    | Var of id 
+    | Unop of unop * texp
+    | Binop of binop * texp * texp
 
 (* commands *)
 type comm = 

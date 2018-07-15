@@ -1,4 +1,5 @@
-open Ast
+open CoreAst
+open TagAst
 open Assoc
 open Util
 open Print
@@ -262,14 +263,14 @@ let rec check_norm_exp (a: typ) (d: delta) : typ =
     else (raise (TypeException "expected linear type for norm operator"))
 
 (* Type check binary bool operators (i.e. &&, ||) *)
-let check_bool_binop (t1: typ) (t2: typ) : typ = 
+let check_bool_binop (t1: typ) (t2: typ) (d: delta) : typ = 
     debug_print ">> check_bool_binop";
     match (t1, t2) with 
     | (BTyp, BTyp) -> BTyp
     | _ -> raise (TypeException "expected boolean expression for binop")
 
 (* Type check unary bool operators (i.e. !) *)
-let check_bool_unop (t1: typ) : typ =
+let check_bool_unop (t1: typ) (d: delta) : typ =
     debug_print ">> check_bool_unop";
     match t1 with 
     | BTyp -> BTyp
@@ -309,18 +310,18 @@ let check_addition (t1: typ) (t2: typ) (d: delta) : typ =
     | _ -> 
         (raise (TypeException ("invalid expressions for arithmetic operation: "^(print_typ t1)^", "^(print_typ t2))))
 
-let tag_erase (t : typ) (d : delta) : Tast.etyp =
+let tag_erase (t : typ) (d : delta) : TypedAst.etyp =
     match t with
-    | UnitTyp -> Tast.UnitTyp
-    | BoolTyp -> Tast.BoolTyp
-    | IntTyp -> Tast.IntTyp
-    | FloatTyp -> Tast.FloatTyp
+    | UnitTyp -> TypedAst.UnitTyp
+    | BoolTyp -> TypedAst.BoolTyp
+    | IntTyp -> TypedAst.IntTyp
+    | FloatTyp -> TypedAst.FloatTyp
     | TagTyp tag -> (match tag with
         | VecTyp n
-        | TagBot n -> Tast.VecTyp n
+        | TagBot n -> TypedAst.VecTyp n
         | TagTyp s -> failwith "Unimplemented")
     | MatTyp (n, m)
-    | TransBot (n, m) -> Tast.MatTyp (n, m)
+    | TransBot (n, m) -> TypedAst.MatTyp (n, m)
     | TransTyp (s1, s2) -> failwith "Unimplemented"
 
 (* Type checking times operator - on scalar mult & matrix transformations *)
@@ -365,20 +366,31 @@ let rec check_times_exp (t1: typ) (t2: typ) (d: delta) : typ =
         )
     | _ -> check_scalar_binop t1 t2 d
 
-let rec check_exp (e: exp) (d: delta) (g: gamma) : Tast.exp * typ = 
+let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) : TypedAst.texp = 
+    ((fst checked_exp), (tag_erase (snd checked_exp) d))
+
+let rec check_exp (e: exp) (d: delta) (g: gamma) : TypedAst.exp * typ = 
     debug_print ">> check_exp";
-    let build_binop (bt : Tast.binop) (e1: exp) (e2: exp) (check_fun: typ->typ->delta->typ)
-        : (Tast.texp * Tast.texp) * typ =
+    let build_unop (op : unop) (e': exp) (check_fun: typ->delta->typ)
+        : TypedAst.exp * typ =
+        let result = check_exp e' d g in
+            (TypedAst.Unop(op, exp_to_texp result d), check_fun (snd result) d)
+    in
+    let build_binop (op : binop) (e1: exp) (e2: exp) (check_fun: typ->typ->delta->typ)
+        : TypedAst.exp * typ =
         let e1r = check_exp e1 d g in
-            let e2r = check_exp e2 d g in
-                ((((fst e1r)), (fst(e2r))), check_fun (snd e1r) (snd e2r) d)
+        let e2r = check_exp e2 d g in
+            (TypedAst.Binop(op, exp_to_texp e1r d, exp_to_texp e2r d), check_fun (snd e1r) (snd e2r) d)
     in
     match e with
-    | Bool b -> (Tast.Bool b, BoolTyp)
-    | Aval a -> (Tast.Aval a, check_aval a d)
+    | Bool b -> (TypedAst.Bool b, BoolTyp)
+    | Aval a -> (TypedAst.Aval a, check_aval a d)
     | Var v -> "\tVar "^v |> debug_print;
-        (Tast.Var v, Assoc.lookup g v)
-    | Norm a -> (Tast.Norm a, check_norm_exp (check_exp a d g) d)
+        (TypedAst.Var v, Assoc.lookup g v)
+    | Unop (op, e') -> (match op with
+        | Norm -> build_unop Norm e' check_norm_exp
+        | Not -> build_unop Not e' check_bool_unop)
+    | Norm a -> (TypedAst.Norm a,  (check_exp a d g) d)
     | Dot (e1, e2) -> check_dot_exp (check_exp e1 d g) (check_exp e2 d g) d
     | Plus (e1, e2) | Minus (e1, e2) -> check_addition (check_exp e1 d g) (check_exp e2 d g) d
     | Div (e1, e2) -> check_scalar_binop (check_exp e1 d g) (check_exp e2 d g) d
@@ -408,24 +420,21 @@ let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gam
         | _ -> raise (TypeException "mismatched types for var decl")
     )
 
-let rec check_comm (c: comm) (d: delta) (g: gamma) : Tast.comm * gamma = 
+let rec check_comm (c: comm) (d: delta) (g: gamma) : TypedAst.comm * gamma = 
     debug_print ">> check_comm";
-    let get_texp (result : Tast.exp * typ) : Tast.texp = 
-        ((fst result), (tag_erase (snd result) d))
-    in
     match c with
-    | Skip -> (Tast.Skip, g)
-    | Print e -> (Tast.Print (get_texp (check_exp e d g)), g)
+    | Skip -> (TypedAst.Skip, g)
+    | Print e -> (TypedAst.Print (exp_to_texp (check_exp e d g) d), g)
     | Decl (t, s, e) -> 
         if Assoc.mem g s then raise (TypeException "variable name shadowing is illegal")
         else let result = check_exp e d g in
-            (Tast.Decl (tag_erase t d, s, (get_texp result)), (check_decl t s (snd result) d g))
+            (TypedAst.Decl (tag_erase t d, s, (exp_to_texp result d)), (check_decl t s (snd result) d g))
 
     | Assign (s, e) -> 
         if Assoc.mem g s then 
             let t = Assoc.lookup g s in
             let result = check_exp e d g in
-            (Tast.Assign (s, (get_texp result)), check_decl t s (snd result) d g)
+            (TypedAst.Assign (s, (exp_to_texp result d)), check_decl t s (snd result) d g)
         else raise (TypeException "assignment to undeclared variable")
 
     | If (b, c1, c2) ->
@@ -433,10 +442,10 @@ let rec check_comm (c: comm) (d: delta) (g: gamma) : Tast.comm * gamma =
         let c1r = check_comm_lst c1 d g in
         let c2r = check_comm_lst c2 d g in
         (match (snd result) with 
-        | BoolTyp -> (Tast.If ((get_texp result), (fst c1r), (fst c2r)), g)
+        | BoolTyp -> (TypedAst.If ((exp_to_texp result d), (fst c1r), (fst c2r)), g)
         | _ -> raise (TypeException "expected boolean expression for if condition"))
 
-and check_comm_lst (cl : comm list) (d: delta) (g: gamma): Tast.comm list * gamma = 
+and check_comm_lst (cl : comm list) (d: delta) (g: gamma): TypedAst.comm list * gamma = 
     debug_print ">> check_comm_lst";
     match cl with
     | [] -> ([], g)
@@ -456,7 +465,7 @@ let rec check_tags (t : tagdecl list) (d: delta): delta =
             else Assoc.update d s l |> check_tags t
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
-let check_prog (e : prog) : Tast.comm list =
+let check_prog (e : prog) : TypedAst.comm list =
     debug_print ">> check_prog";
     match e with
     | Prog (t, c) -> let d = check_tags t Assoc.empty in 
