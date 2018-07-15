@@ -22,13 +22,13 @@ type unop =
     | Norm
     | Not
 type binop = 
-    | Eq 
-    | Leq 
-    | Or 
-    | And 
-    | Dot 
-    | Plus 
-    | Times 
-    | Div 
-    | Minus 
+    | Eq
+    | Leq
+    | Or
+    | And
+    | Dot
+    | Plus
+    | Minus
+    | Times
+    | Div
     | CTimes (* Component-wise multiplication *)
