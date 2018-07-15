@@ -38,23 +38,27 @@ type value =
     | Bvalue of bvalue
 
 (* expressions *)
+type unaryop =
+    | Norm
+    | Not
+type binop = 
+    | Eq 
+    | Leq 
+    | Or 
+    | And 
+    | Dot 
+    | Plus 
+    | Times 
+    | Div 
+    | Minus 
+    | CTimes (* Component-wise multiplication *)
 type exp =
     | Bool of bvalue
     | Aval of avalue
     | Typ of typ
     | Var of id
-    | Norm of exp
-    | Not of exp
-    | Eq of exp * exp
-    | Leq of exp * exp
-    | Or of exp * exp
-    | And of exp * exp
-    | Dot of exp * exp
-    | Plus of exp * exp
-    | Times of exp * exp
-    | Div of exp * exp
-    | Minus of exp * exp
-    | CTimes of exp * exp (* Component-wise multiplication *)
+    | UnaryOp of unaryop * exp
+    | BinOp of binop * exp * exp
     | VecTrans of int * tagtyp (* vec3(<vec4>), vec4(<vec3>) *)
 
 (* commands *)
