@@ -126,15 +126,7 @@ These constructions require the following rules for any provided context $\Delta
 $$\Delta(\nu)\neq\bot_n
 \qquad\textnormal{or}\qquad
 \Delta(\top_n)\neq\nu$$
-%
-As a result of this construction, we can easily see that for any $\nu,\Delta$, there exists a $\top_n$ and $\bot_n$ such that
-%
-\begin{mathpar}
-\inferrule
-    { }
-    {\Delta|-\bot_n\leq_\Delta\nu\qquad\Delta|-\nu\leq_\Delta\top_n}
-\end{mathpar}
-%
+
 The function-like transformation matrix types, $\nu_1 -> \nu_2$, have the same standard subtyping relationship as ordinary function types:
 %
 \begin{mathpar}
@@ -142,7 +134,7 @@ The function-like transformation matrix types, $\nu_1 -> \nu_2$, have the same s
 	{\Delta|-\nu_1'\leq_\Delta \nu_1\qquad\Delta|-\nu_2\leq_\Delta \nu_2'}
 	{\Delta|-\nu_1->\nu_2\leq_\Delta \nu_1'->\nu_2'}
 \end{mathpar}
-As with vectors, matrix functions have a $\top_{n_1\times n_2}$ and $\bot_{n_1\times n_2}$ for any pair of dimensions $n_1,n_2$.  These constructions are just maps $\nu_1->\nu_2$, namely:
+As with vectors, we can define matrix functions have a $\top_{n_1\times n_2}$ and $\bot_{n_1\times n_2}$ for any pair of dimensions $n_1,n_2$.  These constructions are just maps $\nu_1->\nu_2$, namely:
 %
 \begin{mathpar}
 \inferrule
@@ -153,12 +145,6 @@ As with vectors, matrix functions have a $\top_{n_1\times n_2}$ and $\bot_{n_1\t
 	{}
 	{\bot_{n_1\times n_2}=\top_{n_1}->\bot_{n_2}}
 \end{mathpar}
-%
-These constructions similarly result in the fact that for any $\nu_1,\nu_2,\Delta$, there exists a $\top_{n_1\times n_2}$ and $\bot_{n_1\times n_2}$ such that:
-%
-$$\Delta|-\nu_1->\nu_2\leq_\Delta\bot_{n_1\times n_2}
-\qquad\textnormal{or}\qquad
-\Delta|-\top_{n_1\times n_2}\leq_\Delta\nu_1->\nu_2$$
 %
 \section{Static Semantics}
 
@@ -177,7 +163,22 @@ Any type in a given context can be cast ``up'' at any time with one notable exce
 	{\Gamma,\Delta|-e:\nu_2,\Gamma}
 	\quad \nu_2\neq\top_n
 \end{mathpar}
-
+%
+Additionally, we need a rule to subsume the bottom type into values correctly since $\Delta$ only 'points' towards the top type.  In particular, we require the rule:
+\begin{mathpar}
+\inferrule
+    {\Delta|-\nu\leq_\Delta\top_n}
+    {\Delta|-\bot_n\leq_\Delta\nu}
+\end{mathpar}
+%
+This rule, along with the constructions previously described, gives the normal properties of a top and bottom.  In particular, for any $\nu,\Delta$, there exists a $\top_n$ and $\bot_n$ such that
+%
+\begin{mathpar}
+\inferrule
+    { }
+    {\Delta|-\bot_n\leq_\Delta\nu\qquad\Delta|-\nu\leq_\Delta\top_n}
+\end{mathpar}
+%
 \subsection{Constants and Variable Declarations}
 Declaring constants produce the types one would expect:
 %
