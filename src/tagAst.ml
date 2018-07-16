@@ -4,9 +4,14 @@ open CoreAst
 
 (* tag types *)
 type tagtyp = 
-    | VecTyp of int
-    | TagBot of int
-    | TagTyp of id
+    | TagTopTyp of int
+    | TagBotTyp of int
+    | TagVarTyp of id
+
+type transtype =
+    | TransTopTyp of int * int
+    | TransBotTyp of int * int
+    | TransVarTyp of tagtyp * tagtyp
 
 (* types *)
 type typ = 
@@ -15,9 +20,7 @@ type typ =
     | IntTyp
     | FloatTyp
     | TagTyp of tagtyp
-    | MatTyp of int * int
-    | TransBot of int * int
-    | TransTyp of tagtyp * tagtyp
+    | TransTyp of transtype
 
 (* expressions *)
 type exp =
