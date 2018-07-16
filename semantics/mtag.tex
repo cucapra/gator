@@ -41,7 +41,7 @@ v_n &\defas [s_1,s_2,\dots,s_n] \\
 m_{n_1\times n_2} &\defas [[s_{11},s_{12},\dots,s_{1n_2}],\dots,[s_{n_11},s_{n_12},\dots,s_{n_1n_2}]]
 \end{leftalign}
 %
-Expressions can be variables, literals (with tags as defined below), or operators:
+Expressions can be variables, literals, or operators:
 %
 \begin{leftalign}
 x &\in \text{variables} \\
@@ -55,7 +55,7 @@ e &\defas c \alt
     \mathsf{dot}\ e
 \end{leftalign}
 %
-The \textsf{.*} operator represents elementwise multiplication (whereas $*$ is proper linear algebra multiplication).
+The $.*$ operator represents elementwise multiplication (whereas $*$ is proper linear algebra multiplication).
 Our type system consists of user-defined \emph{tags}, $T$, alongside built-in types:
 %
 \begin{leftalign}
@@ -66,12 +66,10 @@ T &\in \text{tags} \\
 \tau &\defas \mathsf{unit} \alt
     \mathsf{scalar} \alt
     \nu \alt
-    \nu_1->\nu_2 \alt
-    \top_{n\times m} \alt
-    \bot_{n\times m}
+    \nu_1->\nu_2
 \end{leftalign}
 %
-Function types $\nu_1 -> \nu_2$ are not ordinary functions; they are matrices used to map from one vector space to another using matrix--vector multiplication.  The top types $\top_n$ and $\top_{n\times m}$ can be written in code as $\mathsf{vec}n$ and $\mathsf{mat}n\mathsf{x}m$, respectively.  The bottom types $\bot_n$ and $\bot_{n\times m}$ are purely meant for use by the typechecker and so do not have an explicit code representation.
+Function types $\nu_1 -> \nu_2$ are not ordinary functions; they are matrices used to map from one vector space to another using matrix--vector multiplication.  The top types $\top_n$ and $\top_{n\times m}$ can be written in code as $\mathsf{vec}n$ and $\mathsf{mat}n\mathsf{x}m$, respectively.  The bottom types $\bot_n$ and $\bot_{n\times m}$ are purely meant for use by the typechecker and so are not part of the surface syntax of the language.
 
 \section{Subtype Ordering}
 We define a judgment $\tau_1 \leq \tau_2$ for subtyping on ordinary types.
@@ -123,20 +121,12 @@ Members of $\nu$, namely vectors and tagged vectors, have a top type representin
     {\Delta|-\bot_n\leq_\Delta\top_n}
 \end{mathpar}
 %
-Since there are a set of top and bottom types, we must require that for any $\Delta,\nu$, there exist a $\bot_n,\top_n$ with the same dimension $n$ such that:
+These constructions require the following rules for any provided context $\Delta$
 %
-\begin{mathpar}
-\inferrule
-    { }
-    {\Delta|-\bot_n\leq_\Delta\nu\leq_\Delta\top_n}
-\end{mathpar}
-%
-These constructions also require that there do not exist any $\Delta,\nu$ such that
-%
-$$\Delta|-\nu\leq_\Delta\bot_n
+$$\Delta(\nu)\neq\bot_n
 \qquad\textnormal{or}\qquad
-\Delta|-\top_n\leq_\Delta\nu$$
-%
+\Delta(\top_n)\neq\nu$$
+
 The function-like transformation matrix types, $\nu_1 -> \nu_2$, have the same standard subtyping relationship as ordinary function types:
 %
 \begin{mathpar}
@@ -144,7 +134,7 @@ The function-like transformation matrix types, $\nu_1 -> \nu_2$, have the same s
 	{\Delta|-\nu_1'\leq_\Delta \nu_1\qquad\Delta|-\nu_2\leq_\Delta \nu_2'}
 	{\Delta|-\nu_1->\nu_2\leq_\Delta \nu_1'->\nu_2'}
 \end{mathpar}
-As with vectors, matrix functions have a $\top_{n_1\times n_2}$ and $\bot_{n_1\times n_2}$ for any pair of dimensions $n_1,n_2$.  These constructions are just maps $\nu_1->\nu_2$, namely:
+As with vectors, we can define matrix functions have a $\top_{n_1\times n_2}$ and $\bot_{n_1\times n_2}$ for any pair of dimensions $n_1,n_2$.  These constructions are just maps $\nu_1->\nu_2$, namely:
 %
 \begin{mathpar}
 \inferrule
@@ -156,18 +146,12 @@ As with vectors, matrix functions have a $\top_{n_1\times n_2}$ and $\bot_{n_1\t
 	{\bot_{n_1\times n_2}=\top_{n_1}->\bot_{n_2}}
 \end{mathpar}
 %
-These constructions similarly require that there do not exist any $\Delta,\nu_1,\nu_2$ such that:
-%
-$$\Delta|-\nu_1->\nu_2\leq_\Delta\bot_{n_1\times n_2}
-\qquad\textnormal{or}\qquad
-\Delta|-\top_{n_1\times n_2}\leq_\Delta\nu_1->\nu_2$$
-%
 \section{Static Semantics}
 
 This typing judgement is a map from an expression to the type of that expression under some variable context $\Gamma$, from variable names to types, and some tag context $\Delta$ defined above.
 
 \subsection{Subsumption}
-Any type in a given context can be cast ``up'' at any time with one notable exception -- we impose a strictness condition on vectors which does not allow implicit subsumption into the top type $\top_n$.  This strictness allows the type system stronger control over regulating tag operation beyond simple dimension.
+Any type in a given context can be cast ``up'' at any time with one notable exception -- we impose a strictness condition on vectors which does not allow implicit subsumption into the top type $\top_n$.  This strictness allows the type system stronger control over regulating tag operation beyond simple dimension.  It is worth noting that strictness is unnecessary for implementing a sound type system, but does provide significant practical benefit in giving earlier compiler errors than would be otherwise observed.
 %
 \begin{mathpar}
 \inferrule
@@ -175,10 +159,26 @@ Any type in a given context can be cast ``up'' at any time with one notable exce
 	{\Gamma,\Delta|-e:\tau_2,\Gamma}
 
 \inferrule
-	{\Delta|-\nu_1\leq_\Delta \nu_2\qquad\Gamma,\Delta|-e:\nu_1,\Gamma\qquad(\nexists n)(\nu_2=\top_n)}
+	{\Delta|-\nu_1\leq_\Delta \nu_2\qquad\Gamma,\Delta|-e:\nu_1,\Gamma}
 	{\Gamma,\Delta|-e:\nu_2,\Gamma}
+	\quad \nu_2\neq\top_n
 \end{mathpar}
-
+%
+Additionally, we need a rule to subsume the bottom type into values correctly since $\Delta$ only 'points' towards the top type.  In particular, we require the rule:
+\begin{mathpar}
+\inferrule
+    {\Delta|-\nu\leq_\Delta\top_n}
+    {\Delta|-\bot_n\leq_\Delta\nu}
+\end{mathpar}
+%
+This rule, along with the constructions previously described, gives the normal properties of a top and bottom.  In particular, for any $\nu,\Delta$, there exists a $\top_n$ and $\bot_n$ such that
+%
+\begin{mathpar}
+\inferrule
+    { }
+    {\Delta|-\bot_n\leq_\Delta\nu\qquad\Delta|-\nu\leq_\Delta\top_n}
+\end{mathpar}
+%
 \subsection{Constants and Variable Declarations}
 Declaring constants produce the types one would expect:
 %
