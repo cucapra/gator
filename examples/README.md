@@ -1,4 +1,5 @@
 ### File Structure
+
 examples/
 --> .gitignore
 	Makefile
@@ -15,4 +16,4 @@ examples/
 		'example'_f.lgl
 		'example'.json
 
-Run `make install` to install appropriate dependencies
+Run `SRC=<example_directory_name> npm start` to run example directory
