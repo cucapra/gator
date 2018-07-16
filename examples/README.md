@@ -1,5 +1,4 @@
-The file structure to use
-
+### File Structure
 examples/
 --> .gitignore
 	Makefile
@@ -15,3 +14,5 @@ examples/
 		'example'_v.lgl
 		'example'_f.lgl
 		'example'.json
+
+Run `make install` to install appropriate dependencies
