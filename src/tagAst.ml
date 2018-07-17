@@ -9,7 +9,7 @@ type tagtyp =
     | VarTyp of id
 
 (* types *)
-type typ = 
+type typ =
     | UnitTyp
     | BoolTyp
     | IntTyp
