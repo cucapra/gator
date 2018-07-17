@@ -7,12 +7,66 @@ open Printf
 open Str
 
 exception TypeException of string
+exception DimensionException of int * int
 
 (* Variable defs *)
 type gamma = (string, typ) Assoc.context
 
 (* Tags defs *)
 type delta = (string, tagtyp) Assoc.context
+
+let rec vec_dim (t: tagtyp) (d: delta) : int =
+    match t with
+    | TopTyp n
+    | BotTyp n -> n
+    | VarTyp s -> vec_dim (lookup d s) d
+
+let rec get_ancestor_list (t: tagtyp) (d: delta) : id list =
+    match t with 
+    | TopTyp _ -> []
+    | BotTyp _ -> raise (TypeException "Bad failure -- Ancestor list somehow includes the bottom type")
+    | VarTyp s -> s :: (get_ancestor_list (lookup d s) d)
+
+let is_tag_subtype (to_check: tagtyp) (target: tagtyp) (d: delta) : bool =
+    match (to_check, target) with
+    | BotTyp n1, BotTyp n2
+    | BotTyp n1, TopTyp n2
+    | TopTyp n1, TopTyp n2 -> n1 = n2
+    | BotTyp n, VarTyp s -> n = (vec_dim target d)
+    | VarTyp _, BotTyp _ -> false
+    | VarTyp _, VarTyp s2 -> List.mem s2 (get_ancestor_list to_check d)
+    | VarTyp s, TopTyp n -> (vec_dim to_check d) = n
+    | TopTyp _, _ -> false
+
+let unify_tags (t1: tagtyp) (t2: tagtyp) (d: delta) : tagtyp =
+    let check_dim (n1: int) (n2: int) : unit =
+        if n1 = n2 then () else (raise (DimensionException (n1, n2)))
+    in
+    let rec lub (anc_list1: id list) (anc_list2: id list) : id =
+        match anc_list1 with
+        | [] -> raise (TypeException "Cannot implicitly cast to the top vector type")
+        | h::t -> 
+            (try (List.find (fun x -> x=h) anc_list2) with Not_found -> lub t anc_list2)
+    in
+    match (t1, t2) with
+    | BotTyp n1, BotTyp n2 ->
+        check_dim n1 n2; BotTyp n1
+    | BotTyp n1, TopTyp n2
+    | TopTyp n1, BotTyp n2
+    | TopTyp n1, TopTyp n2 ->
+        check_dim n1 n2; TopTyp n1
+    | VarTyp s, TopTyp n1
+    | TopTyp n1, VarTyp s ->
+        check_dim (vec_dim (VarTyp s) d) n1;
+        raise (TypeException "Cannot implicitly cast to the top vector type")
+    | VarTyp s, BotTyp n1
+    | BotTyp n1, VarTyp s ->
+        check_dim (vec_dim (VarTyp s) d) n1;
+        BotTyp n1
+    | VarTyp s1, VarTyp s2 ->
+        check_dim (vec_dim (VarTyp s1) d) (vec_dim (VarTyp s2) d);
+        (if s1 = s2 then VarTyp s1
+        else VarTyp (lub (get_ancestor_list t1 d) (get_ancestor_list t1 d)))
 
 (* Gets dimension for top type of ltyp *)
 let rec ltyp_top_dim (t: tagtyp) (d : delta) : int * int = 
@@ -172,13 +226,13 @@ let rec ltyp_equals (t1: ltyp) (t2: ltyp) (d: delta) : bool =
 let rec check_aval (av: avalue) (d: delta) : typ = 
     debug_print ">> check_aval";
     match av with
-    | Num n -> ATyp(IntTyp)
-    | Float f -> ATyp(FloatTyp)
-    | VecLit (v, t) -> 
+    | Num n -> IntTyp
+    | Float f -> FloatTyp
+    | VecLit v -> 
         let littyp = veclit_type v in 
         if ltyp_dim_equals t littyp d then ATyp(LTyp(t)) 
         else (raise (TypeException "vec literal tag mismatch"))
-    | MatLit (m, t) -> 
+    | MatLit m -> 
         let littyp = matlit_type m in 
         if ltyp_dim_equals t littyp d then ATyp(LTyp(t))
         else (raise (TypeException ("mat literal tag mismatch :" ^(print_typ (ATyp(LTyp(t))))^", "^(print_typ (ATyp(LTyp(littyp)))))))
@@ -247,43 +301,54 @@ let check_scalar_linear_exp (t1: typ) (t2: typ) (d: delta) : typ =
         else (raise (TypeException "dimension mismatch in dot/ctimes operator"))
     | _ -> (raise (TypeException "expected linear types for dot/ctimes operator"))
 
-(* Check whether a typ is a vec type *)
-let rec is_vec (a: typ) (d: delta) : bool =
+(* Check whether a typ is a vec type in delta *)
+let is_declared_vec (a: typ) (d: delta) : bool =
     match a with
-    | ATyp(LTyp(VecTyp _)) -> true
-    | ATyp(LTyp(TagTyp t1)) -> 
-        let tag = Assoc.lookup d t1 in is_vec (ATyp(LTyp(tag))) d
+    | TagTyp t -> (match t with
+        | TagVarTyp t' -> 
+            (try Assoc.lookup d t' |> ignore; true
+            with | Not_found -> raise (TypeException ("Use of undeclared tag " ^ t')))
+        | _ -> true)
     | _ -> false
 
 (* Type check norm expressions *)
 let rec check_norm_exp (a: typ) (d: delta) : typ = 
     debug_print ">> check_norm_exp";
     (* Printf.printf "%s" (print_typ a); *)
-    if is_vec a d then a
+    if is_declared_vec a d then a
     else (raise (TypeException "expected linear type for norm operator"))
 
 (* Type check binary bool operators (i.e. &&, ||) *)
 let check_bool_binop (t1: typ) (t2: typ) (d: delta) : typ = 
     debug_print ">> check_bool_binop";
     match (t1, t2) with 
-    | (BTyp, BTyp) -> BTyp
+    | BoolTyp, BoolTyp -> BoolTyp
     | _ -> raise (TypeException "expected boolean expression for binop")
 
 (* Type check unary bool operators (i.e. !) *)
 let check_bool_unop (t1: typ) (d: delta) : typ =
     debug_print ">> check_bool_unop";
     match t1 with 
-    | BTyp -> BTyp
-    | _ -> raise (TypeException "expected boolean expression for !")
+    | BoolTyp -> BoolTyp
+    | _ -> raise (TypeException "expected boolean expression")
 
 (* Type check comparative binary operators (i.e. <. <=) *)
 (* Only bool, int, float are comparable *)
 let check_comp_binop (t1: typ) (t2: typ) (d: delta) : typ = 
     debug_print ">> check_comp_binop";
     match (t1, t2) with
-    | (BTyp, BTyp) -> BTyp
-    | (ATyp(IntTyp), ATyp(IntTyp)) -> BTyp
-    | (ATyp(FloatTyp), ATyp(FloatTyp)) -> BTyp
+    | BoolTyp, BoolTyp -> BoolTyp
+    | IntTyp, IntTyp -> BoolTyp
+    | FloatTyp, FloatTyp -> BoolTyp
+    | _ -> raise (TypeException "unexpected type for binary comparator operations")
+
+(* Type check comparative binary operators (i.e. <. <=) *)
+(* Only bool, int, float are comparable *)
+let check_arith_comp_binop (t1: typ) (t2: typ) (d: delta) : typ = 
+    debug_print ">> check_comp_binop";
+    match (t1, t2) with
+    | IntTyp, IntTyp -> BoolTyp
+    | FloatTyp, FloatTyp -> BoolTyp
     | _ -> raise (TypeException "unexpected type for binary comparator operations")
 
 let check_dot_exp (t1: typ) (t2: typ) (d: delta): typ = 
@@ -298,10 +363,10 @@ let check_addition (t1: typ) (t2: typ) (d: delta) : typ =
     debug_print ">> check_scalar_binop";
     match (t1, t2) with 
     (* | (ATyp(LTyp(VecTyp n1)), ATyp(LTyp(VecTyp n2))) ->  *)
-    | (ATyp(IntTyp), ATyp(IntTyp))
-    | (ATyp(FloatTyp), ATyp(FloatTyp)) -> t1
-    | (ATyp(FloatTyp), ATyp(IntTyp)) 
-    | (ATyp(IntTyp), ATyp(FloatTyp)) -> ATyp(FloatTyp)
+    | IntTyp, IntTyp -> IntTyp
+    | FloatTyp, IntTyp
+    | IntTyp, FloatTyp
+    | FloatTyp, FloatTyp -> FloatTyp
     | (ATyp(LTyp a1), ATyp(LTyp a2)) -> 
         if ltyp_dim_equals a1 a2 d then
         ((print_typ (ATyp(LTyp(least_common_parent a1 a2 d)))) |> debug_print;
@@ -310,36 +375,41 @@ let check_addition (t1: typ) (t2: typ) (d: delta) : typ =
     | _ -> 
         (raise (TypeException ("invalid expressions for arithmetic operation: "^(print_typ t1)^", "^(print_typ t2))))
 
-let tag_erase (t : typ) (d : delta) : TypedAst.etyp =
-    match t with
-    | UnitTyp -> TypedAst.UnitTyp
-    | BoolTyp -> TypedAst.BoolTyp
-    | IntTyp -> TypedAst.IntTyp
-    | FloatTyp -> TypedAst.FloatTyp
-    | TagTyp tag -> (match tag with
-        | VecTyp n
-        | TagBot n -> TypedAst.VecTyp n
-        | TagTyp s -> failwith "Unimplemented")
-    | MatTyp (n, m)
-    | TransBot (n, m) -> TypedAst.MatTyp (n, m)
-    | TransTyp (s1, s2) -> failwith "Unimplemented"
-
 (* Type checking times operator - on scalar mult & matrix transformations *)
-let rec check_times_exp (t1: typ) (t2: typ) (d: delta) : typ = 
+let check_times_exp (t1: typ) (t2: typ) (d: delta) : typ = 
     debug_print ">> check_times_exp";
     match (t1, t2) with
-    | ATyp(LTyp(VecTyp _)), ATyp(LTyp(VecTyp _)) -> raise (TypeException "cannot multiply vectors together")
-    | ATyp(IntTyp), ATyp(LTyp(t'))
-    | ATyp(LTyp(t')), ATyp(IntTyp)
-    | ATyp(LTyp(t')), ATyp(FloatTyp)
-    | ATyp(FloatTyp), ATyp(LTyp(t')) -> ATyp(LTyp(t')) 
-    | (ATyp(LTyp(MatTyp(n1, n2))), ATyp(LTyp(MatTyp(n3, n4)))) -> 
+    | (TagTyp _, TagTyp _) -> raise (TypeException "cannot multiply vectors together")
+    (* Scalar Multiplication *)
+    | IntTyp, TagTyp t
+    | TagTyp t, IntTyp
+    | FloatTyp, TagTyp t
+    | TagTyp t, FloatTyp -> TagTyp t
+
+    | IntTyp, TransTyp (m1, m2)
+    | TransTyp  (m1, m2), IntTyp
+    | FloatTyp, TransTyp  (m1, m2)
+    | TransTyp  (m1, m2), FloatTyp -> TransTyp (m1, m2)
+
+    (* Matrix * Vector Multiplication *)
+    | TagTyp _, TransTyp _ -> 
+        raise(TypeException "Cannot multiply a vector * matrix (did you mean matrix * vector?)")
+    | TransTyp (m1, m2), TagTyp t -> if is_tag_subtype t m1 d then (TagTyp m2) 
+        else raise (TypeException ("Cannot apply a matrix of type " ^ (string_of_typ t1)
+            ^ " to a vector of type " ^ (string_of_typ t2)))
+
+    (* Matrix * Matrix Multiplication *)
+    | TransTyp (TransTopTyp(n1, n2)), TransTyp (TransTopTyp(n3, n4)) -> 
         debug_print "\tmat, mat";
-        if n2 = n3 then ATyp(LTyp(MatTyp(n1, n4))) 
+        if n2 = n3 then TransTyp (TransTopTyp(n1, n4))
+        else (raise (TypeException "matrix multiplication dimension mismatch"))
+    | TransTyp (TransBotTyp(n1, n2)), TransTyp (TransBotTyp(n3, n4)) -> 
+        debug_print "\tmat, mat";
+        if n2 = n3 then TransTyp (TransBotTyp(n1, n4))
         else (raise (TypeException "matrix multiplication dimension mismatch"))
     | (ATyp(LTyp(VecTyp(n1))), ATyp(LTyp(MatTyp(n3, n4)))) -> 
         debug_print "\tvec, mat";
-        (raise (TypeException "vector * matrix is illegal"))
+        (raise (TypeException ""))
     | (ATyp(LTyp(MatTyp(n1, n2))), ATyp(LTyp(VecTyp(n3)))) -> 
         debug_print "\tmat, vec";
         if n2 = n3 then ATyp(LTyp(MatTyp(n1, 1))) 
@@ -366,6 +436,18 @@ let rec check_times_exp (t1: typ) (t2: typ) (d: delta) : typ =
         )
     | _ -> check_scalar_binop t1 t2 d
 
+let tag_erase (t : typ) (d : delta) : TypedAst.etyp =
+    match t with
+    | UnitTyp -> TypedAst.UnitTyp
+    | BoolTyp -> TypedAst.BoolTyp
+    | IntTyp -> TypedAst.IntTyp
+    | FloatTyp -> TypedAst.FloatTyp
+    | TagTyp tag -> (match tag with
+        | TopTyp n
+        | BotTyp n -> TypedAst.VecTyp n
+        | VarTyp s -> failwith "Unimplemented")
+    | TransTyp (s1, s2) -> failwith "Unimplemented"
+    
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) : TypedAst.texp = 
     ((fst checked_exp), (tag_erase (snd checked_exp) d))
 
@@ -391,7 +473,8 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) : TypedAst.exp * typ =
         | Norm -> build_unop op e' check_norm_exp
         | Not -> build_unop op e' check_bool_unop)
     | Binop (op, e1, e2) -> (match op with
-        | Eq | Leq -> build_binop op e1 e2 check_comp_binop
+        | Eq -> build_binop op e1 e2 check_comp_binop
+        | Leq -> build_binop op e1 e2 check_arith_comp_binop
         | Or | And -> build_binop op e1 e2 check_bool_binop
         | Dot -> build_binop op e1 e2 check_dot_exp
         | Plus | Minus -> build_binop op e1 e2 check_addition
