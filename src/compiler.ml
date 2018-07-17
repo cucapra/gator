@@ -180,6 +180,7 @@ let rec comp_comm (c : comm list) (d : delta) (eps : epsilon) : string =
             ^ "{ " ^ (comp_comm c1 d eps) ^ " }"
             ^ "{ " ^ (comp_comm c2 d eps) ^ " }" 
             ^ (comp_comm t d eps))
+        | Store (q, t, s) -> failwith "Unimplemented"
 
 
 let rec decl_attribs (c : comm list) (d : delta) : string = 
@@ -202,6 +203,6 @@ let rec build_delta (tl : tagdecl list) (d : delta) : delta =
 
 let rec compile_program (p : prog) : string =
     match p with
-    | Prog (tl, c) -> let d = build_delta tl Assoc.empty in
-        "{\n    \"main\": \"precision highp float;" 
-            ^ (decl_attribs c d) ^ " void main() { " ^ (comp_comm c d Assoc.empty) ^ " }\"\n}"
+    | Prog (tl, c) -> let d = build_delta tl Context.empty in
+        "\"precision highp float;" 
+            ^ (decl_attribs c d) ^ " void main() { " ^ (comp_comm c d Context.empty) ^ " }\""

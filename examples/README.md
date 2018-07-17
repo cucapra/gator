@@ -1,5 +1,4 @@
-The file structure to use
-
+### File Structure
 examples/
 --> .gitignore
 	Makefile
@@ -7,9 +6,13 @@ examples/
 	tsconfig.json
 	types.d.ts
 	webpack.config.js
+	package.json
 	'example'/ (e.g. lighting/)
 	--> index.html
 		'example'.ts
 		types.d.ts (includes a reference to ../types.d.ts)
-		'example'_vert.lgl
-		'example'_frag.lgl
+		'example'_v.lgl
+		'example'_f.lgl
+		'example'.json
+
+Run `make install` to install appropriate dependencies

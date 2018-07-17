@@ -3,7 +3,7 @@ import * as model3D from 'teapot';
 import * as normals from 'normals';
 import canvasOrbitCamera from 'canvas-orbit-camera';
 import pack from 'array-pack-2d';
-import data from '../color.json';
+import data from './color.json';
 import eye from 'eye-vector';
 
 const VERTEX_SHADER =

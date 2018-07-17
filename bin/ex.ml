@@ -29,4 +29,3 @@ let _ =
     print_string (Compiler.compile_program prog);
     if (Array.length Sys.argv > 2) then ((print_string "\n\n------------------\n\n");
         Ops.eval_prog prog);
-    print_string "\n"
