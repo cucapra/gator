@@ -1,8 +1,8 @@
 open CoreAst
 open TagAst
+open TagAstHelper
 open Assoc
 open Util
-open Print
 open Printf
 open Str
 
@@ -286,7 +286,7 @@ let check_scalar_binop (t1: typ) (t2: typ) (d: delta) : typ =
     | (ATyp(a), ATyp(FloatTyp)) -> ATyp a
     | (ATyp(LTyp a1), ATyp(LTyp a2)) -> 
         if ltyp_dim_equals a1 a2 d then
-        ((print_typ (ATyp(LTyp(least_common_parent a1 a2 d)))) |> debug_print;
+        ((string_of_typ (ATyp(LTyp(least_common_parent a1 a2 d)))) |> debug_print;
         ATyp(LTyp(least_common_parent a1 a2 d)))
         else raise (TypeException "dimension mismatch for scalar binop")
     | _ -> 
