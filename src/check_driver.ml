@@ -1,7 +1,8 @@
 (* Main driver for type checking, for unit testing*)
 
-open Ast
-open Print
+open CoreAst
+open TagAst
+open TagAstHelper
 
 (* Current program file and parsed program. *)
 let file : string option ref = ref None
@@ -19,8 +20,8 @@ let load (filename : string) : unit =
   let lexbuf = Lexing.from_channel ch in
     let parse = Parser.main Lexer.read lexbuf in
     let prog = parse in
-    let prog_str = print_prog prog in
-    Check.check_prog prog;
+    let prog_str = string_of_prog prog in
+    Check.check_prog prog |> ignore;
     print_endline prog_str;
     close_in ch
   

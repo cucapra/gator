@@ -40,7 +40,6 @@ rule read = parse
   | "*"   { TIMES }
   | "/"   { DIV }
   | ".*"  { CTIMES }
-  | ":"   { COLON }
   | "["   { LBRACK }
   | "]"   { RBRACK }
   | "{"   { LBRACE }
@@ -56,7 +55,7 @@ rule read = parse
   | "!"   { NOT }
   | ","   { COMMA } 
   | ";"   { SEMI }
-  | id  as id { ID id }
+  | id as id { ID id }
   | floatval as floatval  { FLOAT (float_of_string floatval) }
   | eof   { EOL }
   | _ { raise (SyntaxError ("Unexpected char: " ^ Lexing.lexeme lexbuf)) }

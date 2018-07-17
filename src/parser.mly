@@ -1,6 +1,7 @@
 
 %{
-open Ast
+open CoreAst
+open TagAst
 open Str
 
 exception ParseException of string
@@ -21,7 +22,6 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %token TIMES
 %token DIV
 %token CTIMES
-%token COLON
 %token LBRACK
 %token RBRACK
 %token LPAREN
@@ -72,10 +72,10 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
    the starting point is for parsing the language.  The following
    declaration says to start with a rule (defined below) named [prog].
    The declaration also says that parsing a [prog] will return an OCaml
-   value of type [Ast.expr]. *)
+   value of type [TagAst.expr]. *)
 
 %start main
-%type <Ast.prog> main
+%type <TagAst.prog> main
 
 (* The following %% ends the declarations section of the grammar definition. *)
 
@@ -83,8 +83,8 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
    
 main:
   | t = taglst; e = commlst; EOL { Prog(t, e) }
-  | e = commlst; EOL {Prog([], e)}
-  | t = taglst; EOL {Prog(t, [])}
+  | e = commlst; EOL { Prog([], e) }
+  | t = taglst; EOL { Prog(t, []) }
 ;
 
 
@@ -94,7 +94,7 @@ taglst:
 ; 
 
 tag:
-  | TAG; x = ID; IS; e1 = ltyp; SEMI; { (x, LTyp(e1)) }
+  | TAG; x = ID; IS; e1 = tagtyp; SEMI; { (x, TagTyp(e1) }
 ;
 
 commlst:
@@ -118,36 +118,33 @@ comm:
 ;
 
 typ:
-  | a = atyp { ATyp(a) }
   | BOOLTYP { BTyp }
-;
-
-atyp:
   | FLOATTYP  { FloatTyp }
   | INTTYP    { IntTyp }
-  | e = ltyp { LTyp(e) }
+  | e = tagtyp { TagTyp(e) }
+  | x1 = tagtyp; TRANS; x2 = tagtyp { TransTyp(x1,x2) }
 ;
 
-ltyp: 
+tagtyp: 
   | x = ID { if (Str.string_match matr x 0) then (
               let len = String.length x in 
               let dim = String.sub x 3 (len-3) in
               let dim_lst = Str.split_delim (regexp "x") dim in ()
-              (*Printf.printf "%s" (List.nth dim_lst 0)*) ;MatTyp (int_of_string(List.nth dim_lst 0),int_of_string(List.nth dim_lst 1))
+              (*Printf.printf "%s" (List.nth dim_lst 0)*) ;
+              TransTyp (TopTyp (int_of_string(List.nth dim_lst 0)),TopTyp (int_of_string(List.nth dim_lst 1)))
             ) else if (Str.string_match vec x 0) then (
               let len = String.length x in 
               let dim = String.sub x 3 (len-3)in
-              VecTyp (int_of_string(dim))
-            ) else TagTyp(x) }
-  | x1 = ltyp; TRANS; x2 = ltyp { TransTyp(x1,x2) }
+              TagTyp(TopTyp (int_of_string(dim)))
+            ) else TagTyp(VarTyp x) }
 ;
 
 aval: 
   | i = NUM { Num i }
   | f = FLOAT { Float f }
-  | LBRACK; RBRACK; COLON; t = ltyp{VecLit([], t)}
-  | LBRACK; v = veclit; RBRACK; COLON; t = ltyp{ VecLit(v@[], t) }
-  | LBRACK; m = matlit; RBRACK; COLON; t = ltyp { MatLit(m@[], t) }
+  | LBRACK; RBRACK {VecLit([])}
+  | LBRACK; v = veclit; RBRACK; { VecLit(v@[]) }
+  | LBRACK; m = matlit; RBRACK; { MatLit(m@[]) }
 ;
 
 veclit:
@@ -175,25 +172,25 @@ exp:
               let len = String.length x in 
               let dim = String.sub x 3 (len-3) in
               let dim_lst = Str.split_delim (regexp "x") dim in
-              Typ(ATyp(LTyp(MatTyp (int_of_string(List.nth dim_lst 0),int_of_string(List.nth dim_lst 1)))))
+              TransTyp (TopTyp(int_of_string(List.nth dim_lst 0)),TopTyp(int_of_string(List.nth dim_lst 1)))
             ) else if (Str.string_match vec x 0) then (
               let len = String.length x in 
               let dim = String.sub x 3 (len-3)in
-              Typ(ATyp(LTyp(VecTyp (int_of_string(dim)))))
+              TagTyp(TopTyp(int_of_string(dim)))
             ) else Var x
            }
-  | DOT; e1 = exp; e2 = exp { Dot(e1, e2) }
-  | NORM; e = exp { Norm(e) } (* Normie *)
-  | e1 = exp; PLUS; e2 = exp { Plus(e1,e2) }
-  | e1 = exp; TIMES; e2 = exp { Times(e1,e2) }
-  | e1 = exp; MINUS; e2 = exp { Minus(e1,e2) }
-  | e1 = exp; DIV; e2 = exp { Div(e1,e2) }
-  | e1 = exp; CTIMES; e2 = exp { CTimes(e1,e2) }
-  | NOT; e1 = exp;{ Not(e1) }
-  | e1 = exp; EQ; e2 = exp { Eq(e1,e2) }
-  | e1 = exp; LEQ; e2 = exp { Leq(e1,e2) }
-  | e1 = exp; OR; e2 = exp { Or(e1,e2) }
-  | e1 = exp; AND; e2 = exp { And(e1,e2) }
+  | DOT; e1 = exp; e2 = exp { Binop(Dot,e1, e2) }
+  | NORM; e = exp { Unop(Norm,e) } (* Normie *)
+  | e1 = exp; PLUS; e2 = exp { Binop(Plus,e1,e2) }
+  | e1 = exp; TIMES; e2 = exp { Binop(Times,e1,e2) }
+  | e1 = exp; MINUS; e2 = exp { Binop(Minus,e1,e2) }
+  | e1 = exp; DIV; e2 = exp { Binop(Div,e1,e2) }
+  | e1 = exp; CTIMES; e2 = exp { Binop(CTimes,e1,e2) }
+  | NOT; e1 = exp;{ Unop(Not,e1) }
+  | e1 = exp; EQ; e2 = exp { Binop(Eq,e1,e2) }
+  | e1 = exp; LEQ; e2 = exp { Binop(Leq,e1,e2) }
+  | e1 = exp; OR; e2 = exp { Binop(Or,e1,e2) }
+  | e1 = exp; AND; e2 = exp { Binop(And,e1,e2) }
 ;
 
 %%
