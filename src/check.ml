@@ -276,7 +276,6 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) : TypedAst.exp * typ =
         | Div  -> build_binop op e1 e2 check_division_exp
         | CTimes -> build_binop op e1 e2 check_ctimes_exp
     )
-    | Typ typ -> check_typ_exp typ d; (TypedAst.Typ (tag_erase typ d), typ)
     | VecTrans (i, tag) -> failwith "Unimplemented"
 
 

@@ -21,7 +21,6 @@ type typ =
 type exp =
     | Bool of bvalue
     | Aval of avalue
-    | Typ of typ
     | Var of id
     | Unop of unop * exp
     | Binop of binop * exp * exp

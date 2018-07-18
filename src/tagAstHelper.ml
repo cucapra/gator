@@ -45,7 +45,6 @@ let rec string_of_exp (e:exp) : string =
     | Aval av -> string_of_aval av
     | Bool b -> string_of_bool b
     | Var v -> v
-    | Typ t -> string_of_typ t
     | Unop (op, x) -> (match op with
         | Norm -> string_of_unop "norm" x
         | Not -> string_of_unop "!" x)

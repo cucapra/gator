@@ -16,7 +16,6 @@ type texp = exp * etyp
 and exp =
     | Bool of bvalue
     | Aval of avalue  
-    | Typ of etyp
     | Var of id 
     | Unop of unop * texp
     | Binop of binop * texp * texp
