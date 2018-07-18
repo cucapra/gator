@@ -7,16 +7,11 @@ repl:
 	dune utop src
 
 examples/%:
-	python3 scripts/jsonify.py $@ $*
-
-init: 
-	[ -d $@ ] || mkdir $@
-	mv $@_f.lgl $@/
-	mv $@_v.lgl $@/
-	python3 scripts/init.py $@ $*
+	python3 scripts/jsonify.py $@
 
 run:
-	cd examples/$(src); $(MAKE) view
+	python3 scripts/jsonify.py examples/$(src);
+	cd examples/; SRC=$(src) npm start
 
 clean:
 	dune clean

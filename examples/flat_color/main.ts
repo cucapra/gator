@@ -3,29 +3,12 @@ import * as model3D from 'teapot';
 import * as normals from 'normals';
 import canvasOrbitCamera from 'canvas-orbit-camera';
 import pack from 'array-pack-2d';
-import data from './flat_color.json';
+import data from './data.json';
 import eye from 'eye-vector';
 
-// const VERTEX_SHADER =
-//   "precision highp float;" +
-//   "attribute vec3 aPosition;" +
-//   "attribute vec3 aNormal;" +
-//   "varying vec3 vPosition;" +
-//   "varying vec3 vNormal;" +
-//   "uniform mat4 uProjection;" +
-//   "uniform mat4 uModel;" +
-//   "uniform mat4 uView;" +
-//   "uniform vec3 uLight;" +
-//   "uniform vec3 uCameraPosition;" +
-//   "void main() {" +
-//   "vNormal = aNormal;" +
-//   "vPosition = aPosition;" +
-//   "vec3 dummy = uCameraPosition;" + // We include this to avoid shenanigans with frag uses
-//   "dummy = uLight;" +
-//   "gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.0);" +
-//   "}";
-
 const VERTEX_SHADER = data["vertex"];
+
+// const VERTEX_SHADER = data["vertex"];
 const FRAGMENT_SHADER = data["fragment"];
 
 function compileShader(gl: WebGLRenderingContext, shaderType: number, shaderSource: string): WebGLShader {
@@ -49,7 +32,7 @@ function compileShader(gl: WebGLRenderingContext, shaderType: number, shaderSour
   }
 
   return shader;
-}
+  }
 
 function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader) {
   // create a program.
@@ -204,8 +187,8 @@ function main() {
     'uProjection': check_null(gl.getUniformLocation(program, 'uProjection')),
     'uView': check_null(gl.getUniformLocation(program, 'uView')),
     'uModel': check_null(gl.getUniformLocation(program, 'uModel')),
-    'uLight': check_null(gl.getUniformLocation(program, 'uLight')),
-    'uCameraPosition': check_null(gl.getUniformLocation(program, 'uCameraPosition')),
+    // 'uLight': check_null(gl.getUniformLocation(program, 'uLight')),
+    // 'uCameraPosition': check_null(gl.getUniformLocation(program, 'uCameraPosition')),
   };
 
   let attributeLocations: { [key: string]: number } = {

@@ -29,6 +29,14 @@ Explore the implementation in a [utop][] REPL:
 Run
 ---
 
+To simulate a Linguine-compiled shader on your browser: 
+
+    # make run src='example_directory_name'
+
+For example: 
+
+    # make run src=lighting
+
 You can run the compiler against an lgl file by executing 'exec' with a single additional argument
 For example:
 
