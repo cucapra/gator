@@ -69,7 +69,7 @@ T &\in \text{tags} \\
     \nu_1->\nu_2
 \end{leftalign}
 %
-Function types $\nu_1 -> \nu_2$ are not ordinary functions; they are matrices used to map from one vector space to another using matrix--vector multiplication.  The top types $\top_n$ and $\top_{n\times m}$ can be written in code as $\mathsf{vec}n$ and $\mathsf{mat}n\mathsf{x}m$, respectively.  The bottom types $\bot_n$ and $\bot_{n\times m}$ are purely meant for use by the typechecker and so are not part of the surface syntax of the language.
+Function types $\nu_1 -> \nu_2$ are not ordinary functions; they are matrices used to map from one vector space to another using matrix--vector multiplication.  As a convenience (as well as to match expected GLSL behavior), the top type $\top_n$ can be written in code as $\mathsf{vec}_n$ and the $\top_{n_1}->\top_{n_2}$ type can be written in code as $\mathsf{mat}n_1\mathsf{x}n_2$.  The $\bot_n$ type is purely meant for use by the typechecker and so is not part of the surface syntax of the language.  
 
 \section{Subtype Ordering}
 We define a judgment $\tau_1 \leq \tau_2$ for subtyping on ordinary types.
@@ -92,13 +92,14 @@ The null type \textsf{unit} acts as a top type for all of $\tau$:
     { }
     {\tau\leq\mathsf{unit}}
 \end{mathpar}
-
+%
 We also introduce a partial order on tags $\nu$, of the form $\Delta |- \nu_1 \leq_\Delta \nu_2$.  This ordering refers to a context $\Delta$, which is a map from tags $T$ to matrix types $\nu$:
 %
 \begin{mathpar}
 \inferrule
     {\Delta|-\Delta(\nu_1)=\nu_2}
     {\Delta|-\nu_1\leq_\Delta \nu_2}
+    \quad \Delta(T)=\nu
 \end{mathpar}
 %
 This relation has the usual reflexivity and transitivity properties:
@@ -121,18 +122,33 @@ Members of $\nu$, namely vectors and tagged vectors, have a top type representin
     {\Delta|-\bot_n\leq_\Delta\top_n}
 \end{mathpar}
 %
-These constructions require the following rules for any provided context $\Delta$
+The map $\Delta$ should not put anything above the top types $\top_n$ and the bottom types $\bot_n$.  In particular, we require the rules
 %
 $$\Delta(\nu)\neq\bot_n
 \qquad\textnormal{or}\qquad
 \Delta(\top_n)\neq\nu$$
-
+%
+Additionally, we need a rule to subsume the bottom type into values correctly since $\Delta$ only 'points' towards the top type.  In particular, we require the rule:
+\begin{mathpar}
+\inferrule
+    {\Delta|-\nu\leq_\Delta\top_n}
+    {\Delta|-\bot_n\leq_\Delta\nu}
+\end{mathpar}
+%
+This rule, along with the constructions previously described, gives the standard properties of a top and bottom.  In particular, for any $\nu,\Delta$, there exists a $\top_n$ and $\bot_n$ such that
+%
+\begin{mathpar}
+\inferrule
+    {}
+    {\Delta|-\bot_n\leq_\Delta\nu\quad\textnormal{and}\quad\Delta|-\nu\leq_\Delta\top_n}
+\end{mathpar}
+%
 The function-like transformation matrix types, $\nu_1 -> \nu_2$, have the same standard subtyping relationship as ordinary function types:
 %
 \begin{mathpar}
 \inferrule
 	{\Delta|-\nu_1'\leq_\Delta \nu_1\qquad\Delta|-\nu_2\leq_\Delta \nu_2'}
-	{\Delta|-\nu_1->\nu_2\leq_\Delta \nu_1'->\nu_2'}
+	{\Delta|-\nu_1->\nu_2\leq\nu_1'->\nu_2'}
 \end{mathpar}
 As with vectors, we can define matrix functions have a $\top_{n_1\times n_2}$ and $\bot_{n_1\times n_2}$ for any pair of dimensions $n_1,n_2$.  These constructions are just maps $\nu_1->\nu_2$, namely:
 %
@@ -145,6 +161,18 @@ As with vectors, we can define matrix functions have a $\top_{n_1\times n_2}$ an
 	{}
 	{\bot_{n_1\times n_2}=\top_{n_1}->\bot_{n_2}}
 \end{mathpar}
+%
+As with vectors, these rules produce the usual property of lattices, namely that every map is 'between' a given pair top and bottom values.  In particular, for any $\nu_1,\nu_2,\Delta$, there exists a $\top_{n_1\times n_2}$ and $\bot_{n_1\times n_2}$ such that:
+%
+$$\Delta|-\bot_{n_1\times n_2}\leq\nu_1->\nu_2
+\quad\textnormal{and}\quad
+\Delta|-\nu_1->\nu_2\leq\top_{n_1\times n_2}$$
+%
+Additionally, for any $\nu_1,\nu_2,\Delta$, there is no $\top_{n_1\times n_2}$ or $\bot_{n_1\times n_2}$ such that
+%
+$$\Delta|-\top_{n_1\times n_2}\leq\nu_1->\nu_2
+\quad\textnormal{or}\quad
+\Delta|-\nu_1->\nu_2\leq\bot_{n_1\times n_2}$$
 %
 \section{Static Semantics}
 
@@ -162,21 +190,6 @@ Any type in a given context can be cast ``up'' at any time with one notable exce
 	{\Delta|-\nu_1\leq_\Delta \nu_2\qquad\Gamma,\Delta|-e:\nu_1,\Gamma}
 	{\Gamma,\Delta|-e:\nu_2,\Gamma}
 	\quad \nu_2\neq\top_n
-\end{mathpar}
-%
-Additionally, we need a rule to subsume the bottom type into values correctly since $\Delta$ only 'points' towards the top type.  In particular, we require the rule:
-\begin{mathpar}
-\inferrule
-    {\Delta|-\nu\leq_\Delta\top_n}
-    {\Delta|-\bot_n\leq_\Delta\nu}
-\end{mathpar}
-%
-This rule, along with the constructions previously described, gives the normal properties of a top and bottom.  In particular, for any $\nu,\Delta$, there exists a $\top_n$ and $\bot_n$ such that
-%
-\begin{mathpar}
-\inferrule
-    { }
-    {\Delta|-\bot_n\leq_\Delta\nu\qquad\Delta|-\nu\leq_\Delta\top_n}
 \end{mathpar}
 %
 \subsection{Constants and Variable Declarations}
@@ -244,7 +257,7 @@ Component multiplication can be defined as a mathematical operation, but makes l
 	{\Gamma,\Delta|-e_1\;\mathsf{.*}\;e_2:\top_{n_1\times n_2},\Gamma''}
 \end{mathpar}
 
-Matrix multiplication is both a way of transforming from one tag to another and for composing two matrix functions together.  Note that these operations are NOT commutative and vectors are treated as column vectors with regards to matching dimensions.
+Matrix multiplication is both a way of transforming from one tag to another and for composing two matrix functions together.  Note that these operations are \textit{not} commutative and vectors are treated as column vectors with regards to matching dimensions.
 %
 \begin{mathpar}
 \inferrule
@@ -256,7 +269,7 @@ Matrix multiplication is both a way of transforming from one tag to another and 
 	{\Gamma,\Delta|-\;e_1*e_2:\tau_1->\tau_3,\Gamma''}
 \end{mathpar}
 
-The dot product function requires that each component is of the same tag (note the implicit use of the strictness condition not allowing vectors to be implicitely cast to the top type to maintain this invariant).
+The dot product function requires that each component is of the same tag (note the implicit use of the strictness condition not allowing vectors to be implicitly cast to the top type to maintain this invariant).
 
 \begin{mathpar}
 \inferrule
