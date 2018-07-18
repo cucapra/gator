@@ -6,7 +6,7 @@ open Str
 
 exception ParseException of string
 
-let matr = Str.regexp "mat\\([0-9]+\\)x\\([0-9]+\\)"
+(* let matr = Str.regexp "mat\\([0-9]+\\)x\\([0-9]+\\)" *)
 let vec = Str.regexp "vec\\([0-9]+\\)"
 
 %}
@@ -16,6 +16,7 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %token EOL 
 %token <int> NUM
 %token <float> FLOAT
+%token <string> MATTYP
 %token <string> ID
 %token PLUS
 %token MINUS
@@ -50,10 +51,6 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %token BOOLTYP
 %token LBRACE
 %token RBRACE
-
-(* Storage qualifiers *)
-%token IN
-%token OUT
 
 (* Precedences *)
 
@@ -94,7 +91,7 @@ taglst:
 ; 
 
 tag:
-  | TAG; x = ID; IS; e1 = tagtyp; SEMI; { (x, TagTyp(e1) }
+  | TAG; x = ID; IS; e1 = tagtyp; SEMI; { (x, TagTyp(e1)) }
 ;
 
 commlst:
@@ -104,39 +101,36 @@ commlst:
 
 comm:
   | SKIP; SEMI;{ Skip } 
-  | t = typ; x = ID; GETS; e1 = exp; SEMI; {  if (Str.string_match matr x 0) || (Str.string_match vec x 0) then (
+  | t = typ; x = ID; GETS; e1 = exp; SEMI; {  if (Str.string_match vec x 0) then (
       raise (ParseException "invalid id specified for variable declaration")
     ) else Decl(t, x, e1) }
-  | x = ID; GETS; e1 = exp; SEMI; {  if (Str.string_match matr x 0) || (Str.string_match vec x 0) then (
+  | x = ID; GETS; e1 = exp; SEMI; {  if (Str.string_match vec x 0) then (
       raise (ParseException "invalid id specified for variable declaration")
     ) else Assign(x, e1) }
   | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; 
     ELSE; LBRACE; c2 = commlst; RBRACE { If(b1,c1,c2) }
   | PRINT; e = exp; SEMI; { Print(e) }
-  | IN; t = typ; x = ID; { Store(In, t, x) }
-  | OUT; t = typ; x = ID; { Store(Out, t, x) }
 ;
 
 typ:
-  | BOOLTYP { BTyp }
+  | BOOLTYP { BoolTyp }
   | FLOATTYP  { FloatTyp }
   | INTTYP    { IntTyp }
-  | e = tagtyp { TagTyp(e) }
-  | x1 = tagtyp; TRANS; x2 = tagtyp { TransTyp(x1,x2) }
-;
-
-tagtyp: 
-  | x = ID { if (Str.string_match matr x 0) then (
-              let len = String.length x in 
-              let dim = String.sub x 3 (len-3) in
+  | m = MATTYP {let len = String.length m in 
+              let dim = String.sub m 3 (len-3) in
               let dim_lst = Str.split_delim (regexp "x") dim in ()
               (*Printf.printf "%s" (List.nth dim_lst 0)*) ;
-              TransTyp (TopTyp (int_of_string(List.nth dim_lst 0)),TopTyp (int_of_string(List.nth dim_lst 1)))
-            ) else if (Str.string_match vec x 0) then (
+              TransTyp (TopTyp (int_of_string(List.nth dim_lst 0)),TopTyp (int_of_string(List.nth dim_lst 1)))}
+  | x1 = tagtyp; TRANS; x2 = tagtyp { TransTyp(x1,x2) }
+  | e = tagtyp { TagTyp(e) }
+;
+
+tagtyp:
+  | x = ID { if (Str.string_match vec x 0) then (
               let len = String.length x in 
               let dim = String.sub x 3 (len-3)in
-              TagTyp(TopTyp (int_of_string(dim)))
-            ) else TagTyp(VarTyp x) }
+              TopTyp (int_of_string(dim))
+            ) else (VarTyp x) }
 ;
 
 aval: 
@@ -168,17 +162,7 @@ exp:
   | LPAREN; a = exp; RPAREN { a }
   | a = aval { Aval a }
   | b = bool { Bool b }
-  | x = ID { if (Str.string_match matr x 0) then (
-              let len = String.length x in 
-              let dim = String.sub x 3 (len-3) in
-              let dim_lst = Str.split_delim (regexp "x") dim in
-              TransTyp (TopTyp(int_of_string(List.nth dim_lst 0)),TopTyp(int_of_string(List.nth dim_lst 1)))
-            ) else if (Str.string_match vec x 0) then (
-              let len = String.length x in 
-              let dim = String.sub x 3 (len-3)in
-              TagTyp(TopTyp(int_of_string(dim)))
-            ) else Var x
-           }
+  | x = ID { Var x }
   | DOT; e1 = exp; e2 = exp { Binop(Dot,e1, e2) }
   | NORM; e = exp { Unop(Norm,e) } (* Normie *)
   | e1 = exp; PLUS; e2 = exp { Binop(Plus,e1,e2) }
