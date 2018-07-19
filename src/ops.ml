@@ -1,4 +1,5 @@
-open Ast
+open CoreAst
+open TypedAst
 open Assoc
 open Lin_ops
 open Util
@@ -8,9 +9,17 @@ type sigma = (id, value) Assoc.context
 let rec eval_aexp (e : exp) (s : sigma) : avalue =
     match e with
     | Aval a -> a
-    | Var x -> (match (Assoc.lookup s x) with
+    | Var x -> (match (Assoc.lookup x s) with
         | Avalue a -> a
         | Bvalue b -> failwith ("Invalid use of non-avalue " ^ x))
+    | Binop (op, left, right) -> (match op with
+        | Dot
+        | Plus
+        | Minus
+        | Times
+        | Div
+        | CTimes
+        | _ -> failwith "Typechecker failure -- op " ^ (string_of_binop op) ^ " does not produce an a")
     | Dot (a1, a2) -> (match ((eval_aexp a1 s), (eval_aexp a2 s)) with
         | (VecLit (v1, _), VecLit (v2, _)) -> Float (dot v1 v2)
         | _ -> failwith "Invalid dot product")
@@ -121,6 +130,5 @@ let rec eval_comm (c : comm list) (s : sigma) : sigma =
             | _ -> (try (if (eval_bexp e s) then (eval_comm c1 s) else (eval_comm c2 s)) with
                 | Failure s -> failwith s)))
 
-let rec eval_prog (p : prog) : unit =
-    match p with
-    | Prog (_, c) -> let _ = eval_comm c Assoc.empty in ()
+let eval_prog (p : prog) : unit =
+    eval_comm p Assoc.empty |> ignore

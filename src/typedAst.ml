@@ -14,8 +14,7 @@ type etyp =
 (* expressions  *)
 type texp = exp * etyp
 and exp =
-    | Bool of bvalue
-    | Aval of avalue  
+    | Val of value
     | Var of id 
     | Unop of unop * texp
     | Binop of binop * texp * texp

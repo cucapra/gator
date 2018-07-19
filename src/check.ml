@@ -74,9 +74,10 @@ let unify_tags (t1: tagtyp) (t2: tagtyp) (d: delta) : tagtyp =
         (if s1 = s2 then VarTyp s1
         else VarTyp (lub (get_ancestor_list t1 d) (get_ancestor_list t1 d)))
 
-let check_aval (av: avalue) (d: delta) : typ = 
+let check_val (v: value) (d: delta) : typ = 
     debug_print ">> check_aval";
-    match av with
+    match v with
+    | Bool b -> BoolTyp
     | Num n -> IntTyp
     | Float f -> FloatTyp
     | VecLit v -> TagTyp (BotTyp (List.length v))
@@ -259,8 +260,7 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) : TypedAst.exp * typ =
             (TypedAst.Binop(op, exp_to_texp e1r d, exp_to_texp e2r d), check_fun (snd e1r) (snd e2r) d)
     in
     match e with
-    | Bool b -> (TypedAst.Bool b, BoolTyp)
-    | Aval a -> (TypedAst.Aval a, check_aval a d)
+    | Val v -> (TypedAst.Val v, check_val v d)
     | Var v -> "\tVar "^v |> debug_print;
         (TypedAst.Var v, Assoc.lookup v g)
     | Unop (op, e') -> (match op with

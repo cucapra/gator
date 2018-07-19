@@ -19,8 +19,7 @@ type typ =
 
 (* expressions *)
 type exp =
-    | Bool of bvalue
-    | Aval of avalue
+    | Val of value
     | Var of id
     | Unop of unop * exp
     | Binop of binop * exp * exp

@@ -1,6 +1,7 @@
 (* Tag AST pretty printer *)
 
 open CoreAst
+open CoreAstHelper
 open TagAst
 
 let string_of_vec (v: vec) : string = 
@@ -9,56 +10,35 @@ let string_of_vec (v: vec) : string =
 let string_of_mat (m: mat) : string = 
     "["^(String.concat ", " (List.map string_of_vec m))^"]"
 
-let string_of_tag_typ (t: TagAst.tagtyp) : string =
+let string_of_tag_typ (t: tagtyp) : string =
     match t with
     | TopTyp n -> "vec"^(string_of_int n)
     | BotTyp n -> "vec"^(string_of_int n)^"lit"
     | VarTyp s -> s
 
-let rec string_of_typ (t: TagAst.typ) : string = 
+let rec string_of_typ (t: typ) : string = 
     match t with
-    | TagAst.UnitTyp -> "unit"
-    | TagAst.BoolTyp -> "bool"
-    | TagAst.IntTyp -> "int"
-    | TagAst.FloatTyp -> "float"
-    | TagAst.TagTyp s -> string_of_tag_typ s
-    | TagAst.TransTyp (s1, s2) -> (string_of_tag_typ s1) ^ "->" ^ (string_of_tag_typ s2)
-
-let rec string_of_aval (av: avalue) : string = 
-    match av with 
-    | Num n -> string_of_int n
-    | Float f -> string_of_float f
-    | VecLit v -> string_of_vec v
-    | MatLit m -> string_of_mat m
+    | UnitTyp -> "unit"
+    | BoolTyp -> "bool"
+    | IntTyp -> "int"
+    | FloatTyp -> "float"
+    | TagTyp s -> string_of_tag_typ s
+    | TransTyp (s1, s2) -> (string_of_tag_typ s1) ^ "->" ^ (string_of_tag_typ s2)
 
 let rec string_of_exp (e:exp) : string =
-    let string_of_unop (op : string) (e': exp) =
-        op ^ " " ^ (string_of_exp e')
-    in
-    let string_of_binop (op : string) (e1 : exp) (e2 : exp) =
+    let s_binop (op : string) (e1 : exp) (e2 : exp) =
         op ^ " " ^ (string_of_exp e1) ^ " " ^ (string_of_exp e2)
     in
-    let string_of_inline_binop (op : string) (e1: exp) (e2: exp) =
+    let inline_binop (op : string) (e1: exp) (e2: exp) =
         (string_of_exp e1) ^ " " ^ op ^ " " ^ (string_of_exp e2)
     in
     match e with
-    | Aval av -> string_of_aval av
-    | Bool b -> string_of_bool b
+    | Val v -> string_of_value v
     | Var v -> v
-    | Unop (op, x) -> (match op with
-        | Norm -> string_of_unop "norm" x
-        | Not -> string_of_unop "!" x)
+    | Unop (op, x) -> (string_of_unop op) ^ " " ^ (string_of_exp x)
     | Binop (op, l, r) -> (match op with
-        | Eq -> string_of_inline_binop "==" l r
-        | Leq -> string_of_inline_binop "<=" l r
-        | Or -> string_of_inline_binop "||" l r
-        | And -> string_of_inline_binop "&&" l r
-        | Dot -> string_of_binop "dot" l r
-        | Plus -> string_of_inline_binop "+" l r
-        | Minus -> string_of_inline_binop "-" l r
-        | Times -> string_of_inline_binop "*" l r
-        | Div -> string_of_inline_binop "/" l r
-        | CTimes -> string_of_inline_binop ".*" l r)
+        | Dot -> s_binop (string_of_binop op) l r
+        | _ -> inline_binop (string_of_binop op) l r)
     | VecTrans (i, t) -> failwith "Unimplemented"
 
 let rec string_of_comm (c: comm) : string =

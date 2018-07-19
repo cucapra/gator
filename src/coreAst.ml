@@ -3,32 +3,25 @@ type id = string
 type vec = float list
 type mat = vec list
 
-(* arithmetic values *)
-type avalue =
-  Num of int
+(* values *)
+type value =
+  | Bool of bool
+  | Num of int
   | Float of float
   | VecLit of vec
   | MatLit of mat
 
-(* boolean values *)
-type bvalue = bool
-
-(* values *)
-type value =
-  | Avalue of avalue
-  | Bvalue of bvalue
-
 type unop =
-    | Norm
-    | Not
+  | Norm
+  | Not
 type binop = 
-    | Eq
-    | Leq
-    | Or
-    | And
-    | Dot
-    | Plus
-    | Minus
-    | Times
-    | Div
-    | CTimes (* Component-wise multiplication *)
+  | Eq
+  | Leq
+  | Or
+  | And
+  | Dot
+  | Plus
+  | Minus
+  | Times
+  | Div
+  | CTimes (* Component-wise multiplication *)

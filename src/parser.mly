@@ -63,7 +63,7 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %nonassoc DOT
 
 %nonassoc NORM
-%left TRANS
+(*%left TRANS*)
 
 (* After declaring associativity and precedence, we need to declare what
    the starting point is for parsing the language.  The following
@@ -133,7 +133,8 @@ tagtyp:
             ) else (VarTyp x) }
 ;
 
-aval: 
+value:
+  | b = bool { Bool b }
   | i = NUM { Num i }
   | f = FLOAT { Float f }
   | LBRACK; RBRACK {VecLit([])}
@@ -160,8 +161,7 @@ bool:
 
 exp:
   | LPAREN; a = exp; RPAREN { a }
-  | a = aval { Aval a }
-  | b = bool { Bool b }
+  | v = value { Val v}
   | x = ID { Var x }
   | DOT; e1 = exp; e2 = exp { Binop(Dot,e1, e2) }
   | NORM; e = exp { Unop(Norm,e) } (* Normie *)
