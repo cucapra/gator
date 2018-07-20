@@ -44,6 +44,7 @@ let is_tag_subtype (to_check: tagtyp) (target: tagtyp) (d: delta) : bool =
     | VarTyp s, TopTyp n -> (vec_dim to_check d) = n
     | TopTyp _, _ -> false
 
+(* Gets the least common parent of the two tags *)
 let unify_tags (t1: tagtyp) (t2: tagtyp) (d: delta) : tagtyp =
     let check_dim (n1: int) (n2: int) : unit =
         if n1 = n2 then () else (raise (DimensionException (n1, n2)))
