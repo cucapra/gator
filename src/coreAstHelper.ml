@@ -17,19 +17,28 @@ let rec string_of_value (v: value) : string =
     | MatLit m -> string_of_mat m
 
 
-let string_of_unop (op: unop) : string =
+let string_of_unop (op: unop) (e: string) : string =
+    let funct_op (op: string) : string =
+        op ^ "(" ^ e ^ ")"
+    in
     match op with
-    | Norm -> "normalize"
-    | Not -> "!"
-let string_of_binop (op: binop) : string =
+    | Norm -> funct_op "normalize"
+    | Not -> "!" ^ e
+let string_of_binop (op: binop) (left: string) (right: string) : string =
+    let funct_op (op: string) : string =
+        op ^ "(" ^ left ^ ", " ^ right ^ ")"
+    in
+    let inline_op (op: string) : string =
+        left ^ " " ^ op ^ " " ^ right
+    in
     match op with
-    | Eq -> "=="
-    | Leq -> "<="
-    | Or -> "||"
-    | And -> "&&"
-    | Dot -> "dot"
-    | Plus -> "+"
-    | Minus -> "-"
-    | Times -> "*"
-    | Div -> "/"
-    | CTimes -> ".*"
+    | Eq -> inline_op "=="
+    | Leq -> inline_op "<="
+    | Or -> inline_op "||"
+    | And -> inline_op "&&"
+    | Dot -> funct_op "dot("
+    | Plus -> inline_op "+"
+    | Minus -> inline_op "-"
+    | Times -> inline_op "*"
+    | Div -> inline_op "/"
+    | CTimes -> inline_op ".*"

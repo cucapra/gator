@@ -26,19 +26,16 @@ let rec string_of_typ (t: typ) : string =
     | TransTyp (s1, s2) -> (string_of_tag_typ s1) ^ "->" ^ (string_of_tag_typ s2)
 
 let rec string_of_exp (e:exp) : string =
-    let s_binop (op : string) (e1 : exp) (e2 : exp) =
-        op ^ " " ^ (string_of_exp e1) ^ " " ^ (string_of_exp e2)
-    in
-    let inline_binop (op : string) (e1: exp) (e2: exp) =
-        (string_of_exp e1) ^ " " ^ op ^ " " ^ (string_of_exp e2)
-    in
     match e with
     | Val v -> string_of_value v
     | Var v -> v
-    | Unop (op, x) -> (string_of_unop op) ^ " " ^ (string_of_exp x)
-    | Binop (op, l, r) -> (match op with
-        | Dot -> s_binop (string_of_binop op) l r
-        | _ -> inline_binop (string_of_binop op) l r)
+    | Unop (op, x) -> (string_of_unop op (string_of_exp x))
+    | Binop (op, l, r) -> 
+        let ls = (string_of_exp l) in
+        let rs = (string_of_exp r) in
+        (match op with
+        | Dot -> (string_of_binop op ls rs)
+        | _ -> (string_of_binop op ls rs))
     | VecTrans (i, t) -> failwith "Unimplemented"
 
 let rec string_of_comm (c: comm) : string =

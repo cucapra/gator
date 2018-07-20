@@ -14,7 +14,7 @@ let rec eval_exp (e : exp) (s : sigma) : value =
     | Unop (op, (e', _)) ->
         let v = eval_exp e' s in
         let bad_unop _ =
-            failwith ("Cannot apply " ^ (string_of_unop op) ^ " to " ^ (string_of_value v))
+            failwith ("No rule to apply " ^ (string_of_unop op (string_of_value v)))
         in
         (match op with
         | Not -> (match v with
@@ -28,8 +28,8 @@ let rec eval_exp (e : exp) (s : sigma) : value =
         let left = eval_exp l s in
         let right = eval_exp r s in
         let bad_binop _ =
-            failwith ("Cannot apply " ^ (string_of_binop op) ^ " to the operands "
-            ^ (string_of_value left) ^ " and " ^ (string_of_value right))
+            failwith ("No rule to apply " ^ 
+            (string_of_binop op (string_of_value left) (string_of_value right)))
         in
         (match op with
         | Eq -> (match (left, right) with
