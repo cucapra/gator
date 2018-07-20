@@ -3,9 +3,9 @@ import * as model3D from 'teapot';
 import * as normals from 'normals';
 import canvasOrbitCamera from 'canvas-orbit-camera';
 import pack from 'array-pack-2d';
-import data from './data.json';
+import data from './data.json';   
 import eye from 'eye-vector';
-
+ 
 const VERTEX_SHADER = data["vertex"];
 
 // const VERTEX_SHADER = data["vertex"];
@@ -51,6 +51,10 @@ function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fra
     // something went wrong with the link
     throw ("program filed to link:" + gl.getProgramInfoLog(program));
   }
+
+  // Delete shader objects after linked to program
+  gl.deleteShader(vertexShader);
+  gl.deleteShader(fragmentShader);
 
   return program;
 };
