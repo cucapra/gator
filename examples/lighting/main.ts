@@ -1,5 +1,5 @@
 import { mat4, vec3 } from 'gl-matrix';
-import * as model3D from 'teapot';
+import * as model3D from 'bunny';
 import * as normals from 'normals';
 import canvasOrbitCamera from 'canvas-orbit-camera';
 import pack from 'array-pack-2d';
@@ -51,6 +51,9 @@ function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fra
     throw ("program filed to link:" + gl.getProgramInfoLog(program));
   }
 
+  // Delete shader objects after linked to program
+  gl.deleteShader(vertexShader);
+  gl.deleteShader(fragmentShader);
   return program;
 };
 
@@ -187,7 +190,6 @@ function main() {
     'uView': check_null(gl.getUniformLocation(program, 'uView')),
     'uModel': check_null(gl.getUniformLocation(program, 'uModel')),
     'uLight': check_null(gl.getUniformLocation(program, 'uLight')),
-    'uCameraPosition': check_null(gl.getUniformLocation(program, 'uCameraPosition')),
   };
 
   let attributeLocations: { [key: string]: number } = {
@@ -205,7 +207,6 @@ function main() {
   let model = mat4.create();
   let view = mat4.create();
   let light = vec3.create();
-  let cameraPosition = vec3.create();
 
   // center the model3D on the screen
   /*let modelShift = vec3.create();
@@ -236,7 +237,6 @@ function main() {
     camera.view(view);
     camera.tick();
 
-    eye(view, cameraPosition);
     projection_matrix(projection, width, height);
 
     // Set the model to fill the canvas
@@ -255,7 +255,6 @@ function main() {
     mat4.rotateY(model, model, .01);
     gl.uniformMatrix4fv(uniformLocations.uModel, false, model);
     gl.uniform3fv(uniformLocations.uLight, light);
-    gl.uniform3fv(uniformLocations.uCameraPosition, cameraPosition);
 
     // Set the attribute arrays.
     // Note that attributes not used in a shader do not have a bound location

@@ -16,7 +16,6 @@ vec3->vec4 v3_v4 = [
 
 // "in" variables
 vec3 vPosition = [0., 0., 0.]:vec3;
-vec3 uCameraPosition = [0., 0., 0.]:vec3;
 vec4->vec4 uModel = [
   [0., 0., 0., 0.],
   [0., 0., 0., 0.],

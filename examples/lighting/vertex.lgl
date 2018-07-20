@@ -21,7 +21,6 @@ vec4->vec4 uModel = [
   [0., 0., 0., 0.]
 ]:vec4->vec4;
 vec3 uLight = [0., 0., 0.]:vec3;
-vec3 uCameraPosition = [0., 0., 0.]:vec3;
 vec3->vec4 v3_v4 = [
   [1., 0., 0.],
   [0., 1., 0.],
@@ -30,6 +29,5 @@ vec3->vec4 v3_v4 = [
 ]:vec3->vec4;
 vNormal = aNormal;
 vPosition = aPosition;
-vec3 dummy = uCameraPosition;
-dummy = uLight;
+vec3 dummy = uLight;
 vec4 gl_Position = uProjection * uView * uModel * (v3_v4 * aPosition + [0., 0., 0., 1.]:vec4);
