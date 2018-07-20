@@ -203,6 +203,6 @@ let rec build_delta (tl : tagdecl list) (d : delta) : delta =
 
 let rec compile_program (p : prog) : string =
     match p with
-    | Prog (tl, c) -> let d = build_delta tl Context.empty in
+    | Prog (tl, c) -> let d = build_delta tl Assoc.empty in
         "\"precision highp float;" 
-            ^ (decl_attribs c d) ^ " void main() { " ^ (comp_comm c d Context.empty) ^ " }\""
+            ^ (decl_attribs c d) ^ " void main() { " ^ (comp_comm c d Assoc.empty) ^ " }\""
