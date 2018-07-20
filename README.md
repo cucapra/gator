@@ -8,9 +8,11 @@ There is a compiler, pretty printer, and interpreter.
 Set Up
 ------
 
-We need [Dune][] and [Menhir][]:
+We need [Dune][], [Jbuilder][], and [Menhir][]:
 
+    $ opam install jbuilder
     $ opam install dune
+    $ apt-get install m4
     $ opam install menhir
 
 Build by typing:
