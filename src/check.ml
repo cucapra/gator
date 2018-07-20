@@ -285,13 +285,18 @@ let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gam
     if Assoc.mem s d then 
         raise (TypeException "variable declared as tag")
     else (
+        print_endline ((string_of_typ t) ^ " " ^ (string_of_typ etyp));
         match (t, etyp) with
-        | (TagTyp a1, TagTyp a2) -> 
-            if is_tag_subtype a2 a1 d then Assoc.update s t g
-            else raise (TypeException ("mismatched linear type for var decl: " ^ s))
+
+        | (BoolTyp, BoolTyp)
         | (IntTyp, IntTyp)
-        | (FloatTyp, FloatTyp)
-        | (BoolTyp, BoolTyp) -> Assoc.update s t g
+        | (FloatTyp, FloatTyp) -> Assoc.update s t g
+        | (TagTyp t1, TagTyp t2) ->
+        if is_tag_subtype t2 t1 d then Assoc.update s t g
+        else raise (TypeException ("mismatched linear type for var decl: " ^ s))
+        | (TransTyp (t1, t2), TransTyp (t3, t4)) ->
+        if is_tag_subtype t4 t2 d then Assoc.update s t g
+        else raise (TypeException ("no possible upcast for var decl: " ^ s))
         | _ -> raise (TypeException "mismatched types for var decl")
     )
 
