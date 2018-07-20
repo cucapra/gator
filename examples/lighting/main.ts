@@ -13,7 +13,7 @@ const FRAGMENT_SHADER = data["fragment"];
 function compileShader(gl: WebGLRenderingContext, shaderType: number, shaderSource: string): WebGLShader {
   // Create the shader object
   let shader = gl.createShader(shaderType);
-  if (!shader) {
+  if (!shader) {  
     throw "could not create shader";
   }
 
