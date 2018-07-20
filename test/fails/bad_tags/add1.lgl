@@ -1,4 +1,4 @@
 tag a is vec2;
 
-a x = [1., 2.]:a;
-a bad = x + [5., 5.]:vec2; // Addition goes to the most general type
+a x = [1., 2.];
+a bad = x + [5., 5.]; // Addition goes to the most general type

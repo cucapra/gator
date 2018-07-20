@@ -1,4 +1,4 @@
 tag a is vec2;
 tag b is vec3;
 
-a->b x = [[1., 1., 1.], [1., 1., 1.]]:a->b; // Bad dimensions
+a->b x = [[1., 1., 1.], [1., 1., 1.]]; // Bad dimensions

@@ -1,4 +1,4 @@
 tag a is vec2;
 
-a->a x = [[1., 2.], [1., 2.]]:a->a;
+a->a x = [[1., 2.], [1., 2.]];
 vec2->a bad = x .* x; // Component multiplication goes to the most general type

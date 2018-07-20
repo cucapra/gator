@@ -1,1 +1,1 @@
-mat2x2 x = [[1., 1.], [1.]]:mat2x2; // Non-square matrix
+mat2x2 x = [[1., 1.], [1.]]; // Non-square matrix
