@@ -109,7 +109,7 @@ let check_val (v: value) (d: delta) : typ =
         (let rows = List.length m in
         if rows = 0 then trans_bot 0 0 else
         let cols = List.length (List.hd m) in
-        if List.for_all (fun v -> List.length v = cols) m then trans_bot rows cols
+        if List.for_all (fun v -> List.length v = cols) m then trans_bot cols rows
         else (raise (TypeException ("Matrix must have the same number of elements in each row"))))
 
 let check_tag_typ (tag: tagtyp) (d: delta) : unit =
@@ -133,7 +133,12 @@ let check_typ_exp (t: typ) (d: delta) : unit =
 (* "scalar linear exp", (i.e. ctimes) returns generalized MatTyp *)
 let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) : typ = 
     debug_print ">> check_scalar_linear_exp";
-    match (t1, t2) with 
+    match (t1, t2) with
+    | TagTyp a1, TagTyp a2 -> 
+        let left = vec_dim a1 d in
+        let right = vec_dim a2 d in
+        if left = right then TagTyp (BotTyp left)
+        else raise (DimensionException (left, right))
     | TransTyp (m1, m2), TransTyp (m3, m4) ->
         let left = (vec_dim m1 d) in
         let right = (vec_dim m2 d) in
@@ -306,11 +311,11 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) : TypedAst.exp * typ =
 
 let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gamma =
     debug_print (">> check_decl <<"^s^">>");
+    print_endline ((string_of_typ t) ^ " " ^ (string_of_typ etyp));
     if Assoc.mem s d then 
         raise (TypeException "variable declared as tag")
     else (
         match (t, etyp) with
-
         | (BoolTyp, BoolTyp)
         | (IntTyp, IntTyp)
         | (FloatTyp, FloatTyp) -> Assoc.update s t g
