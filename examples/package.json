@@ -1,0 +1,26 @@
+{
+  "name": "linguine-examples",
+  "private": true,
+  "version": "1.0.0",
+  "main": "main.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "parcel serve $SRC/index.html"
+  },
+  "devDependencies": {
+    "ts-loader": "^4.4.2",
+    "typescript": "^2.9.2",
+    "parcel-bundler": "^1.9.7"
+  },
+  "dependencies": {
+    "@types/gl-matrix": "^2.4.0",
+    "array-pack-2d": "^1.0.0",
+    "canvas-fit": "^1.5.0",
+    "canvas-orbit-camera": "^1.0.0",
+    "gl-matrix": "^2.6.1",
+    "normals": "^0.1.0",
+    "teapot": "^1.0.0",
+    "bunny": "^1.0.1",
+    "eye-vector": "^1.0.0"
+  }
+}

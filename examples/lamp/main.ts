@@ -251,7 +251,7 @@ function main() {
   let model = mat4.create();
   let view = mat4.create();
   let light = vec3.create();
-  let cameraPosition = vec3.create();
+  // let cameraPosition = vec3.create();
 
   // center the model3D on the screen
   /*let modelShift = vec3.create();
@@ -282,7 +282,7 @@ function main() {
     camera.view(view);
     camera.tick();
 
-    eye(view, cameraPosition);
+    // eye(view, cameraPosition);
     projection_matrix(projection, width, height);
 
     // Set the model to fill the canvas
@@ -301,7 +301,7 @@ function main() {
     mat4.rotateY(model, model, .01);
     gl.uniformMatrix4fv(uniformLocations.uModel, false, model);
     gl.uniform3fv(uniformLocations.uLight, light);
-    gl.uniform3fv(uniformLocations.uCameraPosition, cameraPosition);
+    // gl.uniform3fv(uniformLocations.uCameraPosition, cameraPosition);
 
     // Set the attribute arrays.
     // Note that attributes not used in a shader do not have a bound location
