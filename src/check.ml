@@ -44,8 +44,7 @@ let is_tag_subtype (to_check: tagtyp) (target: tagtyp) (d: delta) : bool =
     | VarTyp s, TopTyp n -> (vec_dim to_check d) = n
     | TopTyp _, _ -> false
 
-(* Gets the least common parent of the two tags *)
-let unify_tags (t1: tagtyp) (t2: tagtyp) (d: delta) : tagtyp =
+let least_common_parent (t1: tagtyp) (t2: tagtyp) (d: delta) : tagtyp =
     let check_dim (n1: int) (n2: int) : unit =
         if n1 = n2 then () else (raise (DimensionException (n1, n2)))
     in
@@ -68,12 +67,36 @@ let unify_tags (t1: tagtyp) (t2: tagtyp) (d: delta) : tagtyp =
         raise (TypeException "Cannot implicitly cast to the top vector type")
     | VarTyp s, BotTyp n1
     | BotTyp n1, VarTyp s ->
-        check_dim (vec_dim (VarTyp s) d) n1;
-        BotTyp n1
+        check_dim (vec_dim (VarTyp s) d) n1; VarTyp s
     | VarTyp s1, VarTyp s2 ->
         check_dim (vec_dim (VarTyp s1) d) (vec_dim (VarTyp s2) d);
         (if s1 = s2 then VarTyp s1
         else VarTyp (lub (get_ancestor_list t1 d) (get_ancestor_list t1 d)))
+
+let greatest_common_child (t1: tagtyp) (t2: tagtyp) (d: delta) : tagtyp =
+    let check_dim (n1: int) (n2: int) : unit =
+        if n1 = n2 then () else (raise (DimensionException (n1, n2)))
+    in
+    match (t1, t2) with
+    | BotTyp n1, BotTyp n2
+    | BotTyp n1, TopTyp n2
+    | TopTyp n1, BotTyp n2 ->
+        check_dim n1 n2; BotTyp n1
+    | TopTyp n1, TopTyp n2 ->
+        check_dim n1 n2; TopTyp n1
+    | VarTyp s, TopTyp n1
+    | TopTyp n1, VarTyp s ->
+        check_dim (vec_dim (VarTyp s) d) n1; VarTyp s
+    | VarTyp s, BotTyp n1
+    | BotTyp n1, VarTyp s ->
+        check_dim (vec_dim (VarTyp s) d) n1; BotTyp n1
+    | VarTyp s1, VarTyp s2 ->
+        let bot_dim = vec_dim (VarTyp s1) d in
+        check_dim bot_dim (vec_dim (VarTyp s2) d);
+        (* This works since each tag can only have one parent *)
+        (if is_tag_subtype t1 t2 d then t1
+        else if is_tag_subtype t2 t1 d then t2
+        else BotTyp bot_dim)
 
 let check_val (v: value) (d: delta) : typ = 
     debug_print ">> check_aval";
@@ -162,7 +185,7 @@ let check_comp_binop (t1: typ) (t2: typ) (d: delta) : typ =
 
 let check_dot_exp (t1: typ) (t2: typ) (d: delta): typ = 
     match (t1, t2) with 
-    | TagTyp a1, TagTyp a2 -> unify_tags a1 a2 d |> ignore; FloatTyp
+    | TagTyp a1, TagTyp a2 -> least_common_parent a1 a2 d |> ignore; FloatTyp
     | _ -> raise (TypeException "unexpected type for dot product exp")
 
 (* Type checking addition operations on scalar (int, float) expressions *)
@@ -175,7 +198,9 @@ let check_addition_exp (t1: typ) (t2: typ) (d: delta) : typ =
     | FloatTyp, IntTyp
     | IntTyp, FloatTyp
     | FloatTyp, FloatTyp -> FloatTyp
-    | TagTyp a1, TagTyp a2 -> TagTyp (unify_tags a1 a2 d)
+    | TagTyp a1, TagTyp a2 -> TagTyp (least_common_parent a1 a2 d)
+    | TransTyp (m1, m2), TransTyp (m3, m4) -> 
+        TransTyp (greatest_common_child m1 m3 d, least_common_parent m2 m4 d)
     | _ -> 
         (raise (TypeException ("invalid expressions for addition: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))))
@@ -211,7 +236,7 @@ let check_times_exp (t1: typ) (t2: typ) (d: delta) : typ =
     (* Matrix * Matrix Multiplication *)
     | TransTyp (m1, m2), TransTyp (m3, m4) ->
         (* Check for a cast match between m2 and m3 *)
-        unify_tags m2 m3 d |> ignore;
+        least_common_parent m2 m3 d |> ignore;
         TransTyp (m1, m4)
     | _ -> raise (TypeException ("Invalid types for multiplication: "
         ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2)))
@@ -221,7 +246,6 @@ let check_times_exp (t1: typ) (t2: typ) (d: delta) : typ =
 let check_division_exp (t1: typ) (t2: typ) (d: delta) : typ =
     debug_print ">> check_addition";
     match (t1, t2) with 
-    (* | (ATyp(LTyp(VecTyp n1)), ATyp(LTyp(VecTyp n2))) ->  *)
     | IntTyp, IntTyp -> IntTyp
     | FloatTyp, IntTyp
     | IntTyp, FloatTyp
@@ -285,7 +309,6 @@ let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gam
     if Assoc.mem s d then 
         raise (TypeException "variable declared as tag")
     else (
-        print_endline ((string_of_typ t) ^ " " ^ (string_of_typ etyp));
         match (t, etyp) with
 
         | (BoolTyp, BoolTyp)
@@ -295,7 +318,7 @@ let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gam
         if is_tag_subtype t2 t1 d then Assoc.update s t g
         else raise (TypeException ("mismatched linear type for var decl: " ^ s))
         | (TransTyp (t1, t2), TransTyp (t3, t4)) ->
-        if is_tag_subtype t4 t2 d then Assoc.update s t g
+        if is_tag_subtype t4 t2 d && is_tag_subtype t1 t3 d then Assoc.update s t g
         else raise (TypeException ("no possible upcast for var decl: " ^ s))
         | _ -> raise (TypeException "mismatched types for var decl")
     )
