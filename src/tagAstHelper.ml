@@ -4,11 +4,6 @@ open CoreAst
 open CoreAstHelper
 open TagAst
 
-let string_of_vec (v: vec) : string = 
-    "["^(String.concat ", " (List.map string_of_float v))^"]"
-
-let string_of_mat (m: mat) : string = 
-    "["^(String.concat ", " (List.map string_of_vec m))^"]"
 
 let string_of_tag_typ (t: tagtyp) : string =
     match t with
