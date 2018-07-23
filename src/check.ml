@@ -317,7 +317,7 @@ let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gam
         if is_tag_subtype t2 t1 d then Assoc.update s t g
         else raise (TypeException ("mismatched linear type for var decl: " ^ s))
         | (TransTyp (t1, t2), TransTyp (t3, t4)) ->
-        if is_tag_subtype t4 t2 d && is_tag_subtype t1 t3 d then Assoc.update s t g
+        if is_tag_subtype t1 t3 d && is_tag_subtype t4 t2 d then Assoc.update s t g
         else raise (TypeException ("no possible upcast for var decl: " ^ s))
         | _ -> raise (TypeException "mismatched types for var decl")
     )

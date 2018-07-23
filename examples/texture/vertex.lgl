@@ -26,8 +26,6 @@ vec3->vec4 v3_v4 = [
   [0., 0., 1.],
   [0., 0., 0.]
 ];
-
-vec2 aTexCoord = [0., 0.];
-vec2 vTexCoord = aTexCoord;
-
+vNormal = aNormal;
+vPosition = aPosition;
 vec4 gl_Position = uProjection * uView * uModel * (v3_v4 * aPosition + [0., 0., 0., 1.]);
