@@ -9,6 +9,7 @@ exception SyntaxError of string
 let white = [' ' '\t' '\n' '\r']+
 let num = ['+' '-']? ['0'-'9']+
 let letter = ['a'-'z' 'A'-'Z']
+let mat = "mat" num ['x'] num
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let floatval = ['+' '-']? ((['0'-'9']*['.']['0'-'9']+)|(['0'-'9']+['.']['0'-'9']*))
 let newline = ('\r' | '\n' | "\r\n" | eof)
@@ -32,15 +33,13 @@ rule read = parse
   | "print" { PRINT }
   | "int" { INTTYP }
   | "float" { FLOATTYP }
+  | mat as mat { MATTYP mat }
   | "bool" { BOOLTYP }
-  | "in" { IN }
-  | "out" { OUT }
   | "+"   { PLUS }
   | "-"   { MINUS }
   | "*"   { TIMES }
   | "/"   { DIV }
   | ".*"  { CTIMES }
-  | ":"   { COLON }
   | "["   { LBRACK }
   | "]"   { RBRACK }
   | "{"   { LBRACE }
@@ -56,7 +55,7 @@ rule read = parse
   | "!"   { NOT }
   | ","   { COMMA } 
   | ";"   { SEMI }
-  | id  as id { ID id }
+  | id as id { ID id }
   | floatval as floatval  { FLOAT (float_of_string floatval) }
   | eof   { EOL }
   | _ { raise (SyntaxError ("Unexpected char: " ^ Lexing.lexeme lexbuf)) }

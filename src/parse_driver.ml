@@ -1,7 +1,8 @@
 (* Main driver for parsing, for unit testing*)
 
-open Ast
-open Print
+open CoreAst
+open TagAst
+open TagAstHelper
 
 (* Current program file and parsed program. *)
 let file : string option ref = ref None
@@ -20,7 +21,7 @@ let load (filename : string) : unit =
   try
     let parse = Parser.main Lexer.read lexbuf in
     let prog = parse in
-    let prog_str = print_prog prog in
+    let prog_str = string_of_prog prog in
     print_endline prog_str;
     close_in ch
   with

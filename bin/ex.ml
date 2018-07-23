@@ -1,8 +1,6 @@
 open Lingl
-open Ast
 
-let program : Ast.prog option ref = ref None
-
+let program : TagAst.prog option ref = ref None
 
 let _ =
     if (Array.length Sys.argv < 2) then 
@@ -10,7 +8,7 @@ let _ =
     let ch =
         try open_in (Array.get Sys.argv 1)
         with Sys_error s -> failwith ("Cannot open file: " ^ s) in
-    let prog : Ast.prog =
+    let prog : TagAst.prog =
         let lexbuf = Lexing.from_channel ch in
         try
             Parser.main Lexer.read lexbuf
@@ -24,8 +22,8 @@ let _ =
             failwith ("Parsing error at character " ^ tok ^ ", character " ^ string_of_int cnum)
             end in  
         close_in ch;
-    let _ = Check.check_prog prog in
-    if (Array.length Sys.argv > 3) then print_endline (Print.print_prog prog);
-    print_string (Compiler.compile_program prog);
+    let typedProg = Check.check_prog prog in
+    if (Array.length Sys.argv > 3) then print_endline (TagAstHelper.string_of_prog prog);
+    print_string (Compiler.compile_program typedProg);
     if (Array.length Sys.argv > 2) then ((print_string "\n\n------------------\n\n");
-        Ops.eval_prog prog);
+        Ops.eval_prog typedProg);

@@ -1,5 +1,5 @@
-type vec = Ast.vec
-type mat = Ast.mat
+type vec = CoreAst.vec
+type mat = CoreAst.mat
 
 let vec_to_mat (v : vec) : mat = [v]
 let mat_to_vec (m : mat) : vec = 

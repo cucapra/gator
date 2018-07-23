@@ -1,4 +1,4 @@
-open Ast
+open CoreAst
 (* Some utilities, modified from CS6110 assignments *)
 
 exception ElementNotFoundException of string
@@ -11,7 +11,7 @@ let string_of_mat (m: mat) : string =
 
 let rec repeat (s : string) (count : int) : string = 
   if count <= 0 then "" else (if count > 1 then (s ^ (repeat s (count-1))) else s)
-  
+
 (*****************************************************
  * HashSet, like in Java!
  *****************************************************)

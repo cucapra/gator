@@ -205,7 +205,7 @@ Declaring constants produce the types one would expect:
 	{\Gamma,\Delta|-s:\mathsf{scalar},\Gamma}
 \end{mathpar}
 
-Vector and matrix literals take on their respective bottom types of the appropriate dimension
+Vector and matrix literals take on their respective bottom types of the appropriate dimension (note the swap in dimensions for the bottom type as a result of treating vectors as column vectors).
 %
 \begin{mathpar}
 \inferrule
@@ -214,7 +214,7 @@ Vector and matrix literals take on their respective bottom types of the appropri
 
 \inferrule
 	{ }
-	{\Gamma,\Delta|-m_{n_1\times n_2}:\bot_{n_1\times n_2},\Gamma}
+	{\Gamma,\Delta|-m_{n_1\times n_2}:\bot_{n_2\times n_1},\Gamma}
 \end{mathpar}
 
 Variables can be declared and assigned.  Assignment is required at declaration time.  Note that the entire variable must be reassigned in the case of vectors and matrices:

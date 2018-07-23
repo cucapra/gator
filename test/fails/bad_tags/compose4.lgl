@@ -2,7 +2,7 @@ tag a is vec2;
 tag b is vec2;
 tag c is vec2;
 
-a->b a_b = [[1., 1.], [1., 1.]]:a->b;
-b->c b_c = [[1., 1.], [1., 1.]]:b->c;
-c->a c_a = [[1., 1.], [1., 1.]]:c->a;
+a->b a_b = [[1., 1.], [1., 1.]];
+b->c b_c = [[1., 1.], [1., 1.]];
+c->a c_a = [[1., 1.], [1., 1.]];
 a->a bad = a_b * b_c + b_c * c_a; // Order of operations in tags

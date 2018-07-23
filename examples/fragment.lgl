@@ -4,14 +4,7 @@ vec4->vec4 as_red = [
                [0., 0., 0., 0.],
                [0., 0., 0., 1.]
                ]:vec4->vec4;
-
-vec4->vec4 red_to_blue = [
-               [0., 0., 0., 0.],
-               [0., 0., 0., 0.],
-               [1., 0., 0., 0.],
-               [0., 0., 0., 1.]
-               ]:vec4->vec4;
                
 vec4 color = [.15, 0.4, 0.25, 1.0]:vec4;
-vec4 gl_FragColor = red_to_blue * as_red * color;
+vec4 gl_FragColor = id * color;
 print gl_FragColor;

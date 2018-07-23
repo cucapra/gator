@@ -1,28 +1,30 @@
 (* IR for typed AST *)
-open Ast
 
-(* expressions *)
-type texp = exp * typ
+open CoreAst
+
+(* Type with tags erased *)
+type etyp = 
+    | UnitTyp
+    | BoolTyp
+    | IntTyp
+    | FloatTyp
+    | VecTyp of int
+    | MatTyp of int * int
+
+(* expressions  *)
+type texp = exp * etyp
 and exp =
-    | Bool of bvalue
-    | Aval of avalue  
-    | Typ of typ
-    | Var of id
-    | Norm of texp
-    | Not of texp   
-    | Eq of texp * texp
-    | Leq of texp * texp
-    | Or of texp * texp
-    | And of texp * texp
-    | Dot of texp * texp
-    | Plus of texp * texp
-    | Times of texp * texp
-    | Minus of texp * texp
-    | CTimes of texp * texp (* Component-wise multiplication*)
+    | Val of value
+    | Var of id 
+    | Unop of unop * texp
+    | Binop of binop * texp * texp
 
 (* commands *)
 type comm = 
-    Skip
+    | Skip
     | Print of texp
-    | Decl of typ * string * texp
+    | Decl of etyp * string * texp
+    | Assign of string * texp
     | If of texp * comm list * comm list
+
+type prog = comm list
