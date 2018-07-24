@@ -34,20 +34,20 @@ Run
 
 To simulate a Linguine-compiled shader on your browser: 
 
-    # make run src='example_directory_name'
+    $ make run src='example_directory_name'
 
 For example: 
 
-    # make run src=lighting
+    $ make run src=lighting
 
 You can run the compiler against an lgl file by executing 'exec' with a single additional argument
 For example:
 
-    $  jbuilder exec bin/lingc.bc 'filename'
+    $ jbuilder exec bin/lingc.bc 'filename'
 
 To also print interpreter output, include an additional argument v
 
-    $  jbuilder exec bin/lingc.bc 'filename' v
+    $ jbuilder exec bin/lingc.bc 'filename' v
 
 Examples
 ---
