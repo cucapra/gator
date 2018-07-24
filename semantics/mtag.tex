@@ -265,7 +265,7 @@ Matrix multiplication is both a way of transforming from one tag to another and 
 	{\Gamma,\Delta|-e_1*e_2:\tau_2,\Gamma''}
 
 \inferrule
-	{\Gamma,\Delta|-e_1:\tau_1->\tau_2,\Gamma'\qquad\Gamma',\Delta|-e_2:\tau_2->\tau_3,\Gamma''}
+	{\Gamma,\Delta|-e_1:\tau_2->\tau_3,\Gamma'\qquad\Gamma',\Delta|-e_2:\tau_1->\tau_2,\Gamma''}
 	{\Gamma,\Delta|-\;e_1*e_2:\tau_1->\tau_3,\Gamma''}
 \end{mathpar}
 
