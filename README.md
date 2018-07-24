@@ -12,21 +12,22 @@ We need [Dune][], [Jbuilder][], and [Menhir][]:
 
     $ opam install jbuilder
     $ opam install dune
-    $ apt-get install m4
+    $ apt-get install m4  # On Debian, for example.
     $ opam install menhir
 
 Build by typing:
 
-    $ dune exec bin/lingc.bc
+    $ dune build bin/lingc.bc
 
-Explore the implementation in a [utop][] REPL:
+Now you can use `dune exec bin/lingc.bc` to run the compiler.
+Or you can install a `lingc` executable:
 
-    $ opam install utop
-    $ dune utop src
+    $ dune build && dune install
+
+Now `lingc` should be available on your path.
 
 [dune]: https://github.com/ocaml/dune
 [menhir]: http://gallium.inria.fr/~fpottier/menhir/
-[utop]: https://github.com/diml/utop
 
 Run
 ---
