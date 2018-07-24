@@ -50,7 +50,7 @@ To also print interpreter output, include an additional argument v
     $ jbuilder exec bin/lingc.bc 'filename' v
 
 Examples
----
+--------
 
 To see examples of shaders in action, simply pipe compiler output into the examples/color.json
 
@@ -70,5 +70,7 @@ You can run them all by typing `./test/test.sh`.
 (But it's not clear how to tell whether they passed.)
 
 Versions
------
+--------
+
 OpenGL 1.0
+TK: I think this should be GLSL 1.0, which is from OpenGL 2.0 and GLSL ES 2.0, which is what WebGL 1.0 corresponds to? Also, this could use a sentence or two explaining why this version is listed here. --ALDS
