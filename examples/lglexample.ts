@@ -294,7 +294,7 @@ export function setup(canvas: HTMLCanvasElement, render: (view: mat4, projection
   gl.clear(gl.COLOR_BUFFER_BIT);
 
   // Set up the render loop.
-  registerAnimator(() => {
+  let cancel = registerAnimator(() => {
     // Update the camera view.
     camera.view(view);
     camera.tick();
@@ -313,6 +313,13 @@ export function setup(canvas: HTMLCanvasElement, render: (view: mat4, projection
 
     render(view, projection);
   });
+
+  // A **total hack** to cancel previously-registered animation loops.
+  let w = window as any;
+  if (w._linguineCancel) {
+    w._linguineCancel();
+  }
+  w._linguineCancel = cancel;
 
   return gl;
 }
