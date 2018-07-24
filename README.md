@@ -49,19 +49,6 @@ To also print interpreter output, include an additional argument v
 
     $ lingc example.lgl v
 
-Examples
---------
-
-To see examples of shaders in action, simply pipe compiler output into the examples/color.json
-
-    $ lingc example.lgl > color.json
-
-And then run the appropriate typescript file (either examples/trivial or examples/lighting)
-
-    $ cd examples/trivial; make view
-
-See the Makefile in examples/trivial for details on setting up your typescript environment
-
 Tests
 -----
 
@@ -69,8 +56,7 @@ There are a bunch of tests under the `test` directory.
 You can run them all by typing `./test/test.sh`.
 (But it's not clear how to tell whether they passed.)
 
-Versions
---------
+Technical Details
+-----------------
 
-OpenGL 1.0
-TK: I think this should be GLSL 1.0, which is from OpenGL 2.0 and GLSL ES 2.0, which is what WebGL 1.0 corresponds to? Also, this could use a sentence or two explaining why this version is listed here. --ALDS
+The current version of the compiler generates GLSL 1.0 code, which is suitable for use in WebGL 1.0 (i.e., OpenGL 2.0) programs.

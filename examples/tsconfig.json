@@ -7,8 +7,9 @@
         "resolveJsonModule": true,
         "outDir": "build"
     },
-    "files": [
-        "main.ts",
+    "include": [
+        "*/main.ts",
+        "lglexample.ts",
         "types.d.ts"
     ]
 }
