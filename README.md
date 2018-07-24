@@ -40,21 +40,21 @@ For example:
 
     $ make run src=lighting
 
-You can run the compiler against an lgl file by executing 'exec' with a single additional argument
+You can run the compiler by passing the `*.lgl` source file as an argument to `lingc`.
 For example:
 
-    $ jbuilder exec bin/lingc.bc 'filename'
+    $ lingc example.lgl
 
 To also print interpreter output, include an additional argument v
 
-    $ jbuilder exec bin/lingc.bc 'filename' v
+    $ lingc example.lgl v
 
 Examples
 --------
 
 To see examples of shaders in action, simply pipe compiler output into the examples/color.json
 
-    $ jbuilder exec bin/lingc.bc 'filename' > color.json
+    $ lingc example.lgl > color.json
 
 And then run the appropriate typescript file (either examples/trivial or examples/lighting)
 
