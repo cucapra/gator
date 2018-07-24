@@ -2,7 +2,7 @@
  * This module contains common functionality shared across Linguine's WebGL
  * examples.
  */
-import { mat4, vec3 } from 'gl-matrix';
+import { mat4 } from 'gl-matrix';
 import * as teapot from 'teapot';
 import * as bunny from 'bunny';
 import * as normals from 'normals';

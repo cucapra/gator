@@ -1,6 +1,5 @@
 import * as lgl from '../lglexample';
 import { mat4 } from 'gl-matrix';
-import * as model3D from 'teapot';
 
 import shaderData from './data.json';
 
