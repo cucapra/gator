@@ -38,9 +38,12 @@ export function compileShader(gl: WebGLRenderingContext, shaderType: number, sha
  * Link two compiled shaders (a vertex shader and a fragment shader) together
  * to create a *shader program*, which can be used to issue a draw call.
  */
-export function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader) {
+export function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader): WebGLProgram {
   // create a program.
   let program = gl.createProgram();
+  if (!program) {
+    throw "could not create new program";
+  }
 
   // attach the shaders.
   gl.attachShader(program, vertexShader);
@@ -66,7 +69,7 @@ export function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShad
 /**
  * Compile and link a vertex/fragment shader pair.
  */
-export function compileProgram(gl: WebGLRenderingContext, vtx: string, frag: string) {
+export function compileProgram(gl: WebGLRenderingContext, vtx: string, frag: string): WebGLProgram {
   let vertexShader = compileShader(gl, gl.VERTEX_SHADER, vtx);
   let fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, frag);
   return createProgram(gl, vertexShader, fragmentShader);
@@ -249,4 +252,18 @@ export function setup(canvas: HTMLCanvasElement, render: (view: mat4, projection
   gl.clear(gl.COLOR_BUFFER_BIT);
 
   return gl;
+}
+
+/**
+ * Look up a uniform location (and assert that it is non-null).
+ */
+export function uniformLoc(gl: WebGLRenderingContext, program: WebGLProgram, name: string) {
+  return check_null(gl.getUniformLocation(program, name));
+}
+
+/**
+ * Look up an attribute location (and assert that it is non-null).
+ */
+export function attribLoc(gl: WebGLRenderingContext, program: WebGLProgram, name: string) {
+  return check_null(gl.getAttribLocation(program, name));
 }

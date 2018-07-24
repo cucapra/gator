@@ -1,6 +1,5 @@
 import * as lgl from '../lglexample';
-import { check_null } from '../lglexample';
-import { mat4, vec3 } from 'gl-matrix';
+import { mat4 } from 'gl-matrix';
 import * as model3D from 'teapot';
 
 import shaderData from './data.json';
@@ -11,14 +10,12 @@ function main() {
 
   let program = lgl.compileProgram(gl, shaderData.vertex, shaderData.fragment);
 
-  // Uniform locations.
-  let loc_uProjection = check_null(gl.getUniformLocation(program, 'uProjection'));
-  let loc_uView = check_null(gl.getUniformLocation(program, 'uView'));
-  let loc_uModel = check_null(gl.getUniformLocation(program, 'uModel'));
-
-  // Attribute locations.
-  let loc_aPosition = check_null(gl.getAttribLocation(program, 'aPosition'));
-  let loc_aNormal = check_null(gl.getAttribLocation(program, 'aNormal'));
+  // Uniform and attribute locations.
+  let loc_uProjection = lgl.uniformLoc(gl, program, 'uProjection');
+  let loc_uView = lgl.uniformLoc(gl, program, 'uView');
+  let loc_uModel = lgl.uniformLoc(gl, program, 'uModel');
+  let loc_aPosition = lgl.attribLoc(gl, program, 'aPosition');
+  let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
 
   // look up where the vertex data needs to go.
   let shape_buffers = lgl.mesh_buffers(gl, model3D);
