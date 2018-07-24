@@ -12,7 +12,6 @@ const FRAGMENT_SHADER = data["fragment"];
 
 function main() {
   let canvas = document.getElementById('c') as HTMLCanvasElement;
-  //window.addEventListener('resize', fit(canvas), false);
   let camera = canvasOrbitCamera(canvas);
   let gl = lgl.glContext(canvas, render);
 
@@ -31,7 +30,7 @@ function main() {
   let attributeLocations: { [key: string]: number } = {
     'aPosition': check_null(gl.getAttribLocation(program, 'aPosition')),
     'aNormal': check_null(gl.getAttribLocation(program, 'aNormal')),
-  }
+  };
 
   // look up where the vertex data needs to go.
   let shape_buffers = lgl.mesh_buffers(gl, model3D);
@@ -43,18 +42,6 @@ function main() {
   let model = mat4.create();
   let view = mat4.create();
   let light = vec3.create();
-
-  // center the model3D on the screen
-  /*let modelShift = vec3.create();
-  modelShift[1] = -10;
-  mat4.translate(model, model, modelShift);
-  let modelScale = vec3.create();
-  let scaleConstant = 1.8;
-  modelScale[0] = scaleConstant;
-  modelScale[1] = scaleConstant;
-  modelScale[2] = scaleConstant;
-  mat4.scale(model, model, modelScale);
-  mat4.rotateX(model, model, .2);*/
 
   // place the light
   light[0] = 20.;

@@ -1,4 +1,5 @@
 import * as lgl from '../lglexample';
+import { check_null } from '../lglexample';
 import canvasOrbitCamera from 'canvas-orbit-camera';
 import { mat4, vec3 } from 'gl-matrix';
 import * as model3D from 'teapot';
@@ -11,19 +12,11 @@ const FRAGMENT_SHADER = data["fragment"];
 
 function main() {
   let canvas = document.getElementById('c') as HTMLCanvasElement;
-  //window.addEventListener('resize', fit(canvas), false);
   let camera = canvasOrbitCamera(canvas);
   let gl = lgl.glContext(canvas, render);
 
   let vertexShader = lgl.compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
   let fragmentShader = lgl.compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
-
-  function check_null<T>(v: T | null): T {
-    if (v === null) {
-      throw "the value was null!";
-    }
-    return v;
-  }
 
   // Compile the shader program.
   let program = lgl.createProgram(gl, vertexShader, fragmentShader);
@@ -31,17 +24,15 @@ function main() {
     'uProjection': check_null(gl.getUniformLocation(program, 'uProjection')),
     'uView': check_null(gl.getUniformLocation(program, 'uView')),
     'uModel': check_null(gl.getUniformLocation(program, 'uModel')),
-    // 'uLight': check_null(gl.getUniformLocation(program, 'uLight')),
-    // 'uCameraPosition': check_null(gl.getUniformLocation(program, 'uCameraPosition')),
   };
 
   let attributeLocations: { [key: string]: number } = {
     'aPosition': check_null(gl.getAttribLocation(program, 'aPosition')),
     'aNormal': check_null(gl.getAttribLocation(program, 'aNormal')),
-  }
+  };
 
   // look up where the vertex data needs to go.
-  let lgl.shape_buffers = mesh_buffers(gl, model3D);
+  let shape_buffers = lgl.mesh_buffers(gl, model3D);
 
   // Create the base matrices to be used
   // when rendering the object. Alternatively, can
@@ -51,18 +42,6 @@ function main() {
   let view = mat4.create();
   let light = vec3.create();
   // let cameraPosition = vec3.create();
-
-  // center the model3D on the screen
-  /*let modelShift = vec3.create();
-  modelShift[1] = -10;
-  mat4.translate(model, model, modelShift);
-  let modelScale = vec3.create();
-  let scaleConstant = 1.8;
-  modelScale[0] = scaleConstant;
-  modelScale[1] = scaleConstant;
-  modelScale[2] = scaleConstant;
-  mat4.scale(model, model, modelScale);
-  mat4.rotateX(model, model, .2);*/
 
   // place the light
   light[0] = 20.;
