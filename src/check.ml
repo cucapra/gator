@@ -34,7 +34,6 @@ let rec get_ancestor_list (t: tagtyp) (d: delta) : id list =
     | VarTyp s -> s :: (get_ancestor_list (lookup s d) d)
 
 let is_tag_subtype (to_check: tagtyp) (target: tagtyp) (d: delta) : bool =
-    (* Printf.printf ">> is_tag_subtype %s %s\n" (string_of_tag_typ to_check) (string_of_tag_typ target); *)
     match (to_check, target) with
     | BotTyp n1, BotTyp n2
     | BotTyp n1, TopTyp n2
@@ -154,7 +153,6 @@ let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) : typ =
 (* Type check norm expressions *)
 let rec check_norm_exp (t: typ) (d: delta) : typ = 
     debug_print ">> check_norm_exp";
-    (* Printf.printf "%s" (print_typ a); *)
     match t with
     | TagTyp a -> FloatTyp
     | _ -> (raise (TypeException "expected linear type for norm operator"))
@@ -211,7 +209,6 @@ let check_addition_exp (t1: typ) (t2: typ) (d: delta) : typ =
     | FloatTyp, FloatTyp -> FloatTyp
     | TagTyp a1, TagTyp a2 -> TagTyp (least_common_parent a1 a2 d)
     | TransTyp (m1, m2), TransTyp (m3, m4) -> 
-    Printf.printf "%s " (string_of_typ(TransTyp (greatest_common_child m1 m3 d, least_common_parent m2 m4 d)));
         TransTyp (greatest_common_child m1 m3 d, least_common_parent m2 m4 d)
     | _ -> 
         (raise (TypeException ("invalid expressions for addition: "
@@ -247,7 +244,6 @@ let check_times_exp (t1: typ) (t2: typ) (d: delta) : typ =
 
     (* Matrix * Matrix Multiplication *)
     | TransTyp (m1, m2), TransTyp (m3, m4) ->
-        (* Printf.printf "%s %s %s\n" (string_of_typ t1) (string_of_typ t2) (string_of_tag_typ m1); *)
         (* Check for a cast match between m2 and m3 *)
         least_common_parent m1 m4 d |> ignore;
         TransTyp (m3, m2)
@@ -331,7 +327,6 @@ let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gam
             if is_tag_subtype t2 t1 d then Assoc.update s t g
             else raise (TypeException ("mismatched linear type for var decl: " ^ s))
         | (TransTyp (t1, t2), TransTyp (t3, t4)) ->
-            (* Printf.printf "%s %s %s %s\n" (string_of_tag_typ t1) (string_of_tag_typ t2) (string_of_tag_typ t3) (string_of_tag_typ t4); *)
             if is_tag_subtype t1 t3 d && is_tag_subtype t4 t2 d then Assoc.update s t g
             else raise (TypeException ("no possible upcast for var decl: " ^ s))
         | _ -> raise (TypeException ("mismatched types for var decl: expected " ^ (string_of_typ t) ^ " " ^ s ^ ", found " ^ (string_of_typ etyp) ))
