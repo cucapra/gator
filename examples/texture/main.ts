@@ -18,7 +18,7 @@ function main() {
   let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
 
   // look up where the vertex data needs to go.
-  let shape_buffers = lgl.mesh_buffers(gl, model3D);
+  let mesh = lgl.getMesh(gl, model3D);
 
   // Create the base matrices to be used
   // when rendering the object.
@@ -35,14 +35,11 @@ function main() {
     gl.uniformMatrix4fv(loc_uModel, false, model);
 
     // Set the attribute arrays.
-    // Note that attributes not used in a shader do not have a bound location
-    lgl.bind_attrib_buffer(gl, loc_aNormal, shape_buffers.normals);
-    lgl.bind_attrib_buffer(gl, loc_aPosition, shape_buffers.positions);
+    lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals);
+    lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions);
 
-    // And the element array.
-    lgl.bind_element_buffer(gl, shape_buffers.cells);
-
-    gl.drawElements(gl.TRIANGLES, shape_buffers.cell_count, gl.UNSIGNED_SHORT, 0);
+    // Draw the object.
+    lgl.drawMesh(gl, mesh);
   }
 }
 

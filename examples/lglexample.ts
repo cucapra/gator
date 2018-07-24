@@ -155,14 +155,35 @@ export function bind_element_buffer(gl: WebGLRenderingContext, buffer: WebGLBuff
 }
 
 /**
- * Given a mesh, with the fields `positions` and `cells`, create three buffers
- * for drawing the thing. Return an object with the fields:
- * - `cells`, a 3-dimensional uint16 element array buffer
- * - `cell_count`, the total number of numbers in the cell buffer
- * - `positions`, a 3-dimensional float32 array buffer
- * - `normals`, ditto
+ * Contains buffers for a single 3D object model.
  */
-export function mesh_buffers(gl: WebGLRenderingContext, obj: { cells: [number, number, number][], positions: [number, number, number][] }) {
+interface Mesh {
+  /**
+   * A 3-dimensional uint16 element array buffer.
+   */
+  cells: WebGLBuffer;
+
+  /**
+   * The total number of numbers in the cell buffer.
+   */
+  cell_count: number;
+
+  /**
+   * A 3-dimensional float32 array buffer.
+   */
+  positions: WebGLBuffer;
+
+  /**
+   * Also a 3-dimensional float32 array buffer.
+   */
+  normals: WebGLBuffer;
+}
+
+/**
+ * Given a mesh, with the fields `positions` and `cells`, create a Mesh object
+ * housing the buffers necessary for drawing the thing.
+ */
+export function getMesh(gl: WebGLRenderingContext, obj: { cells: [number, number, number][], positions: [number, number, number][] }): Mesh {
   let norm = normals.vertexNormals(obj.cells, obj.positions);
 
   return {
@@ -171,6 +192,15 @@ export function mesh_buffers(gl: WebGLRenderingContext, obj: { cells: [number, n
     positions: make_buffer(gl, obj.positions, 'float32', gl.ARRAY_BUFFER),
     normals: make_buffer(gl, norm, 'float32', gl.ARRAY_BUFFER),
   };
+}
+
+/**
+ * Use a WebGL `drawElements` call to draw a mesh created by `getMesh` using
+ * its elements (cells).
+ */
+export function drawMesh(gl: WebGLRenderingContext, mesh: Mesh) {
+  bind_element_buffer(gl, mesh.cells);
+  gl.drawElements(gl.TRIANGLES, mesh.cell_count, gl.UNSIGNED_SHORT, 0);
 }
 
 /**

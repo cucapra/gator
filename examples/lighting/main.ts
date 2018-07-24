@@ -24,7 +24,7 @@ function main() {
   };
 
   // look up where the vertex data needs to go.
-  let shape_buffers = lgl.mesh_buffers(gl, model3D);
+  let mesh = lgl.getMesh(gl, model3D);
 
   // Create the base matrices to be used
   // when rendering the object. Alternatively, can
@@ -50,15 +50,11 @@ function main() {
     gl.uniform3fv(uniformLocations.uLight, light);
 
     // Set the attribute arrays.
-    // Note that attributes not used in a shader do not have a bound location
-    lgl.bind_attrib_buffer(gl, attributeLocations.aNormal, shape_buffers.normals);
-    lgl.bind_attrib_buffer(gl, attributeLocations.aPosition, shape_buffers.positions);
+    lgl.bind_attrib_buffer(gl, attributeLocations.aNormal, mesh.normals);
+    lgl.bind_attrib_buffer(gl, attributeLocations.aPosition, mesh.positions);
 
-    // And the element array.
-    // TODO What is an element array?
-    lgl.bind_element_buffer(gl, shape_buffers.cells);
-
-    gl.drawElements(gl.TRIANGLES, shape_buffers.cell_count, gl.UNSIGNED_SHORT, 0);
+    // Draw the object.
+    lgl.drawMesh(gl, mesh);
   }
 }
 
