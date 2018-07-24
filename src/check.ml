@@ -327,6 +327,7 @@ let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gam
         | (IntTyp, IntTyp)
         | (FloatTyp, FloatTyp) -> Assoc.update s t g
         | (TagTyp t1, TagTyp t2) ->
+            least_common_parent t1 t2 d |> ignore;
             if is_tag_subtype t2 t1 d then Assoc.update s t g
             else raise (TypeException ("mismatched linear type for var decl: " ^ s))
         | (TransTyp (t1, t2), TransTyp (t3, t4)) ->
