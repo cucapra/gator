@@ -233,15 +233,28 @@ export function glContext(canvas: HTMLCanvasElement, render?: () => void): WebGL
 
   // Register the animation function.
   if (render) {
-    const r = render;  // Avoid funky JavaScript scoping problems.
-    let tick = () => {
-      r();
-      requestAnimationFrame(tick);  // Call us back on the next frame.
-    }
-    requestAnimationFrame(tick);  // Kick off the first frame.
+    registerAnimator(render);
   }
 
   return gl;
+}
+
+/**
+ * Register a function to be called to animate every frame.
+ *
+ * Return a function that can be used to cancel the animation.
+ */
+export function registerAnimator(func: () => void): () => void {
+  let rafID: number;
+  let tick = () => {
+    func();
+    rafID = requestAnimationFrame(tick);  // Call us back on the next frame.
+  }
+  rafID = requestAnimationFrame(tick);  // Kick off the first frame.
+
+  return () => {
+    cancelAnimationFrame(rafID);
+  };
 }
 
 /**
@@ -273,8 +286,15 @@ export function setup(canvas: HTMLCanvasElement, render: (view: mat4, projection
   let projection = mat4.create();
   let view = mat4.create();
 
-  // Get the WebGL rendering context, and set up the render loop.
-  let gl = glContext(canvas, () => {
+  // Get the WebGL rendering context
+  let gl = glContext(canvas);
+
+  // Clear the canvas.
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  // Set up the render loop.
+  registerAnimator(() => {
     // Update the camera view.
     camera.view(view);
     camera.tick();
@@ -293,10 +313,6 @@ export function setup(canvas: HTMLCanvasElement, render: (view: mat4, projection
 
     render(view, projection);
   });
-
-  // Clear the canvas.
-  gl.clearColor(0, 0, 0, 0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
 
   return gl;
 }
