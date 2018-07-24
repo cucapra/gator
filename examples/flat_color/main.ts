@@ -7,6 +7,7 @@ function main() {
   let canvas = document.getElementById('c') as HTMLCanvasElement;
   let gl = lgl.setup(canvas, render);
 
+  // Compile our shaders.
   let program = lgl.compileProgram(gl, shaderData.vertex, shaderData.fragment);
 
   // Uniform and attribute locations.
@@ -23,8 +24,10 @@ function main() {
   let model = mat4.create();
 
   function render(view: mat4, projection: mat4) {
+    // Rotate the model a little bit on each frame.
     mat4.rotateY(model, model, .01);
 
+    // Use our shader pair.
     gl.useProgram(program);
 
     // Set the shader "uniform" parameters.
