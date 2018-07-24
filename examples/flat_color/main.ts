@@ -28,12 +28,6 @@ function main() {
   // Create the base matrices to be used
   // when rendering the object.
   let model = mat4.create();
-  let light = vec3.create();
-
-  // place the light
-  light[0] = 20.;
-  light[1] = 0.;
-  light[2] = 20.;
 
   // Clear the canvas
   gl.clearColor(0, 0, 0, 0);
@@ -48,7 +42,6 @@ function main() {
     gl.uniformMatrix4fv(uniformLocations.uView, false, view);
     mat4.rotateY(model, model, .01);
     gl.uniformMatrix4fv(uniformLocations.uModel, false, model);
-    gl.uniform3fv(uniformLocations.uLight, light);
 
     // Set the attribute arrays.
     // Note that attributes not used in a shader do not have a bound location
