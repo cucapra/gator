@@ -140,7 +140,15 @@ let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) : typ =
         if left = (vec_dim m3 d) && right = (vec_dim m4 d)
         then trans_top left right
         else (raise (TypeException "dimension mismatch in ctimes operator"))
-    | _ -> (raise (TypeException "expected linear types for ctimes operator"))
+    | TagTyp l, TagTyp r -> (
+        check_tag_typ l d; check_tag_typ r d;
+        let ldim = vec_dim l d in
+        let rdim = vec_dim r d in 
+        if ldim = rdim 
+        then TagTyp (least_common_parent l r d)
+        else (raise (TypeException "dimension mismatch in ctimes operator"))
+    )
+    | _ -> (raise (TypeException ("expected linear types for ctimes operator, found: "^(string_of_typ t1)^", "^(string_of_typ t2))))
 
 (* Type check norm expressions *)
 let rec check_norm_exp (t: typ) (d: delta) : typ = 
