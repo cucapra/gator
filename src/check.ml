@@ -146,7 +146,7 @@ let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) : typ =
         let ldim = vec_dim l d in
         let rdim = vec_dim r d in 
         if ldim = rdim 
-        then TagTyp (least_common_parent l r d)
+        then TagTyp (TopTyp (vec_dim l d))
         else (raise (TypeException "dimension mismatch in ctimes operator"))
     )
     | _ -> (raise (TypeException ("expected linear types for ctimes operator, found: "^(string_of_typ t1)^", "^(string_of_typ t2))))
