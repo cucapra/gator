@@ -200,9 +200,9 @@ export function glContext(canvas: HTMLCanvasElement, render?: () => void): WebGL
 /**
  * Throw an exception if a value is null. Otherwise, return it unchanged.
  */
-export function check_null<T>(v: T | null): T {
+export function check_null<T>(v: T | null, s: string): T {
   if (v === null) {
-    throw "value is null";
+    throw s + " is null";
   }
   return v;
 }
@@ -258,12 +258,12 @@ export function setup(canvas: HTMLCanvasElement, render: (view: mat4, projection
  * Look up a uniform location (and assert that it is non-null).
  */
 export function uniformLoc(gl: WebGLRenderingContext, program: WebGLProgram, name: string) {
-  return check_null(gl.getUniformLocation(program, name));
+  return check_null(gl.getUniformLocation(program, name), name);
 }
 
 /**
  * Look up an attribute location (and assert that it is non-null).
  */
 export function attribLoc(gl: WebGLRenderingContext, program: WebGLProgram, name: string) {
-  return check_null(gl.getAttribLocation(program, name));
+  return check_null(gl.getAttribLocation(program, name), name);
 }
