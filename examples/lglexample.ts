@@ -55,14 +55,22 @@ export function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShad
     throw ("program filed to link:" + gl.getProgramInfoLog(program));
   }
 
-  // Delete shader objects after linked to program
+  // Delete shader objects after linked to program.
   gl.deleteShader(vertexShader);
   gl.deleteShader(fragmentShader);
 
   return program;
 }
 
-//
+/**
+ * Compile and link a vertex/fragment shader pair.
+ */
+export function compileProgram(gl: WebGLRenderingContext, vtx: string, frag: string) {
+  let vertexShader = compileShader(gl, gl.VERTEX_SHADER, vtx);
+  let fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, frag);
+  return createProgram(gl, vertexShader, fragmentShader);
+}
+
 /**
  * Compute a projection matrix (placed in the `out` matrix allocation) given
  * the width and height of a viewport.

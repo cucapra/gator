@@ -5,21 +5,16 @@ import { mat4, vec3 } from 'gl-matrix';
 import * as model3D from 'bunny';
 import eye from 'eye-vector';
 
-// Import shader source code from our JSON container.
-import data from './data.json';
-const VERTEX_SHADER = data["vertex"];
-const FRAGMENT_SHADER = data["fragment"];
+import shaderData from './data.json';
 
 function main() {
   let canvas = document.getElementById('c') as HTMLCanvasElement;
   let camera = canvasOrbitCamera(canvas);
   let gl = lgl.glContext(canvas, render);
 
-  let vertexShader = lgl.compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
-  let fragmentShader = lgl.compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
-
   // Compile the shader program.
-  let program = lgl.createProgram(gl, vertexShader, fragmentShader);
+  let program = lgl.compileProgram(gl, shaderData.vertex, shaderData.fragment);
+
   let uniformLocations: { [key: string]: WebGLUniformLocation } = {
     'uProjection': check_null(gl.getUniformLocation(program, 'uProjection')),
     'uView': check_null(gl.getUniformLocation(program, 'uView')),
