@@ -109,7 +109,7 @@ let check_val (v: value) (d: delta) : typ =
         (let rows = List.length m in
         if rows = 0 then trans_bot 0 0 else
         let cols = List.length (List.hd m) in
-        if List.for_all (fun v -> List.length v = cols) m then trans_bot rows cols
+        if List.for_all (fun v -> List.length v = cols) m then trans_bot cols rows
         else (raise (TypeException ("Matrix must have the same number of elements in each row"))))
 
 let check_tag_typ (tag: tagtyp) (d: delta) : unit =
@@ -244,8 +244,8 @@ let check_times_exp (t1: typ) (t2: typ) (d: delta) : typ =
     (* Matrix * Matrix Multiplication *)
     | TransTyp (m1, m2), TransTyp (m3, m4) ->
         (* Check for a cast match between m2 and m3 *)
-        least_common_parent m2 m3 d |> ignore;
-        TransTyp (m1, m4)
+        least_common_parent m1 m4 d |> ignore;
+        TransTyp (m3, m2)
     | _ -> raise (TypeException ("Invalid types for multiplication: "
         ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2)))
 
@@ -274,7 +274,7 @@ let tag_erase (t : typ) (d : delta) : TypedAst.etyp =
         | TopTyp n
         | BotTyp n -> TypedAst.VecTyp n
         | VarTyp _ -> TypedAst.VecTyp (vec_dim tag d))
-    | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s1 d), (vec_dim s2 d))
+    | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
     
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) : TypedAst.texp = 
     ((fst checked_exp), (tag_erase (snd checked_exp) d))
