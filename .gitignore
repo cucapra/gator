@@ -1,72 +1,16 @@
-# Mac files
+# macOS cruft.
 .DS_Store
 
-# OCaml
-*.annot
-*.cmo
-*.cma
-*.cmi
-*.a
-*.o
-*.cmx
-*.cmxs
-*.cmxa
-*.conflicts
-*.automaton
-
-# Jbulider
-./src/parser.ml
-./src/parser.mli
-./src/lexer.ml
-
-# ocamlbuild working directory
+# Dune build products.
 _build/
 
-# ocamlbuild targets
-*.byte
-*.native
-
-# oasis generated files
-setup.data
-setup.log
-
-# Merlin configuring file for Vim and Emacs
+# Merlin configuring file for Vim and Emacs.
 .merlin
 
-# LaTeX temporary files
-*.aux
-*.log
-*.toc
-
-# PDF output - usually a bad idea to keep this in Git
-*.pdf
-
-# Latexmk
-*.fdb_latexmk
-*.fls
-
-# SyncTeX
-*.synctex.gz
-
-# LaTeX Beamer
-*.snm
-*.vrb
-*.nav
+# Testing files.
 *.out
 
-# BibTeX
-*.bbl
-*.blg
-
-# Testing files
-*.out
-
-# Menhir/Parsing
-parser.ml
-lexer.ml
-parser.mli
-
-# Node
+# Node.
 yarn.lock
+package-lock.json
 node_modules/
-*.jsonecho
