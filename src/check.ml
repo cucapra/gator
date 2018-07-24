@@ -370,6 +370,10 @@ and check_comm_lst (cl : comm list) (d: delta) (g: gamma): TypedAst.comm list * 
         let result = check_comm_lst t d (snd context) in 
         ((fst context) :: (fst result), (snd result))
 
+let check_tag (s: string) (l: tagtyp) (d: delta) : delta = 
+    if Assoc.mem s d then raise (TypeException "cannot redeclare tag")
+            else Assoc.update s l d
+
 let rec check_tags (t : tagdecl list) (d: delta): delta =
     debug_print ">> check_tags";
     match t with 
@@ -380,13 +384,10 @@ let rec check_tags (t : tagdecl list) (d: delta): delta =
         | (TagTyp l) -> (
             match l with 
             | VarTyp s' -> (
-                if Assoc.mem s' d then Assoc.update s l d |> check_tags t
+                if Assoc.mem s' d then check_tag s l d |> check_tags t
                 else raise (TypeException "tag undefined")
             )
-            | _ -> (
-                if Assoc.mem s d then raise (TypeException "cannot redeclare tag")
-                else Assoc.update s l d |> check_tags t
-            )
+            | _ -> check_tag s l d |> check_tags t
         )
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
