@@ -176,9 +176,9 @@ function main() {
   let vertexShader = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
   let fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
 
-  function check_null<T>(v: T | null): T {
+  function check_null<T>(v: T | null, s: string): T {
     if (v === null) {
-      throw "the value was null!";
+      throw s + " was null!";
     }
     return v;
   }
@@ -186,16 +186,16 @@ function main() {
   // Compile the shader program.
   let program = createProgram(gl, vertexShader, fragmentShader);
   let uniformLocations: { [key: string]: WebGLUniformLocation } = {
-    'uProjection': check_null(gl.getUniformLocation(program, 'uProjection')),
-    'uView': check_null(gl.getUniformLocation(program, 'uView')),
-    'uModel': check_null(gl.getUniformLocation(program, 'uModel')),
+    'uProjection': check_null(gl.getUniformLocation(program, 'uProjection'), 'uProjection'),
+    'uView': check_null(gl.getUniformLocation(program, 'uView'), 'uView'),
+    'uModel': check_null(gl.getUniformLocation(program, 'uModel'), 'uModel'),
     // 'uLight': check_null(gl.getUniformLocation(program, 'uLight')),
     // 'uCameraPosition': check_null(gl.getUniformLocation(program, 'uCameraPosition')),
   };
 
   let attributeLocations: { [key: string]: number } = {
-    'aPosition': check_null(gl.getAttribLocation(program, 'aPosition')),
-    'aNormal': check_null(gl.getAttribLocation(program, 'aNormal')),
+    'aPosition': check_null(gl.getAttribLocation(program, 'aPosition'), 'aPosition'),
+    // 'aNormal': check_null(gl.getAttribLocation(program, 'aNormal')),
   }
 
   // look up where the vertex data needs to go.
@@ -262,7 +262,7 @@ function main() {
 
     // Set the attribute arrays.
     // Note that attributes not used in a shader do not have a bound location
-    bind_attrib_buffer(gl, attributeLocations.aNormal, shape_buffers.normals);
+    // bind_attrib_buffer(gl, attributeLocations.aNormal, shape_buffers.normals);
     bind_attrib_buffer(gl, attributeLocations.aPosition, shape_buffers.positions);
 
     // And the element array.
