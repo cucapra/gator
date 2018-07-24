@@ -17,11 +17,10 @@ function main() {
   let loc_aPosition = lgl.attribLoc(gl, program, 'aPosition');
   let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
 
-  // look up where the vertex data needs to go.
-  let mesh = lgl.getMesh(gl, model3D);
+  // We'll draw a teapot.
+  let mesh = lgl.getTeapot(gl);
 
-  // Create the base matrices to be used
-  // when rendering the object.
+  // Initialize the model position.
   let model = mat4.create();
 
   function render(view: mat4, projection: mat4) {

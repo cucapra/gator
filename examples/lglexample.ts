@@ -3,7 +3,8 @@
  * examples.
  */
 import { mat4, vec3 } from 'gl-matrix';
-import * as model3D from 'teapot';
+import * as teapot from 'teapot';
+import * as bunny from 'bunny';
 import * as normals from 'normals';
 import pack from 'array-pack-2d';
 import canvasOrbitCamera from 'canvas-orbit-camera';
@@ -192,6 +193,20 @@ export function getMesh(gl: WebGLRenderingContext, obj: { cells: [number, number
     positions: make_buffer(gl, obj.positions, 'float32', gl.ARRAY_BUFFER),
     normals: make_buffer(gl, norm, 'float32', gl.ARRAY_BUFFER),
   };
+}
+
+/**
+ * Get a Mesh object for the Stanford bunny.
+ */
+export function getBunny(gl: WebGLRenderingContext) {
+  return getMesh(gl, bunny);
+}
+
+/**
+ * Get a Mesh object for the Utah teapot.
+ */
+export function getTeapot(gl: WebGLRenderingContext) {
+  return getMesh(gl, teapot);
 }
 
 /**
