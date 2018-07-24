@@ -5,8 +5,7 @@ import * as model3D from 'teapot';
 import shaderData from './data.json';
 
 function main() {
-  let canvas = document.getElementById('c') as HTMLCanvasElement;
-  let gl = lgl.setup(canvas, render);
+  let gl = lgl.setup(render);
 
   // Compile our shaders.
   let program = lgl.compileProgram(gl, shaderData.vertex, shaderData.fragment);

@@ -268,7 +268,7 @@ export function check_null<T>(v: T | null, s: string): T {
 }
 
 /**
- * Given a canvas element to draw in, set up a WebGL context with a render
+ * Set up a WebGL context for the first canvas on the page with a render
  * loop that calls the provided function. Return the WebGL context object.
  *
  * The render function is provided with two transformation matrices: a view
@@ -277,7 +277,14 @@ export function check_null<T>(v: T | null, s: string): T {
  * The canvas gets an interactive "orbit camera" that lets the user
  * interactively manipulate the view.
  */
-export function setup(canvas: HTMLCanvasElement, render: (view: mat4, projection: mat4) => void): WebGLRenderingContext {
+export function setup(render: (view: mat4, projection: mat4) => void): WebGLRenderingContext {
+  // Get the first canvas on the document.
+  let canvases = document.getElementsByTagName('canvas');
+  if (canvases.length === 0) {
+    throw "no canvas found";
+  }
+  let canvas = canvases[0] as HTMLCanvasElement;
+
   // Set up the interactive pan/rotate/zoom camera.
   let camera = canvasOrbitCamera(canvas);
 
