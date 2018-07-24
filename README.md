@@ -17,7 +17,7 @@ We need [Dune][], [Jbuilder][], and [Menhir][]:
 
 Build by typing:
 
-    $ dune exec bin/ex.bc
+    $ dune exec bin/lingc.bc
 
 Explore the implementation in a [utop][] REPL:
 
@@ -42,18 +42,18 @@ For example:
 You can run the compiler against an lgl file by executing 'exec' with a single additional argument
 For example:
 
-    $  jbuilder exec bin/ex.bc 'filename'
+    $  jbuilder exec bin/lingc.bc 'filename'
 
 To also print interpreter output, include an additional argument v
 
-    $  jbuilder exec bin/ex.bc 'filename' v
+    $  jbuilder exec bin/lingc.bc 'filename' v
 
 Examples
 ---
 
 To see examples of shaders in action, simply pipe compiler output into the examples/color.json
 
-    $ jbuilder exec bin/ex.bc 'filename' > color.json
+    $ jbuilder exec bin/lingc.bc 'filename' > color.json
 
 And then run the appropriate typescript file (either examples/trivial or examples/lighting)
 
