@@ -6,6 +6,7 @@ import { mat4, vec3 } from 'gl-matrix';
 import * as model3D from 'teapot';
 import * as normals from 'normals';
 import pack from 'array-pack-2d';
+import canvasOrbitCamera from 'canvas-orbit-camera';
 
 /**
  * Compile a single GLSL shader source file.
@@ -201,4 +202,47 @@ export function check_null<T>(v: T | null): T {
     throw "value is null";
   }
   return v;
+}
+
+/**
+ * Given a canvas element to draw in, set up a WebGL context with a render
+ * loop that calls the provided function. Return the WebGL context object.
+ *
+ * The render function is provided with two transformation matrices: a view
+ * matrix and a projection matrix.
+ *
+ * The canvas gets an interactive "orbit camera" that lets the user
+ * interactively manipulate the view.
+ */
+export function setup(canvas: HTMLCanvasElement, render: (view: mat4, projection: mat4) => void): WebGLRenderingContext {
+  // Set up the interactive pan/rotate/zoom camera.
+  let camera = canvasOrbitCamera(canvas);
+
+  // Initialize the transformation matrices that are dictated by the camera
+  // and the canvas dimensions.
+  let projection = mat4.create();
+  let view = mat4.create();
+
+  // Get the WebGL rendering context, and set up the render loop.
+  let gl = glContext(canvas, () => {
+    // Update the camera view.
+    camera.view(view);
+    camera.tick();
+
+    // Update the projection matrix.
+    let width = gl.drawingBufferWidth;
+    let height = gl.drawingBufferHeight;
+    projection_matrix(projection, width, height);
+
+    // Set the rendering context to fill the canvas.
+    gl.viewport(0, 0, width, height);
+
+    // Rendering flags.
+    gl.enable(gl.DEPTH_TEST);  // Prevent triangle overlap.
+    gl.enable(gl.CULL_FACE);  // Triangles not visible from behind.
+
+    render(view, projection);
+  });
+
+  return gl;
 }

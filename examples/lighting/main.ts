@@ -1,18 +1,14 @@
 import * as lgl from '../lglexample';
 import { check_null } from '../lglexample';
-import canvasOrbitCamera from 'canvas-orbit-camera';
 import { mat4, vec3 } from 'gl-matrix';
 import * as model3D from 'bunny';
-import eye from 'eye-vector';
 
 import shaderData from './data.json';
 
 function main() {
   let canvas = document.getElementById('c') as HTMLCanvasElement;
-  let camera = canvasOrbitCamera(canvas);
-  let gl = lgl.glContext(canvas, render);
+  let gl = lgl.setup(canvas, render);
 
-  // Compile the shader program.
   let program = lgl.compileProgram(gl, shaderData.vertex, shaderData.fragment);
 
   let uniformLocations: { [key: string]: WebGLUniformLocation } = {
@@ -33,9 +29,7 @@ function main() {
   // Create the base matrices to be used
   // when rendering the object. Alternatively, can
   // be created using `new Float32Array(16)`
-  let projection = mat4.create();
   let model = mat4.create();
-  let view = mat4.create();
   let light = vec3.create();
 
   // place the light
@@ -47,23 +41,7 @@ function main() {
   gl.clearColor(0, 0, 0, 0);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
-  function render() {
-
-    let width = gl.drawingBufferWidth;
-    let height = gl.drawingBufferHeight;
-
-    camera.view(view);
-    camera.tick();
-
-    lgl.projection_matrix(projection, width, height);
-
-    // Set the model to fill the canvas
-    gl.viewport(0, 0, width, height);
-
-    // Rendering flags.
-    gl.enable(gl.DEPTH_TEST);  // Prevent triangle overlap.
-    gl.enable(gl.CULL_FACE);  // Triangles not visible from behind.s
-
+  function render(view: mat4, projection: mat4) {
     // Tell it to use our program (pair of shaders)
     gl.useProgram(program);
 
