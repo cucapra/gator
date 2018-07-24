@@ -1,7 +1,7 @@
 .PHONY: all clean repl run
 
 all:
-	dune exec bin/ex.bc
+	dune exec bin/lingc.bc
 
 repl:
 	dune utop src

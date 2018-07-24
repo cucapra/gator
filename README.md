@@ -12,48 +12,49 @@ We need [Dune][], [Jbuilder][], and [Menhir][]:
 
     $ opam install jbuilder
     $ opam install dune
-    $ apt-get install m4
+    $ apt-get install m4  # On Debian, for example.
     $ opam install menhir
 
 Build by typing:
 
-    $ dune exec bin/ex.bc
+    $ dune build bin/lingc.bc
 
-Explore the implementation in a [utop][] REPL:
+Now you can use `dune exec bin/lingc.bc` to run the compiler.
+Or you can install a `lingc` executable:
 
-    $ opam install utop
-    $ dune utop src
+    $ dune build && dune install
+
+Now `lingc` should be available on your path.
 
 [dune]: https://github.com/ocaml/dune
 [menhir]: http://gallium.inria.fr/~fpottier/menhir/
-[utop]: https://github.com/diml/utop
 
 Run
 ---
 
 To simulate a Linguine-compiled shader on your browser: 
 
-    # make run src='example_directory_name'
+    $ make run src='example_directory_name'
 
 For example: 
 
-    # make run src=lighting
+    $ make run src=lighting
 
-You can run the compiler against an lgl file by executing 'exec' with a single additional argument
+You can run the compiler by passing the `*.lgl` source file as an argument to `lingc`.
 For example:
 
-    $  jbuilder exec bin/ex.bc 'filename'
+    $ lingc example.lgl
 
 To also print interpreter output, include an additional argument v
 
-    $  jbuilder exec bin/ex.bc 'filename' v
+    $ lingc example.lgl v
 
 Examples
----
+--------
 
 To see examples of shaders in action, simply pipe compiler output into the examples/color.json
 
-    $ jbuilder exec bin/ex.bc 'filename' > color.json
+    $ lingc example.lgl > color.json
 
 And then run the appropriate typescript file (either examples/trivial or examples/lighting)
 
@@ -69,5 +70,7 @@ You can run them all by typing `./test/test.sh`.
 (But it's not clear how to tell whether they passed.)
 
 Versions
------
+--------
+
 OpenGL 1.0
+TK: I think this should be GLSL 1.0, which is from OpenGL 2.0 and GLSL ES 2.0, which is what WebGL 1.0 corresponds to? Also, this could use a sentence or two explaining why this version is listed here. --ALDS
