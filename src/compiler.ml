@@ -52,6 +52,8 @@ let is_core (var_name : string) : bool =
     var_name = "gl_Position" || var_name = "gl_FragColor"
 
 let rec comp_exp (e : exp) : string =
+                    
+
     let op_wrap (op : exp) : string =
         match op with
         | Val _
@@ -60,17 +62,20 @@ let rec comp_exp (e : exp) : string =
     in
     (* Handles the string shenanigans for padding during multiplication *)
     let padded_mult (left : texp) (right : texp) : string =
+        Printf.printf "\t\t\t%s\n" (string_of_exp e); 
         match (left, right) with
         | ((le, lt), (re, rt)) -> (match (lt, rt) with
-            | (MatTyp (ldim, _), VecTyp rdim) -> (if ldim = rdim then 
-                        (op_wrap le) ^ " * " ^ (op_wrap re)
-                        else if ldim > rdim then 
+            | (MatTyp (ldim , _), VecTyp rdim) -> 
+                        (if ldim = rdim then  (
+                        (op_wrap le) ^ " * " ^ (op_wrap re) )
+                        else if ldim > rdim then (
+
                         (op_wrap le) ^ " * " ^ "vec" ^ (string_of_int ldim) ^ "(" ^ 
-                        (comp_exp re) ^ (repeat ", 0." (ldim - rdim)) ^ ")"
-                        else  (* dim < rdim *)
+                        (comp_exp re) ^ (repeat ", 0." (ldim - rdim)) ^ ")" )
+                        else  (* dim < rdim *) (
                         "vec" ^ (string_of_int ldim) ^ "(" ^ 
                         (op_wrap le) ^ " * " ^ 
-                        (comp_exp re) ^ ")")
+                        (comp_exp re) ^ ")") )
             | (MatTyp (ldim, _), MatTyp (_, rdim)) -> 
                     (if ldim = rdim then ((op_wrap le) ^ " * " ^ (op_wrap re))
                     else (op_wrap le) ^ " * " ^ (comp_exp re))
@@ -78,7 +83,7 @@ let rec comp_exp (e : exp) : string =
     in
     match e with
     | (Binop (Times, e1, e2)) -> padded_mult e1 e2
-    | _ -> (string_of_exp e)
+    | _ -> string_of_exp e
 
 let rec comp_comm (c : comm list) : string =
     match c with
@@ -89,8 +94,8 @@ let rec comp_comm (c : comm list) : string =
         (* Super janky, but we need to have rules for weird glsl declarations and variables *)
         | Decl (ty, x, (e, _)) ->
             (if is_core x then "" else string_of_typ ty ^ " ")
-            ^ x ^ " = " ^ (comp_exp e) ^ ";"^ (comp_comm t)
-        | Assign (x, (e, _)) -> x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
+            ^ x ^ " = " ^ (comp_exp e) ^ ";\n"^ (comp_comm t)
+        | Assign (x, (e, _)) -> x ^ " = " ^ (comp_exp e) ^ ";\n" ^ (comp_comm t)
         | If ((e, _), c1, c2) -> ("if " ^ "(" ^ (comp_exp e) ^ ")"
             ^ "{ " ^ (comp_comm c1) ^ " }"
             ^ "{ " ^ (comp_comm c2) ^ " }" 
@@ -103,11 +108,11 @@ let rec decl_attribs (c : comm list) : string =
     | h::t -> match h with
         (* Super janky, but we need to have rules for weird glsl declarations and variables *)
         | Decl (ty, x, e) -> if check_name x then 
-            (attrib_type x) ^ " " ^ (string_of_typ ty) ^ " " ^ x ^ ";" ^ (decl_attribs t) else
+            (attrib_type x) ^ " " ^ (string_of_typ ty) ^ " " ^ x ^ ";\n" ^ (decl_attribs t) else
             decl_attribs t
         | _ -> decl_attribs t
 
 
 let rec compile_program (p : prog) : string =
-    "\"precision highp float;" ^ (decl_attribs p) ^ 
+    "\"precision highp float;\n" ^ (decl_attribs p) ^ 
     " void main() { " ^ (comp_comm p) ^ " }\""

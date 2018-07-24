@@ -34,6 +34,7 @@ let rec get_ancestor_list (t: tagtyp) (d: delta) : id list =
     | VarTyp s -> s :: (get_ancestor_list (lookup s d) d)
 
 let is_tag_subtype (to_check: tagtyp) (target: tagtyp) (d: delta) : bool =
+    (* Printf.printf ">> is_tag_subtype %s %s\n" (string_of_tag_typ to_check) (string_of_tag_typ target); *)
     match (to_check, target) with
     | BotTyp n1, BotTyp n2
     | BotTyp n1, TopTyp n2
@@ -71,7 +72,7 @@ let least_common_parent (t1: tagtyp) (t2: tagtyp) (d: delta) : tagtyp =
     | VarTyp s1, VarTyp s2 ->
         check_dim (vec_dim (VarTyp s1) d) (vec_dim (VarTyp s2) d);
         (if s1 = s2 then VarTyp s1
-        else VarTyp (lub (get_ancestor_list t1 d) (get_ancestor_list t1 d)))
+        else VarTyp (lub (get_ancestor_list t1 d) (get_ancestor_list t2 d)))
 
 let greatest_common_child (t1: tagtyp) (t2: tagtyp) (d: delta) : tagtyp =
     let check_dim (n1: int) (n2: int) : unit =
@@ -109,7 +110,7 @@ let check_val (v: value) (d: delta) : typ =
         (let rows = List.length m in
         if rows = 0 then trans_bot 0 0 else
         let cols = List.length (List.hd m) in
-        if List.for_all (fun v -> List.length v = cols) m then trans_bot rows cols
+        if List.for_all (fun v -> List.length v = cols) m then trans_bot cols rows
         else (raise (TypeException ("Matrix must have the same number of elements in each row"))))
 
 let check_tag_typ (tag: tagtyp) (d: delta) : unit =
@@ -140,14 +141,22 @@ let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) : typ =
         if left = (vec_dim m3 d) && right = (vec_dim m4 d)
         then trans_top left right
         else (raise (TypeException "dimension mismatch in ctimes operator"))
-    | _ -> (raise (TypeException "expected linear types for ctimes operator"))
+    | TagTyp l, TagTyp r -> (
+        check_tag_typ l d; check_tag_typ r d;
+        let ldim = vec_dim l d in
+        let rdim = vec_dim r d in 
+        if ldim = rdim 
+        then TagTyp (TopTyp (vec_dim l d))
+        else (raise (TypeException "dimension mismatch in ctimes operator"))
+    )
+    | _ -> (raise (TypeException ("expected linear types for ctimes operator, found: "^(string_of_typ t1)^", "^(string_of_typ t2))))
 
 (* Type check norm expressions *)
 let rec check_norm_exp (t: typ) (d: delta) : typ = 
     debug_print ">> check_norm_exp";
     (* Printf.printf "%s" (print_typ a); *)
     match t with
-    | TagTyp a -> TagTyp a
+    | TagTyp a -> FloatTyp
     | _ -> (raise (TypeException "expected linear type for norm operator"))
 
 (* Type check binary bool operators (i.e. &&, ||) *)
@@ -185,7 +194,10 @@ let check_comp_binop (t1: typ) (t2: typ) (d: delta) : typ =
 
 let check_dot_exp (t1: typ) (t2: typ) (d: delta): typ = 
     match (t1, t2) with 
-    | TagTyp a1, TagTyp a2 -> least_common_parent a1 a2 d |> ignore; FloatTyp
+    | TagTyp a1, TagTyp a2 ->  
+        if vec_dim a1 d = vec_dim a2 d 
+        then FloatTyp 
+        else raise (TypeException "expected tag type of same dimension for dot product exp")
     | _ -> raise (TypeException "unexpected type for dot product exp")
 
 (* Type checking addition operations on scalar (int, float) expressions *)
@@ -193,13 +205,13 @@ let check_dot_exp (t1: typ) (t2: typ) (d: delta): typ =
 let check_addition_exp (t1: typ) (t2: typ) (d: delta) : typ =
     debug_print ">> check_addition";
     match (t1, t2) with 
-    (* | (ATyp(LTyp(VecTyp n1)), ATyp(LTyp(VecTyp n2))) ->  *)
     | IntTyp, IntTyp -> IntTyp
     | FloatTyp, IntTyp
     | IntTyp, FloatTyp
     | FloatTyp, FloatTyp -> FloatTyp
     | TagTyp a1, TagTyp a2 -> TagTyp (least_common_parent a1 a2 d)
     | TransTyp (m1, m2), TransTyp (m3, m4) -> 
+    Printf.printf "%s " (string_of_typ(TransTyp (greatest_common_child m1 m3 d, least_common_parent m2 m4 d)));
         TransTyp (greatest_common_child m1 m3 d, least_common_parent m2 m4 d)
     | _ -> 
         (raise (TypeException ("invalid expressions for addition: "
@@ -235,9 +247,10 @@ let check_times_exp (t1: typ) (t2: typ) (d: delta) : typ =
 
     (* Matrix * Matrix Multiplication *)
     | TransTyp (m1, m2), TransTyp (m3, m4) ->
+        (* Printf.printf "%s %s %s\n" (string_of_typ t1) (string_of_typ t2) (string_of_tag_typ m1); *)
         (* Check for a cast match between m2 and m3 *)
-        least_common_parent m2 m3 d |> ignore;
-        TransTyp (m1, m4)
+        least_common_parent m1 m4 d |> ignore;
+        TransTyp (m3, m2)
     | _ -> raise (TypeException ("Invalid types for multiplication: "
         ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2)))
 
@@ -266,7 +279,7 @@ let tag_erase (t : typ) (d : delta) : TypedAst.etyp =
         | TopTyp n
         | BotTyp n -> TypedAst.VecTyp n
         | VarTyp _ -> TypedAst.VecTyp (vec_dim tag d))
-    | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s1 d), (vec_dim s2 d))
+    | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
     
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) : TypedAst.texp = 
     ((fst checked_exp), (tag_erase (snd checked_exp) d))
@@ -314,12 +327,14 @@ let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gam
         | (IntTyp, IntTyp)
         | (FloatTyp, FloatTyp) -> Assoc.update s t g
         | (TagTyp t1, TagTyp t2) ->
-        if is_tag_subtype t2 t1 d then Assoc.update s t g
-        else raise (TypeException ("mismatched linear type for var decl: " ^ s))
+            least_common_parent t1 t2 d |> ignore;
+            if is_tag_subtype t2 t1 d then Assoc.update s t g
+            else raise (TypeException ("mismatched linear type for var decl: " ^ s))
         | (TransTyp (t1, t2), TransTyp (t3, t4)) ->
-        if is_tag_subtype t4 t2 d && is_tag_subtype t1 t3 d then Assoc.update s t g
-        else raise (TypeException ("no possible upcast for var decl: " ^ s))
-        | _ -> raise (TypeException "mismatched types for var decl")
+            (* Printf.printf "%s %s %s %s\n" (string_of_tag_typ t1) (string_of_tag_typ t2) (string_of_tag_typ t3) (string_of_tag_typ t4); *)
+            if is_tag_subtype t1 t3 d && is_tag_subtype t4 t2 d then Assoc.update s t g
+            else raise (TypeException ("no possible upcast for var decl: " ^ s))
+        | _ -> raise (TypeException ("mismatched types for var decl: expected " ^ (string_of_typ t) ^ " " ^ s ^ ", found " ^ (string_of_typ etyp) ))
     )
 
 let rec check_comm (c: comm) (d: delta) (g: gamma) : TypedAst.comm * gamma = 
@@ -355,6 +370,10 @@ and check_comm_lst (cl : comm list) (d: delta) (g: gamma): TypedAst.comm list * 
         let result = check_comm_lst t d (snd context) in 
         ((fst context) :: (fst result), (snd result))
 
+let check_tag (s: string) (l: tagtyp) (d: delta) : delta = 
+    if Assoc.mem s d then raise (TypeException "cannot redeclare tag")
+            else Assoc.update s l d
+
 let rec check_tags (t : tagdecl list) (d: delta): delta =
     debug_print ">> check_tags";
     match t with 
@@ -362,9 +381,14 @@ let rec check_tags (t : tagdecl list) (d: delta): delta =
     | (s, a)::t ->
         check_typ_exp a |> ignore;
         match a with 
-        | (TagTyp l) ->
-            if Assoc.mem s d then raise (TypeException "cannot redeclare tag")
-            else Assoc.update s l d |> check_tags t
+        | (TagTyp l) -> (
+            match l with 
+            | VarTyp s' -> (
+                if Assoc.mem s' d then check_tag s l d |> check_tags t
+                else raise (TypeException "tag undefined")
+            )
+            | _ -> check_tag s l d |> check_tags t
+        )
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
 let check_prog (e : prog) : TypedAst.comm list =

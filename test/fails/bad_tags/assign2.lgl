@@ -1,4 +1,0 @@
-tag a is vec2;
-tag b is vec2;
-
-a x = [1., 2.]; // Unrelated tags

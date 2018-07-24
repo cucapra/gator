@@ -8,49 +8,6 @@ import eye from 'eye-vector';
  
 const VERTEX_SHADER = data["vertex"];
 const FRAGMENT_SHADER = data["fragment"];
-// var vertices: float[] = {
-//     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-//      0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-//      0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-//      0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-//     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-//     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-
-//     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-//      0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-//      0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-//      0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-//     -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-//     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
-//     -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-//     -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-//     -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-//     -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-//     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-//     -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-//      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-//      0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-//      0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-//      0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-//      0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-//      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-//     -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-//      0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-//      0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-//      0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-//     -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-//     -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-//     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-//      0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-//      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-//      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-//     -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-//     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-// };
 
 function compileShader(gl: WebGLRenderingContext, shaderType: number, shaderSource: string): WebGLShader {
   // Create the shader object
@@ -309,7 +266,6 @@ function main() {
     bind_attrib_buffer(gl, attributeLocations.aPosition, shape_buffers.positions);
 
     // And the element array.
-    // TODO What is an element array?
     bind_element_buffer(gl, shape_buffers.cells);
 
     let count = model3D.cells.length * model3D.cells[0].length;

@@ -1,0 +1,4 @@
+
+vec4 color = [0.15, 0.4, 0.25, 1.0];
+
+vec4 gl_FragColor = color;

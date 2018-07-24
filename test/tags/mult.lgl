@@ -14,15 +14,15 @@ b->c b_c = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
 // Maps
 a s11 = a_a * x;
 b s12 = a_b * x;
-a s13 = b_a * a_a * y; 
+a s13 = a_a * b_a * y; 
 c s14 = (b_c + b_c) * y;
 a s16 = b_a * (a_b * x);
 
 // Composition
-mat2x2 s21 = a_b * b_a;
-a->c s22 = a_b * b_c;
-b->c s23 = b_a * a_b * b_c;
-a s24 = (a_b * b_a) * x;
-a->b s25 = a_b + a_a * a_b;
+a->a s21 = b_a * a_b;
+a->c s22 = b_c * a_b;
+b->c s23 =  b_c * a_b * b_a;
+a s24 = (b_a * a_b) * x;
+a->b s25 = a_b + a_b * a_a;
 
 print 1;

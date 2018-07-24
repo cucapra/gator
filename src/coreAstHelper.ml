@@ -1,21 +1,38 @@
 (* Tag AST pretty printer *)
 
 open CoreAst
+open Util
+
+(* Note the column parameter for padding the matrix size *)
+let string_of_no_paren_vec (v: vec) (padding: int) : string = 
+    (String.concat ", " (List.map string_of_float v)) ^ (repeat ", 0." padding)
+
+let string_of_mat_padded (m: mat) (max_dim: int) : string =
+    let string_of_vec_padded = (fun v -> (string_of_no_paren_vec v (max_dim - List.length v))) in
+    ("(" ^ (String.concat ", " (List.map string_of_vec_padded m)) ^
+    (repeat (string_of_no_paren_vec [] max_dim) (max_dim - List.length m)) ^ ")")
+
+let string_of_gl_mat (m: mat) : string = 
+    (* Note the transpose to match the glsl column-oriented style *)
+    let tm = Lin_ops.transpose m in
+    let r = (List.length tm) in
+    let c = (if r = 0 then 0 else List.length (List.hd tm)) in
+    string_of_mat_padded tm (max r c)
 
 let string_of_vec (v: vec) : string = 
-    "["^(String.concat ", " (List.map string_of_float v))^"]"
+    "("^(String.concat ", " (List.map string_of_float v))^")"
 
 let string_of_mat (m: mat) : string = 
-    "["^(String.concat ", " (List.map string_of_vec m))^"]"
+    "("^(String.concat ", " (List.map string_of_vec m))^")"
 
 let rec string_of_value (v: value) : string =
     match v with
     | Bool b -> string_of_bool b
     | Num n -> string_of_int n
     | Float f -> string_of_float f
-    | VecLit v -> string_of_vec v
-    | MatLit m -> string_of_mat m
-
+    | VecLit v -> "vec" ^ string_of_int (List.length v) ^ string_of_vec v
+    | MatLit m ->  
+        "mat" ^ string_of_int (List.length m) ^string_of_gl_mat m
 
 let string_of_unop (op: unop) (e: string) : string =
     let funct_op (op: string) : string =
