@@ -10,8 +10,8 @@ examples/%:
 	python3 scripts/jsonify.py $@
 
 run:
-	python3 scripts/jsonify.py examples/$(src);
-	cd examples/; SRC=$(src) npm start
+	make -C examples/$(src)
+	cd examples/; SRC=$(src) yarn run start
 
 clean:
 	dune clean
