@@ -8,7 +8,6 @@
     "start": "parcel serve $SRC/index.html"
   },
   "devDependencies": {
-    "ts-loader": "^4.4.2",
     "typescript": "^2.9.2",
     "parcel-bundler": "^1.9.7"
   },
