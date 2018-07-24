@@ -42,8 +42,7 @@ function main() {
     // And the element array.
     lgl.bind_element_buffer(gl, shape_buffers.cells);
 
-    let count = model3D.cells.length * model3D.cells[0].length;
-    gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_SHORT, 0);
+    gl.drawElements(gl.TRIANGLES, shape_buffers.cell_count, gl.UNSIGNED_SHORT, 0);
   }
 }
 

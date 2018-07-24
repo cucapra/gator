@@ -158,6 +158,7 @@ export function bind_element_buffer(gl: WebGLRenderingContext, buffer: WebGLBuff
  * Given a mesh, with the fields `positions` and `cells`, create three buffers
  * for drawing the thing. Return an object with the fields:
  * - `cells`, a 3-dimensional uint16 element array buffer
+ * - `cell_count`, the total number of numbers in the cell buffer
  * - `positions`, a 3-dimensional float32 array buffer
  * - `normals`, ditto
  */
@@ -166,6 +167,7 @@ export function mesh_buffers(gl: WebGLRenderingContext, obj: { cells: [number, n
 
   return {
     cells: make_buffer(gl, obj.cells, 'uint16', gl.ELEMENT_ARRAY_BUFFER),
+    cell_count: obj.cells.length * obj.cells[0].length,
     positions: make_buffer(gl, obj.positions, 'float32', gl.ARRAY_BUFFER),
     normals: make_buffer(gl, norm, 'float32', gl.ARRAY_BUFFER),
   };
