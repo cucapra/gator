@@ -7,8 +7,8 @@
         "resolveJsonModule": true,
         "outDir": "build"
     },
-    "files": [
-        "main.ts",
+    "include": [
+        "*/main.ts",
         "types.d.ts"
     ]
 }
