@@ -155,7 +155,7 @@ let rec check_norm_exp (t: typ) (d: delta) : typ =
     debug_print ">> check_norm_exp";
     (* Printf.printf "%s" (print_typ a); *)
     match t with
-    | TagTyp a -> TagTyp a
+    | TagTyp a -> FloatTyp
     | _ -> (raise (TypeException "expected linear type for norm operator"))
 
 (* Type check binary bool operators (i.e. &&, ||) *)
@@ -322,12 +322,12 @@ let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gam
         | (IntTyp, IntTyp)
         | (FloatTyp, FloatTyp) -> Assoc.update s t g
         | (TagTyp t1, TagTyp t2) ->
-        if is_tag_subtype t2 t1 d then Assoc.update s t g
-        else raise (TypeException ("mismatched linear type for var decl: " ^ s))
+            if is_tag_subtype t2 t1 d then Assoc.update s t g
+            else raise (TypeException ("mismatched linear type for var decl: " ^ s))
         | (TransTyp (t1, t2), TransTyp (t3, t4)) ->
-        if is_tag_subtype t1 t3 d && is_tag_subtype t4 t2 d then Assoc.update s t g
-        else raise (TypeException ("no possible upcast for var decl: " ^ s))
-        | _ -> raise (TypeException "mismatched types for var decl")
+            if is_tag_subtype t1 t3 d && is_tag_subtype t4 t2 d then Assoc.update s t g
+            else raise (TypeException ("no possible upcast for var decl: " ^ s))
+        | _ -> raise (TypeException ("mismatched types for var decl: expected " ^ (string_of_typ t) ^ " " ^ s ^ ", found " ^ (string_of_typ etyp) ))
     )
 
 let rec check_comm (c: comm) (d: delta) (g: gamma) : TypedAst.comm * gamma = 
