@@ -42,7 +42,7 @@ let attrib_type (var_name : string) : string =
     (if (String.get var_name 0) = 'u' then "uniform" else
     failwith "Not a supported glsl attribute"))
 
-(* Ignore original declarations of apptributes and the like *)
+(* Ignore original declarations of attributes and the like *)
 let check_name (var_name : string) : bool = 
     let decl_reg = Str.regexp "[auv][A-Z]" in
         Str.string_match decl_reg var_name 0
@@ -99,9 +99,10 @@ let rec comp_comm (c : comm list) : string =
         | Skip -> comp_comm t
         | Print e -> comp_comm t
         (* Super janky, but we need to have rules for weird glsl declarations and variables *)
-        | Decl (ty, x, (e, _)) ->
-            (if is_core x then "" else string_of_typ ty ^ " ")
-            ^ x ^ " = " ^ (comp_exp e) ^ ";"^ (comp_comm t)
+        | Decl (ty, x, (e, _)) -> (
+            if check_name x then ""^ (comp_comm t) else  
+            if is_core x  then x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
+            else string_of_typ ty ^ " "^ x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t))
         | Assign (x, (e, _)) -> x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
         | If ((e, _), c1, c2) -> ("if " ^ "(" ^ (comp_exp e) ^ ")"
             ^ "{ " ^ (comp_comm c1) ^ " }"
