@@ -121,5 +121,5 @@ let rec decl_attribs (c : comm list) : string =
 
 
 let rec compile_program (p : prog) : string =
-    "\"precision highp float;" ^ (decl_attribs p) ^ 
-    " void main() { " ^ (comp_comm p) ^ " }\""
+    "precision highp float;" ^ (decl_attribs p) ^ 
+    " void main() { " ^ (comp_comm p) ^ " }"
