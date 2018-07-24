@@ -27,16 +27,11 @@ function main() {
   let shape_buffers = lgl.mesh_buffers(gl, model3D);
 
   // Create the base matrices to be used
-  // when rendering the object. Alternatively, can
-  // be created using `new Float32Array(16)`
+  // when rendering the object.
   let model = mat4.create();
 
   // Position the light source for the lighting effect.
   let light = vec3.fromValues(20., 0., 20.);
-
-  // Clear the canvas
-  gl.clearColor(0, 0, 0, 0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
 
   function render(view: mat4, projection: mat4) {
     // Tell it to use our program (pair of shaders)

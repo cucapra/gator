@@ -29,10 +29,6 @@ function main() {
   // when rendering the object.
   let model = mat4.create();
 
-  // Clear the canvas
-  gl.clearColor(0, 0, 0, 0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-
   function render(view: mat4, projection: mat4) {
     gl.useProgram(program);
 

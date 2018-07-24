@@ -244,5 +244,9 @@ export function setup(canvas: HTMLCanvasElement, render: (view: mat4, projection
     render(view, projection);
   });
 
+  // Clear the canvas.
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
   return gl;
 }
