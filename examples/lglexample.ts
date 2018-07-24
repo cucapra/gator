@@ -184,3 +184,13 @@ export function glContext(canvas: HTMLCanvasElement, render?: () => void): WebGL
 
   return gl;
 }
+
+/**
+ * Throw an exception if a value is null. Otherwise, return it unchanged.
+ */
+export function check_null<T>(v: T | null): T {
+  if (v === null) {
+    throw "value is null";
+  }
+  return v;
+}

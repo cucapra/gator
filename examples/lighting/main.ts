@@ -1,4 +1,5 @@
 import * as lgl from '../lglexample';
+import { check_null } from '../lglexample';
 import canvasOrbitCamera from 'canvas-orbit-camera';
 import { mat4, vec3 } from 'gl-matrix';
 import * as model3D from 'bunny';
@@ -17,13 +18,6 @@ function main() {
 
   let vertexShader = lgl.compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
   let fragmentShader = lgl.compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
-
-  function check_null<T>(v: T | null): T {
-    if (v === null) {
-      throw "the value was null!";
-    }
-    return v;
-  }
 
   // Compile the shader program.
   let program = lgl.createProgram(gl, vertexShader, fragmentShader);
