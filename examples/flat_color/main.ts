@@ -1,9 +1,7 @@
 import * as lgl from '../lglexample';
 import { check_null } from '../lglexample';
-import canvasOrbitCamera from 'canvas-orbit-camera';
 import { mat4, vec3 } from 'gl-matrix';
 import * as model3D from 'teapot';
-import eye from 'eye-vector';
 
 import shaderData from './data.json';
 
@@ -22,7 +20,7 @@ function main() {
   let attributeLocations: { [key: string]: number } = {
     'aPosition': check_null(gl.getAttribLocation(program, 'aPosition')),
     'aNormal': check_null(gl.getAttribLocation(program, 'aNormal')),
-  }
+  };
 
   // look up where the vertex data needs to go.
   let shape_buffers = lgl.mesh_buffers(gl, model3D);
@@ -31,7 +29,6 @@ function main() {
   // when rendering the object.
   let model = mat4.create();
   let light = vec3.create();
-  let cameraPosition = vec3.create();
 
   // place the light
   light[0] = 20.;
@@ -43,8 +40,6 @@ function main() {
   gl.clear(gl.COLOR_BUFFER_BIT);
 
   function render(view: mat4, projection: mat4) {
-    eye(view, cameraPosition);
-
     // Tell it to use our program (pair of shaders)
     gl.useProgram(program);
 
@@ -54,7 +49,6 @@ function main() {
     mat4.rotateY(model, model, .01);
     gl.uniformMatrix4fv(uniformLocations.uModel, false, model);
     gl.uniform3fv(uniformLocations.uLight, light);
-    gl.uniform3fv(uniformLocations.uCameraPosition, cameraPosition);
 
     // Set the attribute arrays.
     // Note that attributes not used in a shader do not have a bound location

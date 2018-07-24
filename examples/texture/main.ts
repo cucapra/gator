@@ -1,9 +1,7 @@
 import * as lgl from '../lglexample';
 import { check_null } from '../lglexample';
-import canvasOrbitCamera from 'canvas-orbit-camera';
 import { mat4, vec3 } from 'gl-matrix';
 import * as model3D from 'teapot';
-import eye from 'eye-vector';
 
 import shaderData from './data.json';
 
@@ -50,7 +48,6 @@ function main() {
     mat4.rotateY(model, model, .01);
     gl.uniformMatrix4fv(uniformLocations.uModel, false, model);
     gl.uniform3fv(uniformLocations.uLight, light);
-    // gl.uniform3fv(uniformLocations.uCameraPosition, cameraPosition);
 
     // Set the attribute arrays.
     // Note that attributes not used in a shader do not have a bound location
