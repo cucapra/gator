@@ -71,7 +71,7 @@ let least_common_parent (t1: tagtyp) (t2: tagtyp) (d: delta) : tagtyp =
         check_dim (vec_dim (VarTyp s) d) n1; VarTyp s
     | VarTyp s1, VarTyp s2 ->
         check_dim (vec_dim (VarTyp s1) d) (vec_dim (VarTyp s2) d);
-        (if s1 = s2 then TopTyp (vec_dim t1 d)
+        (if s1 = s2 then VarTyp s1
         else VarTyp (lub (get_ancestor_list t1 d) (get_ancestor_list t2 d)))
 
 let greatest_common_child (t1: tagtyp) (t2: tagtyp) (d: delta) : tagtyp =
@@ -209,8 +209,9 @@ let check_addition_exp (t1: typ) (t2: typ) (d: delta) : typ =
     | FloatTyp, IntTyp
     | IntTyp, FloatTyp
     | FloatTyp, FloatTyp -> FloatTyp
-    | TagTyp a1, TagTyp a2 -> Printf.printf "Least common parent %s\n" (string_of_tag_typ ((least_common_parent a1 a2 d)));TagTyp (least_common_parent a1 a2 d)
+    | TagTyp a1, TagTyp a2 -> TagTyp (least_common_parent a1 a2 d)
     | TransTyp (m1, m2), TransTyp (m3, m4) -> 
+    Printf.printf "%s " (string_of_typ(TransTyp (greatest_common_child m1 m3 d, least_common_parent m2 m4 d)));
         TransTyp (greatest_common_child m1 m3 d, least_common_parent m2 m4 d)
     | _ -> 
         (raise (TypeException ("invalid expressions for addition: "
