@@ -30,12 +30,9 @@ function main() {
   // when rendering the object. Alternatively, can
   // be created using `new Float32Array(16)`
   let model = mat4.create();
-  let light = vec3.create();
 
-  // place the light
-  light[0] = 20.;
-  light[1] = 0.;
-  light[2] = 20.;
+  // Position the light source for the lighting effect.
+  let light = vec3.fromValues(20., 0., 20.);
 
   // Clear the canvas
   gl.clearColor(0, 0, 0, 0);
