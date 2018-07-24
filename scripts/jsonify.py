@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
+"""Read the contents of a list of files specified on the command line
+and dump a JSON object containing their text, keyed by their basenames.
+"""
+
 import sys
-from subprocess import check_output, call
 import json
+import os
 
-def jsonify(path):
-    """Jsonify vertex and fragment shader."""
 
-    # retrieve and generate appropriate JSON string
-    vert = check_output(["dune", "exec", "bin/lingc.bc", path + "/vertex.lgl"])
-    vert = vert.decode("utf-8")
-    frag = check_output(["dune", "exec", "bin/lingc.bc", path + "/fragment.lgl"])
-    frag = frag.decode("utf-8")
+def jsonify(paths):
+    """Dump a JSON object to stdout whose keys are the basenames of the
+    given paths (sans extension) and whose values are the corresponding
+    file contents.
+    """
+    out = {}
+    for path in paths:
+        name, _ = os.path.splitext(os.path.basename(path))
+        with open(path) as f:
+            out[name] = f.read()
+    json.dump(out, sys.stdout)
 
-    # write into JSON file
-    with open(path + "/data.json", "w+") as file:
-        json.dump({
-            'vertex': vert,
-            'fragment': frag,
-        }, file)
 
 if __name__ == '__main__':
-    path = sys.argv[1]
-    jsonify(path)
+    jsonify(sys.argv[1:])
