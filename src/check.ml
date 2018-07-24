@@ -377,9 +377,17 @@ let rec check_tags (t : tagdecl list) (d: delta): delta =
     | (s, a)::t ->
         check_typ_exp a |> ignore;
         match a with 
-        | (TagTyp l) ->
-            if Assoc.mem s d then raise (TypeException "cannot redeclare tag")
-            else Assoc.update s l d |> check_tags t
+        | (TagTyp l) -> (
+            match l with 
+            | VarTyp s' -> (
+                if Assoc.mem s' d then Assoc.update s l d |> check_tags t
+                else raise (TypeException "tag undefined")
+            )
+            | _ -> (
+                if Assoc.mem s d then raise (TypeException "cannot redeclare tag")
+                else Assoc.update s l d |> check_tags t
+            )
+        )
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
 let check_prog (e : prog) : TypedAst.comm list =
