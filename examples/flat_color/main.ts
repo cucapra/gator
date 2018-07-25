@@ -2,7 +2,7 @@ import * as lgl from '../lglexample';
 import { mat4 } from 'gl-matrix';
 
 const vertex_shader = require('./vertex.lgl');
-const fragment_shader = require('./vertex.lgl');
+const fragment_shader = require('./fragment.lgl');
 
 function main() {
   let gl = lgl.setup(render);
