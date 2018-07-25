@@ -17,7 +17,8 @@ let string_of_gl_mat (m: mat) : string =
     let tm = Lin_ops.transpose m in
     let r = (List.length tm) in
     let c = (if r = 0 then 0 else List.length (List.hd tm)) in
-    string_of_mat_padded tm (max r c)
+    let dim = max r c in
+    ("mat"^(string_of_int dim)^string_of_mat_padded tm dim)
 
 let string_of_vec (v: vec) : string = 
     "("^(String.concat ", " (List.map string_of_float v))^")"
@@ -31,8 +32,7 @@ let rec string_of_value (v: value) : string =
     | Num n -> string_of_int n
     | Float f -> string_of_float f
     | VecLit v -> "vec" ^ string_of_int (List.length v) ^ string_of_vec v
-    | MatLit m ->  
-        "mat" ^ string_of_int (List.length m) ^string_of_gl_mat m
+    | MatLit m -> string_of_gl_mat m
 
 let string_of_unop (op: unop) (e: string) : string =
     let funct_op (op: string) : string =
