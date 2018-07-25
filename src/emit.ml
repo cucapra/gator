@@ -84,7 +84,7 @@ let rec comp_exp (e : exp) : string =
     | (Binop (Plus, (le, lt), (re, rt))) -> (op_wrap le) ^ " + " ^ (op_wrap re)
     | (Binop (Minus, (le, lt), (re, rt))) -> (op_wrap le) ^ " - " ^ (op_wrap re)
     | (Binop (Div, (le, lt), (re, rt))) -> (op_wrap le) ^ " / " ^ (op_wrap re)
-    | (Binop (CTimes, (le, lt), (re, rt))) -> (op_wrap le) ^ " ,* " ^ (op_wrap re)
+    | (Binop (CTimes, (le, lt), (re, rt))) -> (op_wrap le) ^ " * " ^ (op_wrap re)
     | Val v -> string_of_value v
     | Var v -> v
     | Unop (op, (x, _)) -> (string_of_unop op (op_wrap x))
