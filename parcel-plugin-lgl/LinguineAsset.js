@@ -7,6 +7,10 @@ class LinguineAsset extends Asset {
     this.type = 'js';
   }
 
+  async load() {
+    return 'loaded';
+  }
+
   async parse(code) {
     console.error("PARSE", code);
     return 'parsed';

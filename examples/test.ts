@@ -1,2 +1,2 @@
 console.log("hello");
-console.log(require("./flat_color/vertex.lgl"));
+console.log(require("./vertex.lgl"));
