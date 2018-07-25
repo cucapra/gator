@@ -5,35 +5,35 @@ vec4->vec3 v4_v3 = [
     [1.,0.,0.,0.],
     [0.,1.,0.,0.],
     [0.,0.,1.,0.]
-]:vec4->vec3;
+];
 
 vec3->vec4 v3_v4 = [
   [1., 0., 0.],
   [0., 1., 0.],
   [0., 0., 1.],
   [0., 0., 0.]
-]:vec3->vec4;
+];
 
 // "in" variables
-vec3 vPosition = [0., 0., 0.]:vec3;
+vec3 vPosition = [0., 0., 0.];
 vec4->vec4 uModel = [
   [0., 0., 0., 0.],
   [0., 0., 0., 0.],
   [0., 0., 0., 0.],
   [0., 0., 0., 0.]
-]:vec4->vec4;
+];
 vec4->vec4 uView = [
   [0., 0., 0., 0.],
   [0., 0., 0., 0.],
   [0., 0., 0., 0.],
   [0., 0., 0., 0.]
-]:vec4->vec4;
-vec3 vNormal = [0., 0., 0.]:vec3;
-vec3 uLight = [0., 0., 0.]:vec3;
+];
+vec3 vNormal = [0., 0., 0.];
+vec3 uLight = [0., 0., 0.];
 
 
-vec3 color = [0.3, 0.8, 0.4]:vec3; // tasty orange
-vec3 lightColor = [0.4, 0.3, 0.9]:vec3;
+vec3 color = [0.3, 0.8, 0.4]; // tasty orange
+vec3 lightColor = [0.4, 0.3, 0.9];
 
 // ****************
 // Ambient lighting 
@@ -45,7 +45,7 @@ vec3 ambient = ambientStrength * lightColor;
 // Diffuse lighting
 // ****************
 // Calculate the real position of this pixel in 3d space
-vec3 worldPos = v4_v3 * (uModel * ((v3_v4 * vPosition) + [0., 0., 0., 1.]:vec4));
+vec3 worldPos = v4_v3 * (uModel * ((v3_v4 * vPosition) + [0., 0., 0., 1.]));
 
 // Calculate the normal including the model rotation and scale
 vec3 worldNorm = norm(v4_v3 * (uModel * (v3_v4 * vNormal)));
@@ -67,13 +67,13 @@ vec3 diffuse = diff * lightColor;
 
 float specularStrength = 3.;
 
-vec3 viewDir = norm([0., 0., 0.]:vec3 - v4_v3 * (uView * ((v3_v4 * worldPos) + [0., 0., 0., 1.]:vec4)));
+vec3 viewDir = norm([0., 0., 0.] - v4_v3 * (uView * ((v3_v4 * worldPos) + [0., 0., 0., 1.])));
 
 vec3->vec3 neg = [
     [-1., 0., 0.],
     [0., -1., 0.],
     [0., 0., -1.]
-]:vec3->vec3;
+];
 
 vec3 reflectDir = (neg * lightDir) - 2. * (dot (neg * lightDir) worldNorm) * worldNorm;
 vec3 cameraReflect = v4_v3 * (uView * (v3_v4 * reflectDir));
@@ -84,10 +84,10 @@ if (spec_is_neg) {
 } else { skip; }
 
 spec = spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec; // We don't have a pow function yet..
-vec3 specular = specularStrength * spec * [1., 1., 1.]:vec3;  
+vec3 specular = specularStrength * spec * [1., 1., 1.];  
 
 // Combining ambient, diffuse, and spectral lighting
 vec3 result = (color .* (ambient + diffuse + specular)); 
-vec4 gl_FragColor = (v3_v4 * result) + [0., 0., 0., 1.]:vec4;
+vec4 gl_FragColor = (v3_v4 * result) + [0., 0., 0., 1.];
 
 print gl_FragColor;

@@ -154,7 +154,7 @@ let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) : typ =
 let rec check_norm_exp (t: typ) (d: delta) : typ = 
     debug_print ">> check_norm_exp";
     match t with
-    | TagTyp a -> FloatTyp
+    | TagTyp a -> t
     | _ -> (raise (TypeException "expected linear type for norm operator"))
 
 (* Type check binary bool operators (i.e. &&, ||) *)
@@ -282,6 +282,7 @@ let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) : TypedAst.texp =
 
 let rec check_exp (e: exp) (d: delta) (g: gamma) : TypedAst.exp * typ = 
     debug_print ">> check_exp";
+    
     let build_unop (op : unop) (e': exp) (check_fun: typ->delta->typ)
         : TypedAst.exp * typ =
         let result = check_exp e' d g in
@@ -292,7 +293,7 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) : TypedAst.exp * typ =
         let e1r = check_exp e1 d g in
         let e2r = check_exp e2 d g in
             (TypedAst.Binop(op, exp_to_texp e1r d, exp_to_texp e2r d), check_fun (snd e1r) (snd e2r) d)
-    in
+    in 
     match e with
     | Val v -> (TypedAst.Val v, check_val v d)
     | Var v -> "\tVar "^v |> debug_print;
