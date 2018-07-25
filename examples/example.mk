@@ -20,6 +20,10 @@ JSONIFY := $(HERE)/../scripts/jsonify.py
 data.json: $(GLSL)
 	$(JSONIFY) $^ > $@
 
+.PHONY: clean
+clean:
+	rm -rf data.json $(GLSL)
+
 # Compile Linguine programs.
 %.glsl: %.lgl
 	$(LINGC) $^ > $@
