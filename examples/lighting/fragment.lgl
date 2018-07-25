@@ -41,6 +41,7 @@ vec3 lightColor = [0.4, 0.3, 0.9];
 float ambientStrength = 0.5;
 vec3 ambient = ambientStrength * lightColor;
 
+
 // ****************
 // Diffuse lighting
 // ****************
@@ -90,4 +91,5 @@ vec3 specular = specularStrength * spec * [1., 1., 1.];
 vec3 result = (color .* (ambient + diffuse + specular)); 
 vec4 gl_FragColor = (v3_v4 * result) + [0., 0., 0., 1.];
 
+//vec4 gl_FragColor = [0., 0., 0., 1.];
 print gl_FragColor;

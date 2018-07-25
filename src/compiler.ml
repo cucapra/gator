@@ -1,6 +1,6 @@
 open CoreAst
 open TypedAst
-open TypedAstHelper
+open CoreAstHelper
 open Assoc
 open Lin_ops
 open Util
@@ -85,7 +85,9 @@ let rec comp_exp (e : exp) : string =
     | (Binop (Minus, (le, lt), (re, rt))) -> (op_wrap le) ^ " - " ^ (op_wrap re)
     | (Binop (Div, (le, lt), (re, rt))) -> (op_wrap le) ^ " / " ^ (op_wrap re)
     | (Binop (CTimes, (le, lt), (re, rt))) -> (op_wrap le) ^ " ,* " ^ (op_wrap re)
-    | _ -> string_of_exp e
+    | Val v -> string_of_value v
+    | Var v -> v
+    | Unop (op, (x, _)) -> (string_of_unop op (op_wrap x))
 
 let rec comp_comm (c : comm list) : string =
     match c with
