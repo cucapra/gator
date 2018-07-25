@@ -1,10 +1,9 @@
 const Asset = require('parcel-bundler/src/Asset');
-const serializeObject = require('../utils/serializeObject');
+const serializeObject = require('parcel-bundler/src/utils/serializeObject');
 
 class LinguineAsset extends Asset {
   constructor(name, options) {
     super(name, options);
-    console.error("CONSTRUCT", name);
     this.type = 'js';
   }
 

@@ -1,3 +1,3 @@
 module.exports = function (bundler) {
-  bundler.addAssetType('lgl', require.resolve('./LinguineAsset.js'));
+  bundler.addAssetType('lgl', require.resolve('./LinguineAsset'));
 };
