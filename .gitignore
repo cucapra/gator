@@ -15,3 +15,5 @@ yarn.lock
 package-lock.json
 node_modules/
 .cache/
+*.log
+*.install
