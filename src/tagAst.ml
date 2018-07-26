@@ -16,6 +16,7 @@ type typ =
     | FloatTyp
     | TagTyp of tagtyp
     | TransTyp of tagtyp * tagtyp
+    | SamplerTyp of int (* i.e. sampler2D *)
 
 (* expressions *)
 type exp =

@@ -10,6 +10,7 @@ let white = [' ' '\t' '\n' '\r']+
 let num = ['+' '-']? ['0'-'9']+
 let letter = ['a'-'z' 'A'-'Z']
 let mat = "mat" num ['x'] num
+let sampler = "sampler" num ['D']
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let floatval = ['+' '-']? ((['0'-'9']*['.']['0'-'9']+)|(['0'-'9']+['.']['0'-'9']*))
 let newline = ('\r' | '\n' | "\r\n" | eof)
@@ -18,43 +19,44 @@ let comment = "//" [^ '\r' '\n']* newline
 (* Lexer definition *)
 
 rule read = parse
-  | comment { read lexbuf }
-  | white { read lexbuf }
-  | num as num  { NUM (int_of_string num) }
-  | "tag" { TAG }
-  | "is"  { IS }
-  | "dot" { DOT }
-  | "norm" { NORM }
-  | "true" { TRUE }
-  | "false" { FALSE }
-  | "if" { IF }
-  | "else" { ELSE }
-  | "skip" { SKIP }
-  | "print" { PRINT }
-  | "int" { INTTYP }
-  | "float" { FLOATTYP }
-  | mat as mat { MATTYP mat }
-  | "bool" { BOOLTYP }
-  | "+"   { PLUS }
-  | "-"   { MINUS }
-  | "*"   { TIMES }
-  | "/"   { DIV }
-  | ".*"  { CTIMES }
-  | "["   { LBRACK }
-  | "]"   { RBRACK }
-  | "{"   { LBRACE }
-  | "}"   { RBRACE }
-  | "("   { LPAREN }
-  | ")"   { RPAREN }
-  | "->"  { TRANS }
-  | "="   { GETS }
-  | "=="  { EQ }
-  | "<="  { LEQ }
-  | "||"  { OR }
-  | "&&"  { AND }
-  | "!"   { NOT }
-  | ","   { COMMA } 
-  | ";"   { SEMI }
+  | comment         { read lexbuf }
+  | white           { read lexbuf }
+  | num as num      { NUM (int_of_string num) }
+  | "tag"           { TAG }
+  | "is"            { IS }
+  | "dot"           { DOT }
+  | "norm"          { NORM }
+  | "true"          { TRUE }
+  | "false"         { FALSE }
+  | "if"            { IF }
+  | "else"          { ELSE }
+  | "skip"          { SKIP }
+  | "print"         { PRINT }
+  | "int"           { INTTYP }
+  | "float"         { FLOATTYP }
+  | mat as mat      { MATTYP mat }
+  | "bool"          { BOOLTYP }
+  | "+"             { PLUS }
+  | "-"             { MINUS }
+  | "*"             { TIMES }
+  | "/"             { DIV }
+  | ".*"            { CTIMES }
+  | "["             { LBRACK }
+  | "]"             { RBRACK }
+  | "{"             { LBRACE }
+  | "}"             { RBRACE }
+  | "("             { LPAREN }
+  | ")"             { RPAREN }
+  | "->"            { TRANS }
+  | "="             { GETS }
+  | "=="            { EQ }
+  | "<="            { LEQ }
+  | "||"            { OR }
+  | "&&"            { AND }
+  | "!"             { NOT }
+  | ","             { COMMA } 
+  | ";"             { SEMI }
+  | sampler as sm   { SAMPLER sm }
   | "attribute"
   | "const"
   | "uniform"
@@ -81,7 +83,6 @@ rule read = parse
   | "bvec2"
   | "bvec3"
   | "bvec4"
-  | "sampler2D"
   | "samplerCube"
   | "asm"
   | "class" 
@@ -121,8 +122,6 @@ rule read = parse
   | "fvec2"
   | "fvec3"
   | "fvec4"
-  | "sampler1D"
-  | "sampler3D"
   | "sampler1DShadow"
   | "sampler2DShadow"
   | "sampler2DRect"
@@ -132,9 +131,9 @@ rule read = parse
   | "cast"
   | "namespace"
   | "using" 
-  | "struct" { raise (SyntaxError ("Cannot use reserved GLSL keyword " ^ Lexing.lexeme lexbuf)) }
-  | id as id { ID id }
-  | floatval as floatval  { FLOAT (float_of_string floatval) }
-  | eof   { EOL }
-  | _ { raise (SyntaxError ("Unexpected char: " ^ Lexing.lexeme lexbuf)) }
+  | "struct"        { raise (SyntaxError ("Cannot use reserved GLSL keyword " ^ Lexing.lexeme lexbuf)) }
+  | id as id        { ID id }
+  | floatval as fl  { FLOAT (float_of_string fl) }
+  | eof             { EOL }
+  | _               { raise (SyntaxError ("Unexpected char: " ^ Lexing.lexeme lexbuf)) }
 

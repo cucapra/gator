@@ -1,5 +1,6 @@
 open CoreAst
 open TypedAst
+open TypedAstHelper
 open CoreAstHelper
 open Assoc
 open Lin_ops
@@ -25,11 +26,8 @@ let string_of_mat_padded (m: mat) (max_dim: int) : string =
 let string_of_typ (t : etyp) : string =
     match t with
     | UnitTyp -> failwith "Unit type is unwriteable in glsl"
-    | BoolTyp -> "bool"
-    | IntTyp -> "int"
-    | FloatTyp -> "float"
-    | VecTyp n -> "vec" ^ (string_of_int n)
     | MatTyp (m, n) -> "mat" ^ string_of_int (max m n)
+    | _ -> string_of_typ t
 
 let attrib_type (var_name : string) : string =
     if (String.get var_name 0) = 'a' then "attribute" else

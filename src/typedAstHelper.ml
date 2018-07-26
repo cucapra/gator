@@ -18,6 +18,7 @@ let rec string_of_typ (t: etyp) : string =
     | FloatTyp -> "float"
     | VecTyp v -> "vec" ^ (string_of_int v)
     | MatTyp (m1, m2) -> "mat" ^ (string_of_int m1) ^ "x" ^ (string_of_int m2)
+    | SamplerTyp n -> "sampler" ^ (string_of_int n) ^ "D"
 
 let rec string_of_exp (e:exp) : string =
     match e with
