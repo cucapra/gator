@@ -1,0 +1,4 @@
+// Function definitions of matrix functions in GLSL.
+// Reference: https://www.khronos.org/files/opengles_shading_language.pdf
+
+mat matrixCompMult(mat x, mat y);
