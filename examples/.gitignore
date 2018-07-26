@@ -1,4 +1,3 @@
 dist/
 build/
 *.glsl
-data.json

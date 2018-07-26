@@ -1,13 +1,14 @@
 import * as lgl from '../lglexample';
 import { mat4, vec3 } from 'gl-matrix';
 
-import shaderData from './data.json';
-
 function main() {
   let gl = lgl.setup(render);
 
   // Compile our shaders.
-  let program = lgl.compileProgram(gl, shaderData.vertex, shaderData.fragment);
+  let program = lgl.compileProgram(gl,
+    require('./vertex.lgl'),
+    require('./fragment.lgl')
+  );
 
   // Uniform and attribute locations.
   let loc_uProjection = lgl.uniformLoc(gl, program, 'uProjection');
@@ -49,4 +50,3 @@ function main() {
 }
 
 main();
-                                                            

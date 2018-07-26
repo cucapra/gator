@@ -104,3 +104,10 @@ declare module 'normals' {
   function vertexNormals(cells: [number, number, number][], positions: [number, number, number][]): [number, number, number][];
   function faceNormals(cells: [number, number, number][], positions: [number, number, number][]): [number, number, number][];
 }
+
+/**
+ * A *very limited* `require` function that is *only* useful for loading
+ * Linguine source files via our Parcel plugin. (Normal TypeScript
+ * dependencies should use `import`, not `require`.)
+ */
+declare function require(name: string): string;
