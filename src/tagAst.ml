@@ -22,28 +22,29 @@ type typ =
 (* expressions *)
 type exp =
     | Val of value
-    | Var of id
+    | Var of string
     | Unop of unop * exp
     | Binop of binop * exp * exp
     | VecTrans of int * tag_typ (* vec3(<vec4>), vec4(<vec3>) *)
-    | FnInv of id * args (* function invocation *)
+    | FnInv of string * args (* function invocation *)
 
 (* arguments *)
 and args = exp list
 
-(* function declaration *)
-type params = (id * typ) list
+(* function parameters *)
+type params = (string * typ) list
 type ret_type = typ
-(* we do not have higher order functions *)
+(* our functions are not first-order *)
 type fn_type = params * ret_type
-type fn_decl = id * fn_type
+(* function declaration *)
+type fn_decl = string * fn_type
 
 (* commands *)
 type comm = 
     Skip
     | Print of exp
-    | Decl of typ * id * exp
-    | Assign of id * exp
+    | Decl of typ * string * exp
+    | Assign of string * exp
     | If of exp * comm list * comm list
 
 type fn = fn_decl * comm list

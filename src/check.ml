@@ -9,16 +9,15 @@ open Str
 exception TypeException of string
 exception DimensionException of int * int
 
-type id = string
 
 (* Variable defs *)
-type gamma = (id, typ) Assoc.context
+type gamma = (string, typ) Assoc.context
 
 (* Tags defs *)
-type delta = (id, tag_typ) Assoc.context
+type delta = (string, tag_typ) Assoc.context
 
 (* Function defs *)
-type phi = (id, fn_type) Assoc.context
+type phi = (string, fn_type) Assoc.context
 
 let trans_top (n1: int) (n2: int) : typ =
     TransTyp ((BotTyp n1), (TopTyp n2))
@@ -395,23 +394,20 @@ let rec check_tags (t : tag_decl list) (d: delta): delta =
         )
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
-let rec check_fn_lst (fl: fn list) (d: delta) (g: gamma): TypedAst.fn list * gamma =
-    failwith "Unimplemented"
-
-(* Go through list of function declarations to initialize gamma - 
- * overloaded functions are allowed. 
- * However, exact function signature matches are illegal. *)
-let check_fn_decls (fdl: fn_decl list) : gamma =
+let rec check_fn_lst (fl: fn list) (d: delta) (g: gamma) (p: phi): TypedAst.fn list * gamma =
     failwith "Unimplemented"
 
 let check_prog (e : prog) : TypedAst.fn list =
     debug_print ">> check_prog";
     match e with
     | Prog (t, c) -> 
-        (* delta retrieved from tag declarations *)
+        (* delta from tag declarations *)
         let d = check_tags t Assoc.empty in 
         (* list of function declarations of the program *)
         let fn_decls = List.map (fun ((dc, b): fn) -> dc) c in  
-        (* gamma retrieved from initial pass of function declarations *)
-        let g = check_fn_decls fn_decls in 
-        (fst (check_fn_lst c d g))
+        (* phi from initial pass of function declarations. 
+        * overloaded functions and nameshadowing are allowed. *)
+        let p = List.fold_right 
+        (fun ((id, t): fn_decl) (p: phi) -> Assoc.update id t p) 
+        fn_decls Assoc.empty in 
+        (fst (check_fn_lst c d Assoc.empty p))
