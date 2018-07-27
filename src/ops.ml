@@ -99,7 +99,9 @@ let rec eval_comm (c : comm list) (s : sigma) : sigma =
         | Assign (x, (e, _)) -> Assoc.update x (eval_exp e s) s
         | If ((e, _), c1, c2) -> eval_comm (match (eval_exp e s) with
             | Bool b -> if b then c1 else c2
-            | _ -> failwith "Expected a boolean in 'if' exception") s)
+            | _ -> failwith "Expected a boolean in 'if' exception") s
+        | Fn _ -> failwith "Unimplemented")
+        
 
 let eval_prog (p : prog) : unit =
     eval_comm p Assoc.empty |> ignore

@@ -2,7 +2,7 @@
 
 open CoreAst
 
-(* Type with tags erased *)
+(* type with tags erased *)
 type etyp = 
     | UnitTyp
     | BoolTyp
@@ -12,7 +12,12 @@ type etyp =
     | MatTyp of int * int
     | SamplerTyp of int
 
-(* expressions  *)
+(* function declaration *)
+type params = (id * etyp) list
+type ret_type = etyp
+type fn_decl = id * params * ret_type
+
+(* expressions *)
 type texp = exp * etyp
 and exp =
     | Val of value
@@ -24,8 +29,9 @@ and exp =
 type comm = 
     | Skip
     | Print of texp
-    | Decl of etyp * string * texp
-    | Assign of string * texp
+    | Decl of etyp * id * texp
+    | Assign of id * texp
     | If of texp * comm list * comm list
+    | Fn of fn_decl * comm list
 
 type prog = comm list

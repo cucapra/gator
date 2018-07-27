@@ -13,7 +13,7 @@ exception DimensionException of int * int
 type gamma = (string, typ) Assoc.context
 
 (* Tags defs *)
-type delta = (string, tagtyp) Assoc.context
+type delta = (string, tag_typ) Assoc.context
 
 let trans_top (n1: int) (n2: int) : typ =
     TransTyp ((BotTyp n1), (TopTyp n2))
@@ -21,19 +21,19 @@ let trans_top (n1: int) (n2: int) : typ =
 let trans_bot (n1: int) (n2: int) : typ =
     TransTyp ((TopTyp n1), (BotTyp n2))
 
-let rec vec_dim (t: tagtyp) (d: delta) : int =
+let rec vec_dim (t: tag_typ) (d: delta) : int =
     match t with
     | TopTyp n
     | BotTyp n -> n
     | VarTyp s -> vec_dim (lookup s d) d
 
-let rec get_ancestor_list (t: tagtyp) (d: delta) : id list =
+let rec get_ancestor_list (t: tag_typ) (d: delta) : id list =
     match t with 
     | TopTyp _ -> []
     | BotTyp _ -> raise (TypeException "Bad failure -- Ancestor list somehow includes the bottom type")
     | VarTyp s -> s :: (get_ancestor_list (lookup s d) d)
 
-let is_tag_subtype (to_check: tagtyp) (target: tagtyp) (d: delta) : bool =
+let is_tag_subtype (to_check: tag_typ) (target: tag_typ) (d: delta) : bool =
     match (to_check, target) with
     | BotTyp n1, BotTyp n2
     | BotTyp n1, TopTyp n2
@@ -44,7 +44,7 @@ let is_tag_subtype (to_check: tagtyp) (target: tagtyp) (d: delta) : bool =
     | VarTyp s, TopTyp n -> (vec_dim to_check d) = n
     | TopTyp _, _ -> false
 
-let least_common_parent (t1: tagtyp) (t2: tagtyp) (d: delta) : tagtyp =
+let least_common_parent (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
     let check_dim (n1: int) (n2: int) : unit =
         if n1 = n2 then () else (raise (DimensionException (n1, n2)))
     in
@@ -73,7 +73,7 @@ let least_common_parent (t1: tagtyp) (t2: tagtyp) (d: delta) : tagtyp =
         (if s1 = s2 then VarTyp s1
         else VarTyp (lub (get_ancestor_list t1 d) (get_ancestor_list t2 d)))
 
-let greatest_common_child (t1: tagtyp) (t2: tagtyp) (d: delta) : tagtyp =
+let greatest_common_child (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
     let check_dim (n1: int) (n2: int) : unit =
         if n1 = n2 then () else (raise (DimensionException (n1, n2)))
     in
@@ -112,7 +112,7 @@ let check_val (v: value) (d: delta) : typ =
         if List.for_all (fun v -> List.length v = cols) m then trans_bot cols rows
         else (raise (TypeException ("Matrix must have the same number of elements in each row"))))
 
-let check_tag_typ (tag: tagtyp) (d: delta) : unit =
+let check_tag_typ (tag: tag_typ) (d: delta) : unit =
     match tag with
     | TopTyp n
     | BotTyp n -> (if (n > 0) then ()
@@ -359,6 +359,7 @@ let rec check_comm (c: comm) (d: delta) (g: gamma) : TypedAst.comm * gamma =
         (match (snd result) with 
         | BoolTyp -> (TypedAst.If ((exp_to_texp result d), (fst c1r), (fst c2r)), g)
         | _ -> raise (TypeException "expected boolean expression for if condition"))
+    | Fn (_, _) -> failwith "Unimplemented"
 
 and check_comm_lst (cl : comm list) (d: delta) (g: gamma): TypedAst.comm list * gamma = 
     debug_print ">> check_comm_lst";
@@ -368,11 +369,11 @@ and check_comm_lst (cl : comm list) (d: delta) (g: gamma): TypedAst.comm list * 
         let result = check_comm_lst t d (snd context) in 
         ((fst context) :: (fst result), (snd result))
 
-let check_tag (s: string) (l: tagtyp) (d: delta) : delta = 
+let check_tag (s: string) (l: tag_typ) (d: delta) : delta = 
     if Assoc.mem s d then raise (TypeException "cannot redeclare tag")
             else Assoc.update s l d
 
-let rec check_tags (t : tagdecl list) (d: delta): delta =
+let rec check_tags (t : tag_decl list) (d: delta): delta =
     debug_print ">> check_tags";
     match t with 
     | [] -> d

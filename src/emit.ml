@@ -103,6 +103,7 @@ let rec comp_comm (c : comm list) : string =
             ^ "{ " ^ (comp_comm c1) ^ " }"
             ^ "{ " ^ (comp_comm c2) ^ " }" 
             ^ (comp_comm t))
+        | Fn _ -> failwith "Unimplemented"
 
 
 let rec decl_attribs (c : comm list) : string = 

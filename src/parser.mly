@@ -80,105 +80,156 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %%
    
 main:
-  | t = taglst; e = commlst; EOL              { Prog(t, e) }
-  | e = commlst; EOL                          { Prog([], e) }
-  | t = taglst; EOL                           { Prog(t, []) }
+  | t = taglst; e = commlst; EOL 
+      { Prog(t, e) }
+  | e = commlst; EOL             
+      { Prog([], e) }
+  | t = taglst; EOL              
+      { Prog(t, []) }
 ;
 
 
 taglst: 
-  | t = tag                                   { t::[] }
-  | t1 = taglst; t2 = tag                     { t1@(t2::[])@[] }
+  | t = tag               
+      { t::[] }
+  | t1 = taglst; t2 = tag 
+      { t1@(t2::[])@[] }
 ; 
 
 tag:
-  | TAG; x = ID; IS; e1 = tagtyp; SEMI;       { (x, TagTyp(e1)) }
+  | TAG; x = ID; IS; e1 = tagtyp; SEMI; 
+      { (x, TagTyp(e1)) }
 ;
 
 commlst:
-  | c = comm                                  { c::[] }
-  | c1 = comm; c2 = commlst                   { c1::c2@[] }
+  | c = comm                
+      { c::[] }
+  | c1 = comm; c2 = commlst 
+      { c1::c2@[] }
 ;
 
 comm:
-  | SKIP; SEMI;{ Skip } 
-  | t = typ; x = ID; GETS; e1 = exp; SEMI;    {  if (Str.string_match vec x 0) then (
-            raise (ParseException "invalid id specified for variable declaration")
-          ) else Decl(t, x, e1) }
-  | x = ID; GETS; e1 = exp; SEMI;             {  if (Str.string_match vec x 0) then (
-            raise (ParseException "invalid id specified for variable declaration")
-          ) else Assign(x, e1) }
+  | SKIP; SEMI;                            
+      { Skip }
+  | t = typ; x = ID; GETS; e1 = exp; SEMI; 
+      { if (Str.string_match vec x 0) then (
+        raise (ParseException "invalid id specified for variable declaration")
+        ) else Decl(t, x, e1) }
+  | x = ID; GETS; e1 = exp; SEMI;          
+      { if (Str.string_match vec x 0) then (
+        raise (ParseException "invalid id specified for variable declaration")
+        ) else Assign(x, e1) }
   | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; 
-    ELSE; LBRACE; c2 = commlst; RBRACE        { If(b1,c1,c2) }
-  | PRINT; e = exp; SEMI;                     { Print(e) }
+    ELSE; LBRACE; c2 = commlst; RBRACE     
+      { If(b1,c1,c2) }
+  | PRINT; e = exp; SEMI;                  
+      { Print(e) }
 ;
 
 typ:
-  | BOOLTYP                                   { BoolTyp }
-  | FLOATTYP                                  { FloatTyp }
-  | INTTYP                                    { IntTyp }
-  | m = MATTYP                                { let len = String.length m in 
-          let dim = String.sub m 3 (len-3) in
-          let dim_lst = Str.split_delim (regexp "x") dim in
-          TransTyp (TopTyp (int_of_string(List.nth dim_lst 1)),TopTyp (int_of_string(List.nth dim_lst 0)))}
-  | x1 = tagtyp; TRANS; x2 = tagtyp           { TransTyp(x1,x2) }
-  | e = tagtyp                                { TagTyp(e) }
-  | s = SAMPLER                               { let len = String.length s in
-          let dim = String.sub s 7 (len-7) in 
-          let dim_lst = Str.split_delim (regexp "D") dim in
-          SamplerTyp (int_of_string(List.nth dim_lst 0)) }
+  | BOOLTYP                         
+      { BoolTyp }
+  | FLOATTYP                        
+      { FloatTyp }
+  | INTTYP                          
+      { IntTyp }
+  | m = MATTYP                      
+      { let len = String.length m in
+        let dim = String.sub m 3 (len-3) in
+        let dim_lst = Str.split_delim (regexp "x") dim in
+        TransTyp (TopTyp (int_of_string(List.nth dim_lst 1)),
+        TopTyp (int_of_string(List.nth dim_lst 0)))}
+  | x1 = tagtyp; TRANS; x2 = tagtyp 
+      { TransTyp(x1,x2) }
+  | e = tagtyp                      
+      { TagTyp(e) }
+  | s = SAMPLER                     
+      { let len = String.length s in
+        let dim = String.sub s 7 (len-7) in 
+        let dim_lst = Str.split_delim (regexp "D") dim in
+        SamplerTyp (int_of_string(List.nth dim_lst 0)) }
 ;
 
 tagtyp:
-  | x = ID                                    { if (Str.string_match vec x 0) then (
-          let len = String.length x in 
-          let dim = String.sub x 3 (len-3)in
-          TopTyp (int_of_string(dim))
+  | x = ID 
+      { if (Str.string_match vec x 0) then (
+        let len = String.length x in 
+        let dim = String.sub x 3 (len-3)in
+        TopTyp (int_of_string(dim))
         ) else (VarTyp x) }
 ;
 
 value:
-  | b = bool                                  { Bool b }
-  | i = NUM                                   { Num i }
-  | f = FLOAT                                 { Float f }
-  | LBRACK; RBRACK                            { VecLit([]) }
-  | LBRACK; v = veclit; RBRACK;               { VecLit(v@[]) }
-  | LBRACK; m = matlit; RBRACK;               { MatLit(m@[]) }
+  | b = bool                    
+      { Bool b }
+  | i = NUM                     
+      { Num i }
+  | f = FLOAT                   
+      { Float f }
+  | LBRACK; RBRACK              
+      { VecLit([]) }
+  | LBRACK; v = veclit; RBRACK; 
+      { VecLit(v@[]) }
+  | LBRACK; m = matlit; RBRACK; 
+      { MatLit(m@[]) }
 ;
 
 veclit:
-  | f = FLOAT                                 { f::[] }
-  | f = FLOAT; COMMA; v2 = veclit             { f::v2@[] }
+  | f = FLOAT                     
+      { f::[] }
+  | f = FLOAT; COMMA; v2 = veclit 
+      { f::v2@[] }
 ;
 
 matlit:
-  | LBRACK; v = veclit; RBRACK                { [v] }
-  | LBRACK; RBRACK                            { [[]] }
-  | LBRACK; v = veclit; RBRACK; COMMA; m2 = matlit { [v]@m2@[] }
-  | LBRACK; RBRACK; COMMA; m2 = matlit        { [[]]@m2@[] }
+  | LBRACK; v = veclit; RBRACK                     
+      { [v] }
+  | LBRACK; RBRACK                                 
+      { [[]] }
+  | LBRACK; v = veclit; RBRACK; COMMA; m2 = matlit 
+      { [v]@m2@[] }
+  | LBRACK; RBRACK; COMMA; m2 = matlit             
+      { [[]]@m2@[] }
 ;
 
 bool:
-  | TRUE                                      { true }
-  | FALSE                                     { false }
+  | TRUE  
+      { true }
+  | FALSE 
+      { false }
 ;
 
 exp:
-  | LPAREN; a = exp; RPAREN                   { a }
-  | v = value                                 { Val v }
-  | x = ID                                    { Var x }
-  | DOT; e1 = exp; e2 = exp                   { Binop(Dot,e1, e2) }
-  | NORM; e = exp                             { Unop(Norm,e) } (* Normie *)
-  | e1 = exp; PLUS; e2 = exp                  { Binop(Plus,e1,e2) }
-  | e1 = exp; TIMES; e2 = exp                 { Binop(Times,e1,e2) }
-  | e1 = exp; MINUS; e2 = exp                 { Binop(Minus,e1,e2) }
-  | e1 = exp; DIV; e2 = exp                   { Binop(Div,e1,e2) }
-  | e1 = exp; CTIMES; e2 = exp                { Binop(CTimes,e1,e2) }
-  | NOT; e1 = exp;                            { Unop(Not,e1) }
-  | e1 = exp; EQ; e2 = exp                    { Binop(Eq,e1,e2) }
-  | e1 = exp; LEQ; e2 = exp                   { Binop(Leq,e1,e2) }
-  | e1 = exp; OR; e2 = exp                    { Binop(Or,e1,e2) }
-  | e1 = exp; AND; e2 = exp                   { Binop(And,e1,e2) }
+  | LPAREN; a = exp; RPAREN    
+      { a }
+  | v = value                  
+      { Val v }
+  | x = ID                     
+      { Var x }
+  | DOT; e1 = exp; e2 = exp    
+      { Binop(Dot,e1, e2) }
+  | NORM; e = exp              
+      { Unop(Norm,e) } (* Normie *)
+  | e1 = exp; PLUS; e2 = exp   
+      { Binop(Plus,e1,e2) }
+  | e1 = exp; TIMES; e2 = exp  
+      { Binop(Times,e1,e2) }
+  | e1 = exp; MINUS; e2 = exp  
+      { Binop(Minus,e1,e2) }
+  | e1 = exp; DIV; e2 = exp    
+      { Binop(Div,e1,e2) }
+  | e1 = exp; CTIMES; e2 = exp 
+      { Binop(CTimes,e1,e2) }
+  | NOT; e1 = exp;             
+      { Unop(Not,e1) }
+  | e1 = exp; EQ; e2 = exp      
+      { Binop(Eq,e1,e2) }
+  | e1 = exp; LEQ; e2 = exp    
+      { Binop(Leq,e1,e2) }
+  | e1 = exp; OR; e2 = exp    
+      { Binop(Or,e1,e2) }
+  | e1 = exp; AND; e2 = exp    
+      { Binop(And,e1,e2) }
 ;
 
 %%

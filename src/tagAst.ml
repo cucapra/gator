@@ -3,7 +3,7 @@
 open CoreAst
 
 (* tag types *)
-type tagtyp = 
+type tag_typ = 
     | TopTyp of int
     | BotTyp of int
     | VarTyp of id
@@ -14,8 +14,8 @@ type typ =
     | BoolTyp
     | IntTyp
     | FloatTyp
-    | TagTyp of tagtyp
-    | TransTyp of tagtyp * tagtyp
+    | TagTyp of tag_typ
+    | TransTyp of tag_typ * tag_typ
     | SamplerTyp of int (* i.e. sampler2D *)
 
 (* expressions *)
@@ -24,20 +24,26 @@ type exp =
     | Var of id
     | Unop of unop * exp
     | Binop of binop * exp * exp
-    | VecTrans of int * tagtyp (* vec3(<vec4>), vec4(<vec3>) *)
+    | VecTrans of int * tag_typ (* vec3(<vec4>), vec4(<vec3>) *)
+
+(* function declaration *)
+type params = (id * typ) list
+type ret_type = typ
+type fn_decl = id * params * ret_type
 
 (* commands *)
 type comm = 
     Skip
     | Print of exp
-    | Decl of typ * string * exp
-    | Assign of string * exp
+    | Decl of typ * id * exp
+    | Assign of id * exp
     | If of exp * comm list * comm list
-    
+    | Fn of fn_decl * comm list
+
 (* tag declaration statements *)
-type tagdecl = string * typ
+type tag_decl = string * typ
 
 (* program *)
 type prog =
-    | Prog of tagdecl list * comm list
+    | Prog of tag_decl list * comm list
 

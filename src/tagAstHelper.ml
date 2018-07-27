@@ -5,7 +5,7 @@ open CoreAstHelper
 open TagAst
 
 
-let string_of_tag_typ (t: tagtyp) : string =
+let string_of_tag_typ (t: tag_typ) : string =
     match t with
     | TopTyp n -> "vec"^(string_of_int n)
     | BotTyp n -> "vec"^(string_of_int n)^"lit"
@@ -34,6 +34,15 @@ let rec string_of_exp (e:exp) : string =
         | _ -> (string_of_binop op ls rs))
     | VecTrans (i, t) -> failwith "Unimplemented"
 
+let rec string_of_params (p: (id * typ) list) : string =
+    match p with
+    | [] -> ""
+    | (i1, t1)::t -> i1 ^ (string_of_typ t1) ^ " " ^ (string_of_params t)
+
+let string_of_fn_decl (d: fn_decl) : string = 
+    match d with
+    | (id, p, r) -> (string_of_typ r) ^ " " ^ id ^ " (" ^ (string_of_params p) ^ ")"
+
 let rec string_of_comm (c: comm) : string =
     match c with
     | Skip -> "skip;"
@@ -42,6 +51,7 @@ let rec string_of_comm (c: comm) : string =
     | If (b, c1, c2) -> "if (" ^ (string_of_exp b) ^ ") {\n" ^ (string_of_comm_list c1) ^
         "} else {\n" ^ (string_of_comm_list c2) ^ "}"
     | Assign (b, x) -> b^" = " ^ (string_of_exp x) ^ ";"
+    | Fn (d, c1) -> string_of_fn_decl d ^ "{" ^ (string_of_comm_list c1) ^"}"
 
 and 
 string_of_comm_list (cl : comm list) : string = 
@@ -49,7 +59,7 @@ string_of_comm_list (cl : comm list) : string =
     | [] -> ""
     | h::t -> (string_of_comm h)^"\n"^(string_of_comm_list t)
 
-let rec string_of_tags (t : tagdecl list) : string =
+let rec string_of_tags (t : tag_decl list) : string =
     match t with 
     | [] -> ""
     | (s, a)::t -> "tag " ^ s ^ " is "^(string_of_typ a) ^ ";\n" ^ (string_of_tags t)
