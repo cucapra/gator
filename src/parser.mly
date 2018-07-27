@@ -117,9 +117,9 @@ params:
 
 fn_decl:
   | t = typ; x = ID; LPAREN; RPAREN;
-      { (x, [], t) }
+      { (x, ([], t)) }
   | t = typ; x = ID; LPAREN; p = params ; RPAREN;
-      { (x, p, t) }
+      { (x, (p, t)) }
 ;
 
 comm:

@@ -19,7 +19,6 @@ type typ =
     | SamplerTyp of int (* i.e. sampler2D *)
     | VoidTyp
 
-
 (* expressions *)
 type exp =
     | Val of value
@@ -35,7 +34,9 @@ and args = exp list
 (* function declaration *)
 type params = (id * typ) list
 type ret_type = typ
-type fn_decl = id * params * ret_type
+(* we do not have higher order functions *)
+type fn_type = params * ret_type
+type fn_decl = id * fn_type
 
 (* commands *)
 type comm = 

@@ -42,7 +42,7 @@ let rec string_of_params (p: (id * typ) list) : string =
 
 let string_of_fn_decl (d: fn_decl) : string = 
     match d with
-    | (id, p, r) -> (string_of_typ r) ^ " " ^ id ^ " (" ^ (string_of_params p) ^ ")"
+    | (id, (p, r)) -> (string_of_typ r) ^ " " ^ id ^ " (" ^ (string_of_params p) ^ ")"
 
 let rec string_of_comm (c: comm) : string =
     match c with
