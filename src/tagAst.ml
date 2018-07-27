@@ -38,12 +38,13 @@ type comm =
     | Decl of typ * id * exp
     | Assign of id * exp
     | If of exp * comm list * comm list
-    | Fn of fn_decl * comm list
+
+type fn = fn_decl * comm list
 
 (* tag declaration statements *)
 type tag_decl = string * typ
 
 (* program *)
 type prog =
-    | Prog of tag_decl list * comm list
+    | Prog of tag_decl list * fn list
 

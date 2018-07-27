@@ -32,6 +32,7 @@ type comm =
     | Decl of etyp * id * texp
     | Assign of id * texp
     | If of texp * comm list * comm list
-    | Fn of fn_decl * comm list
 
-type prog = comm list
+type fn = fn_decl * comm list
+
+type prog = fn list

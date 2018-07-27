@@ -51,7 +51,6 @@ let rec string_of_comm (c: comm) : string =
     | If (b, c1, c2) -> "if (" ^ (string_of_exp b) ^ ") {\n" ^ (string_of_comm_list c1) ^
         "} else {\n" ^ (string_of_comm_list c2) ^ "}"
     | Assign (b, x) -> b^" = " ^ (string_of_exp x) ^ ";"
-    | Fn (d, c1) -> string_of_fn_decl d ^ "{" ^ (string_of_comm_list c1) ^"}"
 
 and 
 string_of_comm_list (cl : comm list) : string = 
@@ -64,6 +63,15 @@ let rec string_of_tags (t : tag_decl list) : string =
     | [] -> ""
     | (s, a)::t -> "tag " ^ s ^ " is "^(string_of_typ a) ^ ";\n" ^ (string_of_tags t)
 
+let string_of_fn (f : fn) : string = 
+    match f with
+    | (d, c1) -> string_of_fn_decl d ^ "{" ^ (string_of_comm_list c1) ^"}"
+
+let rec string_of_fn_lst (fl : fn list) : string = 
+    match fl with
+    | [] -> ""
+    | h::t -> string_of_fn h ^ "\n" ^ (string_of_fn_lst t)
+
 let string_of_prog (e : prog) : string =
     match e with
-    | Prog (t, c) -> (string_of_tags t) ^ (string_of_comm_list c) 
+    | Prog (t, f) -> (string_of_tags t) ^ (string_of_fn_lst f) 

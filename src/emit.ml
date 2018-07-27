@@ -103,7 +103,6 @@ let rec comp_comm (c : comm list) : string =
             ^ "{ " ^ (comp_comm c1) ^ " }"
             ^ "{ " ^ (comp_comm c2) ^ " }" 
             ^ (comp_comm t))
-        | Fn _ -> failwith "Unimplemented"
 
 
 let rec decl_attribs (c : comm list) : string = 
@@ -118,5 +117,6 @@ let rec decl_attribs (c : comm list) : string =
 
 
 let rec compile_program (p : prog) : string =
-    "precision highp float;" ^ (decl_attribs p) ^ 
-    " void main() { " ^ (comp_comm p) ^ " }"
+    failwith "Unimplemented"
+    (* "precision highp float;" ^ (decl_attribs p) ^ 
+    " void main() { " ^ (comp_comm p) ^ " }" *)

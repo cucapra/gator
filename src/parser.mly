@@ -80,9 +80,9 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %%
    
 main:
-  | t = taglst; e = commlst; EOL 
+  | t = taglst; e = fnlst; EOL 
       { Prog(t, e) }
-  | e = commlst; EOL             
+  | e = fnlst; EOL             
       { Prog([], e) }
   | t = taglst; EOL              
       { Prog(t, []) }
@@ -101,11 +101,30 @@ tag:
       { (x, TagTyp(e1)) }
 ;
 
+fnlst: 
+  | x = fn_decl; LBRACE; c1 = commlst; RBRACE;
+      { Fn(x, c1)::[] }
+  | x = fn_decl; LBRACE; c1 = commlst; RBRACE; fl = fnlst;
+      { Fn(x, c1)::fl@[] }
+
+
 commlst:
   | c = comm                
       { c::[] }
   | c1 = comm; c2 = commlst 
       { c1::c2@[] }
+;
+
+params: 
+  | t = typ; x = ID
+      { (x, t)::[] }
+  | t = typ; x = ID; p = params
+      { (x, t)::p@[] }
+;
+
+fn_decl:
+  | t = typ; x = ID; LPAREN; p = params ; RPAREN;
+      { (x, p, t) }
 ;
 
 comm:
@@ -121,7 +140,7 @@ comm:
         ) else Assign(x, e1) }
   | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; 
     ELSE; LBRACE; c2 = commlst; RBRACE     
-      { If(b1,c1,c2) }
+      { If(b1, c1, c2) }
   | PRINT; e = exp; SEMI;                  
       { Print(e) }
 ;

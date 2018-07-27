@@ -2,6 +2,7 @@
 
 open CoreAst
 open CoreAstHelper
+open TagAstHelper
 open TypedAst
 
 let string_of_vec (v: vec) : string = 
@@ -40,7 +41,6 @@ let rec string_of_comm (c: comm) : string =
     | If ((b, _), c1, c2) -> "if (" ^ (string_of_exp b) ^ ") {\n" ^ (string_of_comm_list c1) ^
         "} else {\n" ^ (string_of_comm_list c2) ^ "}"
     | Assign (b, (x, _)) -> b^" = " ^ (string_of_exp x) ^ ";"
-    | Fn _ -> failwith "Unimplemented"
 
 and 
 string_of_comm_list (cl : comm list) : string = 
@@ -48,5 +48,8 @@ string_of_comm_list (cl : comm list) : string =
     | [] -> ""
     | h::t -> (string_of_comm h)^"\n"^(string_of_comm_list t)
 
+let rec string_of_fn_lst (fl : fn list) : string = 
+    failwith "Unimplemented"
+
 let string_of_prog (e : prog) : string =
-    string_of_comm_list e
+    string_of_fn_lst e

@@ -359,7 +359,6 @@ let rec check_comm (c: comm) (d: delta) (g: gamma) : TypedAst.comm * gamma =
         (match (snd result) with 
         | BoolTyp -> (TypedAst.If ((exp_to_texp result d), (fst c1r), (fst c2r)), g)
         | _ -> raise (TypeException "expected boolean expression for if condition"))
-    | Fn (_, _) -> failwith "Unimplemented"
 
 and check_comm_lst (cl : comm list) (d: delta) (g: gamma): TypedAst.comm list * gamma = 
     debug_print ">> check_comm_lst";
@@ -393,5 +392,6 @@ let rec check_tags (t : tag_decl list) (d: delta): delta =
 let check_prog (e : prog) : TypedAst.comm list =
     debug_print ">> check_prog";
     match e with
-    | Prog (t, c) -> let d = check_tags t Assoc.empty in 
-        (fst (check_comm_lst c d Assoc.empty))
+    | Prog (t, c) -> failwith "Unimplemented"
+     (* let d = check_tags t Assoc.empty in 
+        (fst (check_comm_lst c d Assoc.empty)) *)
