@@ -24,8 +24,6 @@ rule read = parse
   | num as num      { NUM (int_of_string num) }
   | "tag"           { TAG }
   | "is"            { IS }
-  | "dot"           { DOT }
-  | "norm"          { NORM }
   | "true"          { TRUE }
   | "false"         { FALSE }
   | "if"            { IF }

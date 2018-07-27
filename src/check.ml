@@ -303,19 +303,18 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) : TypedAst.exp * typ =
     | Var v -> "\tVar "^v |> debug_print;
         (TypedAst.Var v, Assoc.lookup v g)
     | Unop (op, e') -> (match op with
-        | Norm -> build_unop op e' check_norm_exp
         | Not -> build_unop op e' check_bool_unop)
     | Binop (op, e1, e2) -> (match op with
         | Eq -> build_binop op e1 e2 check_equality_exp
         | Leq -> build_binop op e1 e2 check_comp_binop
         | Or | And -> build_binop op e1 e2 check_bool_binop
-        | Dot -> build_binop op e1 e2 check_dot_exp
         | Plus | Minus -> build_binop op e1 e2 check_addition_exp
         | Times -> build_binop op e1 e2 check_times_exp
         | Div  -> build_binop op e1 e2 check_division_exp
         | CTimes -> build_binop op e1 e2 check_ctimes_exp
     )
     | VecTrans (i, tag) -> failwith "Unimplemented"
+    | _ -> failwith "Unimplemented"
 
 
 let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gamma =

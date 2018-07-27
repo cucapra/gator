@@ -215,11 +215,12 @@ bool:
       { false }
 ;
 
-args:
+arglst:
   | e = exp 
      { e::[] }
-  | e = exp; COMMA; args
-     { e::args@[] }
+  | e = exp; COMMA; a = arglst;
+     { e::a@[] }
+;
 
 exp:
   | LPAREN; a = exp; RPAREN    
@@ -230,7 +231,7 @@ exp:
       { Var x }
   | x = ID; LPAREN; RPAREN;
       { FnInv(x, []) }
-  | x = ID; LPAREN; a = args; RPAREN;
+  | x = ID; LPAREN; a = arglst; RPAREN;
       { FnInv(x, a) }
   | e1 = exp; PLUS; e2 = exp   
       { Binop(Plus,e1,e2) }

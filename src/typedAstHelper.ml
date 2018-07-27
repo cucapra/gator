@@ -31,8 +31,8 @@ let rec string_of_exp (e:exp) : string =
         let ls = (string_of_exp l) in
         let rs = (string_of_exp r) in
         (match op with
-        | Dot -> (string_of_binop op ls rs)
         | _ -> (string_of_binop op ls rs))
+    | _ -> failwith "Unimplemented"
 
 let rec string_of_comm (c: comm) : string =
     match c with

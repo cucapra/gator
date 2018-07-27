@@ -19,9 +19,6 @@ let rec eval_exp (e : exp) (s : sigma) : value =
         (match op with
         | Not -> (match v with
             | Bool b -> Bool (not b)
-            | _ -> bad_unop ())
-        | Norm -> (match v with
-            | VecLit v -> Float (norm v)
             | _ -> bad_unop ()))
 
     | Binop (op, (l, _), (r, _)) -> 
@@ -46,12 +43,7 @@ let rec eval_exp (e : exp) (s : sigma) : value =
             | _ -> bad_binop ())
         | And -> (match (left, right) with
             | (Bool b1, Bool b2) -> Bool (b1 && b2)
-            | _ -> bad_binop ())
-
-        | Dot -> (match (left, right) with
-            | (VecLit v1, VecLit v2) -> Float (dot v1 v2)
-            | _ -> bad_binop ())
-            
+            | _ -> bad_binop ())            
         | Plus -> (match (left, right) with
             | (Num i1, Num i2) -> Num (i1 + i2)
             | (Float f1, Float f2) -> Float (f1 +. f2)
@@ -87,7 +79,9 @@ let rec eval_exp (e : exp) (s : sigma) : value =
         | CTimes -> (match (left, right) with
             | (VecLit v1, VecLit v2) -> VecLit (vc_mult v1 v2)
             | (MatLit m1, MatLit m2) -> MatLit (mc_mult m1 m2)
-            | _ -> bad_binop ()))
+            | _ -> bad_binop ())
+        )
+    | _ -> failwith "Unimplemented"
 
 let rec eval_comm (c : comm list) (s : sigma) : sigma =
     match c with

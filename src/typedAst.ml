@@ -18,6 +18,8 @@ type params = (id * etyp) list
 type ret_type = etyp
 type fn_decl = id * params * ret_type
 
+
+
 (* expressions *)
 type texp = exp * etyp
 and exp =
@@ -25,6 +27,9 @@ and exp =
     | Var of id 
     | Unop of unop * texp
     | Binop of binop * texp * texp
+    | FnInv of id * args (* function invocation *)
+(* function arguments *)
+and args = exp list
 
 (* commands *)
 type comm = 
