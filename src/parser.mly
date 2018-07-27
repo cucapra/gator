@@ -52,6 +52,7 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %token BOOLTYP
 %token LBRACE
 %token RBRACE
+%token VOID
 
 (* Precedences *)
 
@@ -103,9 +104,9 @@ tag:
 
 fnlst: 
   | x = fn_decl; LBRACE; c1 = commlst; RBRACE;
-      { Fn(x, c1)::[] }
+      { (x, c1)::[] }
   | x = fn_decl; LBRACE; c1 = commlst; RBRACE; fl = fnlst;
-      { Fn(x, c1)::fl@[] }
+      { (x, c1)::fl@[] }
 
 
 commlst:
@@ -123,6 +124,8 @@ params:
 ;
 
 fn_decl:
+  | t = typ; x = ID; LPAREN; RPAREN;
+      { (x, [], t) }
   | t = typ; x = ID; LPAREN; p = params ; RPAREN;
       { (x, p, t) }
 ;
@@ -167,6 +170,8 @@ typ:
         let dim = String.sub s 7 (len-7) in 
         let dim_lst = Str.split_delim (regexp "D") dim in
         SamplerTyp (int_of_string(List.nth dim_lst 0)) }
+  | VOID
+      { VoidTyp }
 ;
 
 tagtyp:

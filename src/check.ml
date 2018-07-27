@@ -127,7 +127,8 @@ let check_typ_exp (t: typ) (d: delta) : unit =
     | BoolTyp
     | IntTyp
     | FloatTyp 
-    | SamplerTyp _ -> ()
+    | SamplerTyp _ 
+    | VoidTyp -> ()
     | TagTyp s -> check_tag_typ s d; ()
     | TransTyp (s1, s2) -> check_tag_typ s1 d; check_tag_typ s2 d; ()
 
@@ -278,6 +279,7 @@ let tag_erase (t : typ) (d : delta) : TypedAst.etyp =
         | VarTyp _ -> TypedAst.VecTyp (vec_dim tag d))
     | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
     | SamplerTyp i -> TypedAst.SamplerTyp i
+    | VoidTyp -> TypedAst.VoidTyp
     
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) : TypedAst.texp = 
     ((fst checked_exp), (tag_erase (snd checked_exp) d))

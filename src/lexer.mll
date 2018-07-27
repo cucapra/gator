@@ -57,6 +57,7 @@ rule read = parse
   | ","             { COMMA } 
   | ";"             { SEMI }
   | sampler as sm   { SAMPLER sm }
+  | "void"          { VOID }
   | "attribute"
   | "const"
   | "uniform"

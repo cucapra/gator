@@ -11,6 +11,7 @@ type etyp =
     | VecTyp of int
     | MatTyp of int * int
     | SamplerTyp of int
+    | VoidTyp
 
 (* function declaration *)
 type params = (id * etyp) list

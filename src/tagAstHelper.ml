@@ -20,6 +20,7 @@ let rec string_of_typ (t: typ) : string =
     | TagTyp s -> string_of_tag_typ s
     | TransTyp (s1, s2) -> (string_of_tag_typ s1) ^ "->" ^ (string_of_tag_typ s2)
     | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D"
+    | VoidTyp -> "void"
 
 let rec string_of_exp (e:exp) : string =
     match e with
@@ -37,7 +38,7 @@ let rec string_of_exp (e:exp) : string =
 let rec string_of_params (p: (id * typ) list) : string =
     match p with
     | [] -> ""
-    | (i1, t1)::t -> i1 ^ (string_of_typ t1) ^ " " ^ (string_of_params t)
+    | (i1, t1)::t -> (string_of_typ t1) ^ " " ^ i1 ^ ", " ^ (string_of_params t)
 
 let string_of_fn_decl (d: fn_decl) : string = 
     match d with
