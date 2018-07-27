@@ -1,5 +1,6 @@
 # Menhir
 parser.ml
 parser.mli
-parser.automaton
+*.automaton
+*.conflicts
 lexer.ml
