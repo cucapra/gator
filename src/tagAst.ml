@@ -19,6 +19,9 @@ type typ =
     | SamplerTyp of int (* i.e. sampler2D *)
     | VoidTyp
 
+(* arguments *)
+type args = exp list
+
 (* expressions *)
 type exp =
     | Val of value
@@ -26,6 +29,7 @@ type exp =
     | Unop of unop * exp
     | Binop of binop * exp * exp
     | VecTrans of int * tag_typ (* vec3(<vec4>), vec4(<vec3>) *)
+    | FnInv of id * args (* function invocation *)
 
 (* function declaration *)
 type params = (id * typ) list

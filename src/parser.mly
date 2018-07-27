@@ -38,8 +38,6 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %token COMMA
 %token TAG
 %token IS
-%token DOT
-%token NORM
 %token TRUE
 %token FALSE
 %token IF
@@ -61,10 +59,6 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
-
-%nonassoc DOT
-
-%nonassoc NORM
 (*%left TRANS*)
 
 (* After declaring associativity and precedence, we need to declare what
@@ -89,7 +83,6 @@ main:
       { Prog(t, []) }
 ;
 
-
 taglst: 
   | t = tag               
       { t::[] }
@@ -107,7 +100,6 @@ fnlst:
       { (x, c1)::[] }
   | x = fn_decl; LBRACE; c1 = commlst; RBRACE; fl = fnlst;
       { (x, c1)::fl@[] }
-
 
 commlst:
   | c = comm                
@@ -223,6 +215,12 @@ bool:
       { false }
 ;
 
+args:
+  | e = exp 
+     { e::[] }
+  | e = exp; COMMA; args
+     { e::args@[] }
+
 exp:
   | LPAREN; a = exp; RPAREN    
       { a }
@@ -230,10 +228,10 @@ exp:
       { Val v }
   | x = ID                     
       { Var x }
-  | DOT; e1 = exp; e2 = exp    
-      { Binop(Dot,e1, e2) }
-  | NORM; e = exp              
-      { Unop(Norm,e) } (* Normie *)
+  | x = ID; LPAREN; RPAREN;
+      { FnInv(x, []) }
+  | x = ID; LPAREN; a = args; RPAREN;
+      { FnInv(x, a) }
   | e1 = exp; PLUS; e2 = exp   
       { Binop(Plus,e1,e2) }
   | e1 = exp; TIMES; e2 = exp  
