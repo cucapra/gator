@@ -390,9 +390,11 @@ let rec check_tags (t : tag_decl list) (d: delta): delta =
         )
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
-let check_prog (e : prog) : TypedAst.comm list =
+let rec check_fn_lst (fl: fn list) (d: delta) (g: gamma): TypedAst.fn list * gamma =
+    failwith "Unimplemented"
+
+let check_prog (e : prog) : TypedAst.fn list =
     debug_print ">> check_prog";
     match e with
-    | Prog (t, c) -> failwith "Unimplemented"
-     (* let d = check_tags t Assoc.empty in 
-        (fst (check_comm_lst c d Assoc.empty)) *)
+    | Prog (t, c) -> let d = check_tags t Assoc.empty in 
+        (fst (check_fn_lst c d Assoc.empty))

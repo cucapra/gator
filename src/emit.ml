@@ -21,8 +21,6 @@ let string_of_mat_padded (m: mat) (max_dim: int) : string =
     ("(" ^ (String.concat ", " (List.map string_of_vec_padded m)) ^
     (repeat (string_of_no_paren_vec [] max_dim) (max_dim - List.length m)) ^ ")")
 
-
-
 let string_of_typ (t : etyp) : string =
     match t with
     | UnitTyp -> failwith "Unit type is unwriteable in glsl"
@@ -104,7 +102,6 @@ let rec comp_comm (c : comm list) : string =
             ^ "{ " ^ (comp_comm c2) ^ " }" 
             ^ (comp_comm t))
 
-
 let rec decl_attribs (c : comm list) : string = 
     match c with
     | [] -> ""
@@ -114,7 +111,6 @@ let rec decl_attribs (c : comm list) : string =
             (attrib_type x) ^ " " ^ (string_of_typ ty) ^ " " ^ x ^ ";" ^ (decl_attribs t) else
             decl_attribs t
         | _ -> decl_attribs t
-
 
 let rec compile_program (p : prog) : string =
     failwith "Unimplemented"
