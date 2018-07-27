@@ -1,1 +1,3 @@
-print skip;
+void main() {
+    print skip;
+}

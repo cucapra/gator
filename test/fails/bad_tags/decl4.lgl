@@ -1,2 +1,4 @@
-tag b is a;
-tag a is vec2;  // Out of order
+void main() {
+    tag b is a;
+    tag a is vec2;  // Out of order
+}

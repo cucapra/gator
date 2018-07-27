@@ -1,2 +1,4 @@
-mat3x3 m = [[2.3], [2.1]];
-print m;
+void main() {
+    mat3x3 m = [[2.3], [2.1]];
+    print m;
+}

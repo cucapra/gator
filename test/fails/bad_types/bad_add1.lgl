@@ -1,3 +1,5 @@
-int x = 5;
-bool b = true;
-print x + b;
+void main() {
+    int x = 5;
+    bool b = true;
+    print x + b;
+}

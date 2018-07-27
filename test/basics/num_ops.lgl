@@ -1,23 +1,25 @@
-int r1 = (1 + 2);
-print r1;
+void main() {
+    int r1 = (1 + 2);
+    print r1;
 
-int r2 = (-1 + -2);
-print r2;
+    int r2 = (-1 + -2);
+    print r2;
 
-int r3 = (2 * 6);
-print r3;
+    int r3 = (2 * 6);
+    print r3;
 
-int r4 = (7 + 5);
-print r4;
+    int r4 = (7 + 5);
+    print r4;
 
-int r5 = (7 + -5);
-print r5;
+    int r5 = (7 + -5);
+    print r5;
 
-float r6 = (1.0 + .1);
-print r6;
+    float r6 = (1.0 + .1);
+    print r6;
 
-float r7 = (2. * 1.5);
-print r7;
+    float r7 = (2. * 1.5);
+    print r7;
 
-float r8 = (1.5 + 1.);
-print r8;
+    float r8 = (1.5 + 1.);
+    print r8;
+}

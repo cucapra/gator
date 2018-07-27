@@ -1,1 +1,3 @@
-tag evil is int;
+void main() {
+    tag evil is int;
+}

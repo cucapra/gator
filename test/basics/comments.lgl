@@ -1,23 +1,24 @@
-// This is a comment
-tag s is vec2; // This is another comment
-tag //not a tag
-v //still not//;;
-is //nope;;;
-vec3 //there we go!//;
-;
-// And another one!
-if (true) // Wow, so many comments
-{ //}}}}}}}}}
-skip //interrupted!
-;
-//{{}}{}{{}asldkfjspodpo98fbh09 0q2i3}43567iop;[;+]
-} //else
-else { //;//}
-skip//;
-;
+void main {
+	// This is a comment
+	tag s is vec2; // This is another comment
+	tag //not a tag
+	v //still not//;;
+	is //nope;;;
+	vec3 //there we go!//;
+	;
+	// And another one!
+	if (true) // Wow, so many comments
+	{ //}}}}}}}}}
+	skip //interrupted!
+	;
+	//{{}}{}{{}asldkfjspodpo98fbh09 0q2i3}43567iop;[;+]
+	} //else
+	else { //;//}
+	skip//;
+	; }
+	// tag another is bad;
+	print 5//t //another interruption!;;;;;
+	//alright, I'm done
+	;
+	//now I'm really done
 }
-// tag another is bad;
-print 5//t //another interruption!;;;;;
-//alright, I'm done
-;
-//now I'm really done

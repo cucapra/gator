@@ -1,23 +1,25 @@
-int r1 = 1;
-print r1;
+void main() {
+    int r1 = 1;
+    print r1;
 
-float r2 = 4.;
-print r2;
+    float r2 = 4.;
+    print r2;
 
-float r3 = .3;
-print r3;
+    float r3 = .3;
+    print r3;
 
-vec1 r4 = [1.];
-print r4;
+    vec1 r4 = [1.];
+    print r4;
 
-vec3 r5 = [1.,2.,3.];
-print r5;
+    vec3 r5 = [1.,2.,3.];
+    print r5;
 
-mat2x2 r6 = [[1.,2.],[3.,4.]];
-print r6;
+    mat2x2 r6 = [[1.,2.],[3.,4.]];
+    print r6;
 
-vec0 r7 = [];
-print r7;
+    vec0 r7 = [];
+    print r7;
 
-mat2x0 r8 = [[],[]];
-print r8;
+    mat2x0 r8 = [[],[]];
+    print r8;
+}

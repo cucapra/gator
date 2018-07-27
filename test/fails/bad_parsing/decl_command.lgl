@@ -1,1 +1,3 @@
-int skip = 5;
+void main() {
+    int skip = 5;
+}

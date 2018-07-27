@@ -1,1 +1,3 @@
-int a = -20;
+void main() {
+    int a = -20;
+}

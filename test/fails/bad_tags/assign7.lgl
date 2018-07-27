@@ -1,3 +1,5 @@
-tag a is vec2;
+void main() {
+    tag a is vec2;
 
-int a = 5;  // Can't use a tag as a variable name
+    int a = 5;  // Can't use a tag as a variable name
+}

@@ -1,28 +1,30 @@
-tag a is vec2;
-tag b is vec3;
-tag c is b;
+void main() {
+    tag a is vec2;
+    tag b is vec3;
+    tag c is b;
 
-a x = [1., 2.];
-b y = [2., 1., 2.];
-c z = [3., 3., 3.];
+    a x = [1., 2.];
+    b y = [2., 1., 2.];
+    c z = [3., 3., 3.];
 
-a->b a_b = [[1., 1.], [1., 1.], [1., 1.]];
-a->a a_a = [[1., 0.], [0., 1.]];
-b->a b_a = [[1., 1., 1.], [1., 1., 1.]];
-b->c b_c = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
+    a->b a_b = [[1., 1.], [1., 1.], [1., 1.]];
+    a->a a_a = [[1., 0.], [0., 1.]];
+    b->a b_a = [[1., 1., 1.], [1., 1., 1.]];
+    b->c b_c = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
 
-// Maps
-a s11 = a_a * x;
-b s12 = a_b * x;
-a s13 = a_a * b_a * y; 
-c s14 = (b_c + b_c) * y;
-a s16 = b_a * (a_b * x);
+    // Maps
+    a s11 = a_a * x;
+    b s12 = a_b * x;
+    a s13 = a_a * b_a * y; 
+    c s14 = (b_c + b_c) * y;
+    a s16 = b_a * (a_b * x);
 
-// Composition
-a->a s21 = b_a * a_b;
-a->c s22 = b_c * a_b;
-b->c s23 =  b_c * a_b * b_a;
-a s24 = (b_a * a_b) * x;
-a->b s25 = a_b + a_b * a_a;
+    // Composition
+    a->a s21 = b_a * a_b;
+    a->c s22 = b_c * a_b;
+    b->c s23 =  b_c * a_b * b_a;
+    a s24 = (b_a * a_b) * x;
+    a->b s25 = a_b + a_b * a_a;
 
-print 1;
+    print 1;
+}

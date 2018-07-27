@@ -1,5 +1,7 @@
-tag a is vec2;
+void main() {
+    tag a is vec2;
 
-a x = [1., 1.];
-vec2->a v2_a = [[1., 1.], [1., 1.]];
-a bad = x * v2_a; // Bad transformation downcast
+    a x = [1., 1.];
+    vec2->a v2_a = [[1., 1.], [1., 1.]];
+    a bad = x * v2_a; // Bad transformation downcast
+}

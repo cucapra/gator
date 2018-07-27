@@ -1,1 +1,3 @@
-print [1., 2...];
+void main() {
+    print [1., 2...];
+}

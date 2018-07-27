@@ -1,2 +1,4 @@
-vec2 v = [2., 3.];
-print v * v;
+void main() {
+    vec2 v = [2., 3.];
+    print v * v;
+}
