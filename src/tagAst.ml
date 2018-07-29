@@ -46,6 +46,7 @@ type comm =
     | Decl of typ * string * exp
     | Assign of string * exp
     | If of exp * comm list * comm list
+    | Return of exp
 
 type fn = fn_decl * comm list
 

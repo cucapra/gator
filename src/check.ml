@@ -394,10 +394,10 @@ let rec check_tags (t : tag_decl list) (d: delta): delta =
         )
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
-
 let rec check_fn (((_, (pl, r)), cl): fn) (d: delta) (g: gamma) (p: phi) : TypedAst.fn * gamma = 
     debug_print ">> check_fn";
-    (* fn := fn_decl * comm list*)
+    (* fn := fn_decl * comm list *)
+    (* check that the last command is a return statement *)
     failwith "Unimplemented"
 and check_fn_lst (fl: fn list) (d: delta) (g: gamma) (p: phi) : TypedAst.fn list * gamma =
     debug_print ">> check_fn_lst";

@@ -56,6 +56,7 @@ rule read = parse
   | ";"             { SEMI }
   | sampler as sm   { SAMPLER sm }
   | "void"          { VOID }
+  | "return"        { RETURN }
   | "attribute"
   | "const"
   | "uniform"
@@ -75,7 +76,6 @@ rule read = parse
   | "precision"
   | "invariant"
   | "discard"
-  | "return"
   | "ivec2"
   | "ivec3"
   | "ivec4"

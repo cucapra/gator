@@ -50,6 +50,7 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %token BOOLTYP
 %token LBRACE
 %token RBRACE
+%token RETURN
 %token VOID
 
 (* Precedences *)
@@ -138,6 +139,8 @@ comm:
       { If(b1, c1, c2) }
   | PRINT; e = exp; SEMI;                  
       { Print(e) }
+  | RETURN; e = exp; SEMI;
+      { Return(e) }
 ;
 
 typ:

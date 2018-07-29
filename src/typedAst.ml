@@ -20,8 +20,6 @@ type ret_type = etyp
 type fn_type = params * ret_type
 type fn_decl = id * fn_type
 
-
-
 (* expressions *)
 type texp = exp * etyp
 and exp =
@@ -40,6 +38,7 @@ type comm =
     | Decl of etyp * id * texp
     | Assign of id * texp
     | If of texp * comm list * comm list
+    | Return of texp
 
 type fn = fn_decl * comm list
 
