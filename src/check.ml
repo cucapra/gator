@@ -394,20 +394,46 @@ let rec check_tags (t : tag_decl list) (d: delta): delta =
         )
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
-let rec check_fn_lst (fl: fn list) (d: delta) (g: gamma) (p: phi): TypedAst.fn list * gamma =
+
+let rec check_fn (((_, (pl, r)), cl): fn) (d: delta) (g: gamma) (p: phi) : TypedAst.fn * gamma = 
+    debug_print ">> check_fn";
+    (* fn := fn_decl * comm list*)
     failwith "Unimplemented"
+and check_fn_lst (fl: fn list) (d: delta) (g: gamma) (p: phi) : TypedAst.fn list * gamma =
+    debug_print ">> check_fn_lst";
+    match fl with
+    | [] -> ([], g)
+    | h::t -> let (fn', g') = check_fn h d g p in
+        let (fn'', g'') = check_fn_lst t d g' p in 
+        (fn' :: fn'', g'')
+
+(* Type check parameter; make sure there are no name-shadowed parameter names *)
+let check_param ((id, t): (string * typ)) (g: gamma) : gamma = 
+    if Assoc.mem id g 
+    then raise (TypeException ("duplicate parameter name in function declaration: " ^ id))
+    else Assoc.update id t g
+    
+(* Get list of parameters from param list *)
+let check_params (pl: (id * typ) list) : gamma = 
+    List.fold_left (fun (g: gamma) p -> check_param p g) Assoc.empty pl
+
+let check_fn_decl ((id, t): fn_decl) (p: phi) : phi =
+    let (pl, _) = t in
+    let _ = check_params pl in 
+    if Assoc.mem id p 
+    then raise (TypeException ("function of duplicate name has been found: " ^ id))
+    else Assoc.update id t p
 
 let check_prog (e : prog) : TypedAst.fn list =
     debug_print ">> check_prog";
     match e with
-    | Prog (t, c) -> 
+    | Prog (t, f) -> 
         (* delta from tag declarations *)
         let d = check_tags t Assoc.empty in 
         (* list of function declarations of the program *)
-        let fn_decls = List.map (fun ((dc, b): fn) -> dc) c in  
+        let fn_decls = List.map (fun ((dc, b): fn) -> dc) f in  
         (* phi from initial pass of function declarations. 
-        * overloaded functions and nameshadowing are allowed. *)
-        let p = List.fold_right 
-        (fun ((id, t): fn_decl) (p: phi) -> Assoc.update id t p) 
-        fn_decls Assoc.empty in 
-        (fst (check_fn_lst c d Assoc.empty p))
+         * overloaded functions and nameshadowing are allowed. *)
+        let p = List.fold_right check_fn_decl fn_decls Assoc.empty in 
+        (* TODO: check there is a single void main() defined in phi *)
+        (fst (check_fn_lst f d Assoc.empty p))
