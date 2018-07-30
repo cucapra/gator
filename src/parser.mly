@@ -140,8 +140,10 @@ comm:
   | PRINT; e = exp; SEMI;                  
       { Print(e) }
   | RETURN; e = exp; SEMI;
-      { Return(e) }
-;
+      { Return(Some e) }
+  | RETURN; SEMI;
+      { Return(None) }
+; 
 
 typ:
   | BOOLTYP                         

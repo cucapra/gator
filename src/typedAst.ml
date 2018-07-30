@@ -38,7 +38,7 @@ type comm =
     | Decl of etyp * id * texp
     | Assign of id * texp
     | If of texp * comm list * comm list
-    | Return of texp
+    | Return of texp option
 
 type fn = fn_decl * comm list
 

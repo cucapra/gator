@@ -340,7 +340,7 @@ let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gam
         | _ -> raise (TypeException ("mismatched types for var decl: expected " ^ (string_of_typ t) ^ " " ^ s ^ ", found " ^ (string_of_typ etyp) ))
     )
 
-let rec check_comm (c: comm) (d: delta) (g: gamma) : TypedAst.comm * gamma = 
+let rec check_comm (c: comm) (d: delta) (g: gamma) (p: phi): TypedAst.comm * gamma = 
     debug_print ">> check_comm";
     match c with
     | Skip -> (TypedAst.Skip, g)
@@ -359,18 +359,19 @@ let rec check_comm (c: comm) (d: delta) (g: gamma) : TypedAst.comm * gamma =
 
     | If (b, c1, c2) ->
         let result = (check_exp b d g) in
-        let c1r = check_comm_lst c1 d g in
-        let c2r = check_comm_lst c2 d g in
+        let c1r = check_comm_lst c1 d g p in
+        let c2r = check_comm_lst c2 d g p in
         (match (snd result) with 
         | BoolTyp -> (TypedAst.If ((exp_to_texp result d), (fst c1r), (fst c2r)), g)
         | _ -> raise (TypeException "expected boolean expression for if condition"))
+    | Return e -> failwith "Unimplemented"
 
-and check_comm_lst (cl : comm list) (d: delta) (g: gamma): TypedAst.comm list * gamma = 
+and check_comm_lst (cl : comm list) (d: delta) (g: gamma) (p: phi) : TypedAst.comm list * gamma = 
     debug_print ">> check_comm_lst";
     match cl with
     | [] -> ([], g)
-    | h::t -> let context = check_comm h d g in
-        let result = check_comm_lst t d (snd context) in 
+    | h::t -> let context = check_comm h d g p in
+        let result = check_comm_lst t d (snd context) p in 
         ((fst context) :: (fst result), (snd result))
 
 let check_tag (s: string) (l: tag_typ) (d: delta) : delta = 
@@ -394,19 +395,6 @@ let rec check_tags (t : tag_decl list) (d: delta): delta =
         )
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
-let rec check_fn (((_, (pl, r)), cl): fn) (d: delta) (g: gamma) (p: phi) : TypedAst.fn * gamma = 
-    debug_print ">> check_fn";
-    (* fn := fn_decl * comm list *)
-    (* check that the last command is a return statement *)
-    failwith "Unimplemented"
-and check_fn_lst (fl: fn list) (d: delta) (g: gamma) (p: phi) : TypedAst.fn list * gamma =
-    debug_print ">> check_fn_lst";
-    match fl with
-    | [] -> ([], g)
-    | h::t -> let (fn', g') = check_fn h d g p in
-        let (fn'', g'') = check_fn_lst t d g' p in 
-        (fn' :: fn'', g'')
-
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
 let check_param ((id, t): (string * typ)) (g: gamma) : gamma = 
     if Assoc.mem id g 
@@ -424,6 +412,25 @@ let check_fn_decl ((id, t): fn_decl) (p: phi) : phi =
     then raise (TypeException ("function of duplicate name has been found: " ^ id))
     else Assoc.update id t p
 
+let rec check_fn (((_, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn = 
+    debug_print ">> check_fn";
+    (* fn := fn_decl * comm list *)
+    let g = check_params pl in
+    let _ = check_comm_lst cl d g p in 
+    (* check that the last command is a return statement *)
+    match r with
+    (* functions that return void can have any number of void return statements
+     * , anywhere. *)
+    | VoidTyp -> failwith "Unimplemented"
+    | _ -> failwith "Unimplemented"
+and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.fn list =
+    debug_print ">> check_fn_lst";
+    match fl with
+    | [] -> ([])
+    | h::t -> let fn' = check_fn h d p in
+        let fn'' = check_fn_lst t d p in 
+        (fn' :: fn'')
+
 let check_prog (e : prog) : TypedAst.fn list =
     debug_print ">> check_prog";
     match e with
@@ -436,4 +443,4 @@ let check_prog (e : prog) : TypedAst.fn list =
          * overloaded functions and nameshadowing are allowed. *)
         let p = List.fold_right check_fn_decl fn_decls Assoc.empty in 
         (* TODO: check there is a single void main() defined in phi *)
-        (fst (check_fn_lst f d Assoc.empty p))
+        (check_fn_lst f d p)
