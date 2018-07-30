@@ -22,7 +22,7 @@ let rec string_of_typ (t: etyp) : string =
     | SamplerTyp n -> "sampler" ^ (string_of_int n) ^ "D"
     | VoidTyp -> "void"
 
-let rec string_of_exp (e:exp) : string =
+let rec string_of_exp (e: exp) : string =
     match e with
     | Val v -> string_of_value v
     | Var v -> v
@@ -41,10 +41,11 @@ let rec string_of_comm (c: comm) : string =
     | Decl (t, s, (e, _)) -> (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_exp e) ^ ";"
     | If ((b, _), c1, c2) -> "if (" ^ (string_of_exp b) ^ ") {\n" ^ (string_of_comm_list c1) ^
         "} else {\n" ^ (string_of_comm_list c2) ^ "}"
-    | Assign (b, (x, _)) -> b^" = " ^ (string_of_exp x) ^ ";"
-
-and 
-string_of_comm_list (cl : comm list) : string = 
+    | Assign (b, (x, _)) -> b ^ " = " ^ (string_of_exp x) ^ ";"
+    | Return Some (x, _) -> "return" ^ (string_of_exp x) ^ ";"
+    | Return None -> "return;"
+    
+and string_of_comm_list (cl : comm list) : string = 
     match cl with
     | [] -> ""
     | h::t -> (string_of_comm h)^"\n"^(string_of_comm_list t)
