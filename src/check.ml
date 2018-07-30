@@ -405,26 +405,33 @@ let check_param ((id, t): (string * typ)) (g: gamma) : gamma =
     else Assoc.update id t g
     
 (* Get list of parameters from param list *)
-let check_params (pl: (id * typ) list) : gamma = 
-    List.fold_left (fun (g: gamma) p -> check_param p g) Assoc.empty pl
+let check_params (pl: (id * typ) list) (d: delta):  TypedAst.params * gamma = 
+    let g = List.fold_left (fun (g: gamma) p -> check_param p g) Assoc.empty pl in 
+    let p = List.map (fun (i, t) -> (i, tag_erase t d)) pl in 
+    (p, g)
 
-let check_fn_decl ((id, t): fn_decl) (p: phi) : phi =
+let check_fn_decl (d: delta) ((id, t): fn_decl) (p: phi) : phi =
     let (pl, _) = t in
-    let _ = check_params pl in 
+    let _ = check_params pl d in 
     if Assoc.mem id p 
     then raise (TypeException ("function of duplicate name has been found: " ^ id))
     else Assoc.update id t p
 
-let rec check_fn (((_, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn = 
+let void_return (c: comm) =
+    match c with
+    | Return Some _ -> raise (TypeException ("void functions cannot return a value"))
+    | _ -> ()
+
+let rec check_fn (((id, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn = 
     debug_print ">> check_fn";
     (* fn := fn_decl * comm list *)
-    let g = check_params pl in
-    let _ = check_comm_lst cl d g p in 
+    let (pl', g') = check_params pl d in
+    let (cl', _) = check_comm_lst cl d g' p in 
     (* check that the last command is a return statement *)
     match r with
     (* functions that return void can have any number of void return statements
      * , anywhere. *)
-    | VoidTyp -> failwith "Unimplemented"
+    | VoidTyp -> List.iter void_return cl; ((id, (pl', TypedAst.VoidTyp)), cl')
     | _ -> failwith "Unimplemented"
 and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.fn list =
     debug_print ">> check_fn_lst";
@@ -444,6 +451,6 @@ let check_prog (e : prog) : TypedAst.fn list =
         let fn_decls = List.map (fun ((dc, b): fn) -> dc) f in  
         (* phi from initial pass of function declarations. 
          * overloaded functions and nameshadowing are allowed. *)
-        let p = List.fold_right check_fn_decl fn_decls Assoc.empty in 
+        let p = List.fold_right (check_fn_decl d) fn_decls Assoc.empty in 
         (* TODO: check there is a single void main() defined in phi *)
         (check_fn_lst f d p)

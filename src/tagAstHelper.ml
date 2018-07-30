@@ -51,7 +51,9 @@ let rec string_of_comm (c: comm) : string =
     | Decl (t, s, e) -> (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_exp e) ^ ";"
     | If (b, c1, c2) -> "if (" ^ (string_of_exp b) ^ ") {\n" ^ (string_of_comm_list c1) ^
         "} else {\n" ^ (string_of_comm_list c2) ^ "}"
-    | Assign (b, x) -> b^" = " ^ (string_of_exp x) ^ ";"
+    | Assign (b, x) -> b ^ " = " ^ (string_of_exp x) ^ ";"
+    | Return None -> "return;"
+    | Return Some e -> "return" ^ (string_of_exp e) ^ ";"
 
 and 
 string_of_comm_list (cl : comm list) : string = 
