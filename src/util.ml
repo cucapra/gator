@@ -4,10 +4,10 @@ open CoreAst
 exception ElementNotFoundException of string
 
 let string_of_vec (v: vec) : string = 
-  "("^(String.concat ", " (List.map string_of_float v))^")"
+  "(" ^ (String.concat ", " (List.map string_of_float v)) ^ ")"
 
 let string_of_mat (m: mat) : string = 
-  "("^(String.concat ", " (List.map string_of_vec m))^")"
+  "(" ^ (String.concat ", " (List.map string_of_vec m)) ^ ")"
 
 let rec repeat (s : string) (count : int) : string = 
   if count <= 0 then "" else (if count > 1 then (s ^ (repeat s (count-1))) else s)
