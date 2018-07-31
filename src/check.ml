@@ -488,16 +488,16 @@ and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.fn list =
         let fn'' = check_fn_lst t d p in 
         (fn' :: fn'')
 
-(* Check that there is a void main() function defined *)
-let check_main_fn (p: phi) =
+(* Check that there is a void main() defined *)
+let check_main_fn (p: phi) (d: delta) =
     let (params, ret_type) = Assoc.lookup "main" p in
-    if (List.length params != 0) then 
-        match ret_type with
-        | VoidTyp -> ()
-        | _ -> raise (TypeException ("expected main function to return void"))
-    else raise (TypeException ("expected void main() function not found"))
+    match ret_type with
+    | VoidTyp -> check_params params d |> fst
+    | _ -> raise (TypeException ("expected main function to return void"))
 
-let check_prog (e: prog) : TypedAst.fn list =
+(* Returns the list of fn's which represent the program 
+ * and params of the void main() fn *)
+let check_prog (e: prog) : TypedAst.fn list * TypedAst.params =
     debug_print ">> check_prog";
     match e with
     | Prog (t, f) -> 
@@ -508,5 +508,4 @@ let check_prog (e: prog) : TypedAst.fn list =
         (* phi from initial pass of function declarations. 
          * overloaded functions and nameshadowing are allowed. *)
         let p = List.fold_right (check_fn_decl d) fn_decls Assoc.empty in 
-        (* params * ret_type *)
-        (check_fn_lst f d p)
+        ((check_fn_lst f d p), check_main_fn p d)
