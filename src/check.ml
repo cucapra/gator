@@ -414,9 +414,35 @@ let check_fn_decl (d: delta) ((id, t): fn_decl) (p: phi) : phi =
     then raise (TypeException ("function of duplicate name has been found: " ^ id))
     else Assoc.update id t p
 
-let void_return (c: comm) =
+(* Helper function for type checking void functions. 
+ * Functions that return void can have any number of void return statements 
+ * anywhere. *)
+let check_void_return (c: comm) =
     match c with
     | Return Some _ -> raise (TypeException ("void functions cannot return a value"))
+    | _ -> ()
+
+let check_return (c: comm) (t: typ) (d: delta) (g: gamma) = 
+    match c with
+    | Return None -> raise (TypeException ("expected a return value instead of void"))
+    | Return Some r -> (
+        let (_, rt) = check_exp r d g in 
+        (* raises return exception of given boolean exp is false *)
+        let raise_return_exception b =
+            if b then () 
+            else raise (TypeException ("mismatched return types, expected: " ^ 
+            (string_of_typ t) ^ ", found: " ^ (string_of_typ rt)))
+        in
+        match (t,rt) with 
+        | (TagTyp t1, TagTyp t2) -> is_tag_subtype t1 t2 d |> raise_return_exception
+        | (SamplerTyp i1, SamplerTyp i2) -> i1 = i2 |> raise_return_exception 
+        | (BoolTyp, BoolTyp)
+        | (IntTyp, IntTyp)
+        | (FloatTyp, FloatTyp) -> ()
+        | (TransTyp (t1, t2), TransTyp (t3, t4)) -> 
+            (is_tag_subtype t3 t1 d && is_tag_subtype t2 t4 d) |> raise_return_exception
+        | _ -> false |> raise_return_exception
+        )
     | _ -> ()
 
 let rec check_fn (((id, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn = 
@@ -426,10 +452,10 @@ let rec check_fn (((id, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn =
     let (cl', _) = check_comm_lst cl d g' p in 
     (* check that the last command is a return statement *)
     match r with
-    (* functions that return void can have any number of void return statements
-     * , anywhere. *)
-    | VoidTyp -> List.iter void_return cl; ((id, (pl', TypedAst.VoidTyp)), cl')
-    | _ -> failwith "Unimplemented"
+    | VoidTyp -> List.iter check_void_return cl; ((id, (pl', TypedAst.VoidTyp)), cl')
+    
+    (* TODO: have to check that there is exactly one return statement at the end *)
+    | t -> failwith "Unimplemented"
 and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.fn list =
     debug_print ">> check_fn_lst";
     match fl with
