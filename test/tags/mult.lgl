@@ -21,14 +21,15 @@ a s11 = a_a * x;
 b s12 = a_b * x;
 a s13 = a_a * b_a * y; 
 c s14 = (b_c + b_c) * y;
-b s14 = (b_c + b_d) * y;
-a s15 = b_a * (a_b * x);
+b s15 = (b_c + b_d) * y;
+a s16 = b_a * (a_b * x);
 
 print s11;
 print s12;
 print s13;
 print s14;
 print s15;
+print s16;
 
 // Composition
 a->a s21 = b_a * a_b;
