@@ -331,11 +331,27 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ =
     )
     | VecTrans (i, tag) -> failwith "Unimplemented"
     | FnInv (i, args) -> 
-        let check_exp' d g p c = check_exp c d g p |> fst in
+        let check_exp' d g p c = check_exp c d g p  in
         let args' = List.map (check_exp' d g p) args in 
+        let args_exp = List.map fst args' in 
+        let args_typ = List.map snd args' in
         let (params, rt) = Assoc.lookup i p in
-        ()
-        ; (TypedAst.FnInv (i, args'), rt)
+        let params_typ = List.map snd params in 
+        let is_subtype arg param = (
+            match (arg, param) with 
+            | (TagTyp t1, TagTyp t2) -> is_tag_subtype t1 t2 d 
+            | (SamplerTyp i1, SamplerTyp i2) -> i1 = i2 
+            | (BoolTyp, BoolTyp)
+            | (IntTyp, IntTyp)
+            | (FloatTyp, FloatTyp) -> true
+            | (TransTyp (t1, t2), TransTyp (t3, t4)) -> 
+                (is_tag_subtype t3 t1 d && is_tag_subtype t2 t4 d)
+            | _ -> false
+        ) in 
+        List.iter2 (fun arg param -> 
+            if is_subtype arg param then raise (TypeException("invalid argument type")) 
+            else ()) args_typ params_typ
+        ; (TypedAst.FnInv (i, args_exp), rt)
 
 let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gamma =
     debug_print (">> check_decl <<"^s^">>");
