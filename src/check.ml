@@ -412,7 +412,7 @@ let check_tag (s: string) (l: tag_typ) (d: delta) : delta =
     if Assoc.mem s d then raise (TypeException "cannot redeclare tag")
             else Assoc.update s l d
 
-let rec check_tags (t : tag_decl list) (d: delta): delta =
+let rec check_tags (t: tag_decl list) (d: delta): delta =
     debug_print ">> check_tags";
     match t with 
     | [] -> d
@@ -475,7 +475,7 @@ let rec check_fn (((id, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn =
     (* check that the last command is a return statement *)
     match r with
     | VoidTyp -> List.iter check_void_return cl; ((id, (pl', TypedAst.VoidTyp)), cl')
-    (* TODO: have to check that there is exactly one return statement at the end *)
+    (* TODO: might want to check that there is exactly one return statement at the end *)
     | t -> List.iter (check_return t d g' p) cl; ((id, (pl', tag_erase t d)), cl')
 and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.fn list =
     debug_print ">> check_fn_lst";
@@ -485,7 +485,16 @@ and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.fn list =
         let fn'' = check_fn_lst t d p in 
         (fn' :: fn'')
 
-let check_prog (e : prog) : TypedAst.fn list =
+(* Check that there is a void main() function defined *)
+let check_main_fn (p: phi) =
+    let (params, ret_type) = Assoc.lookup "main" p in
+    if (List.length params != 0) then 
+        match ret_type with
+        | VoidTyp -> ()
+        | _ -> raise (TypeException ("expected main function to return void"))
+    else raise (TypeException ("expected void main() function not found"))
+
+let check_prog (e: prog) : TypedAst.fn list =
     debug_print ">> check_prog";
     match e with
     | Prog (t, f) -> 
@@ -496,5 +505,5 @@ let check_prog (e : prog) : TypedAst.fn list =
         (* phi from initial pass of function declarations. 
          * overloaded functions and nameshadowing are allowed. *)
         let p = List.fold_right (check_fn_decl d) fn_decls Assoc.empty in 
-        (* TODO: check there is a single void main() defined in phi *)
+        (* params * ret_type *)
         (check_fn_lst f d p)
