@@ -1,10 +1,10 @@
-void main() {
-    tag a is vec2;
-    tag a2 is vec2;
-    tag b is vec3;
-    tag c is b;
-    tag d is b;
+tag a is vec2;
+tag a2 is vec2;
+tag b is vec3;
+tag c is b;
+tag d is b;
 
+void main() {
     a x = [1., 2.];
     a2 x2 = [2., 1.];
     b y = [2., 1., 2.];

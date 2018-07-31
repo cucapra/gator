@@ -1,4 +1,4 @@
-void main(int a) {
+void main(int f) {
     int a = 3;
     a = 4;
     bool b = true;

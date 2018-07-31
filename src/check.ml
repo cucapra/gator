@@ -285,21 +285,33 @@ let tag_erase (t : typ) (d : delta) : TypedAst.etyp =
     | SamplerTyp i -> TypedAst.SamplerTyp i
     | VoidTyp -> TypedAst.VoidTyp
     
+(* Type check parameter; make sure there are no name-shadowed parameter names *)
+let check_param ((id, t): (string * typ)) (g: gamma) : gamma = 
+    if Assoc.mem id g 
+    then raise (TypeException ("duplicate parameter name in function declaration: " ^ id))
+    else Assoc.update id t g
+    
+(* Get list of parameters from param list *)
+let check_params (pl: (id * typ) list) (d: delta):  TypedAst.params * gamma = 
+    let g = List.fold_left (fun (g: gamma) p -> check_param p g) Assoc.empty pl in 
+    let p = List.map (fun (i, t) -> (i, tag_erase t d)) pl in 
+    (p, g)
+
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) : TypedAst.texp = 
     ((fst checked_exp), (tag_erase (snd checked_exp) d))
 
-let rec check_exp (e: exp) (d: delta) (g: gamma) : TypedAst.exp * typ = 
+let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ = 
     debug_print ">> check_exp";
     
     let build_unop (op : unop) (e': exp) (check_fun: typ->delta->typ)
         : TypedAst.exp * typ =
-        let result = check_exp e' d g in
+        let result = check_exp e' d g p in
             (TypedAst.Unop(op, exp_to_texp result d), check_fun (snd result) d)
     in
     let build_binop (op : binop) (e1: exp) (e2: exp) (check_fun: typ->typ->delta->typ)
         : TypedAst.exp * typ =
-        let e1r = check_exp e1 d g in
-        let e2r = check_exp e2 d g in
+        let e1r = check_exp e1 d g p in
+        let e2r = check_exp e2 d g p in
             (TypedAst.Binop(op, exp_to_texp e1r d, exp_to_texp e2r d), check_fun (snd e1r) (snd e2r) d)
     in 
     match e with
@@ -318,8 +330,12 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) : TypedAst.exp * typ =
         | CTimes -> build_binop op e1 e2 check_ctimes_exp
     )
     | VecTrans (i, tag) -> failwith "Unimplemented"
-    | _ -> failwith "Unimplemented"
-
+    | FnInv (i, args) -> 
+        let check_exp' d g p c = check_exp c d g p |> fst in
+        let args' = List.map (check_exp' d g p) args in 
+        let (params, rt) = Assoc.lookup i p in
+        ()
+        ; (TypedAst.FnInv (i, args'), rt)
 
 let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gamma =
     debug_print (">> check_decl <<"^s^">>");
@@ -344,28 +360,28 @@ let rec check_comm (c: comm) (d: delta) (g: gamma) (p: phi): TypedAst.comm * gam
     debug_print ">> check_comm";
     match c with
     | Skip -> (TypedAst.Skip, g)
-    | Print e -> (TypedAst.Print (exp_to_texp (check_exp e d g) d), g)
+    | Print e -> (TypedAst.Print (exp_to_texp (check_exp e d g p) d), g)
     | Decl (t, s, e) -> 
         if Assoc.mem s g then raise (TypeException "variable name shadowing is illegal")
-        else let result = check_exp e d g in
+        else let result = check_exp e d g p in
             (TypedAst.Decl (tag_erase t d, s, (exp_to_texp result d)), (check_decl t s (snd result) d g))
 
     | Assign (s, e) -> 
         if Assoc.mem s g then 
             let t = Assoc.lookup s g in
-            let result = check_exp e d g in
+            let result = check_exp e d g p in
             (TypedAst.Assign (s, (exp_to_texp result d)), check_decl t s (snd result) d g)
         else raise (TypeException "assignment to undeclared variable")
 
     | If (b, c1, c2) ->
-        let result = (check_exp b d g) in
+        let result = (check_exp b d g p) in
         let c1r = check_comm_lst c1 d g p in
         let c2r = check_comm_lst c2 d g p in
         (match (snd result) with 
         | BoolTyp -> (TypedAst.If ((exp_to_texp result d), (fst c1r), (fst c2r)), g)
         | _ -> raise (TypeException "expected boolean expression for if condition"))
     | Return Some e -> 
-        let (e', t') = d |> (check_exp e d g |> exp_to_texp) in 
+        let (e', t') = d |> (check_exp e d g p |> exp_to_texp) in 
         (TypedAst.Return (Some (e', t')), g)
     | Return None -> (TypedAst.Return None, g)
 and check_comm_lst (cl : comm list) (d: delta) (g: gamma) (p: phi) : TypedAst.comm list * gamma = 
@@ -397,18 +413,6 @@ let rec check_tags (t : tag_decl list) (d: delta): delta =
         )
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
-(* Type check parameter; make sure there are no name-shadowed parameter names *)
-let check_param ((id, t): (string * typ)) (g: gamma) : gamma = 
-    if Assoc.mem id g 
-    then raise (TypeException ("duplicate parameter name in function declaration: " ^ id))
-    else Assoc.update id t g
-    
-(* Get list of parameters from param list *)
-let check_params (pl: (id * typ) list) (d: delta):  TypedAst.params * gamma = 
-    let g = List.fold_left (fun (g: gamma) p -> check_param p g) Assoc.empty pl in 
-    let p = List.map (fun (i, t) -> (i, tag_erase t d)) pl in 
-    (p, g)
-
 let check_fn_decl (d: delta) ((id, t): fn_decl) (p: phi) : phi =
     let (pl, _) = t in
     let _ = check_params pl d in 
@@ -424,11 +428,11 @@ let check_void_return (c: comm) =
     | Return Some _ -> raise (TypeException ("void functions cannot return a value"))
     | _ -> ()
 
-let check_return (t: typ) (d: delta) (g: gamma) (c: comm) = 
+let check_return (t: typ) (d: delta) (g: gamma) (p: phi) (c: comm) = 
     match c with
     | Return None -> raise (TypeException ("expected a return value instead of void"))
     | Return Some r -> (
-        let (_, rt) = check_exp r d g in 
+        let (_, rt) = check_exp r d g p in 
         (* raises return exception of given boolean exp is false *)
         let raise_return_exception b =
             if b then () 
@@ -456,7 +460,7 @@ let rec check_fn (((id, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn =
     match r with
     | VoidTyp -> List.iter check_void_return cl; ((id, (pl', TypedAst.VoidTyp)), cl')
     (* TODO: have to check that there is exactly one return statement at the end *)
-    | t -> List.iter (check_return t d g') cl; ((id, (pl', tag_erase t d)), cl')
+    | t -> List.iter (check_return t d g' p) cl; ((id, (pl', tag_erase t d)), cl')
 and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.fn list =
     debug_print ">> check_fn_lst";
     match fl with

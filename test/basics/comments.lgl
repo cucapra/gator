@@ -1,11 +1,13 @@
-void main {
+tag s is vec2; // This is another comment
+tag //not a tag
+v //still not//;;
+is //nope;;;
+vec3 //there we go!//;
+;
+
+void main() {
 	// This is a comment
-	tag s is vec2; // This is another comment
-	tag //not a tag
-	v //still not//;;
-	is //nope;;;
-	vec3 //there we go!//;
-	;
+	
 	// And another one!
 	if (true) // Wow, so many comments
 	{ //}}}}}}}}}
