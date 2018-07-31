@@ -1,6 +1,7 @@
 tag a is vec2;
 tag b is vec3;
 tag c is b;
+tag d is b;
 
 a x = [1., 2.];
 b y = [2., 1., 1.];
@@ -8,7 +9,7 @@ c z = [3., 3., 3.];
 
 vec2->vec3 t = [[1., 1.], [1., 1.], [1., 1.]];
 mat2x3 m = [[1., 1., 1.], [1., 1., 1.]];
-//mat2x3 m2 = m; // partial order makes vec2->vec3 = mat2x3
 a->c a_c = [[1., 1.], [1., 1.], [1., 1.]];
 
-print 1;
+print z;
+print a_c;

@@ -4,4 +4,4 @@ bool c = false;
 float d = 2.300;
 mat2x2 e = [[2.3, 1.3], [2.1, 1.7]];
 vec2 f = [1.1, 1.2];
-    
+print 1;

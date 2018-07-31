@@ -3,4 +3,4 @@ tag b is vec2;
 
 a x = [1., 1.];
 b->a b_a = [[1., 1.], [1., 1.]];
-vec2 bad = x * b_a; // No possible cast
+vec2 bad = b_a * x; // No possible cast

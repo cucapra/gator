@@ -1,9 +1,13 @@
 tag a is vec2;
-tag b is vec2;
+tag b is a;
 
 a x = [1., 2.];
 b y = [2., 1.];
 
-float res = dot x y;
+float res = dot [1., 2.] [2., 1.];
+float res2 = dot x y;
+float res3 = dot y x;
 
-print 1;
+print res;
+print res2;
+print (res2 == res3);

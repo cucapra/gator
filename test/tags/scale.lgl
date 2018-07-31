@@ -1,25 +1,37 @@
 tag a is vec2;
-tag a2 is vec2;
 tag b is vec3;
 tag c is b;
 tag d is b;
 
 a x = [1., 2.];
-a2 x2 = [2., 1.];
 b y = [2., 1., 2.];
 c z = [3., 3., 3.];
 d z2 = [2., 2., 2.];
 
+print x;
+print y;
+print z;
+print z2;
+
 // Vector safety
 a s11 = x + [2., 1.];
+b s12 = z + z2;
+b s13 = z * 2.;
 
+print s11;
+print s12;
+print s13;
 
-a->b v2_b = [[1., 1.], [1., 1.], [1., 1.]];
-a->vec3 a_v3 = v2_b;
-c->vec3 v3_c = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
+vec2->d v2_d = [[1., 1.], [1., 1.], [1., 1.]];
+a->b a_b = v2_d;
+vec3->c v3_c = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
 
 // Matrix safety
-//c->b s22 = v3_c * 2.;
-//mat3x2 s23 = v2_b .* (a_v3 * 2.);
+c->b s21 = v3_c * 2.;
+vec2->d s22 = v2_d + [[1., 1.], [1., 1.], [1., 1.]];
+a->b s23 = a_b + v2_d;
 
-print 1;
+print s21;
+print s22;
+print s23;
+print (v2_b .* (a_v3 * 2.)); // There is no writeable variable type to assign this to
