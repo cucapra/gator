@@ -71,9 +71,7 @@ let least_common_parent (t1: tagtyp) (t2: tagtyp) (d: delta) : tagtyp =
     | VarTyp s1, VarTyp s2 ->
         check_dim (vec_dim (VarTyp s1) d) (vec_dim (VarTyp s2) d);
         (if s1 = s2 then VarTyp s1
-        else (print_endline ("["^(String.concat ", " (get_ancestor_list t1 d)^"]"));
-        print_endline ("["^(String.concat ", " (get_ancestor_list t2 d)^"]"));
-        VarTyp (lub (get_ancestor_list t1 d) (get_ancestor_list t2 d))))
+        else VarTyp (lub (get_ancestor_list t1 d) (get_ancestor_list t2 d)))
 
 let greatest_common_child (t1: tagtyp) (t2: tagtyp) (d: delta) : tagtyp =
     let check_dim (n1: int) (n2: int) : unit =
