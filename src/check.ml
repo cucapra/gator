@@ -196,7 +196,7 @@ let check_comp_binop (t1: typ) (t2: typ) (d: delta) : typ =
 let check_dot_exp (t1: typ) (t2: typ) (d: delta): typ = 
     match (t1, t2) with 
     | TagTyp a1, TagTyp a2 ->  
-        if vec_dim a1 d = vec_dim a2 d 
+        if is_tag_subtype a1 a2 d || is_tag_subtype a2 a1 d
         then FloatTyp 
         else raise (TypeException "expected tag type of same dimension for dot product exp")
     | _ -> raise (TypeException "unexpected type for dot product exp")
