@@ -113,7 +113,7 @@ let rec decl_attribs (c : comm list) : string =
             decl_attribs t
         | _ -> decl_attribs t
 
-let rec compile_program (p : prog) : string =
+let rec compile_program (prog : prog) (params: TypedAst.params) : string =
     failwith "Unimplemented"
     (* "precision highp float;" ^ (decl_attribs p) ^ 
     " void main() { " ^ (comp_comm p) ^ " }" *)
