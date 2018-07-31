@@ -367,8 +367,10 @@ let rec check_comm (c: comm) (d: delta) (g: gamma) (p: phi): TypedAst.comm * gam
         (match (snd result) with 
         | BoolTyp -> (TypedAst.If ((exp_to_texp result d), (fst c1r), (fst c2r)), g)
         | _ -> raise (TypeException "expected boolean expression for if condition"))
-    | Return e -> failwith "Unimplemented"
-
+    | Return Some e -> 
+        let (e', t') = d |> (check_exp e d g |> exp_to_texp) in 
+        (TypedAst.Return (Some (e', t')), g)
+    | Return None -> (TypedAst.Return None, g)
 and check_comm_lst (cl : comm list) (d: delta) (g: gamma) (p: phi) : TypedAst.comm list * gamma = 
     debug_print ">> check_comm_lst";
     match cl with
@@ -425,7 +427,7 @@ let check_void_return (c: comm) =
     | Return Some _ -> raise (TypeException ("void functions cannot return a value"))
     | _ -> ()
 
-let check_return (c: comm) (t: typ) (d: delta) (g: gamma) = 
+let check_return (t: typ) (d: delta) (g: gamma) (c: comm) = 
     match c with
     | Return None -> raise (TypeException ("expected a return value instead of void"))
     | Return Some r -> (
@@ -456,9 +458,8 @@ let rec check_fn (((id, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn =
     (* check that the last command is a return statement *)
     match r with
     | VoidTyp -> List.iter check_void_return cl; ((id, (pl', TypedAst.VoidTyp)), cl')
-    
     (* TODO: have to check that there is exactly one return statement at the end *)
-    | t -> failwith "Unimplemented"
+    | t -> List.iter (check_return t d g') cl; ((id, (pl', tag_erase t d)), cl')
 and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.fn list =
     debug_print ">> check_fn_lst";
     match fl with
