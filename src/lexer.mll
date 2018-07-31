@@ -25,7 +25,7 @@ rule read = parse
   | "tag"           { TAG }
   | "is"            { IS }
   | "dot"           { DOT }
-  | "norm"          { NORM }
+  | "normalize"     { NORM }
   | "true"          { TRUE }
   | "false"         { FALSE }
   | "if"            { IF }

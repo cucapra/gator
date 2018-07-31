@@ -21,7 +21,7 @@ let rec eval_exp (e : exp) (s : sigma) : value =
             | Bool b -> Bool (not b)
             | _ -> bad_unop ())
         | Norm -> (match v with
-            | VecLit v -> Float (norm v)
+            | VecLit v -> VecLit (normalize v)
             | _ -> bad_unop ()))
 
     | Binop (op, (l, _), (r, _)) -> 
