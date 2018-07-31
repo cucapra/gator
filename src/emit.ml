@@ -21,8 +21,6 @@ let string_of_mat_padded (m: mat) (max_dim: int) : string =
     ("(" ^ (String.concat ", " (List.map string_of_vec_padded m)) ^
     (repeat (string_of_no_paren_vec [] max_dim) (max_dim - List.length m)) ^ ")")
 
-
-
 let string_of_typ (t : etyp) : string =
     match t with
     | UnitTyp -> failwith "Unit type is unwriteable in glsl"
