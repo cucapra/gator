@@ -14,7 +14,7 @@ void main() {
     vec2 r5 = [1.,2.4] .* [5.,0.2];
     print r5;
 
-    float r6 = dot [1.,2.] [3.,2.];
+    float r6 = dot ([1.,2.], [3.,2.]);
     print r6;
 
     vec2 r7 = normalize ([2.,2.]);
