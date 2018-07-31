@@ -101,20 +101,18 @@ let rec comp_comm (c : comm list) : string =
             ^ "{ " ^ (comp_comm c1) ^ " }"
             ^ "{ " ^ (comp_comm c2) ^ " }" 
             ^ (comp_comm t))
-        | Return _ -> "Unimplemented Return"
+        | Return _ -> failwith "Unimplemented Return"
 
-let rec decl_attribs (c : comm list) : string = 
-    match c with
+let rec decl_attribs (p : TypedAst.params) : string = 
+    match p with
     | [] -> ""
     | h::t -> match h with
         (* Super janky, but we need to have rules for weird glsl declarations and variables *)
-        | Decl (ty, x, e) -> if check_name x then 
-            (attrib_type x) ^ " " ^ (string_of_typ ty) ^ " " ^ x ^ ";" ^ (decl_attribs t) else
+        | (x, et) -> if check_name x then 
+            (attrib_type x) ^ " " ^ (string_of_typ et) ^ " " ^ x ^ ";" ^ (decl_attribs t) else
             decl_attribs t
-        | _ -> decl_attribs t
 
 let rec compile_program (prog : prog) (params: TypedAst.params) : string =
-    failwith "Unimplemented"
-    (* "precision highp float;" ^ (decl_attribs p) ^ 
-    " void main() { " ^ (comp_comm p) ^ " }" *)
+    "precision highp float;" ^ (decl_attribs params) ^ 
+    " void main() { " ^ (comp_comm prog) ^ " }"
  
