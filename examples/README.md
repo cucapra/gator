@@ -11,16 +11,14 @@ The examples currently consist of:
 
 To run an example, type:
 
-    $ make -C flat_color
     $ SRC=flat_color yarn run start
 
 but replace `flat_color` with the directory name for any example.
 This will print out a URL you can open in a browser to view the output.
 
-Here's what's happens when you run those:
-
-1. Each example has a `Makefile` that compiles the Linguine source code and combines it into a JSON file ready for execution in a browser.
-2. Our `start` script in `package.json` uses the `$SRC` environment variable to build and run a given example using [Parcel][].
+This works by invoking our `start` script in `package.json`, which uses the `$SRC` environment variable to build and run a given example using [Parcel][].
+We have a Parcel plugin that compiles Linguine source code to GLSL and then allows our TypeScript host programs to import the result as a string.
+This pipeline requires the `lingc` compiler program to be available on your path, i.e., that you have run `dune install` already.
 
 The `raw` directory contains example code we're still working on.
 Eventually, all this code will migrate to individual complete examples and we will delete these old files.

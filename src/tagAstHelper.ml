@@ -19,6 +19,7 @@ let rec string_of_typ (t: typ) : string =
     | FloatTyp -> "float"
     | TagTyp s -> string_of_tag_typ s
     | TransTyp (s1, s2) -> (string_of_tag_typ s1) ^ "->" ^ (string_of_tag_typ s2)
+    | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D"
 
 let rec string_of_exp (e:exp) : string =
     match e with

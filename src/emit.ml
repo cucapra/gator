@@ -1,6 +1,7 @@
 open CoreAst
 open TypedAst
 open TypedAstHelper
+open CoreAstHelper
 open Assoc
 open Lin_ops
 open Util
@@ -20,21 +21,13 @@ let string_of_mat_padded (m: mat) (max_dim: int) : string =
     ("(" ^ (String.concat ", " (List.map string_of_vec_padded m)) ^
     (repeat (string_of_no_paren_vec [] max_dim) (max_dim - List.length m)) ^ ")")
 
-let string_of_gl_mat (m: mat) : string = 
-    (* Note the transpose to match the glsl column-oriented style *)
-    let tm = Lin_ops.transpose m in
-    let r = (List.length tm) in
-    let c = (if r = 0 then 0 else List.length (List.hd tm)) in
-    string_of_mat_padded tm (max r c)
+
 
 let string_of_typ (t : etyp) : string =
     match t with
     | UnitTyp -> failwith "Unit type is unwriteable in glsl"
-    | BoolTyp -> "bool"
-    | IntTyp -> "int"
-    | FloatTyp -> "float"
-    | VecTyp n -> "vec" ^ (string_of_int n)
     | MatTyp (m, n) -> "mat" ^ string_of_int (max m n)
+    | _ -> string_of_typ t
 
 let attrib_type (var_name : string) : string =
     if (String.get var_name 0) = 'a' then "attribute" else
@@ -89,8 +82,10 @@ let rec comp_exp (e : exp) : string =
     | (Binop (Plus, (le, lt), (re, rt))) -> (op_wrap le) ^ " + " ^ (op_wrap re)
     | (Binop (Minus, (le, lt), (re, rt))) -> (op_wrap le) ^ " - " ^ (op_wrap re)
     | (Binop (Div, (le, lt), (re, rt))) -> (op_wrap le) ^ " / " ^ (op_wrap re)
-    | (Binop (CTimes, (le, lt), (re, rt))) -> (op_wrap le) ^ " ,* " ^ (op_wrap re)
-    | _ -> string_of_exp e
+    | (Binop (CTimes, (le, lt), (re, rt))) -> (op_wrap le) ^ " * " ^ (op_wrap re)
+    | Val v -> string_of_value v
+    | Var v -> v
+    | Unop (op, (x, _)) -> (string_of_unop op (op_wrap x))
 
 let rec comp_comm (c : comm list) : string =
     match c with

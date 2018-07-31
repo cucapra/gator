@@ -1,13 +1,14 @@
 import * as lgl from '../lglexample';
 import { mat4 } from 'gl-matrix';
 
-import shaderData from './data.json';
-
 function main() {
   let gl = lgl.setup(render);
 
   // Compile our shaders.
-  let program = lgl.compileProgram(gl, shaderData.vertex, shaderData.fragment);
+  let program = lgl.compileProgram(gl,
+    require('./vertex.lgl'),
+    require('./fragment.lgl')
+  );
 
   // Uniform and attribute locations.
   let loc_uProjection = lgl.uniformLoc(gl, program, 'uProjection');
@@ -37,7 +38,7 @@ function main() {
     // Set the attribute arrays.
     lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals);
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions);
-  
+
     // Draw the object.
     lgl.drawMesh(gl, mesh);
   }

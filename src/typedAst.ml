@@ -10,6 +10,7 @@ type etyp =
     | FloatTyp
     | VecTyp of int
     | MatTyp of int * int
+    | SamplerTyp of int
 
 (* expressions  *)
 type texp = exp * etyp

@@ -1,0 +1,34 @@
+// Function definitions of common functions in GLSL.
+// Reference: https://www.khronos.org/files/opengles_shading_language.pdf
+
+// genType := float | vec2 | vec3 | vec4
+
+genType abs (genType x);
+
+genType sign (genType x);
+
+genType floor (genType x);
+
+genType ceil (genType x);
+
+genType fract (genType x);
+
+genType mod (genType x, genType y);
+
+genType min (genType x, genType y);
+genType min (genType x, float y);
+
+genType max (genType x, genType y);
+genType max (genType x, float y);
+
+genType clamp (genType x, genType minVal, genType maxVal);
+genType clamp (genType x, float minVal, float maxVal);
+
+genType mix (genType x, genType y, genType a);
+genType mix (genType x, genType y, float a);
+
+genType step (genType edge, genType x);
+genType step (float edge, genType x);
+
+genType smoothstep (genType edge0, genType edge1, genType x);
+genType smoothstep (float edge0, float edge1, genType x);

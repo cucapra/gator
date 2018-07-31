@@ -1,0 +1,15 @@
+// Function definitions of common texture lookup functions in GLSL.
+// Reference: https://www.khronos.org/files/opengles_shading_language.pdf
+
+vec4 texture2D (sampler2D sampler, vec2 coord);
+vec4 texture2D (sampler2D sampler, vec2 coord, float bias);
+vec4 texture2DProj (sampler2D sampler, vec3 coord);
+vec4 texture2DProj (sampler2D sampler, vec3 coord, float bias);
+vec4 texture2DProj (sampler2D sampler, vec4 coord);
+vec4 texture2DProj (sampler2D sampler, vec4 coord, float bias);
+vec4 texture2DProjLod (sampler2D sampler, vec3 coord, float lod);
+vec4 texture2DProjLod (sampler2D sampler, vec4 coord, float bias);
+
+vec4 textureCube (samplerCube sampler, vec3 coord);
+vec4 textureCube (samplerCube sampler, vec3 coord, float bias);
+vec4 textureCubeLod (samplerCube sampler, vec3 coord, float lod);
