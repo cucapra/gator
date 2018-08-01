@@ -472,13 +472,13 @@ let check_return (t: typ) (d: delta) (g: gamma) (p: phi) (c: comm) =
         )
     | _ -> ()
 
-let rec check_fn (((id, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn * phi= 
+let rec check_fn (((id, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn * phi = 
     debug_print ">> check_fn";
     (* fn := fn_decl * comm list *)
     let (pl', g') = check_params pl d in
     let (cl', _) = check_comm_lst cl d g' p in 
     (* update phi with function's declaration *)
-    let p' = Assoc.update id (pl, r) in 
+    let p' = Assoc.update id (pl, r) p in 
     (* check that the last command is a return statement *)
     match r with
     | VoidTyp -> List.iter check_void_return cl; (((id, (pl', TypedAst.VoidTyp)), cl'), p')
@@ -508,6 +508,4 @@ let check_prog (e: prog) : TypedAst.fn list * TypedAst.params =
         (* TODO: add type checking for declares *)
         (* delta from tag declarations *)
         let d = check_tags t Assoc.empty in 
-        (* list of function declarations of the program *)
-        let fn_decls = List.map (fun ((dc, b): fn) -> dc) f in  
         ((check_fn_lst f d Assoc.empty), check_main_fn Assoc.empty d)
