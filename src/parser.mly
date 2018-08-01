@@ -84,6 +84,8 @@ main:
       { Prog(d, [], e) }
   | t = taglst; d = declarelst; EOL              
       { Prog(d, t, []) }
+  | d = declarelst; e = fnlst; EOL
+      { Prog(d, [], e)}
   | t = taglst; e = fnlst; EOL 
       { Prog([], t, e) }
   | e = fnlst; EOL             
