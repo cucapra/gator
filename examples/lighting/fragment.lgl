@@ -1,7 +1,7 @@
 // Phong lighting with top types
 // Referenced https://learnopengl.com/Lighting/Basic-Lighting
 
-void main() {
+void main(vec3 uPosition, vec4->vec4 uModel, vec4->vec4 uView, vec3 vNormal, vec3 uLight) {
     vec4->vec3 v4_v3 = [
         [1.,0.,0.,0.],
         [0.,1.,0.,0.],
@@ -37,7 +37,7 @@ void main() {
     vec3 lightDir = norm(uLight - worldPos);
 
     // An example simple lighting effect, taking the dot product of the normal
-    float diff = (dot worldNorm lightDir);
+    float diff = (dot (worldNorm, lightDir));
     bool diff_is_neg = (diff <= 0.);
     if (diff_is_neg) {
         diff = 0.;
@@ -59,9 +59,9 @@ void main() {
         [0., 0., -1.]
     ];
 
-    vec3 reflectDir = (neg * lightDir) - 2. * (dot (neg * lightDir) worldNorm) * worldNorm;
+    vec3 reflectDir = (neg * lightDir) - 2. * (dot ((neg * lightDir), worldNorm)) * worldNorm;
     vec3 cameraReflect = v4_v3 * (uView * (v3_v4 * reflectDir));
-    float spec = dot viewDir cameraReflect; 
+    float spec = dot(viewDir, cameraReflect); 
     bool spec_is_neg = (spec <= 0.);
     if (spec_is_neg) {
         spec = 0.;
@@ -76,4 +76,12 @@ void main() {
 
     //vec4 gl_FragColor = [0., 0., 0., 1.];
     print gl_FragColor;
+}
+
+float dot (vec3 v1, vec3 v2) {
+    return 1.; 
+}
+
+vec3 norm (vec3 v1, vec3 v2) {
+    return v1;
 }
