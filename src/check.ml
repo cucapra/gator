@@ -351,9 +351,12 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ =
                 (is_tag_subtype t3 t1 d && is_tag_subtype t2 t4 d)
             | _ -> false
         ) in 
-        List.iter2 (fun arg param -> 
-            if is_subtype arg param then raise (TypeException("invalid argument type")) 
-            else ()) args_typ params_typ
+        if List.length args_typ == List.length params_typ then
+            List.iter2 (fun arg param -> 
+            if is_subtype arg param then ()
+            else raise (TypeException("invalid argument type; expected: " ^ (string_of_typ param) ^ ", found: " ^ (string_of_typ arg)))) 
+            args_typ params_typ
+        else raise (TypeException("invalid number of arguments for function: " ^ i))
         ; (TypedAst.FnInv (i, args_exp), rt)
 
 let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gamma =
