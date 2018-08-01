@@ -71,6 +71,13 @@ let rec comp_exp (e : exp) : string =
                     else (op_wrap le) ^ " * " ^ (comp_exp re))
             | _ -> (op_wrap le) ^ " * " ^ (comp_exp re))
     in
+    (* let rec padded_args args =
+        match args with
+        | [] -> ""
+        | h::t -> (op_wrap h) ^ ", " ^ padded_args t
+    in  *)
+    let padded_args (a: exp list) : string = 
+        (String.concat ", " (List.map (op_wrap) a)) in
     match e with
     | (Binop (Times, e1, e2)) -> padded_mult e1 e2
     | (Binop (Eq, (le, lt), (re, rt))) -> (op_wrap le) ^ " == " ^ (op_wrap re)
@@ -84,8 +91,9 @@ let rec comp_exp (e : exp) : string =
     | Val v -> string_of_value v
     | Var v -> v
     | Unop (op, (x, _)) -> (string_of_unop op (op_wrap x))
-    | FnInv (id, args) -> id ^ "(" ^ (string_of_args args) ^ ")"
-
+    | FnInv (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
+ 
+    
 let rec comp_comm (c : comm list) : string =
     match c with
     | [] -> ""
@@ -108,7 +116,7 @@ let rec comp_comm (c : comm list) : string =
 let comp_fn (((id, (p, rt)), cl) : fn) : string = 
     match id with 
     | "main" -> "void main() {" ^ (comp_comm cl) ^ "}"
-    | _ -> (string_of_typ rt) ^ " " ^ id ^ "(" ^ (string_of_param p) ^ "){" ^ (comp_comm cl) ^ "}"
+    | _ -> (string_of_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (comp_comm cl) ^ "}"
  
 let rec comp_fn_lst (f : fn list) : string = 
     match f with 

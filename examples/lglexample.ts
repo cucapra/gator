@@ -21,7 +21,7 @@ export function compileShader(gl: WebGLRenderingContext, shaderType: number, sha
 
   // Set the shader source code.
   gl.shaderSource(shader, shaderSource);
-
+  console.log(shaderSource);
   // Compile the shader
   gl.compileShader(shader);
 
@@ -57,7 +57,7 @@ export function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShad
   let success = gl.getProgramParameter(program, gl.LINK_STATUS);
   if (!success) {
     // something went wrong with the link
-    throw ("program filed to link:" + gl.getProgramInfoLog(program));
+    throw ("program failed to link:" + gl.getProgramInfoLog(program));
   }
 
   // Delete shader objects after linked to program.

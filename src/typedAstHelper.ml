@@ -34,14 +34,13 @@ let rec string_of_exp (e: exp) : string =
         (* id * args *)
     | FnInv (id, args) -> id ^ "(" ^ (string_of_args args) ^")"
 and string_of_args (a: exp list) : string = 
-    match a with
-    | [] -> ""
-    | h::t -> string_of_exp h ^ ", " ^ string_of_args t
+    (String.concat ", " (List.map string_of_exp a))
 
-let rec string_of_param (p: params) : string = 
-    match p with
-    | [] -> ""
-    | (i, e)::t -> (string_of_typ e) ^ " " ^ i ^ "," ^ (string_of_param t)
+let string_of_param (i, e) : string = 
+    (string_of_typ e) ^ " " ^ i
+
+let rec string_of_params (p: params) : string = 
+    (String.concat " " (List.map string_of_param p))
 
 let rec string_of_comm (c: comm) : string =
     match c with
@@ -55,19 +54,15 @@ let rec string_of_comm (c: comm) : string =
     | Return None -> "return;"
 
 and string_of_comm_list (cl : comm list) : string = 
-    match cl with
-    | [] -> ""
-    | h::t -> (string_of_comm h)^"\n"^(string_of_comm_list t)
+   (String.concat "\n" (List.map string_of_comm cl))
 
 let string_of_fn (((id, (p, rt)), cl) : fn) : string = 
     match id with 
     | "main" -> "void main() {" ^ (string_of_comm_list cl) ^ "}"
-    | _ -> (string_of_typ rt) ^ " " ^ id ^ "(" ^ (string_of_param p) ^ "){" ^ (string_of_comm_list cl) ^ "}"
+    | _ -> (string_of_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (string_of_comm_list cl) ^ "}"
  
 let rec string_of_fn_list (f : fn list) : string = 
-    match f with 
-    | [] -> ""
-    | h::t -> (string_of_fn h) ^ (string_of_fn_list t)
+    (String.concat "" (List.map string_of_fn f))
 
 let string_of_prog (e : prog) : string =
 

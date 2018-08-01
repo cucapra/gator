@@ -1,8 +1,9 @@
 // Phong lighting with top types
 // Referenced https://learnopengl.com/Lighting/Basic-Lighting
 
+
 declare float dot(vec3 v1, vec3 v2);
-declare vec3 normalize(vec3 v1);
+declare vec3 normalize(vec3 v1); 
 
 void main(vec3 uPosition, vec4->vec4 uModel, vec4->vec4 uView, vec3 vNormal, vec3 uLight, vec3 vPosition) {
     vec4->vec3 v4_v3 = [
