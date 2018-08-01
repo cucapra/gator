@@ -1,9 +1,9 @@
 
-declare vec3 texture(sampler2D txt, vec2 texCoord);
+declare vec4 texture2D(sampler2D txt, vec2 texCoord);
 
-void main(vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel, sampler2D ourTexture) {
+void main(vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel, sampler2D uTexture, vec2 uTexCoord) {
   vec4->vec4 dummy = uProjection * uView * uModel;
   vec4 color = [0.15, 0.4, 0.25, 1.0];
 
-  vec4 gl_FragColor = color;
+  vec4 gl_FragColor = texture2D(uTexture, uTexCoord);
 }
