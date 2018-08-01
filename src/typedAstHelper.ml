@@ -65,5 +65,4 @@ let rec string_of_fn_list (f : fn list) : string =
     (String.concat "" (List.map string_of_fn f))
 
 let string_of_prog (e : prog) : string =
-
     string_of_fn_list e

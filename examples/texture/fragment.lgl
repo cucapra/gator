@@ -1,22 +1,9 @@
-vec4->vec4 uProjection = [
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.]
-];
-vec4->vec4 uView = [
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.]
-];
-vec4->vec4 uModel = [
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.]
-];
-vec4->vec4 dummy = uProjection * uView * uModel;
-vec4 color = [0.15, 0.4, 0.25, 1.0];
 
-vec4 gl_FragColor = color;
+declare vec3 texture(sampler2D txt, vec2 texCoord);
+
+void main(vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel, sampler2D ourTexture) {
+  vec4->vec4 dummy = uProjection * uView * uModel;
+  vec4 color = [0.15, 0.4, 0.25, 1.0];
+
+  vec4 gl_FragColor = color;
+}
