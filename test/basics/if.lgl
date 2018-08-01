@@ -1,4 +1,9 @@
 void main() {
+    if (1 == 2) { 
+        print 2.2; 
+    }
+    else {
+        print 3.2;
     bool b = false; 
     if (b) { 
         print 2.2; 
@@ -6,4 +11,14 @@ void main() {
     else {
         print 3.2;
     }
+
+    float x = 1.2;
+    float y = 2.1;
+
+    if (y <= x) {
+        print 2;
+    } else {
+        print 3;
+    }
+
 }

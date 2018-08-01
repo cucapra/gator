@@ -28,4 +28,13 @@ void main() {
     a->b s25 = a_b + a_a * a_b;
 
     //print 1;
+
+    tag a is vec2;
+    tag b is vec3;
+
+    b x = [1., 2., 3.];
+    b->a b_a = [[1., 1.], [1., 1.], [1., 1.]];
+
+    vec2 fail = (b_a .* b_a) * z; // CMult is weird
+
 }

@@ -23,7 +23,6 @@ let _ =
             end in
         close_in ch;
     let typedProg = Check.check_prog prog in
-    if (Array.length Sys.argv > 3) then print_endline (TagAstHelper.string_of_prog prog);
-    print_string (Emit.compile_program typedProg);
+    if (Array.length Sys.argv <= 2) then print_endline (Emit.compile_program typedProg);
     if (Array.length Sys.argv > 2) then ((print_string "\n\n------------------\n\n");
-        Ops.eval_prog typedProg);
+        Ops.eval_prog typedProg)

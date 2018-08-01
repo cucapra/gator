@@ -3,5 +3,5 @@ void main() {
 
     a x = [1., 1.];
     vec2->a v2_a = [[1., 1.], [1., 1.]];
-    a bad = x * v2_a; // Bad transformation downcast
+    a bad = v2_a * x; // Can't upcast x to a vec2
 }

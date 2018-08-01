@@ -45,7 +45,7 @@ let is_tag_subtype (to_check: tag_typ) (target: tag_typ) (d: delta) : bool =
     | BotTyp n, VarTyp s -> n = (vec_dim target d)
     | VarTyp _, BotTyp _ -> false
     | VarTyp _, VarTyp s2 -> List.mem s2 (get_ancestor_list to_check d)
-    | VarTyp s, TopTyp n -> (vec_dim to_check d) = n
+    | VarTyp s, TopTyp n -> false (* Cannot upcast a variable to the toptyp *)
     | TopTyp _, _ -> false
 
 let least_common_parent (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
@@ -75,7 +75,9 @@ let least_common_parent (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
     | VarTyp s1, VarTyp s2 ->
         check_dim (vec_dim (VarTyp s1) d) (vec_dim (VarTyp s2) d);
         (if s1 = s2 then VarTyp s1
-        else VarTyp (lub (get_ancestor_list t1 d) (get_ancestor_list t2 d)))
+        else (print_endline ("["^(String.concat ", " (get_ancestor_list t1 d)^"]"));
+        print_endline ("["^(String.concat ", " (get_ancestor_list t2 d)^"]"));
+        VarTyp (lub (get_ancestor_list t1 d) (get_ancestor_list t2 d))))
 
 let greatest_common_child (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
     let check_dim (n1: int) (n2: int) : unit =
@@ -199,7 +201,7 @@ let check_comp_binop (t1: typ) (t2: typ) (d: delta) : typ =
 let check_dot_exp (t1: typ) (t2: typ) (d: delta): typ = 
     match (t1, t2) with 
     | TagTyp a1, TagTyp a2 ->  
-        if vec_dim a1 d = vec_dim a2 d 
+        if is_tag_subtype a1 a2 d || is_tag_subtype a2 a1 d
         then FloatTyp 
         else raise (TypeException "expected tag type of same dimension for dot product exp")
     | _ -> raise (TypeException "unexpected type for dot product exp")
@@ -244,7 +246,8 @@ let check_times_exp (t1: typ) (t2: typ) (d: delta) : typ =
     (* Matrix * Vector Multiplication *)
     | TagTyp _, TransTyp _ -> 
         raise(TypeException "Cannot multiply a vector * matrix (did you mean matrix * vector?)")
-    | TransTyp (m1, m2), TagTyp t -> if is_tag_subtype t m1 d then (TagTyp m2)
+    | TransTyp (m1, m2), TagTyp t -> 
+        if is_tag_subtype t m1 d then (TagTyp m2)
         else raise (TypeException ("Cannot apply a matrix of type " ^ (string_of_typ t1)
             ^ " to a vector of type " ^ (string_of_typ t2)))
 

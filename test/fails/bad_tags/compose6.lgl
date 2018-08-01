@@ -1,0 +1,12 @@
+tag a is vec2;
+tag b is vec3;
+tag c is b;
+tag d is b;
+
+a->b a_b = [[1., 1.], [1., 1.], [1., 1.]];
+b->c b_c = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
+b->d b_d = [[1., -1., 1.], [-1., 1., 1.], [1., 1., -1.]];
+
+a->vec3 fail = b_c * a_b; // No upcast to top during composition
+
+print 1;
