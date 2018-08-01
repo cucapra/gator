@@ -42,6 +42,7 @@ let check_name (var_name : string) : bool =
 let is_core (var_name : string) : bool = 
     var_name = "gl_Position" || var_name = "gl_FragColor"
 
+
 let rec comp_exp (e : exp) : string =
     let op_wrap (op : exp) : string =
         match op with
@@ -83,7 +84,7 @@ let rec comp_exp (e : exp) : string =
     | Val v -> string_of_value v
     | Var v -> v
     | Unop (op, (x, _)) -> (string_of_unop op (op_wrap x))
-    | _ -> failwith "Unimplemented"
+    | FnInv (id, args) -> id ^ "(" ^ (string_of_args args) ^ ")"
 
 let rec comp_comm (c : comm list) : string =
     match c with
@@ -101,18 +102,29 @@ let rec comp_comm (c : comm list) : string =
             ^ "{ " ^ (comp_comm c1) ^ " }"
             ^ "{ " ^ (comp_comm c2) ^ " }" 
             ^ (comp_comm t))
+        | Return _ -> string_of_comm h ^ (comp_comm t)
+        
 
-let rec decl_attribs (c : comm list) : string = 
-    match c with
+let comp_fn (((id, (p, rt)), cl) : fn) : string = 
+    match id with 
+    | "main" -> "void main() {" ^ (comp_comm cl) ^ "}"
+    | _ -> (string_of_typ rt) ^ " " ^ id ^ "(" ^ (string_of_param p) ^ "){" ^ (comp_comm cl) ^ "}"
+ 
+let rec comp_fn_lst (f : fn list) : string = 
+    match f with 
+    | [] -> ""
+    | h::t -> (comp_fn h) ^ (comp_fn_lst t)
+
+let rec decl_attribs (p : TypedAst.params) : string = 
+    match p with
     | [] -> ""
     | h::t -> match h with
         (* Super janky, but we need to have rules for weird glsl declarations and variables *)
-        | Decl (ty, x, e) -> if check_name x then 
-            (attrib_type x) ^ " " ^ (string_of_typ ty) ^ " " ^ x ^ ";" ^ (decl_attribs t) else
+        | (x, et) -> if check_name x then 
+            (attrib_type x) ^ " " ^ (string_of_typ et) ^ " " ^ x ^ ";" ^ (decl_attribs t) else
             decl_attribs t
-        | _ -> decl_attribs t
 
-let rec compile_program (p : prog) : string =
-    failwith "Unimplemented"
-    (* "precision highp float;" ^ (decl_attribs p) ^ 
-    " void main() { " ^ (comp_comm p) ^ " }" *)
+let rec compile_program (prog : prog) (params: TypedAst.params) : string =
+    "precision highp float;" ^ (decl_attribs params) ^ 
+     (comp_fn_lst prog)
+ 

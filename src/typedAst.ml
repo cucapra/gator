@@ -16,7 +16,7 @@ type etyp =
 (* function declaration *)
 type params = (id * etyp) list
 type ret_type = etyp
-(* we do not have higher order functions *)
+(* functions are not first-class *)
 type fn_type = params * ret_type
 type fn_decl = id * fn_type
 
@@ -38,7 +38,7 @@ type comm =
     | Decl of etyp * id * texp
     | Assign of id * texp
     | If of texp * comm list * comm list
-    | Return of texp
+    | Return of texp option
 
 type fn = fn_decl * comm list
 

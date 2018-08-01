@@ -112,7 +112,7 @@ commlst:
 params: 
   | t = typ; x = ID
       { (x, t)::[] }
-  | t = typ; x = ID; p = params
+  | t = typ; x = ID; COMMA; p = params
       { (x, t)::p@[] }
 ;
 
@@ -140,8 +140,10 @@ comm:
   | PRINT; e = exp; SEMI;                  
       { Print(e) }
   | RETURN; e = exp; SEMI;
-      { Return(e) }
-;
+      { Return(Some e) }
+  | RETURN; SEMI;
+      { Return(None) }
+; 
 
 typ:
   | BOOLTYP                         

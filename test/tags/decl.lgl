@@ -1,7 +1,7 @@
-void main() {
-    tag a is vec2;
-    tag b is vec2;
-    tag c is b;
+tag a is vec2;
+tag b is vec2;
+tag c is b;
 
+void main() {
     print 1;
 }
