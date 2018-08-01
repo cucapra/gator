@@ -54,6 +54,9 @@ type fn = fn_decl * comm list
 type tag_decl = string * typ
 
 (* program *)
+(* Consists of list of (external) declare functions, 
+ * list of vector space tags, 
+ * and list of functions with at least one void main() function. *)
 type prog =
-    | Prog of tag_decl list * fn list
+    | Prog of fn_decl list * tag_decl list * fn list
 

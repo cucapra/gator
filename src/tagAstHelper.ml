@@ -4,6 +4,8 @@ open CoreAst
 open CoreAstHelper
 open TagAst
 
+let string_of_lst (f : 'a -> string) (l: 'a list) : string =
+    List.fold_left (fun a b -> f b) "\n" l
 
 let string_of_tag_typ (t: tag_typ) : string =
     match t with
@@ -57,9 +59,7 @@ let rec string_of_comm (c: comm) : string =
 
 and 
 string_of_comm_list (cl : comm list) : string = 
-    match cl with
-    | [] -> ""
-    | h::t -> (string_of_comm h)^"\n"^(string_of_comm_list t)
+    string_of_lst string_of_comm cl
 
 let rec string_of_tags (t : tag_decl list) : string =
     match t with 
@@ -71,10 +71,14 @@ let string_of_fn (f : fn) : string =
     | (d, c1) -> string_of_fn_decl d ^ "{" ^ (string_of_comm_list c1) ^"}"
 
 let rec string_of_fn_lst (fl : fn list) : string = 
-    match fl with
-    | [] -> ""
-    | h::t -> string_of_fn h ^ "\n" ^ (string_of_fn_lst t)
+    string_of_lst string_of_fn fl
+
+let string_of_declare (f: fn) : string = 
+    "declare " ^ string_of_fn f
+
+let string_of_declare_lst (fl : fn list) : string = 
+    string_of_lst string_of_declare fl
 
 let string_of_prog (e : prog) : string =
     match e with
-    | Prog (t, f) -> (string_of_tags t) ^ (string_of_fn_lst f) 
+    | Prog (d, t, f) -> (string_of_tags t) ^ (string_of_fn_lst f) 

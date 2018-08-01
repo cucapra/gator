@@ -9,7 +9,6 @@ open Str
 exception TypeException of string
 exception DimensionException of int * int
 
-
 (* Variable defs *)
 type gamma = (string, typ) Assoc.context
 
@@ -503,7 +502,8 @@ let check_main_fn (p: phi) (d: delta) =
 let check_prog (e: prog) : TypedAst.fn list * TypedAst.params =
     debug_print ">> check_prog";
     match e with
-    | Prog (t, f) -> 
+    | Prog (d, t, f) -> 
+        (* TODO: add type checking for declares *)
         (* delta from tag declarations *)
         let d = check_tags t Assoc.empty in 
         (* list of function declarations of the program *)

@@ -57,6 +57,7 @@ rule read = parse
   | sampler as sm   { SAMPLER sm }
   | "void"          { VOID }
   | "return"        { RETURN }
+  | "declare"       { DECLARE }
   | "attribute"
   | "const"
   | "uniform"

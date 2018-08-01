@@ -37,5 +37,4 @@ void main() {
     print s22;
     print s23;
     print (v2_b .* (a_v3 * 2.)); // There is no writeable variable type to assign this to
-
 }

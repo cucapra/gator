@@ -52,6 +52,7 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %token RBRACE
 %token RETURN
 %token VOID
+%token DECLARE
 
 (* Precedences *)
 
@@ -74,21 +75,34 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 (* The following %% ends the declarations section of the grammar definition. *)
 
 %%
+
    
 main:
+  | d = declarelst; t = taglst; e = fnlst; EOL 
+      { Prog(d, t, e) }
+  | d = declarelst; e = fnlst; EOL             
+      { Prog(d, [], e) }
+  | d = declarelst; t = taglst; EOL              
+      { Prog(d, t, []) }
   | t = taglst; e = fnlst; EOL 
-      { Prog(t, e) }
+      { Prog([], t, e) }
   | e = fnlst; EOL             
-      { Prog([], e) }
+      { Prog([], [], e) }
   | t = taglst; EOL              
-      { Prog(t, []) }
+      { Prog([], t, []) }
 ;
+
+declarelst: 
+  | DECLARE; f = fn_decl
+      { f::[] }
+  | DECLARE; f = fn_decl; SEMI; dl = declarelst
+      { f::dl }
 
 taglst: 
   | t = tag               
       { t::[] }
   | t1 = taglst; t2 = tag 
-      { t1@(t2::[])@[] }
+      { t1@(t2::[]) }
 ; 
 
 tag:
@@ -100,20 +114,20 @@ fnlst:
   | x = fn_decl; LBRACE; c1 = commlst; RBRACE;
       { (x, c1)::[] }
   | x = fn_decl; LBRACE; c1 = commlst; RBRACE; fl = fnlst;
-      { (x, c1)::fl@[] }
+      { (x, c1)::fl }
 
 commlst:
   | c = comm                
       { c::[] }
   | c1 = comm; c2 = commlst 
-      { c1::c2@[] }
+      { c1::c2 }
 ;
 
 params: 
   | t = typ; x = ID
       { (x, t)::[] }
   | t = typ; x = ID; COMMA; p = params
-      { (x, t)::p@[] }
+      { (x, t)::p }
 ;
 
 fn_decl:
@@ -208,9 +222,9 @@ matlit:
   | LBRACK; RBRACK                                 
       { [[]] }
   | LBRACK; v = veclit; RBRACK; COMMA; m2 = matlit 
-      { [v]@m2@[] }
+      { [v]@m2 }
   | LBRACK; RBRACK; COMMA; m2 = matlit             
-      { [[]]@m2@[] }
+      { [[]]@m2 }
 ;
 
 bool:
