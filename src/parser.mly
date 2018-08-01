@@ -112,7 +112,7 @@ commlst:
 params: 
   | t = typ; x = ID
       { (x, t)::[] }
-  | t = typ; x = ID; p = params
+  | t = typ; x = ID; COMMA; p = params
       { (x, t)::p@[] }
 ;
 

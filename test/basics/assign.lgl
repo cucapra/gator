@@ -1,4 +1,4 @@
-void main(int f) {
+void main(int f, vec3 k) {
     int a = 3;
     a = 4;
     bool b = true;
