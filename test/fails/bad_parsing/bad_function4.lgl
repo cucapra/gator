@@ -1,0 +1,7 @@
+int int f() { //double types fail at parse time
+    return 0;
+}
+
+void main() {
+    return;
+}

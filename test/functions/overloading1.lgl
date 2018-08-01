@@ -1,0 +1,15 @@
+tag a is vec2;
+tag b is a;
+tag c is a;
+
+declare int id(int x);
+declare bool id(bool x);
+declare vec2 normalize(vec2 x);
+declare a normalize(a x);
+declare b normalize(b x);
+declare b normalize(b x);
+
+void main() {
+    print 1;
+    return;
+}

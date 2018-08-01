@@ -1,0 +1,7 @@
+int f(int x y) { //Huh?
+    return 0;
+}
+
+void main() {
+    return;
+}

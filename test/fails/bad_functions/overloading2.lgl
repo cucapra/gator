@@ -1,0 +1,11 @@
+int f(int x) {
+    return x;
+}
+
+float f(int x) {
+    return 1.;
+}
+
+void main() {
+    return;
+}

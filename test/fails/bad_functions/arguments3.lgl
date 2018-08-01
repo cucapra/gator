@@ -1,0 +1,8 @@
+int f(int x, int y) {
+    return x + y;
+}
+
+void main() {
+    print f(1);
+    return;
+}

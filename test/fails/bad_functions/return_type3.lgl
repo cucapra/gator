@@ -1,0 +1,7 @@
+vec2 f() {
+    return [1., 2., 3.];
+}
+
+void main() {
+    return;
+}

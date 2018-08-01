@@ -1,0 +1,10 @@
+declare int f(int x);
+
+int f(int x) { // Can't be overloaded
+    return x;
+}
+
+void main() {
+    print f();
+    return;
+}

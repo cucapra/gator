@@ -1,0 +1,6 @@
+declare int f(int x);
+
+void main() {
+    print f(true);
+    return;
+}

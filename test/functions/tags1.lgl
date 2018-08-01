@@ -1,0 +1,20 @@
+tag a is vec2;
+tag b is a;
+tag c is a;
+
+declare c f(vec2 x);
+declare b g(c x);
+declare int h(b x, c y);
+declare a->b build(a x, b->a m);
+
+void main() {
+    a s1 = f([1., 2.]);
+    b s2 = g(f([1., 2.]));
+    int s3 = h(g([1., 2.]), f([2., 1.]));
+    a->b s4 = build([1., 2.], [[1., 2.], [2., 1.]]);
+
+    print s1;
+    print s2;
+    print s3;
+    print s4;
+}

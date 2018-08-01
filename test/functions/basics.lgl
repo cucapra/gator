@@ -1,0 +1,33 @@
+int f(int x) {
+    return x + 1;
+}
+
+float g(float x) {
+    return x - 1.;
+}
+
+bool h(int x) {
+    return x <= 0;
+}
+
+vec2 vid(vec2 x) {
+    return x;
+}
+
+mat2x2 mid(mat2x2 x) {
+    return x;
+}
+
+void main() {
+    int s1 = f(5);
+    float s2 = g(1.2);
+    bool s3 = h(-5);
+    vec2 s4 = vid([1., 2.]);
+    mat2x2 s5 = mid([[1., 0.], [0., 1.]]);
+
+    print s1;
+    print s2;
+    print s3;
+    print s4;
+    print s5;
+}

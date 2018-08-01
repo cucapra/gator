@@ -1,0 +1,7 @@
+int f( { //Unmatched parens
+    return 0;
+}
+
+void main() {
+    return;
+}

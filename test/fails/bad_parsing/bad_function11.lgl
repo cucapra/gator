@@ -1,0 +1,7 @@
+int f(not_attribute int x) { // Declaring tag must be in {attribute | varying | uniform}
+    return 1;
+}
+
+void main() {
+    return;
+}

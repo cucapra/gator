@@ -1,0 +1,7 @@
+int f() {
+    return true;
+}
+
+void main() {
+    return;
+}
