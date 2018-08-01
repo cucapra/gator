@@ -1,7 +1,7 @@
 // Phong lighting with top types
 // Referenced https://learnopengl.com/Lighting/Basic-Lighting
 
-void main(vec3 uPosition, vec4->vec4 uModel, vec4->vec4 uView, vec3 vNormal, vec3 uLight) {
+void main(vec3 uPosition, vec4->vec4 uModel, vec4->vec4 uView, vec3 vNormal, vec3 uLight, vec3 vPosition) {
     vec4->vec3 v4_v3 = [
         [1.,0.,0.,0.],
         [0.,1.,0.,0.],
@@ -32,9 +32,9 @@ void main(vec3 uPosition, vec4->vec4 uModel, vec4->vec4 uView, vec3 vNormal, vec
     vec3 worldPos = v4_v3 * (uModel * ((v3_v4 * vPosition) + [0., 0., 0., 1.]));
 
     // Calculate the normal including the model rotation and scale
-    vec3 worldNorm = norm(v4_v3 * (uModel * (v3_v4 * vNormal)));
+    vec3 worldNorm = normalize(v4_v3 * (uModel * (v3_v4 * vNormal)));
 
-    vec3 lightDir = norm(uLight - worldPos);
+    vec3 lightDir = normalize(uLight - worldPos);
 
     // An example simple lighting effect, taking the dot product of the normal
     float diff = (dot (worldNorm, lightDir));
@@ -51,7 +51,7 @@ void main(vec3 uPosition, vec4->vec4 uModel, vec4->vec4 uView, vec3 vNormal, vec
 
     float specularStrength = 3.;
 
-    vec3 viewDir = norm([0., 0., 0.] - v4_v3 * (uView * ((v3_v4 * worldPos) + [0., 0., 0., 1.])));
+    vec3 viewDir = normalize([0., 0., 0.] - v4_v3 * (uView * ((v3_v4 * worldPos) + [0., 0., 0., 1.])));
 
     vec3->vec3 neg = [
         [-1., 0., 0.],
@@ -82,6 +82,6 @@ float dot (vec3 v1, vec3 v2) {
     return 1.; 
 }
 
-vec3 norm (vec3 v1, vec3 v2) {
+vec3 normalize (vec3 v1) {
     return v1;
 }
