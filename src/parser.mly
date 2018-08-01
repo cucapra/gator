@@ -78,11 +78,11 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 
    
 main:
-  | d = declarelst; t = taglst; e = fnlst; EOL 
+  | t = taglst; d = declarelst; e = fnlst; EOL 
       { Prog(d, t, e) }
-  | d = declarelst; e = fnlst; EOL             
+  | e = fnlst; d = declarelst; EOL             
       { Prog(d, [], e) }
-  | d = declarelst; t = taglst; EOL              
+  | t = taglst; d = declarelst; EOL              
       { Prog(d, t, []) }
   | t = taglst; e = fnlst; EOL 
       { Prog([], t, e) }
