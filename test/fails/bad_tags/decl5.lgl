@@ -1,3 +1,5 @@
-tag a is vec2;
-tag b is a;
-tag a is b;  // Cannot redeclare tags / cannot create a loop
+void main() {
+    tag a is vec2;
+    tag b is a;
+    tag a is b;  // Cannot redeclare tags / cannot create a loop
+}

@@ -1,7 +1,9 @@
-tag a is vec2;
-tag b is vec2;
-tag c is vec2;
+void main() {
+    tag a is vec2;
+    tag b is vec2;
+    tag c is vec2;
 
-a->b x = [[1., 2.], [1., 2.]];
-b->c y = [[1., 2.], [1., 2.]];
-a->c bad = x + y; // Addition cannot generate new maps
+    a->b x = [[1., 2.], [1., 2.]];
+    b->c y = [[1., 2.], [1., 2.]];
+    a->c bad = x + y; // Addition cannot generate new maps
+}

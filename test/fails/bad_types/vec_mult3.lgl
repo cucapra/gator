@@ -1,2 +1,4 @@
-vec2 v = [2., 3.];
-print v * v; // Can't multiply vectors
+void main() {
+    vec2 v = [2., 3.];
+    print v * v; // can't multiply vectors
+}

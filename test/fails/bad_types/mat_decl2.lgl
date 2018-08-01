@@ -1,2 +1,4 @@
-mat1x2 m = [2.3, 2.1];
-print m;
+void main() {
+    mat1x2 m = [2.3, 2.1];
+    print m;
+}

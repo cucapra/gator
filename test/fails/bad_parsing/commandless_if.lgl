@@ -1,1 +1,3 @@
-if (b) { 5; } else { skip; }
+void main() {
+    if (b) { 5; } else { skip; }
+}

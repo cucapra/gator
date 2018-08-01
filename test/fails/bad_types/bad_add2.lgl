@@ -1,3 +1,5 @@
-int x = 5;
-vec2 v = [1.0, 2.0];
-print x + v;
+void main() {
+    int x = 5;
+    vec2 v = [1.0, 2.0];
+    print x + v;
+}

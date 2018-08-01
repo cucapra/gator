@@ -19,9 +19,6 @@ let rec eval_exp (e : exp) (s : sigma) : value =
         (match op with
         | Not -> (match v with
             | Bool b -> Bool (not b)
-            | _ -> bad_unop ())
-        | Norm -> (match v with
-            | VecLit v -> VecLit (normalize v)
             | _ -> bad_unop ()))
 
     | Binop (op, (l, _), (r, _)) -> 
@@ -46,12 +43,7 @@ let rec eval_exp (e : exp) (s : sigma) : value =
             | _ -> bad_binop ())
         | And -> (match (left, right) with
             | (Bool b1, Bool b2) -> Bool (b1 && b2)
-            | _ -> bad_binop ())
-
-        | Dot -> (match (left, right) with
-            | (VecLit v1, VecLit v2) -> Float (dot v1 v2)
-            | _ -> bad_binop ())
-            
+            | _ -> bad_binop ())            
         | Plus -> (match (left, right) with
             | (Num i1, Num i2) -> Num (i1 + i2)
             | (Float f1, Float f2) -> Float (f1 +. f2)
@@ -87,7 +79,9 @@ let rec eval_exp (e : exp) (s : sigma) : value =
         | CTimes -> (match (left, right) with
             | (VecLit v1, VecLit v2) -> VecLit (vc_mult v1 v2)
             | (MatLit m1, MatLit m2) -> MatLit (mc_mult m1 m2)
-            | _ -> bad_binop ()))
+            | _ -> bad_binop ())
+        )
+    | _ -> failwith "Unimplemented"
 
 let rec eval_comm (c : comm list) (s : sigma) : sigma =
     match c with
@@ -99,7 +93,10 @@ let rec eval_comm (c : comm list) (s : sigma) : sigma =
         | Assign (x, (e, _)) -> Assoc.update x (eval_exp e s) s
         | If ((e, _), c1, c2) -> eval_comm (match (eval_exp e s) with
             | Bool b -> if b then c1 else c2
-            | _ -> failwith "Expected a boolean in 'if' exception") s)
+            | _ -> failwith "Expected a boolean in 'if' exception") s 
+        | Return e -> failwith "Unimplemented" )
+        
+        
 
-let eval_prog (p : prog) : unit =
-    eval_comm p Assoc.empty |> ignore
+let eval_prog (p : prog) : unit = ()
+    (* eval_comm p Assoc.empty |> ignore *)

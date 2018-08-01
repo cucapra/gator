@@ -12,14 +12,12 @@ type value =
   | MatLit of mat
 
 type unop =
-  | Norm
   | Not
 type binop = 
   | Eq
   | Leq
   | Or
   | And
-  | Dot
   | Plus
   | Minus
   | Times

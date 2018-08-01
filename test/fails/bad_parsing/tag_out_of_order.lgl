@@ -1,3 +1,5 @@
-print 5;
-tag s is vec2;
-print [vec2];
+void main() {
+    print 5;
+    tag s is vec2;
+    print [vec2];
+}

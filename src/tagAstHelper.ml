@@ -5,7 +5,7 @@ open CoreAstHelper
 open TagAst
 
 
-let string_of_tag_typ (t: tagtyp) : string =
+let string_of_tag_typ (t: tag_typ) : string =
     match t with
     | TopTyp n -> "vec"^(string_of_int n)
     | BotTyp n -> "vec"^(string_of_int n)^"lit"
@@ -20,6 +20,7 @@ let rec string_of_typ (t: typ) : string =
     | TagTyp s -> string_of_tag_typ s
     | TransTyp (s1, s2) -> (string_of_tag_typ s1) ^ "->" ^ (string_of_tag_typ s2)
     | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D"
+    | VoidTyp -> "void"
 
 let rec string_of_exp (e:exp) : string =
     match e with
@@ -30,9 +31,18 @@ let rec string_of_exp (e:exp) : string =
         let ls = (string_of_exp l) in
         let rs = (string_of_exp r) in
         (match op with
-        | Dot -> (string_of_binop op ls rs)
         | _ -> (string_of_binop op ls rs))
     | VecTrans (i, t) -> failwith "Unimplemented"
+    | _ -> failwith "Unimplemented"
+
+let rec string_of_params (p: (id * typ) list) : string =
+    match p with
+    | [] -> ""
+    | (i1, t1)::t -> (string_of_typ t1) ^ " " ^ i1 ^ ", " ^ (string_of_params t)
+
+let string_of_fn_decl (d: fn_decl) : string = 
+    match d with
+    | (id, (p, r)) -> (string_of_typ r) ^ " " ^ id ^ " (" ^ (string_of_params p) ^ ")"
 
 let rec string_of_comm (c: comm) : string =
     match c with
@@ -41,7 +51,9 @@ let rec string_of_comm (c: comm) : string =
     | Decl (t, s, e) -> (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_exp e) ^ ";"
     | If (b, c1, c2) -> "if (" ^ (string_of_exp b) ^ ") {\n" ^ (string_of_comm_list c1) ^
         "} else {\n" ^ (string_of_comm_list c2) ^ "}"
-    | Assign (b, x) -> b^" = " ^ (string_of_exp x) ^ ";"
+    | Assign (b, x) -> b ^ " = " ^ (string_of_exp x) ^ ";"
+    | Return None -> "return;"
+    | Return Some e -> "return" ^ (string_of_exp e) ^ ";"
 
 and 
 string_of_comm_list (cl : comm list) : string = 
@@ -49,11 +61,20 @@ string_of_comm_list (cl : comm list) : string =
     | [] -> ""
     | h::t -> (string_of_comm h)^"\n"^(string_of_comm_list t)
 
-let rec string_of_tags (t : tagdecl list) : string =
+let rec string_of_tags (t : tag_decl list) : string =
     match t with 
     | [] -> ""
     | (s, a)::t -> "tag " ^ s ^ " is "^(string_of_typ a) ^ ";\n" ^ (string_of_tags t)
 
+let string_of_fn (f : fn) : string = 
+    match f with
+    | (d, c1) -> string_of_fn_decl d ^ "{" ^ (string_of_comm_list c1) ^"}"
+
+let rec string_of_fn_lst (fl : fn list) : string = 
+    match fl with
+    | [] -> ""
+    | h::t -> string_of_fn h ^ "\n" ^ (string_of_fn_lst t)
+
 let string_of_prog (e : prog) : string =
     match e with
-    | Prog (t, c) -> (string_of_tags t) ^ (string_of_comm_list c) 
+    | Prog (t, f) -> (string_of_tags t) ^ (string_of_fn_lst f) 

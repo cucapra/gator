@@ -1,1 +1,3 @@
-vec2 x = [[1.], [1.]]; // No implicit cast from vectors to matrices
+void main() {
+    vec2 x = [[1.], [1.]]; // No implicit cast from vectors to matrices
+}

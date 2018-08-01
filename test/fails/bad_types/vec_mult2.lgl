@@ -1,3 +1,5 @@
-vec2 v = [2., 3.];
-mat2x2 m = [[1., 1., 1.], [1., 1., 1.]];
-print v * m;  // Out of order
+void main() {
+    vec2 v = [2., 3.];
+    mat2x2 m = [[1., 1., 1.], [1., 1., 1.]];
+    print v * m;
+}

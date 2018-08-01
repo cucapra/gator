@@ -2,4 +2,6 @@ tag a is vec2;
 tag b is vec2;
 tag c is b;
 
-print 1;
+void main() {
+    print 1;
+}

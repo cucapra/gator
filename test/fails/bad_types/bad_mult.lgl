@@ -1,1 +1,3 @@
-print 5 * true;
+void main() {
+    print 5 * true;
+}

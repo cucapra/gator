@@ -1,1 +1,3 @@
-tag v1.0 is vec2;
+void main() {
+    tag v1.0 is vec2;
+}

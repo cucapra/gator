@@ -24,8 +24,6 @@ rule read = parse
   | num as num      { NUM (int_of_string num) }
   | "tag"           { TAG }
   | "is"            { IS }
-  | "dot"           { DOT }
-  | "normalize"     { NORM }
   | "true"          { TRUE }
   | "false"         { FALSE }
   | "if"            { IF }
@@ -57,6 +55,8 @@ rule read = parse
   | ","             { COMMA } 
   | ";"             { SEMI }
   | sampler as sm   { SAMPLER sm }
+  | "void"          { VOID }
+  | "return"        { RETURN }
   | "attribute"
   | "const"
   | "uniform"
@@ -76,7 +76,6 @@ rule read = parse
   | "precision"
   | "invariant"
   | "discard"
-  | "return"
   | "ivec2"
   | "ivec3"
   | "ivec4"

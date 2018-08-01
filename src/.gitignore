@@ -1,0 +1,6 @@
+# Menhir
+parser.ml
+parser.mli
+*.automaton
+*.conflicts
+lexer.ml
