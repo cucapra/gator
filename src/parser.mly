@@ -93,7 +93,7 @@ main:
 ;
 
 declarelst: 
-  | DECLARE; f = fn_decl
+  | DECLARE; f = fn_decl; SEMI;
       { f::[] }
   | DECLARE; f = fn_decl; SEMI; dl = declarelst
       { f::dl }
