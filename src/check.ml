@@ -475,26 +475,26 @@ let rec check_fn (((id, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn * p
     (* fn := fn_decl * comm list *)
     let (pl', g') = check_params pl d in
     let (cl', _) = check_comm_lst cl d g' p in 
-    (* update phi with function's declaration *)
-    let p' = Assoc.update id (pl, r) p in 
+    (* update phi with function declaration *)
+    let p' = check_fn_decl d (id, (pl, r)) p in 
     (* check that the last command is a return statement *)
     match r with
     | UnitTyp -> List.iter check_void_return cl; (((id, (pl', TypedAst.UnitTyp)), cl'), p')
     (* TODO: might want to check that there is exactly one return statement at the end *)
     | t -> List.iter (check_return t d g' p) cl; (((id, (pl', tag_erase t d)), cl'), p')
-and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.fn list =
+and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.fn list * phi =
     debug_print ">> check_fn_lst";
     match fl with
-    | [] -> ([])
+    | [] -> ([], p)
     | h::t -> let (fn', p') = check_fn h d p in
-        let fn'' = check_fn_lst t d p' in 
-        (fn' :: fn'')
+        let (fn'', p'') = check_fn_lst t d p' in 
+        ((fn' :: fn''), p'')
 
 (* Check that there is a void main() defined *)
-let check_main_fn (p: phi) (d: delta) =
+let check_main_fn (p: phi) =
     let (params, ret_type) = Assoc.lookup "main" p in
     match ret_type with
-    | UnitTyp -> check_params params d |> fst
+    | UnitTyp -> check_params params Assoc.empty |> fst
     | _ -> raise (TypeException ("expected main function to return void"))
 
 (* Returns the list of fn's which represent the program 
@@ -502,8 +502,10 @@ let check_main_fn (p: phi) (d: delta) =
 let check_prog (e: prog) : TypedAst.fn list * TypedAst.params =
     debug_print ">> check_prog";
     match e with
-    | Prog (d, t, f) -> 
-        (* TODO: add type checking for declares *)
+    | Prog (dl, t, f) -> (*(d: delta) ((id, t): fn_decl) (p: phi) *)
         (* delta from tag declarations *)
         let d = check_tags t Assoc.empty in 
-        ((check_fn_lst f d Assoc.empty), check_main_fn Assoc.empty d)
+        let p = List.fold_left (fun (a: phi) (dl': fn_decl) -> check_fn_decl d dl' a) Assoc.empty dl in
+        let (e', p') = check_fn_lst f d p in 
+        let pr = check_main_fn p' in 
+        (e', pr)
