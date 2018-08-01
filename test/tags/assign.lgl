@@ -5,8 +5,6 @@ tag c is b;
 tag d is b;
 
 void main() {
-
-void main() {
     a x = [1., 2.];
     b y = [2., 1., 1.];
     c z = [3., 3., 3.];

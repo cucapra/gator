@@ -5,12 +5,11 @@ void main() {
     a x = [1., 2.];
     b y = [2., 1.];
 
-    float res = dot [1., 2.] [2., 1.];
-    float res2 = dot x y;
-    float res3 = dot y x;
+    float res = dot ([1., 2.], [2., 1.]);
+    float res2 = dot (x, y);
+    float res3 = dot (y, x);
 
     print res;
     print res2;
     print (res2 == res3);
-
 }

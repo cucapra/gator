@@ -4,6 +4,7 @@ void main() {
     }
     else {
         print 3.2;
+    }
     bool b = false; 
     if (b) { 
         print 2.2; 
