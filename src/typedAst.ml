@@ -16,7 +16,7 @@ type etyp =
 (* function declaration *)
 type params = (id * etyp) list
 type ret_type = etyp
-(* we do not have higher order functions *)
+(* functions are not first-class *)
 type fn_type = params * ret_type
 type fn_decl = id * fn_type
 

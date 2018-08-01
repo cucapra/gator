@@ -1,32 +1,12 @@
-vec3 aPosition = [0., 0., 0.];
-vec3 aNormal = [0., 0., 0.];
-vec3 vPosition = [0., 0., 0.];
-vec3 vNormal = [0., 0., 0.];
-vec4->vec4 uProjection = [
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.]
-];
-vec4->vec4 uView = [
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.]
-];
-vec4->vec4 uModel = [
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.],
-  [0., 0., 0., 0.]
-];
-vec3->vec4 v3_v4 = [
-  [1., 0., 0.],
-  [0., 1., 0.],
-  [0., 0., 1.],
-  [0., 0., 0.]
-];
+void main(vec3 aPosition, vec3 aNormal, vec3 vPosition, vec3 vNormal, vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel) {
+  vec3->vec4 v3_v4 = [
+    [1., 0., 0.],
+    [0., 1., 0.],
+    [0., 0., 1.],
+    [0., 0., 0.]
+  ];
 
-vNormal = aNormal;
-vPosition = aPosition;
-vec4 gl_Position = uProjection * uView * uModel * (v3_v4 * aPosition + [0., 0., 0., 1.]);
+  vNormal = aNormal;
+  vPosition = aPosition;
+  vec4 gl_Position = uProjection * uView * uModel * (v3_v4 * aPosition + [0., 0., 0., 1.]);
+}

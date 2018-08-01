@@ -32,7 +32,17 @@ let rec string_of_exp (e: exp) : string =
         let rs = (string_of_exp r) in
         (match op with
         | _ -> (string_of_binop op ls rs))
-    | _ -> failwith "Unimplemented"
+        (* id * args *)
+    | FnInv (id, args) -> id ^ "(" ^ (string_of_args args) ^")"
+and string_of_args (a: exp list) : string = 
+    match a with
+    | [] -> ""
+    | h::t -> string_of_exp h ^ ", " ^ string_of_args t
+
+let rec string_of_param (p: params) : string = 
+    match p with
+    | [] -> ""
+    | (i, e)::t -> (string_of_typ e) ^ " " ^ i ^ "," ^ (string_of_param t)
 
 let rec string_of_comm (c: comm) : string =
     match c with
@@ -44,14 +54,22 @@ let rec string_of_comm (c: comm) : string =
     | Assign (b, (x, _)) -> b ^ " = " ^ (string_of_exp x) ^ ";"
     | Return Some (x, _) -> "return" ^ (string_of_exp x) ^ ";"
     | Return None -> "return;"
-    
+
 and string_of_comm_list (cl : comm list) : string = 
     match cl with
     | [] -> ""
     | h::t -> (string_of_comm h)^"\n"^(string_of_comm_list t)
 
-let rec string_of_fn_lst (fl : fn list) : string = 
-    failwith "Unimplemented"
+let string_of_fn (((id, (p, rt)), cl) : fn) : string = 
+    match id with 
+    | "main" -> "void main() {" ^ (string_of_comm_list cl) ^ "}"
+    | _ -> (string_of_typ rt) ^ " " ^ id ^ "(" ^ (string_of_param p) ^ "){" ^ (string_of_comm_list cl) ^ "}"
+ 
+let rec string_of_fn_list (f : fn list) : string = 
+    match f with 
+    | [] -> ""
+    | h::t -> (string_of_fn h) ^ (string_of_fn_list t)
 
 let string_of_prog (e : prog) : string =
-    string_of_fn_lst e
+
+    string_of_fn_list e
