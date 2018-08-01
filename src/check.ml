@@ -317,7 +317,7 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) : TypedAst.exp * typ =
     | VecTrans (i, tag) -> failwith "Unimplemented"
 
 
-let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gamma =
+let check_assign (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gamma =
     debug_print (">> check_decl <<"^s^">>");
     if Assoc.mem s d then 
         raise (TypeException "variable declared as tag")
@@ -344,13 +344,13 @@ let rec check_comm (c: comm) (d: delta) (g: gamma) : TypedAst.comm * gamma =
     | Decl (t, s, e) -> 
         if Assoc.mem s g then raise (TypeException "variable name shadowing is illegal")
         else let result = check_exp e d g in
-            (TypedAst.Decl (tag_erase t d, s, (exp_to_texp result d)), (check_decl t s (snd result) d g))
+            (TypedAst.Decl (tag_erase t d, s, (exp_to_texp result d)), (check_assign t s (snd result) d g))
 
     | Assign (s, e) -> 
         if Assoc.mem s g then 
             let t = Assoc.lookup s g in
             let result = check_exp e d g in
-            (TypedAst.Assign (s, (exp_to_texp result d)), check_decl t s (snd result) d g)
+            (TypedAst.Assign (s, (exp_to_texp result d)), check_assign t s (snd result) d g)
         else raise (TypeException "assignment to undeclared variable")
 
     | If (b, c1, c2) ->
