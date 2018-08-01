@@ -472,22 +472,24 @@ let check_return (t: typ) (d: delta) (g: gamma) (p: phi) (c: comm) =
         )
     | _ -> ()
 
-let rec check_fn (((id, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn = 
+let rec check_fn (((id, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn * phi= 
     debug_print ">> check_fn";
     (* fn := fn_decl * comm list *)
     let (pl', g') = check_params pl d in
     let (cl', _) = check_comm_lst cl d g' p in 
+    (* update phi with function's declaration *)
+    let p' = Assoc.update id (pl, r) in 
     (* check that the last command is a return statement *)
     match r with
-    | VoidTyp -> List.iter check_void_return cl; ((id, (pl', TypedAst.VoidTyp)), cl')
+    | VoidTyp -> List.iter check_void_return cl; (((id, (pl', TypedAst.VoidTyp)), cl'), p')
     (* TODO: might want to check that there is exactly one return statement at the end *)
-    | t -> List.iter (check_return t d g' p) cl; ((id, (pl', tag_erase t d)), cl')
+    | t -> List.iter (check_return t d g' p) cl; (((id, (pl', tag_erase t d)), cl'), p')
 and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.fn list =
     debug_print ">> check_fn_lst";
     match fl with
     | [] -> ([])
-    | h::t -> let fn' = check_fn h d p in
-        let fn'' = check_fn_lst t d p in 
+    | h::t -> let (fn', p') = check_fn h d p in
+        let fn'' = check_fn_lst t d p' in 
         (fn' :: fn'')
 
 (* Check that there is a void main() defined *)
@@ -508,7 +510,4 @@ let check_prog (e: prog) : TypedAst.fn list * TypedAst.params =
         let d = check_tags t Assoc.empty in 
         (* list of function declarations of the program *)
         let fn_decls = List.map (fun ((dc, b): fn) -> dc) f in  
-        (* phi from initial pass of function declarations. 
-         * overloaded functions and nameshadowing are allowed. *)
-        let p = List.fold_right (check_fn_decl d) fn_decls Assoc.empty in 
-        ((check_fn_lst f d p), check_main_fn p d)
+        ((check_fn_lst f d Assoc.empty), check_main_fn Assoc.empty d)
