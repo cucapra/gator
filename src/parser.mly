@@ -182,7 +182,7 @@ typ:
         let dim_lst = Str.split_delim (regexp "D") dim in
         SamplerTyp (int_of_string(List.nth dim_lst 0)) }
   | VOID
-      { VoidTyp }
+      { UnitTyp }
 ;
 
 tagtyp:

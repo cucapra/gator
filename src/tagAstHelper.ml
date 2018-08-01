@@ -15,14 +15,13 @@ let string_of_tag_typ (t: tag_typ) : string =
 
 let rec string_of_typ (t: typ) : string = 
     match t with
-    | UnitTyp -> "unit"
+    | UnitTyp -> "void"
     | BoolTyp -> "bool"
     | IntTyp -> "int"
     | FloatTyp -> "float"
     | TagTyp s -> string_of_tag_typ s
     | TransTyp (s1, s2) -> (string_of_tag_typ s1) ^ "->" ^ (string_of_tag_typ s2)
     | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D"
-    | VoidTyp -> "void"
 
 let rec string_of_exp (e:exp) : string =
     match e with

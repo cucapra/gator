@@ -132,8 +132,7 @@ let check_typ_exp (t: typ) (d: delta) : unit =
     | BoolTyp
     | IntTyp
     | FloatTyp 
-    | SamplerTyp _ 
-    | VoidTyp -> ()
+    | SamplerTyp _ -> ()
     | TagTyp s -> check_tag_typ s d; ()
     | TransTyp (s1, s2) -> check_tag_typ s1 d; check_tag_typ s2 d; ()
 
@@ -285,7 +284,6 @@ let tag_erase (t : typ) (d : delta) : TypedAst.etyp =
         | VarTyp _ -> TypedAst.VecTyp (vec_dim tag d))
     | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
     | SamplerTyp i -> TypedAst.SamplerTyp i
-    | VoidTyp -> TypedAst.VoidTyp
     
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
 let check_param ((id, t): (string * typ)) (g: gamma) : gamma = 
@@ -481,7 +479,7 @@ let rec check_fn (((id, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn * p
     let p' = Assoc.update id (pl, r) p in 
     (* check that the last command is a return statement *)
     match r with
-    | VoidTyp -> List.iter check_void_return cl; (((id, (pl', TypedAst.VoidTyp)), cl'), p')
+    | UnitTyp -> List.iter check_void_return cl; (((id, (pl', TypedAst.UnitTyp)), cl'), p')
     (* TODO: might want to check that there is exactly one return statement at the end *)
     | t -> List.iter (check_return t d g' p) cl; (((id, (pl', tag_erase t d)), cl'), p')
 and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.fn list =
@@ -496,7 +494,7 @@ and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.fn list =
 let check_main_fn (p: phi) (d: delta) =
     let (params, ret_type) = Assoc.lookup "main" p in
     match ret_type with
-    | VoidTyp -> check_params params d |> fst
+    | UnitTyp -> check_params params d |> fst
     | _ -> raise (TypeException ("expected main function to return void"))
 
 (* Returns the list of fn's which represent the program 
