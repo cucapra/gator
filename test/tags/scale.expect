@@ -1,4 +1,0 @@
-precision highp float;void main() {vec2 x = vec2(1., 2.);vec3 y = vec3(2., 1., 2.);vec3 z = vec3(3., 3., 3.);vec3 z2 = vec3(2., 2., 2.);vec2 s11 = x + vec2(2., 1.);vec3 s12 = z + z2;vec3 s13 = z * 2.;mat3 v2_d = mat3(1., 1., 1., 1., 1., 1., 0., 0., 0.);mat3 a_b = v2_d;mat3 v3_c = mat3(1., 1., 1., 1., 1., 1., 1., 1., 1.);mat3 s21 = v3_c * 2.;mat3 s22 = v2_d + mat3(1., 1., 1., 1., 1., 1., 0., 0., 0.);mat3 s23 = a_b + v2_d;}
-
-------------------
-

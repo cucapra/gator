@@ -1,4 +1,0 @@
-precision highp float;void main() {bool b1 = 1 == 2;bool b2 = 1 == 1;bool b3 = 3 <= 2;bool b4 = 2 <= 3;bool b5 = true && false;bool b6 = false || false;bool b7 = (3 <= 3) && (3 <= 3);bool b8 = !true;bool b = true;bool b9 = b && (!b);}
-
-------------------
-
