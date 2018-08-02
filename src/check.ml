@@ -373,7 +373,6 @@ let check_assign (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gamma
             if subsumes_to t2 t1 d then Assoc.update s t g
             else raise (TypeException ("mismatched linear type for var decl: " ^ s))
         | (TransTyp (t1, t2), TransTyp (t3, t4)) ->
-            print_endline ((string_of_tag_typ t1) ^ " " ^ (string_of_tag_typ t3));
             if is_tag_subtype t1 t3 d && is_tag_subtype t4 t2 d then Assoc.update s t g
             else raise (TypeException ("no possible upcast for var decl: " ^ s))
         | _ -> raise (TypeException ("mismatched types for var decl: expected " ^ (string_of_typ t) ^ " " ^ s ^ ", found " ^ (string_of_typ etyp) ))
