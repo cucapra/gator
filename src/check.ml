@@ -44,8 +44,13 @@ let is_tag_subtype (to_check: tag_typ) (target: tag_typ) (d: delta) : bool =
     | BotTyp n, VarTyp s -> n = (vec_dim target d)
     | VarTyp _, BotTyp _ -> false
     | VarTyp _, VarTyp s2 -> List.mem s2 (get_ancestor_list to_check d)
-    | VarTyp s, TopTyp n -> false (* Cannot upcast a variable to the toptyp *)
+    | VarTyp s, TopTyp n -> n = (vec_dim to_check d)
     | TopTyp _, _ -> false
+
+let subsumes_to (to_check: tag_typ) (target: tag_typ) (d: delta) : bool =
+    match (to_check, target) with
+    | VarTyp s, TopTyp n -> false (* Cannot upcast a variable to the toptyp *)
+    | _ -> is_tag_subtype to_check target d
 
 let least_common_parent (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
     let check_dim (n1: int) (n2: int) : unit =
@@ -97,8 +102,8 @@ let greatest_common_child (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
         let bot_dim = vec_dim (VarTyp s1) d in
         check_dim bot_dim (vec_dim (VarTyp s2) d);
         (* This works since each tag can only have one parent *)
-        (if is_tag_subtype t1 t2 d then t1
-        else if is_tag_subtype t2 t1 d then t2
+        (if subsumes_to t1 t2 d then t1
+        else if subsumes_to t2 t1 d then t2
         else BotTyp bot_dim)
 
 let check_val (v: value) (d: delta) : typ = 
@@ -197,7 +202,7 @@ let check_comp_binop (t1: typ) (t2: typ) (d: delta) : typ =
 let check_dot_exp (t1: typ) (t2: typ) (d: delta): typ = 
     match (t1, t2) with 
     | TagTyp a1, TagTyp a2 ->  
-        if is_tag_subtype a1 a2 d || is_tag_subtype a2 a1 d
+        if subsumes_to a1 a2 d || subsumes_to a2 a1 d
         then FloatTyp 
         else raise (TypeException "expected tag type of same dimension for dot product exp")
     | _ -> raise (TypeException "unexpected type for dot product exp")
@@ -243,7 +248,7 @@ let check_times_exp (t1: typ) (t2: typ) (d: delta) : typ =
     | TagTyp _, TransTyp _ -> 
         raise(TypeException "Cannot multiply a vector * matrix (did you mean matrix * vector?)")
     | TransTyp (m1, m2), TagTyp t -> 
-        if is_tag_subtype t m1 d then (TagTyp m2)
+        if subsumes_to t m1 d then (TagTyp m2)
         else raise (TypeException ("Cannot apply a matrix of type " ^ (string_of_typ t1)
             ^ " to a vector of type " ^ (string_of_typ t2)))
 
@@ -337,7 +342,7 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ =
         let params_typ = List.map snd params in 
         let is_subtype arg param = (
             match (arg, param) with 
-            | (TagTyp t1, TagTyp t2) -> is_tag_subtype t1 t2 d 
+            | (TagTyp t1, TagTyp t2) -> subsumes_to t1 t2 d 
             | (SamplerTyp i1, SamplerTyp i2) -> i1 = i2 
             | (BoolTyp, BoolTyp)
             | (IntTyp, IntTyp)
@@ -365,9 +370,10 @@ let check_assign (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gamma
         | (FloatTyp, FloatTyp) -> Assoc.update s t g
         | (TagTyp t1, TagTyp t2) ->
             least_common_parent t1 t2 d |> ignore;
-            if is_tag_subtype t2 t1 d then Assoc.update s t g
+            if subsumes_to t2 t1 d then Assoc.update s t g
             else raise (TypeException ("mismatched linear type for var decl: " ^ s))
         | (TransTyp (t1, t2), TransTyp (t3, t4)) ->
+            print_endline ((string_of_tag_typ t1) ^ " " ^ (string_of_tag_typ t3));
             if is_tag_subtype t1 t3 d && is_tag_subtype t4 t2 d then Assoc.update s t g
             else raise (TypeException ("no possible upcast for var decl: " ^ s))
         | _ -> raise (TypeException ("mismatched types for var decl: expected " ^ (string_of_typ t) ^ " " ^ s ^ ", found " ^ (string_of_typ etyp) ))
@@ -457,7 +463,7 @@ let check_return (t: typ) (d: delta) (g: gamma) (p: phi) (c: comm) =
             (string_of_typ t) ^ ", found: " ^ (string_of_typ rt)))
         in
         match (t,rt) with 
-        | (TagTyp t1, TagTyp t2) -> is_tag_subtype t1 t2 d |> raise_return_exception
+        | (TagTyp t1, TagTyp t2) -> subsumes_to t1 t2 d |> raise_return_exception
         | (SamplerTyp i1, SamplerTyp i2) -> i1 = i2 |> raise_return_exception 
         | (BoolTyp, BoolTyp)
         | (IntTyp, IntTyp)
