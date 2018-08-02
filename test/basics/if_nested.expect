@@ -1,0 +1,4 @@
+precision highp float;void main() {bool b = true;bool b_in = false;if (b){ if (b_in){  }{  } }{ if (b_in){  }{  } }}
+
+------------------
+

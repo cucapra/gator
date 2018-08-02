@@ -1,0 +1,4 @@
+precision highp float;void main() {int a = -20;}
+
+------------------
+

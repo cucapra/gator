@@ -1,0 +1,4 @@
+precision highp float;void main() {int r1 = 1 + 2;int r2 = -1 + -2;int r3 = 2 * 6;int r4 = 7 + 5;int r5 = 7 + -5;float r6 = 1. + 0.1;float r7 = 2. * 1.5;float r8 = 1.5 + 1.;}
+
+------------------
+

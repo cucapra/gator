@@ -1,0 +1,4 @@
+precision highp float;void main() {vec2 s1 = f(vec2(1., 2.));vec2 s2 = g((f(vec2(1., 2.))));int s3 = h((g(vec2(1., 2.))), (f(vec2(2., 1.))));mat2 s4 = build(vec2(1., 2.), mat2(1., 2., 2., 1.));}
+
+------------------
+
