@@ -19,6 +19,8 @@
     "canvas-orbit-camera": "^1.0.0",
     "gl-matrix": "^2.6.1",
     "normals": "^0.1.0",
-    "teapot": "^1.0.0"
+    "teapot": "^1.0.0",
+    "webgl-obj-loader": "^1.1.3"
+
   }
 }
