@@ -142,9 +142,9 @@ function make_buffer(gl: WebGLRenderingContext, data: number[][], type: 'uint8' 
 /**
  * Bind a buffer as an attribute array.
  */
-export function bind_attrib_buffer(gl: WebGLRenderingContext, location: number, buffer: WebGLBuffer) {
+export function bind_attrib_buffer(gl: WebGLRenderingContext, location: number, buffer: WebGLBuffer, size: number) {
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-  gl.vertexAttribPointer(location, 3, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(location);
 }
 
@@ -191,7 +191,7 @@ export function getMesh(gl: WebGLRenderingContext, obj: { cells: [number, number
     cells: make_buffer(gl, obj.cells, 'uint16', gl.ELEMENT_ARRAY_BUFFER),
     cell_count: obj.cells.length * obj.cells[0].length,
     positions: make_buffer(gl, obj.positions, 'float32', gl.ARRAY_BUFFER),
-    normals: make_buffer(gl, norm, 'float32', gl.ARRAY_BUFFER),
+    normals: make_buffer(gl, norm, 'float32', gl.ARRAY_BUFFER)
   };
 }
 
