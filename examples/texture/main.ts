@@ -1,6 +1,7 @@
 import * as lgl from '../lglexample';
 import { mat4 } from 'gl-matrix';
 import adrian from '../resources/adrian.png'
+import head from '../resources/lpshead/head.obj'
 import * as model3D from 'bunny';
 
 function main() {
@@ -24,7 +25,7 @@ function main() {
   let loc_uTexture = lgl.uniformLoc(gl, program, 'uTexture');
 
   // We'll draw a bunny.
-  let mesh = lgl.getTeapot(gl);
+  let mesh = lgl.getBunny(gl);
 
   // Initialize the model position.
   let model = mat4.create();
@@ -65,11 +66,13 @@ function loadTexture(gl: WebGLRenderingContext) {
       var texture = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
       // clamp to edge gives us non-power-of-2 support
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+   
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image);
 
