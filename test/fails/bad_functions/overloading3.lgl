@@ -1,0 +1,27 @@
+int f(int x) {
+    return 1;
+}
+
+int f(bool x) {
+    return 1;
+}
+
+int f(vec2 x) {
+    return 1;
+}
+
+int f(vec3 x) {
+    return 1;
+}
+
+int f(vec4 x) {
+    return 1;
+}
+
+int f(vec2 x) { // Twice (!)
+    return 1;
+}
+
+void main() {
+    return;
+}

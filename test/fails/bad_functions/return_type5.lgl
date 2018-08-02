@@ -1,0 +1,12 @@
+int f() {
+    return 5;
+}
+
+int g(bool x) {
+    return x > 0;
+}
+
+void main() {
+    print g(f());
+    return;
+}

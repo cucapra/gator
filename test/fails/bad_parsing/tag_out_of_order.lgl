@@ -1,5 +1,0 @@
-void main() {
-    print 5;
-    tag s is vec2;
-    print [vec2];
-}

@@ -1,0 +1,7 @@
+int f(x) { //Must include a type
+    return 0;
+}
+
+void main() {
+    return;
+}

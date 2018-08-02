@@ -1,0 +1,3 @@
+void main(int x) { // Must include attributes in main
+    return;
+}

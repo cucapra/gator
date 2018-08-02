@@ -1,0 +1,7 @@
+int f(int x) {
+    return f(x);
+}
+
+void main() {
+    print f(5);
+}

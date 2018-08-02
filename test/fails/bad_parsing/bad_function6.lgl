@@ -1,0 +1,7 @@
+int f(int x,, float y) { //Double Comma
+    return 0;
+}
+
+void main() {
+    return;
+}

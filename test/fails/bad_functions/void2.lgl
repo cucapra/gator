@@ -1,0 +1,7 @@
+void f() {
+    return;
+}
+
+void main() {
+    print f(); // Cannot use a void function
+}

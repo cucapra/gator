@@ -1,0 +1,5 @@
+declare f(); // No return type
+
+void main() {
+    return;
+}
