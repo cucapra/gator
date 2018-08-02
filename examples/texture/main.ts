@@ -29,8 +29,6 @@ function main() {
   // Initialize the model position.
   let model = mat4.create();
 
-  let txture = mat4.create();
-
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
     mat4.rotateY(model, model, .01);
@@ -49,30 +47,32 @@ function main() {
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
     gl.enableVertexAttribArray(loc_aTexCoord);
     gl.vertexAttribPointer(loc_aTexCoord, 2, gl.FLOAT, false, 0, 0);
+    
+    // setTexcoords(gl, projection);
+
+    // clamp to edge gives non-power-of-2 support for WebGL 1.0
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
     // Create a texture.
-    var texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
     
-    // Fill the texture with a 1x1 blue pixel.
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
-                  new Uint8Array([0, 0, 255, 255]));
     
     // Asynchronously load an image
     var image = new Image();
     
-    image.crossOrigin = "";
     image.src = adrian;
     image.addEventListener('load', function() {
       // Now that the image has loaded make copy it to the texture.
+      var texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image);
 
-      // Non power-of-two
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     });
+    
 
     // Draw the object.
     lgl.drawMesh(gl, mesh);
@@ -80,15 +80,10 @@ function main() {
 }
 
 // Fill the buffer with texture coordinates for the bunny.
-function setTexcoords(gl: WebGLRenderingContext) {
+function setTexcoords(gl: WebGLRenderingContext, data: Float32Array) {
   gl.bufferData(
     gl.ARRAY_BUFFER,
-    new Float32Array([
-      0, 0, 
-      0, .2, 
-      .2, 0, 
-      0, .2
-    ]), 
+    data, 
     gl.STATIC_DRAW
   );
 }
