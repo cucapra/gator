@@ -8,7 +8,7 @@ import random
 
 
 TEST_SYMBOLS = "test/symbols.txt"
-SUCCESS_COUNT = 3
+SUCCESS_COUNT = 5
 
 
 def get_symbols():
@@ -18,7 +18,6 @@ def get_symbols():
     with open(TEST_SYMBOLS, "r") as f:
         for line in f:
             line = line.strip()
-            print(line)
             if line == "":
                 continue
             if line.lower() == "fails":
@@ -33,9 +32,9 @@ def get_symbols():
 
 def main():
     success_symbols, fail_symbols = get_symbols()
+    any_fails = True  # Trick to avoid printing excess successes
     for path, _, files in os.walk("test/"):
         lglfiles = filter(lambda x: x.endswith(".lgl"), files)
-        any_fails = True  # Trick to avoid printing excess successes
         if len(lglfiles) > 0:
             print("Running tests in " + path + ":")
             any_fails = False
@@ -56,10 +55,11 @@ def main():
                 any_fails = True
                 print(random.choice(fail_symbols) + " " +
                       basename + ".expect not found")
-        if not any_fails:
-            for _ in range(SUCCESS_COUNT):
-                print(random.choice(success_symbols)),
-            print()
+    if not any_fails:
+        print("No Failures!")
+        for _ in range(SUCCESS_COUNT):
+            print(random.choice(success_symbols)),
+        print("")
 
 
 if __name__ == "__main__":
