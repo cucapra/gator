@@ -1,6 +1,10 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import subprocess
 import os
 import filecmp
+import random
 
 def main():
 	for path,_,files in os.walk("test/"):
@@ -16,9 +20,9 @@ def main():
 			# We write and then read to avoid memory shenanigans (this might be worse actually, but I don't think it matters)
 			try:
 				if not filecmp.cmp(basename + ".expect", outname):
-					print("ERROR: " + basename + ".expect" + " and " + outname + " do not match")
+					print("❌ " + basename)
 			except FileNotFoundError:
-				print("ERROR: " + basename + ".expect not found")
+				print("❌ " + basename + ".expect not found")
 				
 if __name__=="__main__":
 	main()
