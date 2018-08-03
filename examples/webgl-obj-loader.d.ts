@@ -37,4 +37,4 @@ declare module "webgl-obj-loader" {
        */
       constructor(objStr: string);
     }
-  }
+}
