@@ -1,7 +1,6 @@
 import * as lgl from '../lglexample';
 import { mat4 } from 'gl-matrix';
-import adrian from '../resources/adrian.png'
-import head from '../resources/lpshead/head.obj'
+import * as obj_loader from 'webgl-obj-loader';
 import * as model3D from 'bunny';
 
 function main() {
