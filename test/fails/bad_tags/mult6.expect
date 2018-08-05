@@ -1,1 +1,1 @@
-Fatal error: exception Failure("Parsing error at character =, character 65")
+Fatal error: exception Lingl__Check.TypeException("mismatched linear type for var decl: fail")

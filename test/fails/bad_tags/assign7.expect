@@ -1,1 +1,1 @@
-Fatal error: exception Failure("Parsing error at character tag, character 22")
+Fatal error: exception Lingl__Check.TypeException("variable declared as tag")

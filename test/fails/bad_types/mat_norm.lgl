@@ -1,4 +1,0 @@
-void main() {
-    mat2x2 m = [[2., 3.], [3., 2.]];
-    print (normalize (m));
-}

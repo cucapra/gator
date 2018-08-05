@@ -1,3 +1,1 @@
-void main() {
-    tag a is b; // Undeclared b
-}
+tag a is b; // Undeclared b

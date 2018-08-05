@@ -30,6 +30,27 @@ def get_symbols():
     return success_symbols, fail_symbols
 
 
+def test_exception(outname, expectname):
+    # Special case for exceptions
+    # Ignore the text of the exception, we just want the type of exception that occured
+    # (And, of course, that an exception occured)
+    try:
+        with open(outname, "r") as outf:
+            with open(expectname, "r") as expf:
+                outval = next(outf)
+                expval = next(expf)
+                # Special case party!
+                parsing_error = "Fatal error: exception Failure(\"Parsing error"
+                if expval.startswith(parsing_error):
+                    return outval.startswith(parsing_error)
+                if expval.startswith("Fatal error: exception"):
+                    pindex = expval.index("(")
+                    return outval[:pindex] == expval[:pindex]
+                return False
+    except:
+        return False
+
+
 def main():
     success_symbols, fail_symbols = get_symbols()
     any_fails = True  # Trick to avoid printing excess successes
@@ -42,24 +63,26 @@ def main():
             filename = path + "/" + filename
             basename = filename[:-4]  # Remove the extension
             outname = basename + ".out"
+            expectname = basename + ".expect"
             with open(outname, "w") as f:
                 subprocess.call(
                     ("jbuilder", "exec", "bin/lingc.bc", filename, "v"), stdout=f, stderr=f)
             # We write and then read to avoid memory shenanigans
             # (this might be worse actually, but I don't think it matters)
             try:
-                if not filecmp.cmp(basename + ".expect", outname):
+                if not filecmp.cmp(outname, expectname)\
+                        and not test_exception(outname, expectname):
                     any_fails = True
                     print(random.choice(fail_symbols) + " " + basename)
             except IOError:
                 any_fails = True
                 print(random.choice(fail_symbols) + " " +
-                      basename + ".expect not found")
+                      expectname + " not found")
     if not any_fails:
         print("No Failures!")
         for _ in range(SUCCESS_COUNT):
             print(random.choice(success_symbols)),
-        print("")
+        print("")  # newline
 
 
 if __name__ == "__main__":

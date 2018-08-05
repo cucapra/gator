@@ -1,8 +1,8 @@
-void main() {
-    tag a is vec2;
-    tag b is vec2;
-    tag c is vec2;
+tag a is vec2;
+tag b is vec2;
+tag c is vec2;
 
+void main() {
     a->b a_b = [[1., 1.], [1., 1.]];
     b->c b_c = [[1., 1.], [1., 1.]];
     c->a c_a = [[1., 1.], [1., 1.]];

@@ -1,7 +1,0 @@
-tag a is vec2;
-tag b is vec2;
-
-a x = [1., 2.];
-b y = [2., 1.];
-
-float res = dot x y; // Cannot cast to top type

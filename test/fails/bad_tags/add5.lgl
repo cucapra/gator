@@ -3,8 +3,10 @@ tag b is vec3;
 tag c is b;
 tag d is vec3;
 
-a->b a_b = [[1., 1.], [1., 1.], [1., 1.]];
-b->c b_c = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
-b->d b_d = [[1., -1., 1.], [-1., 1., 1.], [1., 1., -1.]];
+void main() {
+    a->b a_b = [[1., 1.], [1., 1.], [1., 1.]];
+    b->c b_c = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
+    b->d b_d = [[1., -1., 1.], [-1., 1., 1.], [1., 1., -1.]];
 
-b->vec3 fail = b_c + b_d; // No upcast to top during addition
+    b->vec3 fail = b_c + b_d; // No upcast to top during addition
+}

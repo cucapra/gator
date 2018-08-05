@@ -1,7 +1,7 @@
-void main() {
-    tag a is vec2;
-    tag b is vec2;
+tag a is vec2;
+tag b is vec2;
 
+void main() {
     a->b a_b = [[1., 1.], [1., 1.]];
     b->vec2 b_v2 = [[1., 1.], [1., 1.]];
     a->a bad = a_b * b_v2; // Illegal downcast
