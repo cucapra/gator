@@ -35,6 +35,6 @@ declare module "webgl-obj-loader" {
       /**
        * Parse the source code for an .obj file.
        */
-      constructor(objStr: string);
+      constructor(objStr: Object);
     }
 }

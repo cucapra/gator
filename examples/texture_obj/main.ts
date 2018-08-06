@@ -2,8 +2,8 @@ import * as lgl from '../lglexample';
 import { mat4 } from 'gl-matrix';
 import * as model3D from 'bunny';
 import * as normals from 'normals';
-
-
+import * as head from '../resources/lpshead/lambertian.jpg';
+import * as head_mesh from '../resources/lpshead/head.OBJ';
 
 function main() {
   let gl = lgl.setup(render);
@@ -24,9 +24,8 @@ function main() {
   // Texture things
   let loc_aTexCoord = lgl.attribLoc(gl, program, 'aTexCoord');
   let loc_uTexture = lgl.uniformLoc(gl, program, 'uTexture');
-
-  let mesh = lgl.load_obj (gl, "resources/lpshead/head.OBJ");
-
+  let mesh = lgl.load_obj (gl, head_mesh);
+  
   // Initialize the model position.
   let model = mat4.create();
 
@@ -46,10 +45,10 @@ function main() {
     // Set the attribute arrays.
     //lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
-    lgl.bind_attrib_buffer(gl, loc_aTexCoord, mesh.texcoords, 3);
+    // lgl.bind_attrib_buffer(gl, loc_aTexCoord, mesh.texcoords, 3);
    
-    load_texture(gl);
-    
+    // load_texture(gl);
+
     // Draw the object.
     lgl.drawMesh(gl, mesh);
   }
@@ -59,7 +58,7 @@ function load_texture(gl: WebGLRenderingContext) {
     // Create a texture.
     // Asynchronously load an image
     var image = new Image();
-    
+    image.src = head;
     image.addEventListener('load', function() {
       // Now that the image has loaded make copy it to the texture.
       var texture = gl.createTexture();
