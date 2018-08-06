@@ -1,7 +1,9 @@
 import * as lgl from '../lglexample';
 import { mat4 } from 'gl-matrix';
 import * as model3D from 'bunny';
-import * as glrt from 'glrt';
+import * as normals from 'normals';
+
+
 
 function main() {
   let gl = lgl.setup(render);
@@ -23,8 +25,7 @@ function main() {
   let loc_aTexCoord = lgl.attribLoc(gl, program, 'aTexCoord');
   let loc_uTexture = lgl.uniformLoc(gl, program, 'uTexture');
 
-  // We'll draw a bunny.
-  let mesh = lgl.getBunny(gl);
+  let mesh = lgl.load_obj (gl, "resources/lpshead/head.OBJ");
 
   // Initialize the model position.
   let model = mat4.create();
@@ -45,21 +46,20 @@ function main() {
     // Set the attribute arrays.
     //lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
-    lgl.bind_attrib_buffer(gl, loc_aTexCoord, mesh.normals, 3);
+    lgl.bind_attrib_buffer(gl, loc_aTexCoord, mesh.texcoords, 3);
    
-    loadTexture(gl);
-  
+    load_texture(gl);
+    
     // Draw the object.
     lgl.drawMesh(gl, mesh);
   }
 }
 
-function loadTexture(gl: WebGLRenderingContext) {
+function load_texture(gl: WebGLRenderingContext) {
     // Create a texture.
     // Asynchronously load an image
     var image = new Image();
     
-    // image.src = adrian;
     image.addEventListener('load', function() {
       // Now that the image has loaded make copy it to the texture.
       var texture = gl.createTexture();

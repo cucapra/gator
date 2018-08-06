@@ -8,6 +8,11 @@ import * as bunny from 'bunny';
 import * as normals from 'normals';
 import pack from 'array-pack-2d';
 import canvasOrbitCamera from 'canvas-orbit-camera';
+import * as obj_loader from 'webgl-obj-loader';
+
+
+export type Vec3Array = [number, number, number][];
+export type Vec2Array = [number, number][];
 
 /**
  * Compile a single GLSL shader source file.
@@ -178,6 +183,11 @@ interface Mesh {
    * Also a 3-dimensional float32 array buffer.
    */
   normals: WebGLBuffer;
+
+  /**
+   * 2-Dimensional float32 array buffer.
+   */
+  texcoords: WebGLBuffer;
 }
 
 /**
@@ -191,9 +201,55 @@ export function getMesh(gl: WebGLRenderingContext, obj: { cells: [number, number
     cells: make_buffer(gl, obj.cells, 'uint16', gl.ELEMENT_ARRAY_BUFFER),
     cell_count: obj.cells.length * obj.cells[0].length,
     positions: make_buffer(gl, obj.positions, 'float32', gl.ARRAY_BUFFER),
-    normals: make_buffer(gl, norm, 'float32', gl.ARRAY_BUFFER)
+    normals: make_buffer(gl, norm, 'float32', gl.ARRAY_BUFFER),
+    texcoords: make_buffer(gl, norm, 'float32', gl.ARRAY_BUFFER) /* dummy value */
   };
 }
+
+// Load a mesh from an OBJ file.
+export function load_obj (gl: WebGLRenderingContext, src: string) {
+  let obj_src = src;
+  if (typeof obj_src !== "string") {
+    throw "obj source must be a string";
+  }
+  let mesh = new obj_loader.Mesh(obj_src);
+  // Match the interface we're using for Mesh objects that come from
+  // StackGL.
+  let cell = group_array(mesh.indices, 3) as Vec3Array;
+  let position = group_array(mesh.vertices, 3) as Vec3Array;
+  let normal = normals.vertexNormals(cell, position);
+  let texcoord = group_array(mesh.textures, 2) as Vec2Array;
+  let out: Mesh = {
+    positions: make_buffer(gl, position, 'float32', gl.ARRAY_BUFFER),
+    cells: make_buffer(gl, cell, 'uint16', gl.ELEMENT_ARRAY_BUFFER),
+    normals: make_buffer(gl, normal, 'float32', gl.ARRAY_BUFFER),
+    cell_count: 0, // dummy value
+    // This name I invented -- it's not in the StackGL models.
+    texcoords: make_buffer(gl, texcoord, 'float32', gl.ARRAY_BUFFER)
+  };
+
+
+  // .obj files can have normals, but if they don't, this parser library
+  // (confusingly) fills the array with NaN.
+  if (!isNaN(mesh.vertexNormals[0])) {
+    out.normals = group_array(mesh.vertexNormals, 3) as Vec3Array;
+  }
+
+  return out;
+}
+
+/**
+ * Given a flat array, return an array with the elements grouped into
+ * sub-arrays of a given size.
+ */
+function group_array<T>(a: T[], size: number) {
+  let out: T[][] = [];
+  for (let i = 0; i < a.length; i += size) {
+    out.push(a.slice(i, i + size));
+  }
+  return out;
+}
+
 
 /**
  * Get a Mesh object for the Stanford bunny.
