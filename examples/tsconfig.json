@@ -6,11 +6,16 @@
         "esModuleInterop": true,
         "resolveJsonModule": true,
         "outDir": "build",
+        "plugins": [
+            { "name": "tslint-language-service" }
+        ]
+
     },
     "include": [
         "*/main.ts",
         "lglexample.ts",
         "types.d.ts",
         "webgl-obj-loader.d.ts",
-    ]
+    ],
+    
 }

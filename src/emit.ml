@@ -42,7 +42,6 @@ let check_name (var_name : string) : bool =
 let is_core (var_name : string) : bool = 
     var_name = "gl_Position" || var_name = "gl_FragColor"
 
-
 let rec comp_exp (e : exp) : string =
     let op_wrap (op : exp) : string =
         match op with
@@ -93,7 +92,6 @@ let rec comp_exp (e : exp) : string =
     | Unop (op, (x, _)) -> (string_of_unop op (op_wrap x))
     | FnInv (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
  
-    
 let rec comp_comm (c : comm list) : string =
     match c with
     | [] -> ""
