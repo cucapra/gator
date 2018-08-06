@@ -1,7 +1,7 @@
 import * as lgl from '../lglexample';
 import { mat4 } from 'gl-matrix';
-import * as obj_loader from 'webgl-obj-loader';
 import * as model3D from 'bunny';
+import * as glrt from 'glrt';
 
 function main() {
   let gl = lgl.setup(render);
@@ -59,7 +59,7 @@ function loadTexture(gl: WebGLRenderingContext) {
     // Asynchronously load an image
     var image = new Image();
     
-    image.src = adrian;
+    // image.src = adrian;
     image.addEventListener('load', function() {
       // Now that the image has loaded make copy it to the texture.
       var texture = gl.createTexture();
