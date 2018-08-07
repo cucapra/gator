@@ -5,14 +5,7 @@
         "strict": true,
         "esModuleInterop": true,
         "resolveJsonModule": true,
-        "outDir": "build",
-        "plugins": [
-            { "name": "tslint-language-service" }
-        ],
-        "typeRoots": [
-            "./node_modules/@types"
-        ]
-
+        "outDir": "build"
     },
     "include": [
         "*/main.ts",

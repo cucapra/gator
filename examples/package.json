@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@types/gl-matrix": "^2.4.0",
-    "@types/node": "^10.5.7",
     "array-pack-2d": "^1.0.0",
     "bunny": "^1.0.1",
     "canvas-orbit-camera": "^1.0.0",

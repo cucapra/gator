@@ -1,11 +1,11 @@
 import * as lgl from '../lglexample';
 import { mat4 } from 'gl-matrix';
-import * as model3D from 'bunny';
-import * as normals from 'normals';
-// import head from '../resources/adrian.png'
-import head from '../resources/lpshead/lambertian.jpg';
-const fs = require('fs');
 
+
+const head : string = require('../resources/marble.jpg');
+const fs : any = require('fs');
+
+var __dirname : string;
 
 function main() {
   let gl = lgl.setup(render);
