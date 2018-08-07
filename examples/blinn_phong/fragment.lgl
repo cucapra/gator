@@ -1,83 +1,126 @@
-// Phong lighting with top types
-// Referenced https://learnopengl.com/Lighting/Basic-Lighting
+// Blinn-Phong
+// GLSL reference:
+// https://learnopengl.com/Lighting/Basic-Lighting
+// Note that some varying values are baked in differently here (e.g. vNormal vs. normalWorld)
+// Thus we sometimes use Braid example as a reference
+// https://capra.cs.cornell.edu/braid/dingus/#example=phong
 
+tag model is vec3;
+tag modelHom is vec4;
+tag world is vec3;
+tag worldHom is vec4;
+tag camera is vec3;
+tag cameraHom is vec4;
+tag color is vec3;
+tag alphaColor is vec4;
 
 declare float dot(vec3 v1, vec3 v2);
 declare vec3 normalize(vec3 v1); 
 
 void main(vec3 uPosition, vec4->vec4 uModel, vec4->vec4 uView, vec3 vNormal, vec3 uLight, vec3 vPosition) {
-    vec4->vec3 v4_v3 = [
-        [1.,0.,0.,0.],
-        [0.,1.,0.,0.],
-        [0.,0.,1.,0.]
+
+    model->modelHom extendModel = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.],
+        [0., 0., 0.]
     ];
 
-    vec3->vec4 v3_v4 = [
-    [1., 0., 0.],
-    [0., 1., 0.],
-    [0., 0., 1.],
-    [0., 0., 0.]
+    modelHom modelScale = [0., 0., 0., 1.];
+    modelHom->model collapseModel = [ 
+        [1., 0., 0., 0.],
+        [0., 1., 0., 0.], 
+        [0., 0., 1., 0.]
     ];
 
-    vec3 color = [0.9, 0.8, 0.9]; // tasty orange
-    vec3 lightColor = [0.4, 0.3, 0.9];
-
-    // ****************
-    // Ambient lighting 
-    // ****************
-    float ambientStrength = 0.5;
-    vec3 ambient = ambientStrength * lightColor;
-
-
-    // ****************
-    // Diffuse lighting
-    // ****************
-    // Calculate the real position of this pixel in 3d space
-    vec3 worldPos = v4_v3 * (uModel * ((v3_v4 * vPosition) + [0., 0., 0., 1.]));
-
-    // Calculate the normal including the model rotation and scale
-    vec3 worldNorm = normalize(v4_v3 * (uModel * (v3_v4 * vNormal)));
-
-    vec3 lightDir = normalize(uLight - worldPos);
-
-    // An example simple lighting effect, taking the dot product of the normal
-    float diff = (dot (worldNorm, lightDir));
-    bool diff_is_neg = (diff <= 0.);
-    if (diff_is_neg) {
-        diff = 0.;
-    } else { skip; }
-
-    vec3 diffuse = diff * lightColor;
-
-    // ****************
-    // Specular lighting
-    // ****************
-
-    float specularStrength = 3.;
-
-    vec3 viewDir = normalize([0., 0., 0.] - v4_v3 * (uView * ((v3_v4 * worldPos) + [0., 0., 0., 1.])));
-
-    vec3->vec3 neg = [
-        [-1., 0., 0.],
-        [0., -1., 0.],
-        [0., 0., -1.]
+    world->worldHom extendWorld = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.],
+        [0., 0., 0.]
+    ];
+    worldHom worldScale = [0., 0., 0., 1.];
+    worldHom->world collapseWorld = [ 
+        [1., 0., 0., 0.],
+        [0., 1., 0., 0.], 
+        [0., 0., 1., 0.]
     ];
 
-    vec3 reflectDir = (neg * lightDir) - 2. * (dot ((neg * lightDir), worldNorm)) * worldNorm;
-    vec3 cameraReflect = v4_v3 * (uView * (v3_v4 * reflectDir));
-    float spec = dot(viewDir, cameraReflect); 
-    bool spec_is_neg = (spec <= 0.);
-    if (spec_is_neg) {
-        spec = 0.;
-    } else { skip; }
+    camera->cameraHom extendCamera = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.],
+        [0., 0., 0.]
+    ];
+    cameraHom cameraScale = [0., 0., 0., 1.];
+    cameraHom->camera collapseCamera = [ 
+        [1., 0., 0., 0.],
+        [0., 1., 0., 0.], 
+        [0., 0., 1., 0.]
+    ];
 
-    spec = spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec; // We don't have a pow function yet..
-    vec3 specular = specularStrength * spec * [1., 1., 1.];  
+    color->alphaColor extendColor = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.],
+        [0., 0., 0.]
+    ];
+    alphaColor opaque = [0., 0., 0., 1.];
 
-    // Combining ambient, diffuse, and spectral lighting
-    vec3 result = (color .* (ambient + diffuse + specular)); 
-    vec4 gl_FragColor = (v3_v4 * result) + [0., 0., 0., 1.];
+    worldHom getWorldW = [0., 0., 0., 1.];
 
-    //vec4 gl_FragColor = [0., 0., 0., 1.];
-    print gl_FragColor;
+    model->color modelAsColor = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.]
+    ];
+
+    world->color worldAsColor = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.]
+    ];
+
+    color ambient = [.3, 0., 0.];
+    color diffuse = [.3, 0.0, 0.0];
+    color spec = [1.0, 1.0, 1.0];
+
+    world worldPosition = collapseWorld * (uModel * ((extendModel * vPosition) + modelScale));
+    world lightDir = normalize(uLight - worldPosition);
+    world worldNormal = normalize(collapseWorld * (uModel * (extendModel * vNormal)));
+
+    float lambertian = 0.0;
+    float lDot = dot (lightDir, worldNormal);
+    bool lDotCheck = (0. <= lDot);
+    if (lDotCheck) { 
+        lambertian = lDot; 
+    } else { 
+        skip; 
+    }
+
+    bool lCheck = (0.0 <= lambertian && !(lambertian == 0.0));
+    world viewDir = normalize(uCameraPosition - worldPosition);
+    world negLight = [0., 0., 0.] - lightDir;
+
+    // See glsl reflection definition
+    world reflectDir = negLight - (2. * (dot(worldNormal, negLight)) * worldNormal);
+    float specular = 0.0;
+
+    if (lCheck) {
+        float specAngle = 0.;
+        float specDot = dot (viewDir, reflectDir);
+        bool specDotCheck = (0. <= specDot);
+        if (specDotCheck) { 
+            specAngle = specDot; 
+        } else { 
+            skip; 
+        }
+        specular = specAngle * specAngle * specAngle * specAngle * specAngle * specAngle * specAngle * specAngle;
+    }
+    else { 
+        skip; 
+    }
+
+    color fragColor = ambient + lambertian * diffuse + specular * spec;
+    alphaColor gl_FragColor = (extendColor * fragColor) + opaque;
 }
