@@ -1,7 +1,12 @@
 import * as lgl from '../lglexample';
 import { mat4 } from 'gl-matrix';
-import * as model3D from 'bunny';
-import * as adrian from '../resources/adrian.png';
+
+
+// TODO: texture rendering is not quite right
+// because there is no texture coordinates provided for the teapot
+// model.
+// Texture for marble
+const marble : string = require('../resources/marble.jpg');
 
 function main() {
   let gl = lgl.setup(render);
@@ -24,10 +29,12 @@ function main() {
   let loc_uTexture = lgl.uniformLoc(gl, program, 'uTexture');
 
   // We'll draw a bunny.
-  let mesh = lgl.getBunny(gl);
+  let mesh = lgl.getTeapot(gl);
 
   // Initialize the model position.
   let model = mat4.create();
+
+  lgl.load_texture(gl, marble);
 
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
@@ -45,37 +52,12 @@ function main() {
     // Set the attribute arrays.
     //lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
-    lgl.bind_attrib_buffer(gl, loc_aTexCoord, mesh.normals, 3);
+    lgl.bind_attrib_buffer(gl, loc_aTexCoord, mesh.texcoords, 3);
    
-    load_texture(gl);
   
     // Draw the object.
     lgl.drawMesh(gl, mesh);
   }
-}
-
-function load_texture(gl: WebGLRenderingContext) {
-    // Create a texture.
-    // Asynchronously load an image
-    var image = new Image();
-    
-    image.src = adrian;
-    image.addEventListener('load', function() {
-      // Now that the image has loaded make copy it to the texture.
-      var texture = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-    
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      // clamp to edge gives us non-power-of-2 support
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-   
-      gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image);
-
-    });
 }
 
 main();

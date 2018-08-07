@@ -39,7 +39,7 @@ function main() {
   let model = mat4.create();
 
   // Load image texture
-  load_texture(gl, head_lambert);
+  lgl.load_texture(gl, head_lambert);
 
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
@@ -63,30 +63,6 @@ function main() {
     // Draw the object.
     lgl.drawMesh(gl, mesh);
   }
-}
-
-/**
- * Load image texture.
- * @param gl rendering context
- */
-function load_texture(gl: WebGLRenderingContext, img_src: string) {
-    // Create a texture.
-    // Asynchronously load an image
-    var image = new Image();
-    image.src = img_src;
-    var texture = gl.createTexture();
-    
-    image.addEventListener('load', function() {
-      gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-      
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      // clamp to edge gives us non-power-of-2 support
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image);       
-      });
 }
 
 main();

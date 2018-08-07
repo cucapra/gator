@@ -251,6 +251,32 @@ export function load_obj (gl: WebGLRenderingContext, obj_src: string) {
   return out;
 }
 
+
+/**
+ * Load image texture.
+ * @param gl rendering context
+ */
+export function load_texture(gl: WebGLRenderingContext, img_src: string) {
+  // Create a texture.
+  // Asynchronously load an image
+  var image = new Image();
+  image.src = img_src;
+  var texture = gl.createTexture();
+  
+  image.addEventListener('load', function() {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    // clamp to edge gives us non-power-of-2 support
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image);       
+    });
+}
+
+
 /**
  * Given a flat array, return an array with the elements grouped into
  * sub-arrays of a given size.
@@ -357,7 +383,7 @@ export function setup(render: (view: mat4, projection: mat4) => void): WebGLRend
 
   // Set up the interactive pan/rotate/zoom camera.
   let camera = canvasOrbitCamera(canvas);
-  camera.zoom(-31);
+  // camera.zoom(-31);
   // Initialize the transformation matrices that are dictated by the camera
   // and the canvas dimensions.
   let projection = mat4.create();
