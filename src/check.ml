@@ -25,10 +25,11 @@ let trans_bot (n1: int) (n2: int) : typ =
     TransTyp ((TopTyp n1), (BotTyp n2))
 
 let rec vec_dim (t: tag_typ) (d: delta) : int =
+    debug_print ">> vec_dim";
     match t with
     | TopTyp n
     | BotTyp n -> n
-    | VarTyp s -> vec_dim (lookup s d) d
+    | VarTyp s -> try vec_dim (lookup s d) d with _ -> failwith (string_of_tag_typ t)
 
 let rec get_ancestor_list (t: tag_typ) (d: delta) : id list =
     match t with 
@@ -58,7 +59,7 @@ let least_common_parent (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
     in
     let rec lub (anc_list1: id list) (anc_list2: id list) : id =
         match anc_list1 with
-        | [] -> raise (TypeException "Cannot implicitly cast to the top vector type")
+        | [] -> raise (TypeException ("Cannot implicitly cast " ^ (string_of_tag_typ t1) ^ " and " ^ (string_of_tag_typ t2) ^ " to the top vector type"  ))
         | h::t -> 
             (try (List.find (fun x -> x=h) anc_list2) with Not_found -> lub t anc_list2)
     in
@@ -72,7 +73,7 @@ let least_common_parent (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
     | VarTyp s, TopTyp n1
     | TopTyp n1, VarTyp s ->
         check_dim (vec_dim (VarTyp s) d) n1;
-        raise (TypeException "Cannot implicitly cast to the top vector type")
+        raise (TypeException ("Cannot implicitly cast " ^ (string_of_tag_typ t1) ^ " and " ^ (string_of_tag_typ t2) ^ " to the top vector type"  ))
     | VarTyp s, BotTyp n1
     | BotTyp n1, VarTyp s ->
         check_dim (vec_dim (VarTyp s) d) n1; VarTyp s
@@ -119,6 +120,7 @@ let check_val (v: value) (d: delta) : typ =
         let cols = List.length (List.hd m) in
         if List.for_all (fun v -> List.length v = cols) m then trans_bot cols rows
         else (raise (TypeException ("Matrix must have the same number of elements in each row"))))
+    | _ -> failwith "Unimplemented"
 
 let check_tag_typ (tag: tag_typ) (d: delta) : unit =
     match tag with
@@ -276,6 +278,7 @@ let check_division_exp (t1: typ) (t2: typ) (d: delta) : typ =
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))))
 
 let tag_erase (t : typ) (d : delta) : TypedAst.etyp =
+    debug_print ">> tag_erase";
     match t with
     | UnitTyp -> TypedAst.UnitTyp
     | BoolTyp -> TypedAst.BoolTyp
@@ -290,12 +293,13 @@ let tag_erase (t : typ) (d : delta) : TypedAst.etyp =
     
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
 let check_param ((id, t): (string * typ)) (g: gamma) : gamma = 
+    debug_print ">> check_param";
     if Assoc.mem id g 
     then raise (TypeException ("duplicate parameter name in function declaration: " ^ id))
     else Assoc.update id t g
     
 (* Get list of parameters from param list *)
-let check_params (pl: (id * typ) list) (d: delta):  TypedAst.params * gamma = 
+let check_params (pl: (id * typ) list) (d: delta): TypedAst.params * gamma = 
     let g = List.fold_left (fun (g: gamma) p -> check_param p g) Assoc.empty pl in 
     let p = List.map (fun (i, t) -> (i, tag_erase t d)) pl in 
     (p, g)
@@ -305,7 +309,6 @@ let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) : TypedAst.texp =
 
 let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ = 
     debug_print ">> check_exp";
-    
     let build_unop (op : unop) (e': exp) (check_fun: typ->delta->typ)
         : TypedAst.exp * typ =
         let result = check_exp e' d g p in
@@ -342,7 +345,7 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ =
         let params_typ = List.map snd params in 
         let is_subtype arg param = (
             match (arg, param) with 
-            | (TagTyp t1, TagTyp t2) -> subsumes_to t1 t2 d 
+            | (TagTyp t1, TagTyp t2) -> is_tag_subtype t1 t2 d (* MARK *)
             | (SamplerTyp i1, SamplerTyp i2) -> i1 = i2 
             | (BoolTyp, BoolTyp)
             | (IntTyp, IntTyp)
@@ -351,6 +354,7 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ =
                 (is_tag_subtype t3 t1 d && is_tag_subtype t2 t4 d)
             | _ -> false
         ) in 
+        
         if List.length args_typ == List.length params_typ then
             List.iter2 (fun arg param -> 
             if is_subtype arg param then ()
@@ -415,6 +419,7 @@ and check_comm_lst (cl : comm list) (d: delta) (g: gamma) (p: phi) : TypedAst.co
         ((fst context) :: (fst result), (snd result))
 
 let check_tag (s: string) (l: tag_typ) (d: delta) : delta = 
+    debug_print ">> check_tag";
     if Assoc.mem s d then raise (TypeException "cannot redeclare tag")
             else Assoc.update s l d
 
@@ -436,6 +441,7 @@ let rec check_tags (t: tag_decl list) (d: delta): delta =
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
 let check_fn_decl (d: delta) ((id, t): fn_decl) (p: phi) : phi =
+    debug_print ">> check_fn_decl";
     let (pl, _) = t in
     let _ = check_params pl d in 
     if Assoc.mem id p 
@@ -446,11 +452,13 @@ let check_fn_decl (d: delta) ((id, t): fn_decl) (p: phi) : phi =
  * Functions that return void can have any number of void return statements 
  * anywhere. *)
 let check_void_return (c: comm) =
+    debug_print ">> check_void_return";
     match c with
     | Return Some _ -> raise (TypeException ("void functions cannot return a value"))
     | _ -> ()
 
 let check_return (t: typ) (d: delta) (g: gamma) (p: phi) (c: comm) = 
+    debug_print ">> check_return";
     match c with
     | Return None -> raise (TypeException ("expected a return value instead of void"))
     | Return Some r -> (
@@ -494,10 +502,11 @@ and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.prog * phi =
         ((fn' :: fn''), p'')
 
 (* Check that there is a void main() defined *)
-let check_main_fn (p: phi) =
+let check_main_fn (p: phi) (d: delta) =
+    debug_print ">> check_main_fn";
     let (params, ret_type) = Assoc.lookup "main" p in
     match ret_type with
-    | UnitTyp -> check_params params Assoc.empty |> fst
+    | UnitTyp -> check_params params d |> fst
     | _ -> raise (TypeException ("expected main function to return void"))
 
 (* Returns the list of fn's which represent the program 
@@ -510,5 +519,5 @@ let check_prog (e: prog) : TypedAst.prog * TypedAst.params =
         let d = check_tags t Assoc.empty in 
         let p = List.fold_left (fun (a: phi) (dl': fn_decl) -> check_fn_decl d dl' a) Assoc.empty dl in
         let (e', p') = check_fn_lst f d p in 
-        let pr = check_main_fn p' in 
+        let pr = check_main_fn p' d in 
         (e', pr)

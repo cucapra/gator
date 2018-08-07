@@ -25,6 +25,7 @@ let rec string_of_value (v: value) : string =
   | Float f -> string_of_float f
   | VecLit v -> "vec" ^ string_of_int (List.length v) ^ string_of_vec v
   | MatLit m -> string_of_mat m
+  | _ -> failwith "Unimplemented"
 
 let string_of_unop (op: unop) (e: string) : string =
   match op with

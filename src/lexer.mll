@@ -1,7 +1,6 @@
 {
 open Parser
 exception SyntaxError of string
-
 }
 
 (* Regex definitons *)
