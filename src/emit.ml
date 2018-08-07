@@ -1,7 +1,6 @@
 open CoreAst
 open TypedAst
-open TypedAstHelper
-open CoreAstHelper
+open TypedAstPrinter
 open Assoc
 open Lin_ops
 open Util
@@ -50,7 +49,6 @@ let rec comp_exp (e : exp) : string =
         | Var _ -> comp_exp op
         | _ -> "(" ^ (comp_exp op) ^ ")"
     in
-
     (* Handles the string shenanigans for padding during multiplication *)
     let padded_mult (left : texp) (right : texp) : string =
         (* Printf.printf "\t\t\t%s\n" (string_of_exp e);  *)
@@ -71,26 +69,15 @@ let rec comp_exp (e : exp) : string =
                     else (op_wrap le) ^ " * " ^ (comp_exp re))
             | _ -> (op_wrap le) ^ " * " ^ (comp_exp re))
     in
-    (* let rec padded_args args =
-        match args with
-        | [] -> ""
-        | h::t -> (op_wrap h) ^ ", " ^ padded_args t
-    in  *)
     let padded_args (a: exp list) : string = 
         (String.concat ", " (List.map (op_wrap) a)) in
     match e with
-    | (Binop (Times, e1, e2)) -> padded_mult e1 e2
-    | (Binop (Eq, (le, lt), (re, rt))) -> (op_wrap le) ^ " == " ^ (op_wrap re)
-    | (Binop (Leq, (le, lt), (re, rt))) -> (op_wrap le) ^ " <= " ^ (op_wrap re)
-    | (Binop (Or, (le, lt), (re, rt))) -> (op_wrap le) ^ " || " ^ (op_wrap re)
-    | (Binop (And, (le, lt), (re, rt))) -> (op_wrap le) ^ " && " ^ (op_wrap re)
-    | (Binop (Plus, (le, lt), (re, rt))) -> (op_wrap le) ^ " + " ^ (op_wrap re)
-    | (Binop (Minus, (le, lt), (re, rt))) -> (op_wrap le) ^ " - " ^ (op_wrap re)
-    | (Binop (Div, (le, lt), (re, rt))) -> (op_wrap le) ^ " / " ^ (op_wrap re)
-    | (Binop (CTimes, (le, lt), (re, rt))) -> (op_wrap le) ^ " * " ^ (op_wrap re)
     | Val v -> string_of_value v
     | Var v -> v
-    | Unop (op, (x, _)) -> (string_of_unop op (op_wrap x))
+    | Binop (op, l, r) -> (match op with
+        | Times -> padded_mult l r
+        | _ -> "(" ^ (string_of_binop op (comp_exp (fst l)) (comp_exp (fst r))) ^ ")")
+    | Unop (op, (x, _)) -> (string_of_unop op ("(" ^ (comp_exp x) ^ ")"))
     | FnInv (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
  
     
