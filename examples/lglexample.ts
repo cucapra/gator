@@ -124,6 +124,21 @@ export function projection_matrix(out: mat4, width: number, height: number) {
 }
 
 /**
+ * Create and fill a WebGL buffer with a typed array.
+ *
+ * `mode` should be either `ELEMENT_ARRAY_BUFFER` or `ARRAY_BUFFER`.
+ */
+function gl_buffer(gl: WebGLRenderingContext, mode: number, data: Float32Array | Uint16Array) {
+  let buf = gl.createBuffer();
+  if (!buf) {
+    throw "could not create WebGL buffer";
+  }
+  gl.bindBuffer(mode, buf);
+  gl.bufferData(mode, data, gl.STATIC_DRAW);
+  return buf;
+}
+
+/**
  * Make a WebGL buffer from a nested "array of arrays" representing a series
  * of short vectors.
  */
@@ -212,21 +227,27 @@ export function load_obj (gl: WebGLRenderingContext, obj_src: string) {
   if (typeof obj_src !== "string") {
     throw "obj source must be a string";
   }
- 
+  // let coords = obj.texcoords;
+  // if (!coords) {
+  //   throw "mesh does not have texture coordinates";
+  // }
+
+  // // Create a WebGL buffer.
+  // let data = flat_array(coords);
+  // return gl_buffer(gl, gl.ARRAY_BUFFER, new Float32Array(data));
   let mesh = new obj_loader.Mesh(obj_src);
   // Match the interface we're using for Mesh objects that come from
   // StackGL.
   let cell = group_array(mesh.indices, 3) as Vec3Array;
   let position = group_array(mesh.vertices, 3) as Vec3Array;
   let normal = normals.vertexNormals(cell, position);
-  let texcoord = group_array(mesh.textures, 2) as Vec2Array;
   let out: Mesh = {
     positions: make_buffer(gl, position, 'float32', gl.ARRAY_BUFFER),
     cells: make_buffer(gl, cell, 'uint16', gl.ELEMENT_ARRAY_BUFFER),
     normals: make_buffer(gl, normal, 'float32', gl.ARRAY_BUFFER),
     cell_count: cell.length * cell[0].length, 
     // This name I invented -- it's not in the StackGL models.
-    texcoords: make_buffer(gl, texcoord, 'float32', gl.ARRAY_BUFFER)
+    texcoords: gl_buffer(gl, gl.ARRAY_BUFFER, new Float32Array(mesh.textures))
   };
 
   // .obj files can have normals, but if they don't, this parser library

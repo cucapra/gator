@@ -50,7 +50,7 @@ function main() {
     // Set the attribute arrays.
     //lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
-    // lgl.bind_attrib_buffer(gl, loc_aTexCoord, mesh.texcoords, 3);
+    lgl.bind_attrib_buffer(gl, loc_aTexCoord, mesh.texcoords, 2);
    
     load_texture(gl);
 
@@ -68,6 +68,8 @@ function load_texture(gl: WebGLRenderingContext) {
     
     image.addEventListener('load', function() {
       gl.bindTexture(gl.TEXTURE_2D, texture);
+      const alignment = 1;
+      gl.pixelStorei(gl.UNPACK_ALIGNMENT, alignment);
       // Invert the Y-coordinate. I'm not 100% sure why this is necessary,
       // but it appears to have been invented to convert between the DOM
       // coordinate convention for images and WebGL's convention.
