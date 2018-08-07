@@ -1,0 +1,11 @@
+      ocamlc src/.lingl.objs/lingl__Util.{cmi,cmo,cmt}
+File "src/util.ml", line 22, characters 2-211:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+Unit
+      ocamlc src/.lingl.objs/lingl__Check.{cmi,cmo,cmt}
+File "src/check.ml", line 111, characters 4-465:
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+Unit
+Fatal error: exception Failure("Unimplemented function f -- is this a GLSL function?")
