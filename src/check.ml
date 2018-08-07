@@ -119,6 +119,7 @@ let check_val (v: value) (d: delta) : typ =
         let cols = List.length (List.hd m) in
         if List.for_all (fun v -> List.length v = cols) m then trans_bot cols rows
         else (raise (TypeException ("Matrix must have the same number of elements in each row"))))
+    | _ -> failwith "Unimplemented"
 
 let check_tag_typ (tag: tag_typ) (d: delta) : unit =
     match tag with
@@ -351,6 +352,7 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ =
                 (is_tag_subtype t3 t1 d && is_tag_subtype t2 t4 d)
             | _ -> false
         ) in 
+        
         if List.length args_typ == List.length params_typ then
             List.iter2 (fun arg param -> 
             if is_subtype arg param then ()

@@ -17,6 +17,7 @@ tag alphaColor is vec4;
 declare float dot(vec3 v1, vec3 v2);
 declare vec3 normalize(vec3 v1); 
 
+// parsing error : allow empty mains
 void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView, model vNormal, world uLight, world uCameraPosition) {
 
     model->modelHom extendModel = [
@@ -81,13 +82,22 @@ void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView,
         [0., 0., 1.]
     ];
 
+    // PARSING ERROR: allow vec3AsWorld
+    vec3->world vecAsWorld = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.]
+    ];
+
     color ambient = [.3, 0., 0.];
     color diffuse = [.3, 0.0, 0.0];
     color spec = [1.0, 1.0, 1.0];
 
+    
+
     world worldPosition = collapseWorld * (uModel * ((extendModel * vPosition) + modelScale));
-    world lightDir = normalize(uLight - worldPosition);
-    world worldNormal = normalize(collapseWorld * (uModel * (extendModel * vNormal)));
+    world lightDir = vecAsWorld * normalize(uLight - worldPosition);
+    world worldNormal = vecAsWorld * normalize(collapseWorld * (uModel * (extendModel * vNormal)));
 
     float lambertian = 0.0;
     float lDot = dot (lightDir, worldNormal);
@@ -99,7 +109,7 @@ void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView,
     }
 
     bool lCheck = (0.0 <= lambertian && !(lambertian == 0.0));
-    world viewDir = normalize(uCameraPosition - worldPosition);
+    world viewDir = vecAsWorld * normalize(uCameraPosition - worldPosition);
     world negLight = [0., 0., 0.] - lightDir;
 
     // See glsl reflection definition
