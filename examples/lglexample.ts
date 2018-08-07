@@ -8,6 +8,9 @@ import * as bunny from 'bunny';
 import * as normals from 'normals';
 import pack from 'array-pack-2d';
 import canvasOrbitCamera from 'canvas-orbit-camera';
+import * as obj_loader from 'webgl-obj-loader';
+
+export type Vec3Array = [number, number, number][];
 
 /**
  * Compile a single GLSL shader source file.
@@ -92,14 +95,6 @@ export function projection_matrix(out: mat4, width: number, height: number) {
   var f = 1.0 / Math.tan(fieldOfView / 2),
     rangeInv = 1.0 / (near - far);
 
-  // doesn't work?
-  // out = [
-  //   f / aspectRatio, 0, 0, 0,
-  //   0, f, 0, 0,
-  //   0, 0, (near + far) * rangeInv, -1,
-  //   0, 0, (2 * near * far) * rangeInv, 0
-  // ];
-
   out[0] = f / aspectRatio;
   out[1] = 0;
   out[2] = 0;
@@ -116,6 +111,23 @@ export function projection_matrix(out: mat4, width: number, height: number) {
   out[13] = 0;
   out[14] = (2 * far * near) * rangeInv;
   out[15] = 0;
+}
+
+/**
+ * Create and fill a WebGL buffer with a typed array.
+ *
+ * `mode` should be either `ELEMENT_ARRAY_BUFFER` or `ARRAY_BUFFER`.
+ * 
+ * [Source]: https://github.com/cucapra/braid/
+ */
+function gl_buffer(gl: WebGLRenderingContext, mode: number, data: Float32Array | Uint16Array) {
+  let buf = gl.createBuffer();
+  if (!buf) {
+    throw "could not create WebGL buffer";
+  }
+  gl.bindBuffer(mode, buf);
+  gl.bufferData(mode, data, gl.STATIC_DRAW);
+  return buf;
 }
 
 /**
@@ -178,6 +190,11 @@ interface Mesh {
    * Also a 3-dimensional float32 array buffer.
    */
   normals: WebGLBuffer;
+
+  /**
+   * 2-Dimensional float32 array buffer.
+   */
+  texcoords: WebGLBuffer;
 }
 
 /**
@@ -191,8 +208,87 @@ export function getMesh(gl: WebGLRenderingContext, obj: { cells: [number, number
     cells: make_buffer(gl, obj.cells, 'uint16', gl.ELEMENT_ARRAY_BUFFER),
     cell_count: obj.cells.length * obj.cells[0].length,
     positions: make_buffer(gl, obj.positions, 'float32', gl.ARRAY_BUFFER),
-    normals: make_buffer(gl, norm, 'float32', gl.ARRAY_BUFFER)
+    normals: make_buffer(gl, norm, 'float32', gl.ARRAY_BUFFER),
+    texcoords: make_buffer(gl, norm, 'float32', gl.ARRAY_BUFFER) /* dummy value */
   };
+}
+
+/**
+ * Load a mesh from an OBJ file.
+ * 
+ * [Reference] : https://github.com/cucapra/braid/
+ * @param gl      rendering context
+ * @param obj_src string literal content of OBJ source file
+ */
+export function load_obj (gl: WebGLRenderingContext, obj_src: string) {
+
+  if (typeof obj_src !== "string") {
+    throw "obj source must be a string";
+  }
+
+  // // Create a WebGL buffer.
+  let mesh = new obj_loader.Mesh(obj_src);
+  // Match the interface we're using for Mesh objects that come from
+  // StackGL.
+  let cell = group_array(mesh.indices, 3) as Vec3Array;
+  let position = group_array(mesh.vertices, 3) as Vec3Array;
+  let normal = normals.vertexNormals(cell, position);
+  let out: Mesh = {
+    positions: make_buffer(gl, position, 'float32', gl.ARRAY_BUFFER),
+    cells: make_buffer(gl, cell, 'uint16', gl.ELEMENT_ARRAY_BUFFER),
+    normals: make_buffer(gl, normal, 'float32', gl.ARRAY_BUFFER),
+    cell_count: cell.length * cell[0].length, 
+    // This name I invented -- it's not in the StackGL models.
+    texcoords: gl_buffer(gl, gl.ARRAY_BUFFER, new Float32Array(mesh.textures))
+  };
+
+  // .obj files can have normals, but if they don't, this parser library
+  // (confusingly) fills the array with NaN.
+  if (!isNaN(mesh.vertexNormals[0])) {
+    out.normals = group_array(mesh.vertexNormals, 3) as Vec3Array;
+  }
+
+  return out;
+}
+
+
+/**
+ * Load image texture.
+ * @param gl rendering context
+ */
+export function load_texture(gl: WebGLRenderingContext, img_src: string) {
+  // Create a texture.
+  // Asynchronously load an image
+  var image = new Image();
+  image.src = img_src;
+  var texture = gl.createTexture();
+  
+  image.addEventListener('load', function() {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    // clamp to edge gives us non-power-of-2 support
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image);       
+    });
+}
+
+
+/**
+ * Given a flat array, return an array with the elements grouped into
+ * sub-arrays of a given size.
+ * 
+ * [Source] : https://github.com/cucapra/braid/
+ */
+function group_array<T>(a: T[], size: number) {
+  let out: T[][] = [];
+  for (let i = 0; i < a.length; i += size) {
+    out.push(a.slice(i, i + size));
+  }
+  return out;
 }
 
 /**
@@ -287,7 +383,7 @@ export function setup(render: (view: mat4, projection: mat4) => void): WebGLRend
 
   // Set up the interactive pan/rotate/zoom camera.
   let camera = canvasOrbitCamera(canvas);
-
+  // camera.zoom(-31);
   // Initialize the transformation matrices that are dictated by the camera
   // and the canvas dimensions.
   let projection = mat4.create();
@@ -305,6 +401,7 @@ export function setup(render: (view: mat4, projection: mat4) => void): WebGLRend
     // Update the camera view.
     camera.view(view);
     camera.tick();
+
 
     // Update the projection matrix.
     let width = gl.drawingBufferWidth;

@@ -36,8 +36,8 @@ function main() {
     gl.uniformMatrix4fv(loc_uModel, false, model);
 
     // Set the attribute arrays.
-    lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals);
-    lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions);
+    lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
+    lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
 
     // Draw the object.
     lgl.drawMesh(gl, mesh);

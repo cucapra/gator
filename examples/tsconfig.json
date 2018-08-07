@@ -10,6 +10,8 @@
     "include": [
         "*/main.ts",
         "lglexample.ts",
-        "types.d.ts"
-    ]
+        "types.d.ts",
+        "webgl-obj-loader.d.ts",
+    ],
+    
 }
