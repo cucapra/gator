@@ -18,7 +18,7 @@ declare float dot(vec3 v1, vec3 v2);
 declare vec3 normalize(vec3 v1); 
 
 // parsing error : allow empty mains
-void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView, model vNormal, world uLight, world uCameraPosition) {
+void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView, model vNormal, world uLight) {
 
     model->modelHom extendModel = [
         [1., 0., 0.],
@@ -88,19 +88,24 @@ void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView,
         [0., 1., 0.],
         [0., 0., 1.]
     ];
-
+    
+    // ****************
+    // Ambient lighting 
+    // ****************
     color ambient = [.3, 0., 0.];
     color diffuse = [.3, 0.0, 0.0];
     color spec = [1.0, 1.0, 1.0];
 
-    
-
+    // ****************
+    // Diffuse lighting
+    // ****************
+    // Calculate the real position of this pixel in 3d space
     world worldPosition = collapseWorld * (uModel * ((extendModel * vPosition) + modelScale));
-    world lightDir = vecAsWorld * normalize(uLight - worldPosition);
     world worldNormal = vecAsWorld * normalize(collapseWorld * (uModel * (extendModel * vNormal)));
+    world lightDir = vecAsWorld * normalize(uLight - worldPosition);
 
     float lambertian = 0.0;
-    float lDot = dot (lightDir, worldNormal);
+    float lDot = dot (worldNormal, lightDir);
     bool lDotCheck = (0. <= lDot);
     if (lDotCheck) { 
         lambertian = lDot; 
@@ -109,9 +114,12 @@ void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView,
     }
 
     bool lCheck = (0.0 <= lambertian && !(lambertian == 0.0));
-    world viewDir = vecAsWorld * normalize(uCameraPosition - worldPosition);
+    world viewDir = vecAsWorld * normalize([0., 0., 0.] - collapseCamera * (uView * ((extendWorld * worldPosition) + [0., 0., 0., 1.])));
     world negLight = [0., 0., 0.] - lightDir;
 
+    // ****************
+    // Specular lighting
+    // ****************
     // See glsl reflection definition
     world reflectDir = negLight - (2. * (dot(worldNormal, negLight)) * worldNormal);
     float specular = 0.0;
