@@ -3,7 +3,7 @@
 open CoreAst
 
 (* tag types *)
-type tag_typ = 
+type tag_typ =
     | TopTyp of int
     | BotTyp of int
     | VarTyp of id
@@ -27,7 +27,6 @@ type exp =
     | VecTrans of int * tag_typ (* vec3(<vec4>), vec4(<vec3>) *)
     | FnInv of string * args (* function invocation *)
 
-(* arguments *)
 and args = exp list
 
 (* function parameters *)
@@ -39,7 +38,7 @@ type fn_type = params * ret_type
 type fn_decl = string * fn_type
 
 (* commands *)
-type comm = 
+type comm =
     Skip
     | Print of exp
     | Decl of typ * string * exp
@@ -53,8 +52,8 @@ type fn = fn_decl * comm list
 type tag_decl = string * typ
 
 (* program *)
-(* Consists of list of (external) declare functions, 
- * list of vector space tags, 
+(* Consists of list of (external) declare functions,
+ * list of vector space tags,
  * and list of functions with at least one void main() function. *)
 type prog =
     | Prog of fn_decl list * tag_decl list * fn list

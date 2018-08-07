@@ -1,6 +1,6 @@
 open CoreAst
 open TagAst
-open TagAstHelper
+open TagAstPrinter
 open Assoc
 open Util
 open Printf

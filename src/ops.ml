@@ -1,6 +1,6 @@
 open CoreAst
-open CoreAstHelper
 open TypedAst
+open TypedAstPrinter
 open Assoc
 open Lin_ops
 open Util
@@ -98,5 +98,5 @@ let rec eval_comm (c : comm list) (s : sigma) : sigma =
         
         
 
-let eval_prog (p : prog) : unit = ()
-    (* eval_comm p Assoc.empty |> ignore *)
+let eval_prog (p : prog) : unit =
+    eval_comm p Assoc.empty |> ignore

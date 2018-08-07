@@ -13,7 +13,7 @@ type value =
 
 type unop =
   | Not
-type binop = 
+type binop =
   | Eq
   | Leq
   | Or

@@ -1,8 +1,8 @@
 (* Tag AST pretty printer *)
 
 open CoreAst
-open CoreAstHelper
-open TagAstHelper
+open Util
+open TagAstPrinter
 open TypedAst
 
 let string_of_vec (v: vec) : string = 

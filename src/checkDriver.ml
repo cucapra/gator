@@ -2,7 +2,7 @@
 
 open CoreAst
 open TagAst
-open TagAstHelper
+open TagAstPrinter
 
 (* Current program file and parsed program. *)
 let file : string option ref = ref None

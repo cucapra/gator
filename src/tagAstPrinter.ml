@@ -1,7 +1,7 @@
 (* Tag AST pretty printer *)
 
 open CoreAst
-open CoreAstHelper
+open Util
 open TagAst
 
 let string_of_lst (f : 'a -> string) (l: 'a list) : string =

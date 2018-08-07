@@ -14,13 +14,21 @@ type ltyp_top =
 (* Note the column parameter for padding the matrix size *)
 let string_of_no_paren_vec (v: vec) (padding: int) : string = 
     (String.concat ", " (List.map string_of_float v)) ^ (repeat ", 0." padding)
-
+  
 let string_of_mat_padded (m: mat) (max_dim: int) : string =
     let string_of_vec_padded = (fun v -> (string_of_no_paren_vec v (max_dim - List.length v))) in
     ("(" ^ (String.concat ", " (List.map string_of_vec_padded m)) ^
     (repeat (string_of_no_paren_vec [] max_dim) (max_dim - List.length m)) ^ ")")
+  
+let string_of_gl_mat (m: mat) : string = 
+    (* Note the transpose to match the glsl column-oriented style *)
+    let tm = Lin_ops.transpose m in
+    let r = (List.length tm) in
+    let c = (if r = 0 then 0 else List.length (List.hd tm)) in
+    let dim = max r c in
+    ("mat"^(string_of_int dim)^string_of_mat_padded tm dim)
 
-let string_of_typ (t : etyp) : string =
+let string_of_gl_typ (t : etyp) : string =
     match t with
     | UnitTyp -> failwith "Unit type is unwriteable in glsl"
     | MatTyp (m, n) -> "mat" ^ string_of_int (max m n)
@@ -71,7 +79,9 @@ let rec comp_exp (e : exp) : string =
     let padded_args (a: exp list) : string = 
         (String.concat ", " (List.map (op_wrap) a)) in
     match e with
-    | Val v -> string_of_value v
+    | Val v -> (match v with 
+        | MatLit m -> string_of_gl_mat m
+        | _ -> string_of_value v)
     | Var v -> v
     | Binop (op, l, r) -> (match op with
         | Times -> padded_mult l r
@@ -89,7 +99,7 @@ let rec comp_comm (c : comm list) : string =
         | Decl (ty, x, (e, _)) -> (
             if check_name x then ""^ (comp_comm t) else  
             if is_core x  then x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
-            else string_of_typ ty ^ " "^ x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t))
+            else string_of_gl_typ ty ^ " "^ x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t))
         | Assign (x, (e, _)) -> x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
         | If ((e, _), c1, c2) -> ("if " ^ "(" ^ (comp_exp e) ^ ")"
             ^ "{ " ^ (comp_comm c1) ^ " }"
@@ -101,7 +111,7 @@ let rec comp_comm (c : comm list) : string =
 let comp_fn (((id, (p, rt)), cl) : fn) : string = 
     match id with 
     | "main" -> "void main() {" ^ (comp_comm cl) ^ "}"
-    | _ -> (string_of_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (comp_comm cl) ^ "}"
+    | _ -> (string_of_gl_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (comp_comm cl) ^ "}"
  
 let rec comp_fn_lst (f : fn list) : string = 
     match f with 
