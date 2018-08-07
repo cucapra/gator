@@ -1,7 +1,6 @@
 import * as lgl from '../lglexample';
 import { mat4 } from 'gl-matrix';
 
-
 const head : string = require('../resources/marble.jpg');
 const fs : any = require('fs');
 
@@ -60,6 +59,11 @@ function main() {
   }
 }
 
+/**
+ * Load image texture.
+ * [Reference] : https://github.com/cucapra/braid/
+ * @param gl rendering context
+ */
 function load_texture(gl: WebGLRenderingContext) {
     // Create a texture.
     // Asynchronously load an image

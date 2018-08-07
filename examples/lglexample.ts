@@ -10,9 +10,7 @@ import pack from 'array-pack-2d';
 import canvasOrbitCamera from 'canvas-orbit-camera';
 import * as obj_loader from 'webgl-obj-loader';
 
-
 export type Vec3Array = [number, number, number][];
-export type Vec2Array = [number, number][];
 
 /**
  * Compile a single GLSL shader source file.
@@ -97,14 +95,6 @@ export function projection_matrix(out: mat4, width: number, height: number) {
   var f = 1.0 / Math.tan(fieldOfView / 2),
     rangeInv = 1.0 / (near - far);
 
-  // doesn't work?
-  // out = [
-  //   f / aspectRatio, 0, 0, 0,
-  //   0, f, 0, 0,
-  //   0, 0, (near + far) * rangeInv, -1,
-  //   0, 0, (2 * near * far) * rangeInv, 0
-  // ];
-
   out[0] = f / aspectRatio;
   out[1] = 0;
   out[2] = 0;
@@ -127,6 +117,8 @@ export function projection_matrix(out: mat4, width: number, height: number) {
  * Create and fill a WebGL buffer with a typed array.
  *
  * `mode` should be either `ELEMENT_ARRAY_BUFFER` or `ARRAY_BUFFER`.
+ * 
+ * [Source]: https://github.com/cucapra/braid/
  */
 function gl_buffer(gl: WebGLRenderingContext, mode: number, data: Float32Array | Uint16Array) {
   let buf = gl.createBuffer();
@@ -221,20 +213,20 @@ export function getMesh(gl: WebGLRenderingContext, obj: { cells: [number, number
   };
 }
 
-// Load a mesh from an OBJ file.
+/**
+ * Load a mesh from an OBJ file.
+ * 
+ * [Reference] : https://github.com/cucapra/braid/
+ * @param gl      rendering context
+ * @param obj_src string literal content of OBJ source file
+ */
 export function load_obj (gl: WebGLRenderingContext, obj_src: string) {
 
   if (typeof obj_src !== "string") {
     throw "obj source must be a string";
   }
-  // let coords = obj.texcoords;
-  // if (!coords) {
-  //   throw "mesh does not have texture coordinates";
-  // }
 
   // // Create a WebGL buffer.
-  // let data = flat_array(coords);
-  // return gl_buffer(gl, gl.ARRAY_BUFFER, new Float32Array(data));
   let mesh = new obj_loader.Mesh(obj_src);
   // Match the interface we're using for Mesh objects that come from
   // StackGL.
@@ -262,6 +254,8 @@ export function load_obj (gl: WebGLRenderingContext, obj_src: string) {
 /**
  * Given a flat array, return an array with the elements grouped into
  * sub-arrays of a given size.
+ * 
+ * [Source] : https://github.com/cucapra/braid/
  */
 function group_array<T>(a: T[], size: number) {
   let out: T[][] = [];
@@ -270,7 +264,6 @@ function group_array<T>(a: T[], size: number) {
   }
   return out;
 }
-
 
 /**
  * Get a Mesh object for the Stanford bunny.

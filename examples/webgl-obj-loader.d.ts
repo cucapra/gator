@@ -1,8 +1,7 @@
 /**
  * Type definition for webgl-obj-loader
  * 
- * [Source Code]: https://github.com/cucapra/braid/blob/209e04f5b515ad6d7f4b003c51e399a59417f34a/glrt/webgl-obj-loader.d.ts
- * [Source Author]: https://github.com/sampsyo
+ * [Source]: https://github.com/cucapra/braid/
  */
 
 declare module "webgl-obj-loader" {
