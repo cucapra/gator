@@ -45,15 +45,15 @@ let vec_mult (v : vec) (m : mat) : vec =
 let mat_mult (m1 : mat) (m2 : mat) : mat =
   List.rev (List.fold_left (fun acc v -> (vec_mult v (transpose m2))::acc) [] m1)
 
+let vec_eq (v1 : vec) (v2 : vec) : bool =
+  List.fold_left2 (fun acc x y -> acc && (x = y)) true v1 v2
+
+let mat_eq (m1 : mat) (m2 : mat) : bool =
+  List.fold_left2 (fun acc x y -> acc && (vec_eq x y)) true m1 m2
+
 let dot (v1 : vec) (v2 : vec) : float =
   List.fold_left2 (fun acc x y -> acc +. (x *. y)) 0. v1 v2
 
 let normalize (v : vec) : vec = 
   let distance = sqrt (List.fold_left (fun acc x -> acc +. (x *. x)) 0. v) in
   List.map (fun x -> x /. distance) v
-
-let vec_eq (v1 : vec) (v2 : vec) : bool =
-  List.fold_left2 (fun acc x y -> acc && (x = y)) true v1 v2
-
-let mat_eq (m1 : mat) (m2 : mat) : bool =
-  List.fold_left2 (fun acc x y -> acc && (vec_eq x y)) true m1 m2
