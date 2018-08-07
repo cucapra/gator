@@ -2,6 +2,7 @@ import * as lgl from '../lglexample';
 import { mat4 } from 'gl-matrix';
 import * as model3D from 'bunny';
 import * as normals from 'normals';
+// import head from '../resources/adrian.png'
 import head from '../resources/lpshead/lambertian.jpg';
 const fs = require('fs');
 
@@ -82,9 +83,7 @@ function load_texture(gl: WebGLRenderingContext) {
       // clamp to edge gives us non-power-of-2 support
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image);
-
-       
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image);       
       });
 }
 
