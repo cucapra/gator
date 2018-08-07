@@ -3,9 +3,11 @@ tag b is vec3;
 tag c is b;
 tag d is b;
 
-b y = [2., 1., 2.];
+void main() {
+    b y = [2., 1., 2.];
 
-c->b c_b = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
-d->b d_b = [[1., -1., 1.], [-1., 1., 1.], [1., 1., -1.]];
+    c->b c_b = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
+    d->b d_b = [[1., -1., 1.], [-1., 1., 1.], [1., 1., -1.]];
 
-b fail = (d_b + c_b) * y; // Vector must be bottom type
+    b fail = (d_b + c_b) * y; // Vector must be bottom type
+}

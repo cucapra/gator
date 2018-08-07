@@ -179,7 +179,7 @@ $$\Delta|-\top_{n_1\times n_2}\leq\nu_1->\nu_2
 This typing judgement is a map from an expression to the type of that expression under some variable context $\Gamma$, from variable names to types, and some tag context $\Delta$ defined above.
 
 \subsection{Subsumption}
-Any type in a given context can be cast ``up'' at any time with one notable exception -- we impose a strictness condition on vectors which does not allow implicit subsumption into the top type $\top_n$.  This strictness allows the type system stronger control over regulating tag operation beyond simple dimension.  It is worth noting that strictness is unnecessary for implementing a sound type system, but does provide significant practical benefit in giving earlier compiler errors than would be otherwise observed.
+Any type in a given context can be cast ``up'' at any time with one notable exception -- we impose a strictness condition on vectors which does not allow implicit subsumption of tags into the top type $\top_n$ (Note that the bottom type $\bot_n$ can still be directly subsumed into the appropriate top type).  This strictness allows the type system stronger control over regulating tag operation beyond simple dimension.  It is worth noting that strictness is unnecessary for implementing a sound type system, but does provide significant practical benefit in giving earlier compiler errors than would be otherwise observed.
 %
 \begin{mathpar}
 \inferrule
@@ -190,6 +190,10 @@ Any type in a given context can be cast ``up'' at any time with one notable exce
 	{\Delta|-\nu_1\leq_\Delta \nu_2\qquad\Gamma,\Delta|-e:\nu_1,\Gamma}
 	{\Gamma,\Delta|-e:\nu_2,\Gamma}
 	\quad \nu_2\neq\top_n
+
+\inferrule
+	{\Gamma,\Delta|-e:\bot_n,\Gamma}
+	{\Gamma,\Delta|-e:\top_n,\Gamma}
 \end{mathpar}
 %
 \subsection{Constants and Variable Declarations}

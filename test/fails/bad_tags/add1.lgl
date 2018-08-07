@@ -1,6 +1,7 @@
+tag a is vec2;
+tag b is vec2;
+
 void main() {
-    tag a is vec2;
-    tag b is vec2;
     a x = [1., 2.];
     b y = [1., 2.];
     a bad = x + y; // Addition goes to the most general type

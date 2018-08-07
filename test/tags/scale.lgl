@@ -23,7 +23,6 @@ void main() {
     print s12;
     print s13;
 
-    
     vec2->d v2_d = [[1., 1.], [1., 1.], [1., 1.]];
     a->b a_b = v2_d;
     vec3->c v3_c = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
@@ -36,5 +35,5 @@ void main() {
     print s21;
     print s22;
     print s23;
-    print (v2_b .* (a_v3 * 2.)); // There is no writeable variable type to assign this to
+    print (a_b .* (v2_d * 2.)); // There is no writeable variable type to assign this to
 }

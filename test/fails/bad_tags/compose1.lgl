@@ -1,6 +1,6 @@
-void main() {
-    tag a is vec2;
+tag a is vec2;
 
+void main() {
     a x = [1., 1.];
     a->vec2 a_v2 = [[1., 1.], [1., 1.]];
     a->vec2 bad = a_v2 * a_v2; // No possible cast

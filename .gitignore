@@ -21,3 +21,6 @@ node_modules/
 # OCaml
 *.cmo
 *.cmi
+
+# VSCode
+.vscode/

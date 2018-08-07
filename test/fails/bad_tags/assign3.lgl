@@ -1,6 +1,6 @@
-void main() {
-    tag a is vec2;
-    tag b is vec3;
+tag a is vec2;
+tag b is vec3;
 
+void main() {
     a->b x = [[1., 1., 1.], [1., 1., 1.]]; // Bad dimensions
 }
