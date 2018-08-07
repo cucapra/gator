@@ -9,7 +9,6 @@ import * as normals from 'normals';
 import pack from 'array-pack-2d';
 import canvasOrbitCamera from 'canvas-orbit-camera';
 import * as obj_loader from 'webgl-obj-loader';
-const fs = require('fs');
 
 
 export type Vec3Array = [number, number, number][];
@@ -208,8 +207,7 @@ export function getMesh(gl: WebGLRenderingContext, obj: { cells: [number, number
 }
 
 // Load a mesh from an OBJ file.
-export function load_obj (gl: WebGLRenderingContext, src: string) {
-  let obj_src = fs.readFileSync(__dirname + '/resources/lpshead/head.OBJ', 'utf8');
+export function load_obj (gl: WebGLRenderingContext, obj_src: string) {
 
   if (typeof obj_src !== "string") {
     throw "obj source must be a string";
@@ -226,7 +224,7 @@ export function load_obj (gl: WebGLRenderingContext, src: string) {
     positions: make_buffer(gl, position, 'float32', gl.ARRAY_BUFFER),
     cells: make_buffer(gl, cell, 'uint16', gl.ELEMENT_ARRAY_BUFFER),
     normals: make_buffer(gl, normal, 'float32', gl.ARRAY_BUFFER),
-    cell_count: cell.length * cell[0].length, // dummy value
+    cell_count: cell.length * cell[0].length, 
     // This name I invented -- it's not in the StackGL models.
     texcoords: make_buffer(gl, texcoord, 'float32', gl.ARRAY_BUFFER)
   };
@@ -363,6 +361,7 @@ export function setup(render: (view: mat4, projection: mat4) => void): WebGLRend
     // Update the camera view.
     camera.view(view);
     camera.tick();
+
 
     // Update the projection matrix.
     let width = gl.drawingBufferWidth;

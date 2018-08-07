@@ -111,3 +111,4 @@ declare module 'normals' {
  * dependencies should use `import`, not `require`.)
  */
 declare function require(name: string): string;
+
