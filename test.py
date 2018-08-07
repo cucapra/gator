@@ -7,7 +7,7 @@ import filecmp
 import random
 
 
-TEST_SYMBOLS = "test/symbols.txt"
+TEST_SYMBOLS = "test/symbols2.txt"
 SUCCESS_COUNT = 5
 
 
@@ -57,7 +57,7 @@ def main():
     for path, _, files in os.walk("test/"):
         lglfiles = filter(lambda x: x.endswith(".lgl"), files)
         if len(lglfiles) > 0:
-            print("Running tests in " + path + ":")
+            print("🏃‍   Running tests in " + path + ":")
             any_fails = False
         for filename in lglfiles:
             filename = path + "/" + filename
@@ -73,15 +73,15 @@ def main():
                 if not filecmp.cmp(outname, expectname)\
                         and not test_exception(outname, expectname):
                     any_fails = True
-                    print(random.choice(fail_symbols) + " " + basename)
+                    print("\t❌  " + basename + " " + random.choice(fail_symbols))
             except IOError:
                 any_fails = True
-                print(random.choice(fail_symbols) + " " +
-                      expectname + " not found")
+                print("\t❌  " + expectname + " not found " + 
+                    random.choice(fail_symbols))
     if not any_fails:
-        print("No Failures!")
+        print("No 👏   Failures 👏")
         for _ in range(SUCCESS_COUNT):
-            print(random.choice(success_symbols)),
+            print(random.choice(success_symbols) + "  "),
         print("")  # newline
 
 
