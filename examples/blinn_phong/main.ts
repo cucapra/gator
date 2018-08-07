@@ -41,8 +41,8 @@ function main() {
     gl.uniform3fv(loc_uLight, light);
 
     // Set the attribute arrays.
-    lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals);
-    lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions);
+    lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
+    lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
 
     // Draw the object.
     lgl.drawMesh(gl, mesh);
