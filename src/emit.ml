@@ -85,6 +85,7 @@ let rec comp_exp (e : exp) : string =
     | Var v -> v
     | Binop (op, l, r) -> (match op with
         | Times -> padded_mult l r
+        | CTimes -> "(" ^ ((comp_exp (fst l)) ^ " * " ^(comp_exp (fst r))) ^ ")"
         | _ -> "(" ^ (string_of_binop op (comp_exp (fst l)) (comp_exp (fst r))) ^ ")")
     | Unop (op, (x, _)) -> (string_of_unop op ("(" ^ (comp_exp x) ^ ")"))
     | FnInv (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
