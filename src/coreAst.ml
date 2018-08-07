@@ -5,6 +5,7 @@ type mat = vec list
 
 (* values *)
 type value =
+  | Unit
   | Bool of bool
   | Num of int
   | Float of float

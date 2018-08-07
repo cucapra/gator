@@ -22,12 +22,6 @@ and exp =
 
 and args = exp list
 
-(* function declaration *)
-type params = (id * etyp) list
-type ret_type = etyp
-type fn_type = params * ret_type
-type fn_decl = id * fn_type
-
 (* commands *)
 type comm =
     | Skip
@@ -37,6 +31,10 @@ type comm =
     | If of texp * comm list * comm list
     | Return of texp option
 
+type params = (string * etyp) list
+type ret_type = etyp
+type fn_type = params * ret_type
+type fn_decl = string * fn_type
 type fn = fn_decl * comm list
 
 type prog = fn list

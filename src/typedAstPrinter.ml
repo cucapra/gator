@@ -56,13 +56,10 @@ let rec string_of_comm (c: comm) : string =
 and string_of_comm_list (cl : comm list) : string = 
    (String.concat "\n" (List.map string_of_comm cl))
 
-let string_of_fn (((id, (p, rt)), cl) : fn) : string = 
+let string_of_fn ((((id, (p, rt)), cl)) : fn) : string = 
     match id with 
     | "main" -> "void main() {" ^ (string_of_comm_list cl) ^ "}"
     | _ -> (string_of_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (string_of_comm_list cl) ^ "}"
- 
-let rec string_of_fn_list (f : fn list) : string = 
-    (String.concat "" (List.map string_of_fn f))
 
 let string_of_prog (e : prog) : string =
-    string_of_fn_list e
+    (String.concat "" (List.map string_of_fn e))

@@ -482,10 +482,10 @@ let rec check_fn (((id, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn * p
     let p' = check_fn_decl d (id, (pl, r)) p in 
     (* check that the last command is a return statement *)
     match r with
-    | UnitTyp -> List.iter check_void_return cl; (((id, (pl', TypedAst.UnitTyp)), cl'), p')
+    | UnitTyp -> List.iter check_void_return cl; ((((id, (pl', TypedAst.UnitTyp)), cl')), p')
     (* TODO: might want to check that there is exactly one return statement at the end *)
-    | t -> List.iter (check_return t d g' p) cl; (((id, (pl', tag_erase t d)), cl'), p')
-and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.fn list * phi =
+    | t -> List.iter (check_return t d g' p) cl; ((((id, (pl', tag_erase t d)), cl')), p')
+and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.prog * phi =
     debug_print ">> check_fn_lst";
     match fl with
     | [] -> ([], p)
@@ -502,7 +502,7 @@ let check_main_fn (p: phi) =
 
 (* Returns the list of fn's which represent the program 
  * and params of the void main() fn *)
-let check_prog (e: prog) : TypedAst.fn list * TypedAst.params =
+let check_prog (e: prog) : TypedAst.prog * TypedAst.params =
     debug_print ">> check_prog";
     match e with
     | Prog (dl, t, f) -> (*(d: delta) ((id, t): fn_decl) (p: phi) *)

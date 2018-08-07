@@ -112,8 +112,8 @@ let comp_fn (((id, (p, rt)), cl) : fn) : string =
     match id with 
     | "main" -> "void main() {" ^ (comp_comm cl) ^ "}"
     | _ -> (string_of_gl_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (comp_comm cl) ^ "}"
- 
-let rec comp_fn_lst (f : fn list) : string = 
+
+let rec comp_fn_lst (f : fn list) : string =
     match f with 
     | [] -> ""
     | h::t -> (comp_fn h) ^ (comp_fn_lst t)
