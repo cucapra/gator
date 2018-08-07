@@ -5,7 +5,8 @@ The examples currently consist of:
 
 * **flat_color:** The simplest possible shader! Just draws an object with every pixel set to a constant color.
 * **lighting:** The [Phong lighting model][phong].
-* **texture:** Demonstrates texture mapping.
+* **texture_pkg:** Demonstrates texture mapping on models loaded through yarnpkg (bunny/teapot).
+* **texture_obj:** Demonstrates texture mapping on models loaded through OBJ files. Can find LPSHead rendering here.
 
 [phong]: https://en.wikipedia.org/wiki/Phong_reflection_model
 

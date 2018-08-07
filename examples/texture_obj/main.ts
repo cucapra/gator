@@ -1,7 +1,11 @@
 import * as lgl from '../lglexample';
 import { mat4 } from 'gl-matrix';
 
-const head : string = require('../resources/lpshead/lambertian.jpg');
+// Texture for LPSHead
+const head_lambert : string = require('../resources/lpshead/lambertian.jpg');
+
+// Loads file system implementation in parcel
+// * can only call synchronous functions *
 const fs : any = require('fs');
 
 var __dirname : string;
@@ -20,14 +24,13 @@ function main() {
   let loc_uView = lgl.uniformLoc(gl, program, 'uView');
   let loc_uModel = lgl.uniformLoc(gl, program, 'uModel');
   let loc_aPosition = lgl.attribLoc(gl, program, 'aPosition');
-  //let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
   
   // Texture things
   let loc_aTexCoord = lgl.attribLoc(gl, program, 'aTexCoord');
   let loc_uTexture = lgl.uniformLoc(gl, program, 'uTexture');
 
   // Read in lpshead obj
-  // TODO : make this nicer..?
+  // URL must be statically analyzable other than (__dirname) and (__filename)
   let src = fs.readFileSync(__dirname + './../resources/lpshead/head.OBJ', 'utf8');
 
   let mesh = lgl.load_obj (gl, src);
@@ -35,7 +38,8 @@ function main() {
   // Initialize the model position.
   let model = mat4.create();
 
-  load_texture(gl);
+  // Load image texture
+  load_texture(gl, head_lambert);
 
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
@@ -48,6 +52,8 @@ function main() {
     gl.uniformMatrix4fv(loc_uProjection, false, projection);
     gl.uniformMatrix4fv(loc_uView, false, view);
     gl.uniformMatrix4fv(loc_uModel, false, model);
+    
+    // Use texture unit 0 for uTexture
     gl.uniform1i(loc_uTexture, 0);
   
     // Set the attribute arrays.
@@ -63,14 +69,13 @@ function main() {
  * Load image texture.
  * @param gl rendering context
  */
-function load_texture(gl: WebGLRenderingContext) {
+function load_texture(gl: WebGLRenderingContext, img_src: string) {
     // Create a texture.
     // Asynchronously load an image
     var image = new Image();
-    image.src = head;
+    image.src = img_src;
     var texture = gl.createTexture();
     
-    // TODO : add in more cases for types for textures 
     image.addEventListener('load', function() {
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
