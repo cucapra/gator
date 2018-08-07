@@ -17,7 +17,7 @@ tag alphaColor is vec4;
 declare float dot(vec3 v1, vec3 v2);
 declare vec3 normalize(vec3 v1); 
 
-void main(vec3 uPosition, vec4->vec4 uModel, vec4->vec4 uView, vec3 vNormal, vec3 uLight, vec3 vPosition) {
+void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView, model vNormal, world uLight, world uCameraPosition) {
 
     model->modelHom extendModel = [
         [1., 0., 0.],

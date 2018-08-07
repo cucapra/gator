@@ -58,7 +58,7 @@ let least_common_parent (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
     in
     let rec lub (anc_list1: id list) (anc_list2: id list) : id =
         match anc_list1 with
-        | [] -> raise (TypeException "Cannot implicitly cast to the top vector type")
+        | [] -> raise (TypeException ("Cannot implicitly cast " ^ (string_of_tag_typ t1) ^ " and " ^ (string_of_tag_typ t2) ^ " to the top vector type"  ))
         | h::t -> 
             (try (List.find (fun x -> x=h) anc_list2) with Not_found -> lub t anc_list2)
     in
@@ -72,7 +72,7 @@ let least_common_parent (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
     | VarTyp s, TopTyp n1
     | TopTyp n1, VarTyp s ->
         check_dim (vec_dim (VarTyp s) d) n1;
-        raise (TypeException "Cannot implicitly cast to the top vector type")
+        raise (TypeException ("Cannot implicitly cast " ^ (string_of_tag_typ t1) ^ " and " ^ (string_of_tag_typ t2) ^ " to the top vector type"  ))
     | VarTyp s, BotTyp n1
     | BotTyp n1, VarTyp s ->
         check_dim (vec_dim (VarTyp s) d) n1; VarTyp s
@@ -342,7 +342,7 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ =
         let params_typ = List.map snd params in 
         let is_subtype arg param = (
             match (arg, param) with 
-            | (TagTyp t1, TagTyp t2) -> subsumes_to t1 t2 d 
+            | (TagTyp t1, TagTyp t2) -> is_tag_subtype t1 t2 d (* MARK *)
             | (SamplerTyp i1, SamplerTyp i2) -> i1 = i2 
             | (BoolTyp, BoolTyp)
             | (IntTyp, IntTyp)
