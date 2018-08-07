@@ -1,3 +1,6 @@
+declare float dot(vec2 x, vec2 y);
+declare vec2 normalize(vec2 x);
+
 void main() {
     vec2 r1 = [1.,2.] + [-.2,-3.];
     print r1;
