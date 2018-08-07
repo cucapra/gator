@@ -14,6 +14,16 @@ let rec fn_lookup (name : id) (fns : fn list) : (fn option * id list) =
         (if name = id then (Some h, List.map fst p) else fn_lookup name t)
 
 let rec eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
+    let eval_glsl_fn (name : id) (args : exp list) : value =
+        let as_vec (e : exp) : vec =
+            (match (eval_exp e fns s) with
+            | VecLit v -> v
+            | _ -> failwith "Expected vec, but didn't get it!")
+        in
+        if name = "dot" then Float (dot (as_vec (List.nth args 0)) (as_vec (List.nth args 1))) else
+        if name = "normalize" then VecLit (normalize (as_vec (List.nth args 0))) else
+        failwith ("Unimplemented function " ^ name ^ " -- is this a GLSL function?")
+    in
     match e with
     | Val v -> v
     | Var x -> Assoc.lookup x s
@@ -89,7 +99,7 @@ let rec eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
         )
     | FnInv (id, args) -> let (fn, p) = fn_lookup id fns in
         match fn with
-        | None -> failwith ("Unimplemented function " ^ id ^ " -- is this a GLSL function?")
+        | None -> eval_glsl_fn id args
         | Some f -> eval_funct f fns s
 
 and eval_comm (c : comm) (fns : fn list) (s : sigma) : sigma =

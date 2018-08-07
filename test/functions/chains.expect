@@ -1,1 +1,6 @@
-Fatal error: exception Lingl__Check.TypeException("invalid number of arguments for function: f")
+2
+vec2(0.75, 1.5)
+9
+vec2(1.3333333333333333, 2.6666666666666665)
+6
+vec2(4.0, 8.0)

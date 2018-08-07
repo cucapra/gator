@@ -43,6 +43,9 @@ def test_exception(outname, expectname):
                 parsing_error = "Fatal error: exception Failure(\"Parsing error"
                 if expval.startswith(parsing_error):
                     return outval.startswith(parsing_error)
+                extern_error = "Fatal error: exception Failure(\"Unimplemented function"
+                if expval.startswith(extern_error):
+                    return outval.startswith(extern_error)
                 if expval.startswith("Fatal error: exception"):
                     pindex = expval.index("(")
                     return outval[:pindex] == expval[:pindex]
@@ -73,11 +76,12 @@ def main():
                 if not filecmp.cmp(outname, expectname)\
                         and not test_exception(outname, expectname):
                     any_fails = True
-                    print("\t❌  " + basename + " " + random.choice(fail_symbols))
+                    print("\t❌  " + basename + " " +
+                          random.choice(fail_symbols))
             except IOError:
                 any_fails = True
-                print("\t❌  " + expectname + " not found " + 
-                    random.choice(fail_symbols))
+                print("\t❌  " + expectname + " not found " +
+                      random.choice(fail_symbols))
     if not any_fails:
         print("No 👏   Failures 👏")
         for _ in range(SUCCESS_COUNT):

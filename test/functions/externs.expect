@@ -1,1 +1,1 @@
-Fatal error: exception Lingl__Check.TypeException("invalid number of arguments for function: f")
+Fatal error: exception Failure("Unimplemented function g -- is this a GLSL function?")
