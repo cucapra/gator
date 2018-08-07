@@ -1,7 +1,7 @@
 import * as lgl from '../lglexample';
 import { mat4 } from 'gl-matrix';
 
-const head : string = require('../resources/marble.jpg');
+const head : string = require('../resources/lpshead/lambertian.jpg');
 const fs : any = require('fs');
 
 var __dirname : string;
@@ -27,12 +27,15 @@ function main() {
   let loc_uTexture = lgl.uniformLoc(gl, program, 'uTexture');
 
   // Read in lpshead obj
+  // TODO : make this nicer..?
   let src = fs.readFileSync(__dirname + './../resources/lpshead/head.OBJ', 'utf8');
 
   let mesh = lgl.load_obj (gl, src);
   
   // Initialize the model position.
   let model = mat4.create();
+
+  load_texture(gl);
 
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
@@ -48,12 +51,9 @@ function main() {
     gl.uniform1i(loc_uTexture, 0);
   
     // Set the attribute arrays.
-    //lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
     lgl.bind_attrib_buffer(gl, loc_aTexCoord, mesh.texcoords, 2);
    
-    load_texture(gl);
-
     // Draw the object.
     lgl.drawMesh(gl, mesh);
   }
@@ -61,7 +61,6 @@ function main() {
 
 /**
  * Load image texture.
- * [Reference] : https://github.com/cucapra/braid/
  * @param gl rendering context
  */
 function load_texture(gl: WebGLRenderingContext) {
@@ -71,16 +70,10 @@ function load_texture(gl: WebGLRenderingContext) {
     image.src = head;
     var texture = gl.createTexture();
     
+    // TODO : add in more cases for types for textures 
     image.addEventListener('load', function() {
       gl.bindTexture(gl.TEXTURE_2D, texture);
-      const alignment = 1;
-      gl.pixelStorei(gl.UNPACK_ALIGNMENT, alignment);
-      // Invert the Y-coordinate. I'm not 100% sure why this is necessary,
-      // but it appears to have been invented to convert between the DOM
-      // coordinate convention for images and WebGL's convention.
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,
-        gl.UNSIGNED_BYTE, image);
       
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
