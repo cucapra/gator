@@ -1,11 +1,10 @@
-int f(int x) {
-    return x;
-}
+tag a is vec2;
+tag b is vec2;
 
-float f(int x) {
-    return 1.;
-}
+declare a f(a x);
+declare b f(b x);
 
 void main() {
+    print f([1., 2.]) // SHENANIGANS!
     return;
 }
