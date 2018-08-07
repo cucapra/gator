@@ -124,7 +124,7 @@ let rec decl_attribs (p : TypedAst.params) : string =
     | h::t -> match h with
         (* Super janky, but we need to have rules for weird glsl declarations and variables *)
         | (x, et) -> if check_name x then 
-            (attrib_type x) ^ " " ^ (string_of_typ et) ^ " " ^ x ^ ";" ^ (decl_attribs t) else
+            (attrib_type x) ^ " " ^ (string_of_gl_typ et) ^ " " ^ x ^ ";" ^ (decl_attribs t) else
             decl_attribs t
 
 let rec compile_program (prog : prog) (params: TypedAst.params) : string =
