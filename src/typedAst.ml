@@ -1,9 +1,8 @@
 (* IR for typed AST *)
-
 open CoreAst
 
 (* type with tags erased *)
-type etyp = 
+type etyp =
     | UnitTyp
     | BoolTyp
     | IntTyp
@@ -12,26 +11,19 @@ type etyp =
     | MatTyp of int * int
     | SamplerTyp of int
 
-(* function declaration *)
-type params = (id * etyp) list
-type ret_type = etyp
-(* functions are not first-class *)
-type fn_type = params * ret_type
-type fn_decl = id * fn_type
-
 (* expressions *)
 type texp = exp * etyp
 and exp =
     | Val of value
-    | Var of id 
+    | Var of id
     | Unop of unop * texp
     | Binop of binop * texp * texp
-    | FnInv of id * args (* function invocation *)
-(* function arguments *)
+    | FnInv of id * args
+
 and args = exp list
 
 (* commands *)
-type comm = 
+type comm =
     | Skip
     | Print of texp
     | Decl of etyp * id * texp
@@ -39,6 +31,10 @@ type comm =
     | If of texp * comm list * comm list
     | Return of texp option
 
+type params = (string * etyp) list
+type ret_type = etyp
+type fn_type = params * ret_type
+type fn_decl = string * fn_type
 type fn = fn_decl * comm list
 
 type prog = fn list

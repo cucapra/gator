@@ -5,6 +5,7 @@ type mat = vec list
 
 (* values *)
 type value =
+  | Unit
   | Bool of bool
   | Num of int
   | Float of float
@@ -13,7 +14,7 @@ type value =
 
 type unop =
   | Not
-type binop = 
+type binop =
   | Eq
   | Leq
   | Or

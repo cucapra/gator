@@ -1,18 +1,24 @@
 open CoreAst
-open CoreAstHelper
 open TypedAst
+open TypedAstPrinter
 open Assoc
 open Lin_ops
 open Util
 
 type sigma = (id, value) Assoc.context
 
-let rec eval_exp (e : exp) (s : sigma) : value =
+let rec fn_lookup (name : id) (fns : fn list) : (fn option * id list) =
+    match fns with
+    | [] -> (None, [])
+    | h::t -> match h with ((id, (p, _)), _) -> 
+        (if name = id then (Some h, List.map fst p) else fn_lookup name t)
+
+let rec eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
     match e with
     | Val v -> v
     | Var x -> Assoc.lookup x s
     | Unop (op, (e', _)) ->
-        let v = eval_exp e' s in
+        let v = eval_exp e' fns s in
         let bad_unop _ =
             failwith ("No rule to apply " ^ (string_of_unop op (string_of_value v)))
         in
@@ -22,8 +28,8 @@ let rec eval_exp (e : exp) (s : sigma) : value =
             | _ -> bad_unop ()))
 
     | Binop (op, (l, _), (r, _)) -> 
-        let left = eval_exp l s in
-        let right = eval_exp r s in
+        let left = eval_exp l fns s in
+        let right = eval_exp r fns s in
         let bad_binop _ =
             failwith ("No rule to apply " ^ 
             (string_of_binop op (string_of_value left) (string_of_value right)))
@@ -81,22 +87,36 @@ let rec eval_exp (e : exp) (s : sigma) : value =
             | (MatLit m1, MatLit m2) -> MatLit (mc_mult m1 m2)
             | _ -> bad_binop ())
         )
-    | _ -> failwith "Unimplemented"
+    | FnInv (id, args) -> let (fn, p) = fn_lookup id fns in
+        match fn with
+        | None -> failwith ("Unimplemented function " ^ id ^ " -- is this a GLSL function?")
+        | Some f -> eval_funct f fns s
 
-let rec eval_comm (c : comm list) (s : sigma) : sigma =
+and eval_comm (c : comm) (fns : fn list) (s : sigma) : sigma =
     match c with
-    | [] -> s
-    | h::t -> eval_comm t (match h with
-        | Skip -> s
-        | Print (e, _) -> print_string (string_of_value (eval_exp e s) ^ "\n"); s
-        | Decl (_, x, (e, _))
-        | Assign (x, (e, _)) -> Assoc.update x (eval_exp e s) s
-        | If ((e, _), c1, c2) -> eval_comm (match (eval_exp e s) with
-            | Bool b -> if b then c1 else c2
-            | _ -> failwith "Expected a boolean in 'if' exception") s 
-        | Return e -> failwith "Unimplemented" )
-        
-        
+    | Skip -> s
+    | Print (e, _) -> print_string (string_of_value (eval_exp e fns s) ^ "\n"); s
+    | Decl (_, x, (e, _))
+    | Assign (x, (e, _)) -> Assoc.update x (eval_exp e fns s) s
+    | If ((e, _), c1, c2) -> snd (eval_cl (match (eval_exp e fns s) with
+        | Bool b -> if b then c1 else c2
+        | _ -> failwith "Expected a boolean in 'if' exception") fns s)
+    | Return e -> s
+and eval_cl (cl : comm list) (fns : fn list) (s : sigma) : (value * sigma) =
+    match cl with
+    | [] -> (Unit, s)
+    | h::t -> (match h with
+        | Return Some (e, _) -> (eval_exp e fns s, s)
+        | Return None -> (Unit, s)
+        | _ -> eval_cl t fns (eval_comm h fns s))
 
-let eval_prog (p : prog) : unit = ()
-    (* eval_comm p Assoc.empty |> ignore *)
+and eval_funct ((_, cl) : fn) (fns : fn list) (s : sigma) : value =
+    fst (eval_cl cl fns s)
+
+let start_eval (fns : fn list) : unit =
+    match fst (fn_lookup "main" fns) with
+    | None -> failwith "Typechecker failed to find lack of main"
+    | Some main -> eval_funct main fns Assoc.empty |> ignore
+
+let eval_prog (p : prog) : unit =
+    start_eval p
