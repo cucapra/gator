@@ -1,1 +1,1 @@
-Fatal error: exception Lingl__Check.TypeException("Huge Success!")
+Fatal error: exception Lingl__Check.TypeException("print function cannot print void types")

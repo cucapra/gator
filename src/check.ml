@@ -370,7 +370,12 @@ and check_comm (c: comm) (d: delta) (g: gamma) (p: phi): TypedAst.comm * gamma =
     debug_print ">> check_comm";
     match c with
     | Skip -> (TypedAst.Skip, g)
-    | Print e -> (TypedAst.Print (exp_to_texp (check_exp e d g p) d), g)
+    | Print e -> (
+        let (e, t) = exp_to_texp (check_exp e d g p) d in 
+        match t with
+        | UnitTyp -> raise (TypeException "print function cannot print void types")
+        | _ -> (TypedAst.Print (e, t), g)
+    )
     | Decl (t, s, e) -> 
         if Assoc.mem s g then raise (TypeException "variable name shadowing is illegal")
         else let result = check_exp e d g p in
