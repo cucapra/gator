@@ -20,8 +20,14 @@ let mat_sub (m1 : mat) (m2 : mat) : mat =
 let sv_mult (s : float) (v : vec) : vec = 
   List.map (fun x -> s *. x) v
 
+let iv_mult (s : int) (v : vec) : vec = 
+  List.map (fun x -> (float_of_int (s * (int_of_float x)))) v
+
 let sm_mult (s : float) (m : mat) : mat = 
   List.map (fun x -> List.map (fun y -> s *. y) x) m
+
+let im_mult (s : int) (m : mat) : mat = 
+  List.map (fun x -> List.map (fun y -> float_of_int (s * (int_of_float y))) x) m
 
 let vc_mult (v1 : vec) (v2 : vec) : vec =
   List.map2 (fun x y -> x *. y) v1 v2

@@ -77,9 +77,13 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
         | Times -> (match (left, right) with
             | (Num i1, Num i2) -> Num (i1 * i2)
             | (Float f1, Float f2) -> Float (f1 *. f2)
-            | (VecLit v, Float s) -> VecLit (sv_mult s v)
+            | (VecLit v, Num n)
+            | (Num n, VecLit v) -> VecLit (iv_mult n v)
+            | (VecLit v, Float s)
             | (Float s, VecLit v) -> VecLit (sv_mult s v)
-            | (MatLit m, Float s) -> MatLit (sm_mult s m)
+            | (MatLit m, Num n)
+            | (Num n, MatLit m) -> MatLit (im_mult n m)
+            | (MatLit m, Float s)
             | (Float s, MatLit m) -> MatLit (sm_mult s m)
             | (MatLit m, VecLit v) -> VecLit (vec_mult v m)
             | (MatLit m1, MatLit m2) -> MatLit (mat_mult m1 m2)
@@ -88,7 +92,9 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
         | Div -> (match (left, right) with
             | (Num i1, Num i2) -> Num (i1 / i2)
             | (Float f1, Float f2) -> Float (f1 /. f2)
+            | (VecLit v, Num n) -> VecLit (sv_mult (1. /. (float_of_int n)) v)
             | (VecLit v, Float s) -> VecLit (sv_mult (1. /. s) v)
+            | (MatLit m, Num n) -> MatLit (sm_mult (1. /. (float_of_int n)) m)
             | (MatLit m, Float s) -> MatLit (sm_mult (1. /. s) m)
             | _ -> bad_binop ())
 
