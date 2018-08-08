@@ -3,7 +3,7 @@ int f() {
 }
 
 int g(bool x) {
-    return x > 0;
+    return x <= 0;
 }
 
 void main() {

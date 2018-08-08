@@ -1,0 +1,6 @@
+declare int f();
+tag s is vec2;
+
+void main() {
+    return;
+}
