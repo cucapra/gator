@@ -477,7 +477,7 @@ let check_return (t: typ) (d: delta) (g: gamma) (p: phi) (c: comm) =
             (string_of_typ t) ^ ", found: " ^ (string_of_typ rt)))
         in
         match (t,rt) with 
-        | (TagTyp t1, TagTyp t2) -> subsumes_to t1 t2 d |> raise_return_exception
+        | (TagTyp t1, TagTyp t2) -> is_tag_subtype t2 t1 d |> raise_return_exception
         | (SamplerTyp i1, SamplerTyp i2) -> i1 = i2 |> raise_return_exception 
         | (BoolTyp, BoolTyp)
         | (IntTyp, IntTyp)
