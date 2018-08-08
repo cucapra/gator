@@ -113,6 +113,10 @@ tag:
 ;
 
 fnlst: 
+  | x = fn_decl; LBRACE; RBRACE;
+      { (x, [])::[] }
+  | x = fn_decl; LBRACE; RBRACE; fl = fnlst;
+      { (x, [])::fl }
   | x = fn_decl; LBRACE; c1 = commlst; RBRACE;
       { (x, c1)::[] }
   | x = fn_decl; LBRACE; c1 = commlst; RBRACE; fl = fnlst;
