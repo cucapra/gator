@@ -30,6 +30,7 @@ type comm =
     | Assign of id * texp
     | If of texp * comm list * comm list
     | Return of texp option
+    | FnCall of id * args
 
 type params = (string * etyp) list
 type ret_type = etyp

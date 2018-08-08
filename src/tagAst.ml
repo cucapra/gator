@@ -45,6 +45,7 @@ type comm =
     | Assign of string * exp
     | If of exp * comm list * comm list
     | Return of exp option
+    | FnCall of string * args 
 
 type fn = fn_decl * comm list
 

@@ -163,6 +163,10 @@ comm:
       { Return(Some e) }
   | RETURN; SEMI;
       { Return(None) }
+  | x = ID; LPAREN; RPAREN; SEMI;
+      { FnCall(x, []) }
+  | x = ID; LPAREN; a = arglst; RPAREN; SEMI;
+      { FnCall(x, a) }
 ; 
 
 typ:
@@ -247,6 +251,7 @@ arglst:
      { e::a@[] }
 ;
 
+  
 exp:
   | LPAREN; a = exp; RPAREN    
       { a }

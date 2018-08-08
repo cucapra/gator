@@ -13,8 +13,7 @@ let rec fn_lookup (name : id) (fns : fn list) : (fn option * id list) =
     | h::t -> match h with ((id, (p, _)), _) -> 
         (if name = id then (Some h, List.map fst p) else fn_lookup name t)
 
-let rec eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
-    let eval_glsl_fn (name : id) (args : exp list) : value =
+let rec eval_glsl_fn (name : id) (args : exp list) fns s : value =
         let as_vec (e : exp) : vec =
             (match (eval_exp e fns s) with
             | VecLit v -> v
@@ -23,7 +22,8 @@ let rec eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
         if name = "dot" then Float (dot (as_vec (List.nth args 0)) (as_vec (List.nth args 1))) else
         if name = "normalize" then VecLit (normalize (as_vec (List.nth args 0))) else
         failwith ("Unimplemented function " ^ name ^ " -- is this a GLSL function?")
-    in
+
+and eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
     match e with
     | Val v -> v
     | Var x -> Assoc.lookup x s
@@ -99,7 +99,7 @@ let rec eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
         )
     | FnInv (id, args) -> let (fn, p) = fn_lookup id fns in
         match fn with
-        | None -> eval_glsl_fn id args
+        | None -> eval_glsl_fn id args fns s
         | Some f -> eval_funct f fns s
 
 and eval_comm (c : comm) (fns : fn list) (s : sigma) : sigma =
@@ -112,6 +112,10 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) : sigma =
         | Bool b -> if b then c1 else c2
         | _ -> failwith "Expected a boolean in 'if' exception") fns s)
     | Return e -> s
+    | FnCall (id, args) -> let (fn, p) = fn_lookup id fns in
+        match fn with
+        | None -> eval_glsl_fn id args fns s |> ignore; s
+        | Some f -> eval_funct f fns s |> ignore; s
 and eval_cl (cl : comm list) (fns : fn list) (s : sigma) : (value * sigma) =
     match cl with
     | [] -> (Unit, s)

@@ -49,35 +49,37 @@ let check_name (var_name : string) : bool =
 let is_core (var_name : string) : bool = 
     var_name = "gl_Position" || var_name = "gl_FragColor"
 
-let rec comp_exp (e : exp) : string =
-    let op_wrap (op : exp) : string =
-        match op with
-        | Val _
-        | Var _ -> comp_exp op
-        | _ -> "(" ^ (comp_exp op) ^ ")"
-    in
-    (* Handles the string shenanigans for padding during multiplication *)
-    let padded_mult (left : texp) (right : texp) : string =
-        (* Printf.printf "\t\t\t%s\n" (string_of_exp e);  *)
-        match (left, right) with
-        | ((le, lt), (re, rt)) -> (match (lt, rt) with
-            | (MatTyp (ldim , _), VecTyp rdim) -> 
-                        (if ldim = rdim then  (
-                        (op_wrap le) ^ " * " ^ (op_wrap re) )
-                        else if ldim > rdim then (
-                        (op_wrap le) ^ " * " ^ "vec" ^ (string_of_int ldim) ^ "(" ^ 
-                        (comp_exp re) ^ (repeat ", 0." (ldim - rdim)) ^ ")" )
-                        else  (* dim < rdim *) (
-                        "vec" ^ (string_of_int ldim) ^ "(" ^ 
-                        (op_wrap le) ^ " * " ^ 
-                        (comp_exp re) ^ ")") )
-            | (MatTyp (ldim, _), MatTyp (_, rdim)) -> 
-                    (if ldim = rdim then ((op_wrap le) ^ " * " ^ (op_wrap re))
-                    else (op_wrap le) ^ " * " ^ (comp_exp re))
-            | _ -> (op_wrap le) ^ " * " ^ (comp_exp re))
-    in
-    let padded_args (a: exp list) : string = 
-        (String.concat ", " (List.map (op_wrap) a)) in
+let rec op_wrap (op : exp) : string =
+    match op with
+    | Val _
+    | Var _ -> comp_exp op
+    | _ -> "(" ^ (comp_exp op) ^ ")"
+
+(* Handles the string shenanigans for padding during multiplication *)
+and padded_mult (left : texp) (right : texp) : string =
+    (* Printf.printf "\t\t\t%s\n" (string_of_exp e);  *)
+    match (left, right) with
+    | ((le, lt), (re, rt)) -> (match (lt, rt) with
+        | (MatTyp (ldim , _), VecTyp rdim) -> 
+                    (if ldim = rdim then  (
+                    (op_wrap le) ^ " * " ^ (op_wrap re) )
+                    else if ldim > rdim then (
+                    (op_wrap le) ^ " * " ^ "vec" ^ (string_of_int ldim) ^ "(" ^ 
+                    (comp_exp re) ^ (repeat ", 0." (ldim - rdim)) ^ ")" )
+                    else  (* dim < rdim *) (
+                    "vec" ^ (string_of_int ldim) ^ "(" ^ 
+                    (op_wrap le) ^ " * " ^ 
+                    (comp_exp re) ^ ")") )
+        | (MatTyp (ldim, _), MatTyp (_, rdim)) -> 
+                (if ldim = rdim then ((op_wrap le) ^ " * " ^ (op_wrap re))
+                else (op_wrap le) ^ " * " ^ (comp_exp re))
+        | _ -> (op_wrap le) ^ " * " ^ (comp_exp re))
+        
+and padded_args (a: exp list) : string = 
+    (String.concat ", " (List.map (op_wrap) a))
+
+and comp_exp (e : exp) : string =
+    
     match e with
     | Val v -> (match v with 
         | MatLit m -> string_of_gl_mat m
@@ -90,7 +92,7 @@ let rec comp_exp (e : exp) : string =
     | Unop (op, (x, _)) -> (string_of_unop op ("(" ^ (comp_exp x) ^ ")"))
     | FnInv (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
  
-let rec comp_comm (c : comm list) : string =
+and comp_comm (c : comm list) : string =
     match c with
     | [] -> ""
     | h::t -> match h with
@@ -107,6 +109,7 @@ let rec comp_comm (c : comm list) : string =
             ^ "{ " ^ (comp_comm c2) ^ " }" 
             ^ (comp_comm t))
         | Return _ -> string_of_comm h ^ (comp_comm t)
+        | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
         
 
 let comp_fn (((id, (p, rt)), cl) : fn) : string = 

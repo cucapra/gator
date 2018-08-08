@@ -307,6 +307,7 @@ let check_params (pl: (id * typ) list) (d: delta): TypedAst.params * gamma =
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) : TypedAst.texp = 
     ((fst checked_exp), (tag_erase (snd checked_exp) d))
 
+
 let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ = 
     debug_print ">> check_exp";
     let build_unop (op : unop) (e': exp) (check_fun: typ->delta->typ)
@@ -336,53 +337,36 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ =
         | CTimes -> build_binop op e1 e2 check_ctimes_exp
     )
     | VecTrans (i, tag) -> failwith "Unimplemented"
-    | FnInv (i, args) -> 
-        let check_exp' d g p c = check_exp c d g p  in
-        let args' = List.map (check_exp' d g p) args in 
-        let args_exp = List.map fst args' in 
-        let args_typ = List.map snd args' in
-        let (params, rt) = Assoc.lookup i p in
-        let params_typ = List.map snd params in 
-        let is_subtype arg param = (
-            match (arg, param) with 
-            | (TagTyp t1, TagTyp t2) -> is_tag_subtype t1 t2 d (* MARK *)
-            | (SamplerTyp i1, SamplerTyp i2) -> i1 = i2 
-            | (BoolTyp, BoolTyp)
-            | (IntTyp, IntTyp)
-            | (FloatTyp, FloatTyp) -> true
-            | (TransTyp (t1, t2), TransTyp (t3, t4)) -> 
-                (is_tag_subtype t3 t1 d && is_tag_subtype t2 t4 d)
-            | _ -> false
-        ) in 
-        
-        if List.length args_typ == List.length params_typ then
-            List.iter2 (fun arg param -> 
-            if is_subtype arg param then ()
-            else raise (TypeException("invalid argument type; expected: " ^ (string_of_typ param) ^ ", found: " ^ (string_of_typ arg)))) 
-            args_typ params_typ
-        else raise (TypeException("invalid number of arguments for function: " ^ i))
-        ; (TypedAst.FnInv (i, args_exp), rt)
-
-let check_assign (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gamma =
-    debug_print (">> check_decl <<"^s^">>");
-    if Assoc.mem s d then 
-        raise (TypeException "variable declared as tag")
-    else (
-        match (t, etyp) with
+    | FnInv (i, args) -> let ((i, args_exp), rt) = check_fn_inv d g p args i in 
+        (FnInv (i, args_exp), rt)
+and check_fn_inv d g p args i =
+    let check_exp' d g p c = check_exp c d g p  in
+    let args' = List.map (check_exp' d g p) args in 
+    let args_exp = List.map fst args' in 
+    let args_typ = List.map snd args' in
+    let (params, rt) = Assoc.lookup i p in
+    let params_typ = List.map snd params in 
+    let is_subtype arg param = (
+        match (arg, param) with 
+        | (TagTyp t1, TagTyp t2) -> is_tag_subtype t1 t2 d (* MARK *)
+        | (SamplerTyp i1, SamplerTyp i2) -> i1 = i2 
         | (BoolTyp, BoolTyp)
         | (IntTyp, IntTyp)
-        | (FloatTyp, FloatTyp) -> Assoc.update s t g
-        | (TagTyp t1, TagTyp t2) ->
-            least_common_parent t1 t2 d |> ignore;
-            if subsumes_to t2 t1 d then Assoc.update s t g
-            else raise (TypeException ("mismatched linear type for var decl: " ^ s))
-        | (TransTyp (t1, t2), TransTyp (t3, t4)) ->
-            if is_tag_subtype t1 t3 d && is_tag_subtype t4 t2 d then Assoc.update s t g
-            else raise (TypeException ("no possible upcast for var decl: " ^ s))
-        | _ -> raise (TypeException ("mismatched types for var decl: expected " ^ (string_of_typ t) ^ " " ^ s ^ ", found " ^ (string_of_typ etyp) ))
-    )
+        | (FloatTyp, FloatTyp) -> true
+        | (TransTyp (t1, t2), TransTyp (t3, t4)) -> 
+            (is_tag_subtype t3 t1 d && is_tag_subtype t2 t4 d)
+        | _ -> false
+    ) in 
+    
+    if List.length args_typ == List.length params_typ then
+        List.iter2 (fun arg param -> 
+        if is_subtype arg param then ()
+        else raise (TypeException("invalid argument type; expected: " ^ (string_of_typ param) ^ ", found: " ^ (string_of_typ arg)))) 
+        args_typ params_typ
+    else raise (TypeException("invalid number of arguments for function: " ^ i))
+    ; ((i, args_exp), rt)
 
-let rec check_comm (c: comm) (d: delta) (g: gamma) (p: phi): TypedAst.comm * gamma = 
+and check_comm (c: comm) (d: delta) (g: gamma) (p: phi): TypedAst.comm * gamma = 
     debug_print ">> check_comm";
     match c with
     | Skip -> (TypedAst.Skip, g)
@@ -410,6 +394,9 @@ let rec check_comm (c: comm) (d: delta) (g: gamma) (p: phi): TypedAst.comm * gam
         let (e', t') = d |> (check_exp e d g p |> exp_to_texp) in 
         (TypedAst.Return (Some (e', t')), g)
     | Return None -> (TypedAst.Return None, g)
+    | FnCall (i, args) -> let ((i, args_exp), _) = check_fn_inv d g p args i in 
+        (TypedAst.FnCall (i, args_exp), g)
+
 and check_comm_lst (cl : comm list) (d: delta) (g: gamma) (p: phi) : TypedAst.comm list * gamma = 
     debug_print ">> check_comm_lst";
     match cl with
@@ -417,6 +404,26 @@ and check_comm_lst (cl : comm list) (d: delta) (g: gamma) (p: phi) : TypedAst.co
     | h::t -> let context = check_comm h d g p in
         let result = check_comm_lst t d (snd context) p in 
         ((fst context) :: (fst result), (snd result))
+
+and check_assign (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gamma =
+    debug_print (">> check_decl <<"^s^">>");
+    if Assoc.mem s d then 
+        raise (TypeException "variable declared as tag")
+    else (
+        match (t, etyp) with
+        | (BoolTyp, BoolTyp)
+        | (IntTyp, IntTyp)
+        | (FloatTyp, FloatTyp) -> Assoc.update s t g
+        | (TagTyp t1, TagTyp t2) ->
+            least_common_parent t1 t2 d |> ignore;
+            if subsumes_to t2 t1 d then Assoc.update s t g
+            else raise (TypeException ("mismatched linear type for var decl: " ^ s))
+        | (TransTyp (t1, t2), TransTyp (t3, t4)) ->
+            if is_tag_subtype t1 t3 d && is_tag_subtype t4 t2 d then Assoc.update s t g
+            else raise (TypeException ("no possible upcast for var decl: " ^ s))
+        | _ -> raise (TypeException ("mismatched types for var decl: expected " ^ (string_of_typ t) ^ " " ^ s ^ ", found " ^ (string_of_typ etyp) ))
+    )
+
 
 let check_tag (s: string) (l: tag_typ) (d: delta) : delta = 
     debug_print ">> check_tag";
