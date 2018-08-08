@@ -55,6 +55,7 @@ let rec string_of_comm (c: comm) : string =
     | Assign (b, x) -> b ^ " = " ^ (string_of_exp x) ^ ";"
     | Return None -> "return;"
     | Return Some e -> "return" ^ (string_of_exp e) ^ ";"
+    | FnCall (id, e) -> id ^ "(" ^ (String.concat "," (List.map string_of_exp e)) ^ "^"
 
 and 
 string_of_comm_list (cl : comm list) : string = 
