@@ -56,12 +56,11 @@ def test_exception(outname, expectname):
 
 def main():
     success_symbols, fail_symbols = get_symbols()
-    any_fails = True  # Trick to avoid printing excess successes
+    any_fails = False  # Trick to avoid printing excess successes
     for path, _, files in os.walk("test/"):
         lglfiles = filter(lambda x: x.endswith(".lgl"), files)
         if len(lglfiles) > 0:
             print("🏃‍   Running tests in " + path + ":")
-            any_fails = False
         for filename in lglfiles:
             filename = path + "/" + filename
             basename = filename[:-4]  # Remove the extension
