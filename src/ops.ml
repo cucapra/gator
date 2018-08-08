@@ -13,7 +13,7 @@ let rec fn_lookup (name : id) (fns : fn list) : (fn option * id list) =
     | h::t -> match h with ((id, (p, _)), _) -> 
         (if name = id then (Some h, List.map fst p) else fn_lookup name t)
 
-let rec eval_glsl_fn (name : id) (args : exp list) fns s : value =
+let rec eval_glsl_fn (name : id) (args : exp list) (fns : fn list) (s : sigma) : value =
         let as_vec (e : exp) : vec =
             (match (eval_exp e fns s) with
             | VecLit v -> v
@@ -100,7 +100,9 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
     | FnInv (id, args) -> let (fn, p) = fn_lookup id fns in
         match fn with
         | None -> eval_glsl_fn id args fns s
-        | Some f -> eval_funct f fns s
+        | Some f -> (match f with ((_, (names, _)), _) ->
+            let add_arg = (fun acc (name, _) ex -> Assoc.update name (eval_exp ex fns s) acc) in
+            eval_funct f fns (List.fold_left2 (add_arg) Assoc.empty names args))
 
 and eval_comm (c : comm) (fns : fn list) (s : sigma) : sigma =
     match c with
@@ -112,10 +114,8 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) : sigma =
         | Bool b -> if b then c1 else c2
         | _ -> failwith "Expected a boolean in 'if' exception") fns s)
     | Return e -> s
-    | FnCall (id, args) -> let (fn, p) = fn_lookup id fns in
-        match fn with
-        | None -> eval_glsl_fn id args fns s |> ignore; s
-        | Some f -> eval_funct f fns s |> ignore; s
+    | FnCall (id, args) -> (eval_exp (FnInv (id, args))) |> ignore; s
+
 and eval_cl (cl : comm list) (fns : fn list) (s : sigma) : (value * sigma) =
     match cl with
     | [] -> (Unit, s)
@@ -126,7 +126,7 @@ and eval_cl (cl : comm list) (fns : fn list) (s : sigma) : (value * sigma) =
 
 and eval_funct ((_, cl) : fn) (fns : fn list) (s : sigma) : value =
     fst (eval_cl cl fns s)
-
+    
 let start_eval (fns : fn list) : unit =
     match fst (fn_lookup "main" fns) with
     | None -> failwith "Typechecker failed to find lack of main"
