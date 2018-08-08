@@ -5,7 +5,7 @@ open Assoc
 open Lin_ops
 open Util
 
-type sigma = (id, value) Assoc.context
+type sigma = (value) Assoc.context
 
 let rec fn_lookup (name : id) (fns : fn list) : (fn option * id list) =
     match fns with

@@ -10,13 +10,13 @@ exception TypeException of string
 exception DimensionException of int * int
 
 (* Variable defs *)
-type gamma = (string, typ) Assoc.context
+type gamma = (typ) Assoc.context
 
 (* Tags defs *)
-type delta = (string, tag_typ) Assoc.context
+type delta = (tag_typ) Assoc.context
 
 (* Function defs *)
-type phi = (string, fn_type) Assoc.context
+type phi = (fn_type) Assoc.context
 
 let trans_top (n1: int) (n2: int) : typ =
     TransTyp ((BotTyp n1), (TopTyp n2))
