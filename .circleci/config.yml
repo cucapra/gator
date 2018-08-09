@@ -10,7 +10,7 @@ jobs:
           command: sudo apt-get install -y m4 && opam install -y ounit menhir dune
       - run:
           name: Install Python 2.7
-          command: sudo apt-get update && sudo apt install --yes python2.7
+          command: sudo apt-get update && sudo apt-get install --yes python2.7
       - run:
           name: Build Linguine 
           command: eval $(opam env) && make build 
