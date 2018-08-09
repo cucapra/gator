@@ -292,15 +292,21 @@ let tag_erase (t : typ) (d : delta) : TypedAst.etyp =
     | SamplerTyp i -> TypedAst.SamplerTyp i
     
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
-let check_param ((id, t): (string * typ)) (g: gamma) : gamma = 
+let check_param ((id, t): (string * typ)) (g: gamma) (d: delta) : gamma = 
     debug_print ">> check_param";
     if Assoc.mem id g 
     then raise (TypeException ("duplicate parameter name in function declaration: " ^ id))
-    else Assoc.update id t g
+    else (
+        match t with
+        TagTyp (VarTyp v) -> 
+            if Assoc.mem v d then Assoc.update id t g 
+            else raise (TypeException ("Tag in parameter not defined : " ^ v))
+        | _ -> Assoc.update id t g
+    )
     
 (* Get list of parameters from param list *)
 let check_params (pl: (id * typ) list) (d: delta): TypedAst.params * gamma = 
-    let g = List.fold_left (fun (g: gamma) p -> check_param p g) Assoc.empty pl in 
+    let g = List.fold_left (fun (g: gamma) p -> check_param p g d) Assoc.empty pl in 
     let p = List.map (fun (i, t) -> (i, tag_erase t d)) pl in 
     (p, g)
 

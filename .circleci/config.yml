@@ -6,7 +6,6 @@ jobs:
       - image: circleci/python:3.6.1
     steps:
       - checkout
-
       - run:
           name: Install OCaml packages
           command: sudo apt-get install -y m4 && opam install -y ounit menhir dune
