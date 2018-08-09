@@ -3,13 +3,14 @@ jobs:
   build:
     docker:
       - image: ocaml/opam2
-      - image: circleci/python:3.6.1
     steps:
       - checkout
       - run:
           name: Install OCaml packages
           command: sudo apt-get install -y m4 && opam install -y ounit menhir dune
-
+      - run:
+          name: Install Python 2.7
+          command: sudo apt-get update && sudo apt install --yes python2.7
       - run:
           name: Build Linguine 
           command: eval $(opam env) && make build 

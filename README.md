@@ -11,7 +11,7 @@ There is a compiler, pretty printer, and interpreter.
 Set Up
 ------
 
-We need [Dune][], [Jbuilder][], and [Menhir][]:
+We need [Dune][] and [Menhir][]:
 
     $ opam install jbuilder
     $ opam install dune
