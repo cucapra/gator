@@ -62,7 +62,7 @@ def main():
     success_symbols, fail_symbols = get_symbols()
     any_fails = False  # Trick to avoid printing excess successes
     for path, _, files in os.walk("test/"):
-        lglfiles = filter(lambda x: x.endswith(".lgl"), files)
+        lglfiles = [x for x in files if x.endswith(".lgl")]
         if len(lglfiles) > 0:
             print("🏃‍   Running tests in " + path + ":")
         for filename in lglfiles:
@@ -79,7 +79,7 @@ def main():
             # We write and then read to avoid memory shenanigans
             # (this might be worse actually, but I don't think it matters)
             try:
-                if not filecmp.cmp(outname, expectname)\
+                if not filecmp.cmp(outname, expectname) \
                         and not test_exception(outname, expectname):
                     any_fails = True
                     print("\t❌  " + basename + " " +
