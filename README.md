@@ -53,8 +53,7 @@ Tests
 -----
 
 There are a bunch of tests under the `test` directory.
-You can run them all by typing `./test/test.sh`.
-(But it's not clear how to tell whether they passed.)
+Use the `test.py` script to run them.
 
 Technical Details
 -----------------
