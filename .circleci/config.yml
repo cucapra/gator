@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       - image: ocaml/opam2
-
+      - image: circleci/python:3.6.1
     steps:
       - checkout
 
