@@ -1,6 +1,9 @@
 lingl
 =====
 
+[![CircleCI](https://circleci.com/gh/cucapra/linguine.svg?style=svg)](https://circleci.com/gh/cucapra/linguine)
+
+
 This is a language with a type system that enforces the correctness of linear algebra operations.
 There is a compiler, pretty printer, and interpreter.
 
