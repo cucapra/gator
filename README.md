@@ -13,7 +13,6 @@ Set Up
 
 We need [Dune][] and [Menhir][]:
 
-    $ opam install jbuilder
     $ opam install dune
     $ apt-get install m4  # On Debian, for example.
     $ opam install menhir
@@ -35,11 +34,11 @@ Now `lingc` should be available on your path.
 Run
 ---
 
-To simulate a Linguine-compiled shader on your browser: 
+To simulate a Linguine-compiled shader on your browser:
 
     $ make run src='example_directory_name'
 
-For example: 
+For example:
 
     $ make run src=lighting
 
