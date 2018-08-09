@@ -13,8 +13,8 @@ jobs:
 
       - run:
           name: Build Linguine 
-          command: make build 
+          command: eval $(opam env) && make build 
 
       - run:
           name: Run Linguine examples
-          command: python test.py 
+          command: eval $(opam env) && make build && python test.py 
