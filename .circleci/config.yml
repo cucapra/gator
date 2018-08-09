@@ -1,0 +1,20 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: ocaml/opam2
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install OCaml packages
+          command: sudo apt-get install -y m4 && opam install -y ounit menhir dune
+
+      - run:
+          name: Build Linguine 
+          command: make build 
+
+      - run:
+          name: Run Linguine examples
+          command: python test.py 
