@@ -10,6 +10,11 @@ import random
 TEST_SYMBOLS = "test/symbols2.txt"
 SUCCESS_COUNT = 5
 
+# Error messages we look for.
+PARSING_ERROR = "Fatal error: exception Failure(\"Parsing error"
+EXTERN_ERROR = "Fatal error: exception Failure(\"Unimplemented function"
+EXCEPTION_ERROR = "Fatal error: exception"
+
 
 def get_symbols():
     fail = False
@@ -32,7 +37,8 @@ def get_symbols():
 
 def test_exception(outname, expectname):
     # Special case for exceptions
-    # Ignore the text of the exception, we just want the type of exception that occured
+    # Ignore the text of the exception. we just want the type of
+    # exception that occurred.
     # (And, of course, that an exception occured)
     try:
         with open(outname, "r") as outf:
@@ -40,13 +46,11 @@ def test_exception(outname, expectname):
                 outval = next(outf)
                 expval = next(expf)
                 # Special case party!
-                parsing_error = "Fatal error: exception Failure(\"Parsing error"
-                if expval.startswith(parsing_error):
-                    return outval.startswith(parsing_error)
-                extern_error = "Fatal error: exception Failure(\"Unimplemented function"
-                if expval.startswith(extern_error):
-                    return outval.startswith(extern_error)
-                if expval.startswith("Fatal error: exception"):
+                if expval.startswith(PARSING_ERROR):
+                    return outval.startswith(PARSING_ERROR)
+                if expval.startswith(EXTERN_ERROR):
+                    return outval.startswith(EXTERN_ERROR)
+                if expval.startswith(EXCEPTION_ERROR):
                     pindex = expval.index("(")
                     return outval[:pindex] == expval[:pindex]
                 return False
@@ -68,7 +72,10 @@ def main():
             expectname = basename + ".expect"
             with open(outname, "w") as f:
                 subprocess.call(
-                    ("jbuilder", "exec", "bin/lingc.bc", filename, "v"), stdout=f, stderr=f)
+                    ("jbuilder", "exec", "bin/lingc.bc", filename, "v"),
+                    stdout=f,
+                    stderr=f,
+                )
             # We write and then read to avoid memory shenanigans
             # (this might be worse actually, but I don't think it matters)
             try:
