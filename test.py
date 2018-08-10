@@ -5,7 +5,14 @@ import subprocess
 import os
 import filecmp
 import random
+import argparse
+import sys
 
+parser = argparse.ArgumentParser(description="Flip a switch by setting a flag")
+# Flag for CircleCI build
+parser.add_argument('-b', action='store_true')
+
+args = parser.parse_args()
 
 TEST_SYMBOLS = "test/symbols2.txt"
 SUCCESS_COUNT = 5
@@ -93,6 +100,8 @@ def main():
         for _ in range(SUCCESS_COUNT):
             print(random.choice(success_symbols) + "  "),
         print("")  # newline
+    elif args.b: # for CircleCI builds
+        sys.exit(420) 
 
 
 if __name__ == "__main__":

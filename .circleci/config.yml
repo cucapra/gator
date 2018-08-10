@@ -16,4 +16,4 @@ jobs:
           command: eval $(opam env) && make build 
       - run:
           name: Run Linguine examples
-          command: eval $(opam env) && make build && python2.7 test.py 
+          command: eval $(opam env) && make build && python2.7 test.py -b
