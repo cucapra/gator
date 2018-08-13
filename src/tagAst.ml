@@ -37,19 +37,19 @@ type exp =
     | Unop of unop * exp
     | Binop of binop * exp * exp
     | VecTrans of int * tag_typ (* vec3(<vec4>), vec4(<vec3>) *)
-    | FnInv of string * args * parametrization list option (* function invocation *)
+    | FnInv of string * args * parametrization option (* function invocation *)
 
 and args = exp list
 
 (* function parameterization,
  * which may extend another type. *)
-and parametrization = typ * typ option
+and parametrization = (typ * typ) list
 
 (* function parameters *)
 type params = (string * typ) list
 type ret_type = typ
 (* our functions are not first-order! *)
-type fn_type = params * ret_type * parametrization list option
+type fn_type = params * ret_type * parametrization option
 (* function declaration *)
 type fn_decl = string * fn_type
 
