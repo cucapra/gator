@@ -1,0 +1,11 @@
+tag pos is vec3;
+tag color is vec3;
+tag tinted is color;
+
+declare float dot<t extends vec>(t x, t y);
+
+void main() {
+    pos x = [1., 2., 3.];
+    color red = [1., 0., 0.];
+    float fail = dot<color>(x, red);  // The intended catch
+}

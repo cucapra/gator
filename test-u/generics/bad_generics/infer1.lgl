@@ -1,0 +1,7 @@
+t id<t>(t x) {
+    return x;
+}
+
+void main() {
+    float fail = id(true); // id(true) must produce a bool
+}

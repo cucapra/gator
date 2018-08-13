@@ -1,0 +1,21 @@
+tag a is vec2;
+tag b is vec2;
+tag c is b;
+tag d is b;
+tag e is c;
+
+t low_cast<t extends b>(a x) {
+    a->b a_b = [[.5, .5], [1.5, .5]];
+    b->t id = [[1., 0.], [0., 1.]];
+    return id * a_b * x;
+}
+
+void main() {
+    a avec = [1., 1.];
+    b bvec = [1., 2.];
+    c cvec = [0., 2.];
+    d dvec = [1., 0.];
+    e evec = [0., 1.];
+    
+    vec2 fail = low_cast(avec); // Can't cast up to vec2
+}

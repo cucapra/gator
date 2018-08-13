@@ -1,0 +1,10 @@
+tag pos is vec3;
+tag color is vec3;
+tag tinted is color;
+
+declare t normalize<t extends vec>(t x);
+
+void main() {
+    pos vert = [1., 2., 3.];
+    vec2 fail = normal<vec2>(vert);  // Annoying, but true -- pretty much fine though tbh
+}

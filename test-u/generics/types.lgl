@@ -1,0 +1,30 @@
+// And finally, generic types!
+// I'm not sure what this will look like to be completely honest
+// I'll put some stuff down, ommitting things I'm not sure about using '??'
+
+tag a is vec2;
+tag b is vec2;
+tag c is b;
+tag d is b;
+tag e is c;
+tag gen<t> is ??;
+
+tag pos is vec3;
+tag color is vec3;
+tag tinted is color;
+tag sampler2d<t extends vec3> is ??;
+tag texcoord is vec3;
+
+declare float dot<t extends vec>(t x, t y);
+
+// This could be even more powerful, but we're not there yet
+declare t normalize<t extends vec>(t x);
+
+declare t texture<t>(sampler2d<t>, texcoord);
+
+void main() {
+    sampler2d<color> texcolor = ??;
+    texcoord coordinate = [1., 2., 3.];
+
+    color s1 = texture<color>(texcolor, coordinate);
+}

@@ -1,0 +1,8 @@
+// Note that 't' and 'u' MUST be vecs, regardless if we explicitely require it or not!
+u app_mat<t, u>(t->u m, t x) {
+    return m * x;
+}
+
+void main() {
+    int fail = app_mat<vec2, int>([[1., 2.], [2., 1.]], [1., 2]);
+}

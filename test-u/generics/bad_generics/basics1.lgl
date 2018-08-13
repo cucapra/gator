@@ -1,0 +1,7 @@
+t id<t>(t x) {
+    return x;
+}
+
+void main() {
+    bool fail = id<int>(3);  // Should return 't'
+}

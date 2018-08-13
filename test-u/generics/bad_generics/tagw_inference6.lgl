@@ -1,0 +1,20 @@
+tag a is vec2;
+tag b is vec2;
+tag c is b;
+tag d is b;
+tag e is c;
+
+// Note that, as before, bounds just increase the strictness of the operation
+b as_b<t extends c>(t x) {
+    return x;
+}
+
+void main() {
+    a avec = [1., 1.];
+    b bvec = [1., 2.];
+    c cvec = [0., 2.];
+    d dvec = [1., 0.];
+    e evec = [0., 1.];
+    
+    print as_b(bvec);  // Must extend c!
+}

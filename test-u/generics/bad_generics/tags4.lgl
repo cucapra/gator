@@ -1,0 +1,14 @@
+tag a is vec2;
+tag b is vec2;
+tag c is b;
+tag d is b;
+tag e is c;
+
+// Note also that bounds using tags can make using a function impossible
+vec2 uninvokable<t extends a>(t x) {
+    return x;
+}
+
+void main() {
+    vec2 fail = uninvokable<vec2>([1., 2.]);
+}

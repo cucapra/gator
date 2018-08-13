@@ -1,0 +1,7 @@
+v multiop<t, u, v>(t x, u y, v z) {
+    return x * y * z
+}
+
+void main() {
+    print multiop([1., 2.], 1., [1., 2.]);  // Vector multiplication shenanigans
+}

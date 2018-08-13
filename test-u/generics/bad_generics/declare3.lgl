@@ -1,0 +1,11 @@
+tag pos is vec3;
+tag color is vec3;
+tag tinted is color;
+
+declare float dot<t extends vec>(t x, t y);
+
+void main() {
+    tinted blueish = [1., 0., .2];
+    color red = [1., 0., 0.];
+    float fail = dot<tinted>(blueish, red);  // Odd, but should fail
+}

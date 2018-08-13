@@ -1,0 +1,8 @@
+v multiop<t, u, v>(t x, u y, v z) {
+    return x * y * z
+}
+
+void main() {
+    // Fails due to returning the wrong thing
+    vec2 fail = multiop<vec2, float, float>([1., 2.], 1., 2.);
+}

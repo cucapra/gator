@@ -1,0 +1,76 @@
+// You might want to read declare.lgl before diving into this
+// Dunno if the following should work
+// It could maybe, but then we have might have problems (see tag_inference for more strange things)
+// Also, the fails (fails/infer* and fails/tag_inference*) get pretty interesting
+
+t id<t>(t x) {
+    return x;
+}
+
+int id_int(int x) {
+    return x;
+}
+
+t restrict<t>(t x) {
+    return id_int(x);
+}
+
+t add_op<t>(t x, t y) {
+    t result = x + y;
+    return result;
+}
+
+u app_mat<t, u>(t->u m, t x) {
+    return m * x;
+}
+
+t project_r3_r2<t>(t x) {
+    t->vec2 proj = [[1., 0., 0.], [0., 1., 0.]];
+    // Multiply, but annoying as a test
+    return app_mat(proj, x);
+}
+
+t double<t>(t x) {
+    return 2. * x;
+}
+
+// O_o
+v multiop<t, u, v>(t x, u y, v z) {
+    return x * y * z
+}
+
+void main() {
+    print id(5);  // id<int>(5), but without the 'int'!
+    print id(2.5);
+    print id(3 + 6);
+
+    print restrict(5);
+
+    print add_op(1, 2);
+    print add_op(1., .3);
+    print add_op([1., 2.], [2., 1.]);
+    print add_op([[1., 0.], [0., 1.]], [[0., 1.], [1., 0.]]);
+    print add_op(restrict(3), restrict(2));
+    print id(add_op(id(5), id(6)) + 3);
+
+    print app_mat([[1., 0.], [0., 1.], [1., 1.]], [1., 2.]);
+    print app_mat(
+        add_op([[1., 2.], [2., 1.]], [[2., 1.], [1., 2.]]),
+        add_op([1., 2.], [3., 2.])
+    ); 
+    print project_r3_r2([1., 1., 1.]);
+
+    print double(3.);
+    print double([1., 2.]);
+    print double([[1., 0.], [0., 1.]])
+
+    print multiop(1., 2., 3.); // Seems safe enough
+    print multiop(1., 2., [1., 2.]);  // Strict ordering of arguments, but seems fine
+    print multiop(1., [[1., 0.], [0., 1.]], [1., 2.]);  // Uh oh (is just the identity though)
+    // This has to infer t = vec3->vec2, u = vec2->vec3, v = vec2
+    // It DOES typecheck in principle, but already looks tricky and we don't even have tags yet!
+    vec2 result = multiop([[1., 0., 1.], [0., 1., 1.]], 
+        [[1., 0.], [0., 1.], [1., 1.]],
+        [1., 2.]); 
+    print result;
+}

@@ -1,0 +1,8 @@
+t fst<t, u>(t x, u y) {
+    t z = x;
+    return z;
+}
+
+void main() {
+    int fail = fst<bool, int>(true, 5);  // Mixing up of return type
+}

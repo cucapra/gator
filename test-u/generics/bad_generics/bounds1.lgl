@@ -1,0 +1,7 @@
+bool uninvokable<t extends vec2>(t x) {
+    return x && true;
+}
+
+void main() {
+    bool fail = uninvokable<bool>(true); // Fails the bounds
+}

@@ -1,0 +1,34 @@
+// This could be super cool if it works
+// The fails are probably the more interesting part
+// But the stuff that typechecks can be pretty cool too
+
+tag pos is vec3;
+tag color is vec3;
+tag tinted is color;
+
+declare float dot<t extends vec>(t x, t y);
+
+// This could be even more powerful, but we're not there yet
+declare t normalize<t extends vec>(t x);
+
+float normed_dot<t extends vec>(t x, t y) {
+    t normx = normalize(x);
+    t normy = normalize(y);
+    return dot(normx, normy);
+}
+
+void main() {
+    pos vert = [1., 1., 1.];
+    pos unitx = [1., 0., 0.];
+    color red = [1., 0., 0.];
+    color purple = [.5, 0., .5];
+    tinted tred = [1., 0., .2];
+
+    print dot(vert, unitx);
+    print dot(purple, tred);
+
+    pos norm_vert = normalize(vert);
+    print norm_vert;
+    print normed_dot(red, tred);
+    print normed_dot(normalize(tred), normalize(purple)) + normed_dot(normalize(vert), unitx);
+}

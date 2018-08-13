@@ -1,0 +1,8 @@
+t fst<t, u>(t x, u y) {
+    t z = x;
+    return z;
+}
+
+void main() {
+    int fail = fst<int>(3, 5);  // Must include the correct number of types, even with inference
+}

@@ -1,0 +1,7 @@
+t id<t>(t x) {
+    return x;
+}
+
+void main() {
+    print id(5) + id([1.]);  // No operation shenanigans!
+}
