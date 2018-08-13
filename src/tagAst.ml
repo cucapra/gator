@@ -37,13 +37,13 @@ type exp =
     | Unop of unop * exp
     | Binop of binop * exp * exp
     | VecTrans of int * tag_typ (* vec3(<vec4>), vec4(<vec3>) *)
-    | FnInv of string * args * parametrization option (* function invocation *)
+    | FnInv of string * args * typ list (* function invocation *)
 
 and args = exp list
 
 (* function parameterization,
  * which may extend another type. *)
-and parametrization = (typ * typ) list
+type parametrization = (typ * typ option) list
 
 (* function parameters *)
 type params = (string * typ) list
