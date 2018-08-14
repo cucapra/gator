@@ -8,11 +8,8 @@ type tag_typ =
     | BotTyp of int
     | VarTyp of id
 
-(* "Normal" type, as apposed to polymorphic types.
- * While the need for separation for these would be useful in
- * the context of let polymorphism, it is unclear if we 
- * need this. *)
-type n_typ =
+(* types *)
+type typ = 
     UnitTyp
     | BoolTyp
     | IntTyp
@@ -20,15 +17,6 @@ type n_typ =
     | TagTyp of tag_typ
     | TransTyp of tag_typ * tag_typ
     | SamplerTyp of int (* i.e. sampler2D *)
-
-(* Polymorphic type.
- * Not to be confused with a certain kind of semiconductors. *)
-type p_typ = string
-
-(* types *)
-type typ = 
-    NTyp of n_typ 
-    | PTyp of p_typ
     
 (* expressions *)
 type exp =
@@ -49,7 +37,7 @@ type parametrization = (typ * typ option) list
 type params = (string * typ) list
 type ret_type = typ
 (* our functions are not first-order! *)
-type fn_type = params * ret_type * parametrization option
+type fn_type = params * ret_type * parametrization
 (* function declaration *)
 type fn_decl = string * fn_type
 

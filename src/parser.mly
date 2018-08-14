@@ -32,6 +32,7 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %token GETS
 %token EQ
 %token LEQ
+%token LT
 %token AND
 %token OR
 %token NOT
@@ -136,11 +137,25 @@ params:
       { (x, t)::p }
 ;
 
+parametrization:
+  | t = typ;
+      { (t, None) }
+  | t1 = typ; LT; t2 = typ;
+      { (t1, Some t2) }
+
+parametrizations:
+  | p = parametrization;
+      { p::[] }
+  | p = parametrization; COMMA; pl = parametrizations;
+      { p::pl }
+
 fn_decl:
   | t = typ; x = ID; LPAREN; RPAREN;
-      { (x, ([], t)) }
+      { (x, ([], t, [])) }
   | t = typ; x = ID; LPAREN; p = params ; RPAREN;
-      { (x, (p, t)) }
+      { (x, (p, t, [])) }
+  | t = typ; x = ID; LBRACK; pt = parametrizations; RBRACK; LPAREN; p = params ; RPAREN;
+      { (x, (p, t, pt)) }
 ;
 
 comm:
@@ -260,9 +275,9 @@ exp:
   | x = ID                     
       { Var x }
   | x = ID; LPAREN; RPAREN;
-      { FnInv(x, []) }
+      { FnInv(x, [], []) }
   | x = ID; LPAREN; a = arglst; RPAREN;
-      { FnInv(x, a) }
+      { FnInv(x, a, []) }
   | e1 = exp; PLUS; e2 = exp   
       { Binop(Plus,e1,e2) }
   | e1 = exp; TIMES; e2 = exp  
