@@ -343,14 +343,14 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ =
         | CTimes -> build_binop op e1 e2 check_ctimes_exp
     )
     | VecTrans (i, tag) -> failwith "Unimplemented"
-    | FnInv (i, args) -> let ((i, args_exp), rt) = check_fn_inv d g p args i in 
+    | FnInv (i, args, _) -> let ((i, args_exp), rt) = check_fn_inv d g p args i in 
         (FnInv (i, args_exp), rt)
 and check_fn_inv d g p args i =
     let check_exp' d g p c = check_exp c d g p  in
     let args' = List.map (check_exp' d g p) args in 
     let args_exp = List.map fst args' in 
     let args_typ = List.map snd args' in
-    let (params, rt) = Assoc.lookup i p in
+    let (params, rt, pm) = Assoc.lookup i p in
     let params_typ = List.map snd params in 
     let is_subtype arg param = (
         match (arg, param) with 
@@ -460,7 +460,7 @@ let rec check_tags (t: tag_decl list) (d: delta): delta =
 
 let check_fn_decl (d: delta) ((id, t): fn_decl) (p: phi) : phi =
     debug_print ">> check_fn_decl";
-    let (pl, _) = t in
+    let (pl, _, _) = t in
     let _ = check_params pl d in 
     if Assoc.mem id p 
     then raise (TypeException ("function of duplicate name has been found: " ^ id))
@@ -499,13 +499,13 @@ let check_return (t: typ) (d: delta) (g: gamma) (p: phi) (c: comm) =
         )
     | _ -> ()
 
-let rec check_fn (((id, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn * phi = 
+let rec check_fn (((id, (pl, r, pm)), cl): fn) (d: delta) (p: phi) : TypedAst.fn * phi = 
     debug_print ">> check_fn";
     (* fn := fn_decl * comm list *)
     let (pl', g') = check_params pl d in
     let (cl', _) = check_comm_lst cl d g' p in 
     (* update phi with function declaration *)
-    let p' = check_fn_decl d (id, (pl, r)) p in 
+    let p' = check_fn_decl d (id, (pl, r, pm)) p in 
     (* check that the last command is a return statement *)
     match r with
     | UnitTyp -> List.iter check_void_return cl; ((((id, (pl', TypedAst.UnitTyp)), cl')), p')
@@ -522,7 +522,7 @@ and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.prog * phi =
 (* Check that there is a void main() defined *)
 let check_main_fn (p: phi) (d: delta) =
     debug_print ">> check_main_fn";
-    let (params, ret_type) = Assoc.lookup "main" p in
+    let (params, ret_type, parameterization) = Assoc.lookup "main" p in
     match ret_type with
     | UnitTyp -> check_params params d |> fst
     | _ -> raise (TypeException ("expected main function to return void"))
