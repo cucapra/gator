@@ -79,7 +79,7 @@ def main():
             expectname = basename + ".expect"
             with open(outname, "w") as f:
                 subprocess.call(
-                    ("jbuilder", "exec", "bin/lingc.bc", filename, "v"),
+                    ("lingc", "-i", filename),
                     stdout=f,
                     stderr=f,
                 )
@@ -100,8 +100,8 @@ def main():
         for _ in range(SUCCESS_COUNT):
             print(random.choice(success_symbols) + "  "),
         print("")  # newline
-    elif args.b: # for CircleCI builds
-        sys.exit(420) 
+    elif args.b:  # for CircleCI builds
+        sys.exit(420)
 
 
 if __name__ == "__main__":
