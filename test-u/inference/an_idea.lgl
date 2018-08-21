@@ -1,0 +1,9 @@
+tag world is vec3;
+tag screen is vec2;
+
+void main() {
+    define world->screen := [[1., 0., 0.], [0., 1., 0.];  // Naive projection
+    world pos = [1., 2., 3.];
+    screen result = (pos => screen);
+    print result; // Should be [1., 2.]
+}

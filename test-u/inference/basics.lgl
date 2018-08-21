@@ -1,0 +1,12 @@
+tag a is vec3;
+tag b is vec2;
+tag c is b;
+tag d is b;
+tag e is c;
+
+void main() {
+    define a->b := [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]];
+    a avec = [1., 2.];
+    b result = (avec => b);
+    print result; // Should be [1., 2., 0.]
+}
