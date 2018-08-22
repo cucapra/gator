@@ -17,6 +17,8 @@ type typ =
     | TagTyp of tag_typ
     | TransTyp of tag_typ * tag_typ
     | SamplerTyp of int (* i.e. sampler2D *)
+    | AbsTyp of string * typ option (* type abstraction *)
+    | AppTyp of string * typ (* type application *)
     
 (* expressions *)
 type exp =
@@ -31,7 +33,7 @@ and args = exp list
 
 (* function parameterization,
  * which may extend another type. *)
-type parametrization = (typ * typ option) list
+type parametrization = typ list
 
 (* function parameters *)
 type params = (string * typ) list
