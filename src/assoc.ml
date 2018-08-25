@@ -1,5 +1,5 @@
 (* A representation for a general context *)
-(* A context is simply a finite map from 'a to 'b  *)
+(* A context is simply a finite map from strings to 'b  *)
 (* This implementation uses association lists. *)
 type 'b context = (string * 'b) list
 

@@ -1,15 +1,23 @@
 tag a is vec2;
 tag b is a;
 tag c is a;
+tag d is b;
 
 declare int id(int x);
 declare bool id(bool x);
 declare vec2 normalize(vec2 x);
 declare a normalize(a x);
-declare b normalize(b x);
-declare b normalize(b x);
+declare d normalize(d x);
+declare c normalize(c x);
 
 void main() {
-    print 1;
-    return;
+    a avec = [1., 2.];
+    b bvec = [1., 0.];
+    c cvec = [0., 2.];
+    d dvec = [3., 0.];
+
+    print normalize(avec);
+    print normalize(bvec);
+    print normalize(cvec);
+    print normalize(dvec);
 }

@@ -3,6 +3,7 @@ open TypedAst
 open TypedAstPrinter
 open Assoc
 open Lin_ops
+open Glsl_ops
 open Util
 
 type sigma = (value) Assoc.context
@@ -21,6 +22,9 @@ let rec eval_glsl_fn (name : id) (args : exp list) (fns : fn list) (s : sigma) :
         in
         if name = "dot" then Float (dot (as_vec (List.nth args 0)) (as_vec (List.nth args 1))) else
         if name = "normalize" then VecLit (normalize (as_vec (List.nth args 0))) else
+        if Str.string_match (Str.regexp "vec[0-9]+") name 0 then
+            VecLit (vecn (int_of_string (Str.string_after name 3))
+            (List.map (fun e -> eval_exp e fns s) args)) else
         failwith ("Unimplemented function " ^ name ^ " -- is this a GLSL function?")
 
 and eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
