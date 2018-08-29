@@ -1,0 +1,4 @@
+void main() {
+    vec3 fail = [1., 2.].xy;  // bad dimensions for v
+    print fail;
+}

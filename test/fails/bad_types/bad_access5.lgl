@@ -1,0 +1,3 @@
+void main() {
+    print [1., 2.].z;  // can't swizzle a 3rd element from a vec2 (we can actually statically check this)
+}

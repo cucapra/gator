@@ -1,0 +1,6 @@
+tag a is vec3;
+
+void main() {
+    a v = [[1., 2., 3.], [1., 2., 3.], [1., 2., 3.]][0];  // Getting an element from a matrix is untagged
+    print 1;
+}
