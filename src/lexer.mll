@@ -51,8 +51,9 @@ rule read = parse
   | "||"            { OR }
   | "&&"            { AND }
   | "!"             { NOT }
-  | ","             { COMMA } 
+  | ","             { COMMA }
   | ";"             { SEMI }
+  | "."             { DOT }
   | sampler as sm   { SAMPLER sm }
   | "void"          { VOID }
   | "return"        { RETURN }

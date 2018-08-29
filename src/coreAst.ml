@@ -14,6 +14,7 @@ type value =
 
 type unop =
   | Not
+  | Swizzle of id
 type binop =
   | Eq
   | Leq
@@ -24,3 +25,4 @@ type binop =
   | Times
   | Div
   | CTimes (* Component-wise multiplication *)
+  | Index

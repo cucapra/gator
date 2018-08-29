@@ -36,6 +36,7 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %token OR
 %token NOT
 %token COMMA
+%token DOT
 %token TAG
 %token IS
 %token TRUE
@@ -60,7 +61,8 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %left NOT EQ LEQ
 
 %left PLUS MINUS
-%left TIMES DIV CTIMES 
+%left TIMES DIV CTIMES
+%left LBRACK DOT
 (*%left TRANS*)
 
 (* After declaring associativity and precedence, we need to declare what
@@ -250,7 +252,6 @@ arglst:
   | e = exp; COMMA; a = arglst;
      { e::a@[] }
 ;
-
   
 exp:
   | LPAREN; a = exp; RPAREN    
@@ -283,6 +284,10 @@ exp:
       { Binop(Or,e1,e2) }
   | e1 = exp; AND; e2 = exp    
       { Binop(And,e1,e2) }
+  | e1 = exp; DOT; s = ID;
+      { Unop(Swizzle s,e1) }
+  | e1 = exp; LBRACK; e2 = exp; RBRACK;
+      { Binop(Index,e1,e2) }
 ;
 
 %%
