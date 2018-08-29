@@ -12,9 +12,4 @@ void main() {
     b s2 = g(f([1., 2.]));
     int s3 = h(g([1., 2.]), f([2., 1.]));
     a->b s4 = build([1., 2.], [[1., 2.], [2., 1.]]);
-
-    print s1;
-    print s2;
-    print s3;
-    print s4;
 }

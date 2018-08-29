@@ -1,0 +1,35 @@
+void main() {
+    // Tests taken almost verbatim from https://en.wikibooks.org/wiki/GLSL_Programming/Vector_and_Matrix_Operations#Constructors
+    vec4 v = vec4(1.1, 2.2, 3.3, 4.4);
+
+    float s11 = v[3]; // = 4.4 
+    float s12 = v.w; // = 4.4
+    float s13 = v.a; // = 4.4
+    float s14 = v.q; // = 4.4
+
+    print s11;
+    print s12;
+    print s13;
+    print s14;
+
+    vec3 s21 = v.xyz; // = vec3(1.1, 2.2, 3.3) 
+    vec3 s22 = v.bgr; // = vec3(3.3, 2.2, 1.1)
+    vec2 s23 = v.tt; // = vec2(2.2, 2.2)
+    vec4 s24 = v.qpts; // = vec4(4.4, 3.3, 2.2, 1.1)
+    vec3 s25 = v.xrs; // = vec3(1.1, 1.1, 1.1)?
+
+    print s21;
+    print s22;
+    print s23;
+    print s24;
+    print s25;
+
+    mat3 m = [[1.1, 1.2, 1.3], [2.1, 2.2, 2.3], [3.1, 3.2, 3.3]]
+    vec3 s31 = m[2]; // = vec3(1.3, 2.3, 3.3) OR vec3(3.1, 3.2, 3.3) -- we're keeping the first for now
+    float s32 = m[2][0]; // = 1.3 OR 3.1
+    float s33 = m[2].y; // = 2.3 OR 3.2
+    
+    print s31;
+    print s32;
+    print s33;
+}
