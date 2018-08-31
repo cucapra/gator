@@ -13,6 +13,7 @@ type value =
   | MatLit of mat
 
 type unop =
+  | Neg
   | Not
   | Swizzle of id
 type binop =

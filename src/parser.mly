@@ -207,13 +207,13 @@ tagtyp:
 ;
 
 value:
-  | b = bool                    
+  | b = bool 
       { Bool b }
-  | i = NUM                     
+  | i = NUM 
       { Num i }
-  | f = FLOAT                   
+  | f = FLOAT 
       { Float f }
-  | LBRACK; RBRACK              
+  | LBRACK; RBRACK 
       { VecLit([]) }
   | LBRACK; v = veclit; RBRACK; 
       { VecLit(v@[]) }
@@ -222,7 +222,7 @@ value:
 ;
 
 veclit:
-  | f = FLOAT                     
+  | f = FLOAT 
       { f::[] }
   | f = FLOAT; COMMA; v2 = veclit 
       { f::v2@[] }
@@ -274,7 +274,9 @@ exp:
       { Binop(Div,e1,e2) }
   | e1 = exp; CTIMES; e2 = exp 
       { Binop(CTimes,e1,e2) }
-  | NOT; e1 = exp;             
+  | MINUS; e1 = exp;
+      { Unop(Neg,e1) }
+  | NOT; e1 = exp;
       { Unop(Not,e1) }
   | e1 = exp; EQ; e2 = exp      
       { Binop(Eq,e1,e2) }

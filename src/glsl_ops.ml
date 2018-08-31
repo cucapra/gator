@@ -9,6 +9,22 @@ let normalize (v : vec) : vec =
   let distance = sqrt (List.fold_left (fun acc x -> acc +. (x *. x)) 0. v) in
   List.map (fun x -> x /. distance) v
 
+let mat_access (m : mat) (index : int) : vec =
+  List.fold_left (fun v acc -> (List.nth v index)::acc) [] m
+
+let char_to_index (c : char) : int =
+  if c == 'x' || c == 'r' || c == 's' then 0 else
+  if c == 'y' || c == 'g' || c == 't' then 1 else
+  if c == 'z' || c == 'b' || c == 'p' then 2 else
+  if c == 'w' || c == 'a' || c == 'q' then 3 else
+  failwith ("Bad character" ^ (String.make 1 c))
+
+let rec swizzle (s : string) (v : vec) : vec =
+  if String.length s == 0 then [] else
+ (List.nth v (char_to_index (String.get s 0)))::(swizzle (String.sub s 1 ((String.length s) - 1)) v)
+
+(* Start of glsl vector constructor functions *)
+
 let rec make_list (v : 'a) (length : int) : 'a list =
   if length < 0 then failwith "Cannot make a vector with length < 0"
   else if length = 0 then [] else v::(make_list v (length - 1))

@@ -40,8 +40,15 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
             failwith ("No rule to apply " ^ (string_of_unop op (string_of_value v)))
         in
         (match op with
+        | Neg -> (match v with
+            | Num i -> Num (-i)
+            | Float f -> Float (-.f)
+            | _ -> bad_unop ())
         | Not -> (match v with
             | Bool b -> Bool (not b)
+            | _ -> bad_unop ())
+        | Swizzle s -> (match v with
+            | VecLit v -> VecLit (swizzle s v)
             | _ -> bad_unop ()))
 
     | Binop (op, (l, _), (r, _)) -> 
@@ -108,6 +115,10 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
         | CTimes -> (match (left, right) with
             | (VecLit v1, VecLit v2) -> VecLit (vc_mult v1 v2)
             | (MatLit m1, MatLit m2) -> MatLit (mc_mult m1 m2)
+            | _ -> bad_binop ())
+        | Index -> (match (left, right) with
+            | (VecLit v, Num i) -> Float (List.nth v i)
+            | (MatLit m, Num i) -> VecLit (List.nth m i)
             | _ -> bad_binop ())
         )
     | FnInv (id, args) -> let (fn, p) = fn_lookup id fns in

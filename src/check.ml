@@ -185,11 +185,31 @@ let check_bool_binop (t1: typ) (t2: typ) (d: delta) : typ =
     | BoolTyp, BoolTyp -> BoolTyp
     | _ -> raise (TypeException "expected boolean expression for binop")
 
+(* Type check unary number operators (i.e. -) *)
+let check_num_unop (t1: typ) (d: delta) : typ =
+    debug_print ">> check_num_unop";
+    match t1 with 
+    | IntTyp
+    | FloatTyp
+    | TagTyp _
+    | TransTyp _ -> t1
+    | _ -> raise (TypeException "expected integer, float, vector, or matrix expression")
+
 (* Type check unary bool operators (i.e. !) *)
 let check_bool_unop (t1: typ) (d: delta) : typ =
     debug_print ">> check_bool_unop";
     match t1 with 
     | BoolTyp -> BoolTyp
+    | _ -> raise (TypeException "expected boolean expression")
+
+(* Type check unary bool operators (i.e. !) *)
+let check_swizzle (s : id) (t1: typ) (d: delta) : typ =
+    debug_print ">> check_swizzle";
+    let valid_set = Str.regexp "[xyzwrgbastpq]+$" in
+    match t1 with
+    | TagTyp v -> if Str.string_match valid_set s 0
+        then TagTyp (TopTyp (String.length s))
+        else raise (TypeException ("invalid characters used for swizzling in " ^ s))
     | _ -> raise (TypeException "expected boolean expression")
 
 (* Type check equality (==) *)
@@ -287,6 +307,15 @@ let check_division_exp (t1: typ) (t2: typ) (d: delta) : typ =
         (raise (TypeException ("invalid expressions for division: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))))
 
+let check_index_exp (t1: typ) (t2: typ) (d: delta) : typ =
+    debug_print ">> check_addition";
+    match (t1, t2) with 
+    | TagTyp t, IntTyp -> FloatTyp
+    | TransTyp (u, v), IntTyp -> TagTyp u
+    | _ -> 
+        (raise (TypeException ("invalid expressions for division: "
+        ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))))
+
 let tag_erase (t : typ) (d : delta) : TypedAst.etyp =
     debug_print ">> tag_erase";
     match t with
@@ -342,7 +371,9 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ =
     | Var v -> "\tVar "^v |> debug_print;
         (TypedAst.Var v, Assoc.lookup v g)
     | Unop (op, e') -> (match op with
-        | Not -> build_unop op e' check_bool_unop)
+        | Neg -> build_unop op e' check_num_unop
+        | Not -> build_unop op e' check_bool_unop
+        | Swizzle s -> build_unop op e' (check_swizzle s))
     | Binop (op, e1, e2) -> (match op with
         | Eq -> build_binop op e1 e2 check_equality_exp
         | Leq -> build_binop op e1 e2 check_comp_binop
@@ -351,6 +382,7 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ =
         | Times -> build_binop op e1 e2 check_times_exp
         | Div  -> build_binop op e1 e2 check_division_exp
         | CTimes -> build_binop op e1 e2 check_ctimes_exp
+        | Index -> build_binop op e1 e2 check_index_exp
     )
     | VecTrans (i, tag) -> failwith "Unimplemented"
     | FnInv (i, args) -> let ((i, args_exp), rt) = check_fn_inv d g p args i in 
