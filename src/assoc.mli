@@ -1,22 +1,24 @@
-(* A context must be a map from 'a to 'b *)
-type 'b context
+(* A context must be a map from a string to 'a *)
+type 'a context
 
 (* Make a new empty context. *)
-val empty : 'b context
+val empty : 'a context
 
 (* Left-biased merge of two contexts *)
-val merge : 'b context -> 'b context -> 'b context
+val merge : 'a context -> 'a context -> 'a context
 
 (* Look up a variable by name and return the associated value. *)
 (* Raises Not_found if no binding *)
-val lookup : string -> 'b context -> 'b
+val lookup : string -> 'a context -> 'a
 
 (* Rebind var to value in context. *)
-val update : string -> 'b -> 'b context -> 'b context
+val update : string -> 'a -> 'a context -> 'a context
 
 (* Produce bindings as an association list. *)
-val bindings : 'b context -> (string * 'b) list
+val bindings : 'a context -> (string * 'a) list
 
 (* Checks if variable is in context *)
-val mem : string -> 'b context -> bool
-(* val state_to_string : ('a, 'b) context -> string *)
+val mem : string -> 'a context -> bool
+(* val state_to_string : ('a, 'a) context -> string *)
+
+val to_string : ('a -> string) -> 'a context -> string
