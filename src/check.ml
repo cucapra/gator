@@ -123,14 +123,7 @@ let check_val (v: value) (d: delta) : typ =
     | Bool b -> BoolTyp
     | Num n -> IntTyp
     | Float f -> FloatTyp
-    | VecLit v -> TagTyp (BotTyp (List.length v))
-    | MatLit m ->
-        (let rows = List.length m in
-        if rows = 0 then trans_bot 0 0 else
-        let cols = List.length (List.hd m) in
-        if List.for_all (fun v -> List.length v = cols) m then trans_bot cols rows
-        else (raise (TypeException ("Matrix must have the same number of elements in each row"))))
-    | _ -> failwith "Unimplemented"
+    | _ -> raise (TypeException ("Unexpected typechecker value " ^ (string_of_value v)))
 
 let check_tag_typ (tag: tag_typ) (d: delta) : unit =
     match tag with
@@ -150,6 +143,7 @@ let check_typ_exp (t: typ) (d: delta) : unit =
     | SamplerTyp _ -> ()
     | TagTyp s -> check_tag_typ s d; ()
     | TransTyp (s1, s2) -> check_tag_typ s1 d; check_tag_typ s2 d; ()
+
 
 (* "scalar linear exp", (i.e. ctimes) returns generalized MatTyp *)
 let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) : typ = 
@@ -205,11 +199,21 @@ let check_bool_unop (t1: typ) (d: delta) : typ =
 (* Type check unary bool operators (i.e. !) *)
 let check_swizzle (s : id) (t1: typ) (d: delta) : typ =
     debug_print ">> check_swizzle";
-    let valid_set = Str.regexp "[xyzwrgbastpq]+$" in
+    let check_reg valid_set = if Str.string_match valid_set s 0 
+        then if String.length s == 1 then FloatTyp else TagTyp (TopTyp (String.length s))
+        else raise (TypeException ("invalid characters used for swizzling in " ^ s)) in
+    let valid_length_1 = Str.regexp "[xrs]+" in
+    let valid_length_2 = Str.regexp "[xyrgst]+" in
+    let valid_length_3 = Str.regexp "[xyzrgbstp]+" in
+    let valid_length_4 = Str.regexp "[xyzwrgbastpq]+" in
     match t1 with
-    | TagTyp v -> if Str.string_match valid_set s 0
-        then TagTyp (TopTyp (String.length s))
-        else raise (TypeException ("invalid characters used for swizzling in " ^ s))
+    | TagTyp v -> 
+        let dim = vec_dim v d in
+        if dim == 1 then check_reg valid_length_1 else
+        if dim == 2 then check_reg valid_length_2 else
+        if dim == 3 then check_reg valid_length_3 else
+        if dim >= 4 then check_reg valid_length_4 else
+        raise (TypeException "cannot swizzle a vector of length 0")
     | _ -> raise (TypeException "expected boolean expression")
 
 (* Type check equality (==) *)
@@ -311,7 +315,7 @@ let check_index_exp (t1: typ) (t2: typ) (d: delta) : typ =
     debug_print ">> check_addition";
     match (t1, t2) with 
     | TagTyp t, IntTyp -> FloatTyp
-    | TransTyp (u, v), IntTyp -> TagTyp u
+    | TransTyp (u, v), IntTyp -> TagTyp (TopTyp (vec_dim v d))
     | _ -> 
         (raise (TypeException ("invalid expressions for division: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))))
@@ -352,7 +356,6 @@ let check_params (pl: (id * typ) list) (d: delta): TypedAst.params * gamma =
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) : TypedAst.texp = 
     ((fst checked_exp), (tag_erase (snd checked_exp) d))
 
-
 let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ = 
     debug_print ">> check_exp";
     let build_unop (op : unop) (e': exp) (check_fun: typ->delta->typ)
@@ -370,6 +373,7 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ =
     | Val v -> (TypedAst.Val v, check_val v d)
     | Var v -> "\tVar "^v |> debug_print;
         (TypedAst.Var v, Assoc.lookup v g)
+    | Arr a -> check_arr d g p a
     | Unop (op, e') -> (match op with
         | Neg -> build_unop op e' check_num_unop
         | Not -> build_unop op e' check_bool_unop
@@ -384,9 +388,29 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ =
         | CTimes -> build_binop op e1 e2 check_ctimes_exp
         | Index -> build_binop op e1 e2 check_index_exp
     )
-    | VecTrans (i, tag) -> failwith "Unimplemented"
     | FnInv (i, args) -> let ((i, args_exp), rt) = check_fn_inv d g p args i in 
         (FnInv (i, args_exp), rt)
+        
+and check_arr (d: delta) (g: gamma) (p: phi) (a: exp list) : (TypedAst.exp * typ) =
+    let is_vec (v: TypedAst.texp list) : bool =
+        List.fold_left (fun acc (_, t) -> match t with
+            | TypedAst.IntTyp | TypedAst.FloatTyp -> acc | _ -> false) true v
+    in
+    let is_mat (v: TypedAst.texp list) : int option =
+        match List.hd v with
+        | (_, TypedAst.VecTyp size) ->
+        List.fold_left (fun acc (_, t) -> match t with
+            | TypedAst.VecTyp n -> if (n == size) then acc else None | _ -> None) (Some size) v
+        | _ -> None
+    in
+    let checked_a = List.map (fun e -> (exp_to_texp (check_exp e d g p) d)) a in
+    let length_a = List.length a in
+    if is_vec checked_a then (TypedAst.Arr checked_a, TagTyp (BotTyp length_a)) else 
+    (match is_mat checked_a with
+    | Some n -> (TypedAst.Arr checked_a, trans_bot n length_a)
+    | None ->  raise (TypeException ("Invalid array definition for " ^ (string_of_exp (Arr a)) ^ ", must be a matrix or vector")))
+    
+
 and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string)
  : (string * TypedAst.args) * typ =
     let args' = List.map (fun a -> check_exp a d g p) args in 
@@ -418,16 +442,16 @@ and check_comm (c: comm) (d: delta) (g: gamma) (p: phi): TypedAst.comm * gamma =
         | UnitTyp -> raise (TypeException "print function cannot print void types")
         | _ -> (TypedAst.Print (e, t), g)
     )
-    | Decl (t, s, e) -> 
+    | Decl (t, s, e) ->
         if Assoc.mem s g then raise (TypeException "variable name shadowing is illegal")
         else let result = check_exp e d g p in
-            (TypedAst.Decl (tag_erase t d, s, (exp_to_texp result d)), (check_assign t s (snd result) d g))
+            (TypedAst.Decl (tag_erase t d, s, (exp_to_texp result d)), (check_assign t s (snd result) d g p))
 
-    | Assign (s, e) -> 
+    | Assign (s, e) ->
         if Assoc.mem s g then 
             let t = Assoc.lookup s g in
             let result = check_exp e d g p in
-            (TypedAst.Assign (s, (exp_to_texp result d)), check_assign t s (snd result) d g)
+            (TypedAst.Assign (s, (exp_to_texp result d)), check_assign t s (snd result) d g p)
         else raise (TypeException "assignment to undeclared variable")
 
     | If (b, c1, c2) ->
@@ -437,9 +461,9 @@ and check_comm (c: comm) (d: delta) (g: gamma) (p: phi): TypedAst.comm * gamma =
         (match (snd result) with 
         | BoolTyp -> (TypedAst.If ((exp_to_texp result d), (fst c1r), (fst c2r)), g)
         | _ -> raise (TypeException "expected boolean expression for if condition"))
-    | Return Some e -> 
-        let (e', t') = d |> (check_exp e d g p |> exp_to_texp) in 
-        (TypedAst.Return (Some (e', t')), g)
+    | Return Some e ->
+        let (e, t) = exp_to_texp (check_exp e d g p) d in
+        (TypedAst.Return (Some (e, t)), g)
     | Return None -> (TypedAst.Return None, g)
     | FnCall (i, args) -> let ((i, args_exp), _) = check_fn_inv d g p args i in 
         (TypedAst.FnCall (i, args_exp), g)
@@ -452,10 +476,29 @@ and check_comm_lst (cl : comm list) (d: delta) (g: gamma) (p: phi) : TypedAst.co
         let result = check_comm_lst t d (snd context) p in 
         ((fst context) :: (fst result), (snd result))
 
-and check_assign (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gamma =
+and check_assign (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) (p: phi) : gamma =
     debug_print (">> check_decl <<"^s^">>");
+    (* Check that t, if not a core type, is a registered tag *)
+    (match t with
+    | TransTyp (VarTyp t1, VarTyp t2) -> if not (Assoc.mem t1 d)
+        then raise (TypeException ("unknown tag " ^ t2))
+        else if not (Assoc.mem t2 d) then raise (TypeException ("unknown tag " ^ t1))
+    | TagTyp (VarTyp t')
+    | TransTyp (VarTyp t', _)
+    | TransTyp (_, VarTyp t') ->
+        if not (Assoc.mem t' d) then raise (TypeException ("unknown tag " ^ t'))
+    | _ -> ());
+    let check_name regexp = if Str.string_match regexp s 0 then raise (TypeException ("Invalid variable name " ^ s)) in
+    check_name (Str.regexp "int");
+    check_name (Str.regexp "float");
+    check_name (Str.regexp "bool");
+    check_name (Str.regexp "vec[0-9]+");
+    check_name (Str.regexp "mat[0-9]+");
+    check_name (Str.regexp "mat[0-9]+x[0-9]+");
     if Assoc.mem s d then 
-        raise (TypeException "variable declared as tag")
+        raise (TypeException ("variable " ^ s ^ " has the name of a tag"))
+    else if Assoc.mem s p then
+        raise (TypeException ("variable " ^ s ^ " has the name of a function"))
     else (
         match (t, etyp) with
         | (BoolTyp, BoolTyp)
@@ -468,7 +511,7 @@ and check_assign (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gamma
         | (TransTyp (t1, t2), TransTyp (t3, t4)) ->
             if is_tag_subtype t1 t3 d && is_tag_subtype t4 t2 d then Assoc.update s t g
             else raise (TypeException ("no possible upcast for var decl: " ^ s))
-        | _ -> raise (TypeException ("mismatched types for var decl: expected " ^ (string_of_typ t) ^ " " ^ s ^ ", found " ^ (string_of_typ etyp) ))
+        | _ -> raise (TypeException ("mismatched types for var decl for " ^ s ^  ": expected " ^ (string_of_typ t) ^ ", found " ^ (string_of_typ etyp)))
     )
 
 
@@ -527,7 +570,7 @@ let check_return (t: typ) (d: delta) (g: gamma) (p: phi) (c: comm) =
     match c with
     | Return None -> raise (TypeException ("expected a return value instead of void"))
     | Return Some r -> (
-        let (_, rt) = check_exp r d g p in 
+        let (_, rt) = check_exp r d g p in
         (* raises return exception of given boolean exp is false *)
         let raise_return_exception b =
             if b then () 
@@ -550,14 +593,14 @@ let rec check_fn (((id, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn * p
     debug_print ">> check_fn";
     (* fn := fn_decl * comm list *)
     let (pl', g') = check_params pl d in
-    let (cl', _) = check_comm_lst cl d g' p in 
+    let (cl', g'') = check_comm_lst cl d g' p in 
     (* update phi with function declaration *)
     let p' = check_fn_decl d (id, (pl, r)) p in 
     (* check that the last command is a return statement *)
     match r with
     | UnitTyp -> List.iter check_void_return cl; ((((id, (pl', TypedAst.UnitTyp)), cl')), p' true)
     (* TODO: might want to check that there is exactly one return statement at the end *)
-    | t -> List.iter (check_return t d g' p) cl; ((((id, (pl', tag_erase t d)), cl')), p' true)
+    | t -> List.iter (check_return t d g'' p) cl; ((((id, (pl', tag_erase t d)), cl')), p' true)
 and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.prog * phi =
     debug_print ">> check_fn_lst";
     match fl with

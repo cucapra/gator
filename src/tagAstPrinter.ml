@@ -24,16 +24,19 @@ let rec string_of_typ (t: typ) : string =
     | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D"
 
 let rec string_of_exp (e:exp) : string =
+    let string_of_arr (a: exp list) : string = 
+        "["^(String.concat ", " (List.map string_of_exp a))^"]"
+    in
     match e with
     | Val v -> string_of_value v
     | Var v -> v
+    | Arr a -> string_of_arr a
     | Unop (op, x) -> (string_of_unop op (string_of_exp x))
     | Binop (op, l, r) -> 
         let ls = (string_of_exp l) in
         let rs = (string_of_exp r) in
         (match op with
         | _ -> (string_of_binop op ls rs))
-    | VecTrans (i, t) -> failwith "Unimplemented"
     | _ -> failwith "Unimplemented"
 
 let rec string_of_params (p: (id * typ) list) : string =

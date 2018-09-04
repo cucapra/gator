@@ -16,6 +16,7 @@ type texp = exp * etyp
 and exp =
     | Val of value
     | Var of id
+    | Arr of texp list
     | Unop of unop * texp
     | Binop of binop * texp * texp
     | FnInv of id * args

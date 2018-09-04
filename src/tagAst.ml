@@ -22,9 +22,9 @@ type typ =
 type exp =
     | Val of value
     | Var of string
+    | Arr of exp list
     | Unop of unop * exp
     | Binop of binop * exp * exp
-    | VecTrans of int * tag_typ (* vec3(<vec4>), vec4(<vec3>) *)
     | FnInv of string * args (* function invocation *)
 
 and args = exp list

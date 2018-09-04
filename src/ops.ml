@@ -34,6 +34,25 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
     match e with
     | Val v -> v
     | Var x -> Assoc.lookup x s
+    | Arr a -> 
+        let result = (List.map (fun e' -> eval_exp e' fns s) (List.map fst a)) in
+        let rec as_vec (arr : value list) : vec option =
+            (match arr with
+            | [] -> Some []
+            | h::t -> 
+            (match h with | Float f -> (option_map (fun l -> f::l) (as_vec t)) | _ -> None ))
+        in
+        let rec as_mat (arr : value list) : mat option =
+            (match arr with
+            | [] -> Some []
+            | h::t -> 
+            (match h with | VecLit v -> (option_map (fun l -> v::l) (as_mat t)) | _ -> None ))
+        in
+        (match as_vec result with
+        | Some v -> VecLit v
+        | None -> (match as_mat result with
+            | Some m -> MatLit m
+            | None -> failwith ("Typechecker failure, bad arr " ^ (string_of_exp e))))
     | Unop (op, (e', _)) ->
         let v = eval_exp e' fns s in
         let bad_unop _ =
@@ -43,12 +62,15 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
         | Neg -> (match v with
             | Num i -> Num (-i)
             | Float f -> Float (-.f)
+            | VecLit v -> VecLit (List.map (~-.) v)
+            | MatLit m -> MatLit (List.map (fun v -> (List.map (~-.) v)) m)
             | _ -> bad_unop ())
         | Not -> (match v with
             | Bool b -> Bool (not b)
             | _ -> bad_unop ())
         | Swizzle s -> (match v with
-            | VecLit v -> VecLit (swizzle s v)
+            | VecLit v -> let res = swizzle s v in
+                if List.length res == 1 then Float (List.hd res) else VecLit res
             | _ -> bad_unop ()))
 
     | Binop (op, (l, _), (r, _)) -> 
@@ -60,9 +82,9 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
         in
         (match op with
         | Eq -> (match (left, right) with
-            | (Bool b1, Bool b2) -> Bool (b1 = b2)
             | (Num n1, Num n2) -> Bool (n1 = n2)
             | (Float f1, Float f2) -> Bool (f1 = f2)
+            | (Bool b1, Bool b2) -> Bool (b1 = b2)
             | _ -> bad_binop ())
         | Leq -> (match (left, right) with
             | (Num n1, Num n2) -> Bool (n1 <= n2)
@@ -118,7 +140,7 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
             | _ -> bad_binop ())
         | Index -> (match (left, right) with
             | (VecLit v, Num i) -> Float (List.nth v i)
-            | (MatLit m, Num i) -> VecLit (List.nth m i)
+            | (MatLit m, Num i) -> VecLit (List.map (fun v -> List.nth v i) m)
             | _ -> bad_binop ())
         )
     | FnInv (id, args) -> let (fn, p) = fn_lookup id fns in

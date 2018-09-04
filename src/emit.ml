@@ -79,12 +79,15 @@ and padded_args (a: exp list) : string =
     (String.concat ", " (List.map (op_wrap) a))
 
 and comp_exp (e : exp) : string =
-    
+    let comp_arr (a: texp list) : string = 
+        "["^(String.concat ", " (List.map comp_exp (List.map fst a)))^"]"
+    in
     match e with
     | Val v -> (match v with 
         | MatLit m -> string_of_gl_mat m
         | _ -> string_of_value v)
     | Var v -> v
+    | Arr a -> comp_arr a
     | Binop (op, l, r) -> (match op with
         | Times -> padded_mult l r
         | CTimes -> "(" ^ ((comp_exp (fst l)) ^ " * " ^(comp_exp (fst r))) ^ ")"

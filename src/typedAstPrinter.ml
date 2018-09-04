@@ -22,8 +22,12 @@ let rec string_of_typ (t: etyp) : string =
     | SamplerTyp n -> "sampler" ^ (string_of_int n) ^ "D"
 
 let rec string_of_exp (e: exp) : string =
+    let string_of_arr (a: texp list) : string = 
+        "["^(String.concat ", " (List.map string_of_exp (List.map fst a)))^"]"
+    in
     match e with
     | Val v -> string_of_value v
+    | Arr a -> string_of_arr a
     | Var v -> v
     | Unop (op, (x, _)) -> (string_of_unop op (string_of_exp x))
     | Binop (op, (l, _), (r, _)) -> 
