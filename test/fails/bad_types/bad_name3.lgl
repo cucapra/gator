@@ -1,0 +1,1 @@
+void main() { int main = 5; print main; }
