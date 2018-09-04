@@ -1,5 +1,0 @@
-int f() { int g = 3; return g; }
-
-void main() {
-    print f();
-}
