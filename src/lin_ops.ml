@@ -35,7 +35,7 @@ let vc_mult (v1 : vec) (v2 : vec) : vec =
 let mc_mult (m1 : mat) (m2 : mat) : mat =
   List.map2 (fun x y -> vc_mult x y) m1 m2
 
-let rec transpose (m : mat) : mat =
+let rec transpose (m : 'a list) : 'a list =
   (*https://stackoverflow.com/questions/3989776/transpose-of-a-list-of-lists*)
   match m with
   | [] -> []

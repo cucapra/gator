@@ -11,29 +11,6 @@ type ltyp_top =
     | VecDim of int
     | MatDim of int * int
 
-(* Note the column parameter for padding the matrix size *)
-let string_of_no_paren_vec (v: vec) (padding: int) : string = 
-    (String.concat ", " (List.map string_of_float v)) ^ (repeat ", 0." padding)
-  
-let string_of_mat_padded (m: mat) (max_dim: int) : string =
-    let string_of_vec_padded = (fun v -> (string_of_no_paren_vec v (max_dim - List.length v))) in
-    ("(" ^ (String.concat ", " (List.map string_of_vec_padded m)) ^
-    (repeat (string_of_no_paren_vec [] max_dim) (max_dim - List.length m)) ^ ")")
-  
-let string_of_gl_mat (m: mat) : string = 
-    (* Note the transpose to match the glsl column-oriented style *)
-    let tm = Lin_ops.transpose m in
-    let r = (List.length tm) in
-    let c = (if r = 0 then 0 else List.length (List.hd tm)) in
-    let dim = max r c in
-    ("mat"^(string_of_int dim)^string_of_mat_padded tm dim)
-
-let string_of_gl_typ (t : etyp) : string =
-    match t with
-    | UnitTyp -> failwith "Unit type is unwriteable in glsl"
-    | MatTyp (m, n) -> "mat" ^ string_of_int (max m n)
-    | _ -> string_of_typ t
-
 let attrib_type (var_name : string) : string =
     if (String.get var_name 0) = 'a' then "attribute" else
     (if (String.get var_name 0) = 'v' then "varying" else
@@ -49,7 +26,30 @@ let check_name (var_name : string) : bool =
 let is_core (var_name : string) : bool = 
     var_name = "gl_Position" || var_name = "gl_FragColor"
 
-let rec op_wrap (op : exp) : string =
+(* Note the column parameter for padding the matrix size *)
+let rec string_of_no_paren_vec (v: exp list) (padding: int) : string = 
+    (String.concat ", " (List.map comp_exp v)) ^ (repeat ", 0." padding)
+  
+and string_of_mat_padded (m: exp list list) (max_dim: int) : string =
+    let string_of_vec_padded = (fun v -> (string_of_no_paren_vec v (max_dim - List.length v))) in
+    ("(" ^ (String.concat ", " (List.map string_of_vec_padded m)) ^
+    (repeat (string_of_no_paren_vec [] max_dim) (max_dim - List.length m)) ^ ")")
+  
+and string_of_gl_mat (m: exp list list) : string = 
+    (* Note the transpose to match the glsl column-oriented style *)
+    let tm = Lin_ops.transpose m in
+    let r = (List.length tm) in
+    let c = (if r = 0 then 0 else List.length (List.hd tm)) in
+    let dim = max r c in
+    ("mat"^(string_of_int dim)^string_of_mat_padded tm dim)
+
+and string_of_gl_typ (t : etyp) : string =
+    match t with
+    | UnitTyp -> failwith "Unit type is unwriteable in glsl"
+    | MatTyp (m, n) -> "mat" ^ string_of_int (max m n)
+    | _ -> string_of_typ t
+
+and op_wrap (op : exp) : string =
     match op with
     | Val _
     | Var _ -> comp_exp op
@@ -79,15 +79,16 @@ and padded_args (a: exp list) : string =
     (String.concat ", " (List.map (op_wrap) a))
 
 and comp_exp (e : exp) : string =
-    let comp_arr (a: texp list) : string = 
-        "["^(String.concat ", " (List.map comp_exp (List.map fst a)))^"]"
-    in
     match e with
-    | Val v -> (match v with 
-        | MatLit m -> string_of_gl_mat m
-        | _ -> string_of_value v)
+    | Val v -> string_of_value v
     | Var v -> v
-    | Arr a -> comp_arr a
+    | Arr a -> (match a with
+        | [] -> "vec0()"
+        | (_, t)::_ -> (match t with
+            | FloatTyp | IntTyp -> "vec" ^ (string_of_int (List.length a)) ^ "(" ^ (String.concat ", " (List.map (fun x -> comp_exp (fst x)) a)) ^ ")"
+            | VecTyp n -> let as_vec_list = (fun v -> (match v with | (Arr a', _) -> (List.map fst a') | _ -> failwith "Typechecker error, a matrix must be a list of vectors")) in
+                string_of_gl_mat (List.map as_vec_list a)
+            | _ -> failwith "Typechecker error, every array must be a list of ints, floats, or vectors"))
     | Binop (op, l, r) -> (match op with
         | Times -> padded_mult l r
         | CTimes -> "(" ^ ((comp_exp (fst l)) ^ " * " ^(comp_exp (fst r))) ^ ")"
