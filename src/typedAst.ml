@@ -10,6 +10,8 @@ type etyp =
     | VecTyp of int
     | MatTyp of int * int
     | SamplerTyp of int
+    | AbsTyp of string * etyp option
+    | AppTyp of string * etyp (* type application *)
 
 (* expressions *)
 type texp = exp * etyp

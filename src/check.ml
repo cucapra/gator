@@ -335,6 +335,7 @@ let tag_erase (t : typ) (d : delta) : TypedAst.etyp =
         | VarTyp _ -> TypedAst.VecTyp (vec_dim tag d))
     | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
     | SamplerTyp i -> TypedAst.SamplerTyp i
+
     
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
 let check_param ((id, t): (string * typ)) (g: gamma) (d: delta) : gamma = 
@@ -623,10 +624,16 @@ and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.prog * phi =
 (* Check that there is a void main() defined *)
 let check_main_fn (p: phi) (d: delta) =
     debug_print ">> check_main_fn";
-    match Assoc.lookup "main" p with
-    | [(params, UnitTyp)] -> check_params params d |> fst
-    | _::_::_ -> raise (TypeException ("Cannot overload main"))
-    | _ -> raise (TypeException ("Expected main function to return void"))
+    let main_fns = Assoc.lookup "main" p in
+    let rec check_main (fl: fn_type list) =
+        match fl with 
+        | [] -> raise (TypeException ("expected main function to return void"))
+        | (params, ret_type, parameterization)::t -> (
+            match ret_type with
+                | UnitTyp -> check_params params d |> fst
+                | _ -> check_main t
+        ) in 
+    check_main main_fns
 
 (* Returns the list of fn's which represent the program 
  * and params of the void main() fn *)
