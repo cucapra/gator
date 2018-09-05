@@ -57,6 +57,8 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %token COLON
 %token BACKTICK
 %token GENTYPE
+%token LWICK
+%token RWICK
 
 
 (* Precedences *)
@@ -158,7 +160,7 @@ fn_decl:
       { (x, ([], t, [])) }
   | t = typ; x = ID; LPAREN; p = params ; RPAREN;
       { (x, (p, t, [])) }
-  | t = typ; x = ID; LBRACK; pt = parametrizations; RBRACK; LPAREN; p = params ; RPAREN;
+  | t = typ; x = ID; LWICK; pt = parametrizations; RWICK; LPAREN; p = params ; RPAREN;
       { (x, (p, t, pt)) }
 ;
 
@@ -278,6 +280,11 @@ arglst:
 ;
 
   
+typlst: 
+  | t = typ 
+      { t::[] }
+  | t = typ; COMMA; tl = typlst
+      { t::tl }
 exp:
   | LPAREN; a = exp; RPAREN    
       { a }
@@ -289,6 +296,10 @@ exp:
       { FnInv(x, [], []) }
   | x = ID; LPAREN; a = arglst; RPAREN;
       { FnInv(x, a, []) }
+  | x = ID; LWICK; t = typlst; RWICK; LPAREN; a = arglst; RPAREN;
+      { FnInv(x, a, t) }
+  | x = ID; LWICK; t = typlst; RWICK; LPAREN; RPAREN;
+      { FnInv(x, [], t) }
   | e1 = exp; PLUS; e2 = exp   
       { Binop(Plus,e1,e2) }
   | e1 = exp; TIMES; e2 = exp  
