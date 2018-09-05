@@ -23,6 +23,8 @@ let rec string_of_typ (t: typ) : string =
     | TagTyp s -> string_of_tag_typ s
     | TransTyp (s1, s2) -> (string_of_tag_typ s1) ^ "->" ^ (string_of_tag_typ s2)
     | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D"
+    | AbsTyp s -> "`" ^ s
+    | AppTyp (string, typ) -> failwith "Unimplemented"(* type application *)
 
 let rec string_of_exp (e:exp) : string =
     let string_of_arr (a: exp list) : string = 
@@ -45,9 +47,11 @@ let rec string_of_params (p: (id * typ) list) : string =
     | [] -> ""
     | (i1, t1)::t -> (string_of_typ t1) ^ " " ^ i1 ^ ", " ^ (string_of_params t)
 
+(* TODO: add stringifying fn declarations *)
+
 let string_of_fn_decl (d: fn_decl) : string = 
     match d with
-    | (id, (p, r)) -> (string_of_typ r) ^ " " ^ id ^ " (" ^ (string_of_params p) ^ ")"
+    | (id, (p, r, _)) -> (string_of_typ r) ^ " " ^ id ^ " (" ^ (string_of_params p) ^ ")"
 
 let rec string_of_comm (c: comm) : string =
     match c with
