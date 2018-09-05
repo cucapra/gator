@@ -144,6 +144,7 @@ let check_typ_exp (t: typ) (d: delta) : unit =
     | SamplerTyp _ -> ()
     | TagTyp s -> check_tag_typ s d; ()
     | TransTyp (s1, s2) -> check_tag_typ s1 d; check_tag_typ s2 d; ()
+    | _ -> failwith "Unimplemented"
 
 
 (* "scalar linear exp", (i.e. ctimes) returns generalized MatTyp *)
@@ -335,6 +336,7 @@ let tag_erase (t : typ) (d : delta) : TypedAst.etyp =
         | VarTyp _ -> TypedAst.VecTyp (vec_dim tag d))
     | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
     | SamplerTyp i -> TypedAst.SamplerTyp i
+    | _ -> failwith "Unimplemented"
 
     
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
@@ -391,7 +393,7 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ =
         | CTimes -> build_binop op e1 e2 check_ctimes_exp
         | Index -> build_binop op e1 e2 check_index_exp
     )
-    | FnInv (i, args) -> let ((i, args_exp), rt) = check_fn_inv d g p args i in 
+    | FnInv (i, args, pr) -> let ((i, args_exp), rt) = check_fn_inv d g p args i in 
         (FnInv (i, args_exp), rt)
         
 and check_arr (d: delta) (g: gamma) (p: phi) (a: exp list) : (TypedAst.exp * typ) =
@@ -423,16 +425,16 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string)
         match fns with
         | [] -> raise (TypeException ("No function matching the argument types " ^ 
         (String.concat ", " (List.map string_of_typ args_typ)) ^ " for the function " ^ i ^ " found"))
-        | (params, rt)::t -> 
+        | (params, rt, pr)::t -> 
             let params_typ = List.map snd params in
             if List.length args_typ == List.length params_typ then
                 if List.fold_left2 (fun acc arg param -> 
                 acc && is_subtype arg param d)
                 true args_typ params_typ 
-                then (params, rt) else find_fn_inv t
+                then (params, rt, pr) else find_fn_inv t
             else find_fn_inv t 
     in
-    let (_, rt) = find_fn_inv (Assoc.lookup i p) in
+    let (_, rt, pr) = find_fn_inv (Assoc.lookup i p) in
     ((i, args_exp), rt)
 
 and check_comm (c: comm) (d: delta) (g: gamma) (p: phi): TypedAst.comm * gamma = 
@@ -560,7 +562,7 @@ let check_fn_decl (d: delta) ((id, t): fn_decl) (p: phi) (no_dupes : bool) : phi
         check_arg_dups fns; Assoc.update name (ft::(fns)) p
     in
     debug_print ">> check_fn_decl";
-    let (pl, _) = t in
+    let (pl, _, _) = t in
     let _ = check_params pl d in 
     if no_dupes && Assoc.mem id p 
     then raise (TypeException ("function of duplicate name has been found: " ^ id))
@@ -600,13 +602,13 @@ let check_return (t: typ) (d: delta) (g: gamma) (p: phi) (c: comm) : unit =
         )
     | _ -> ()
 
-let rec check_fn (((id, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn * phi = 
+let rec check_fn (((id, (pl, r, pr)), cl): fn) (d: delta) (p: phi) : TypedAst.fn * phi = 
     debug_print ">> check_fn";
     (* fn := fn_decl * comm list *)
     let (pl', g') = check_params pl d in
     let (cl', g'') = check_comm_lst cl d g' p in 
     (* update phi with function declaration *)
-    let p' = check_fn_decl d (id, (pl, r)) p in 
+    let p' = check_fn_decl d (id, (pl, r, pr)) p in 
     (* check that the last command is a return statement *)
     match r with
     | UnitTyp -> List.iter check_void_return cl; ((((id, (pl', TypedAst.UnitTyp)), cl')), p' true)
