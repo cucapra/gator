@@ -100,7 +100,7 @@ let greatest_common_child (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
     | BotTyp n1, BotTyp n2
     | BotTyp n1, TopTyp n2
     | TopTyp n1, BotTyp n2 ->
-        check_dim n1 n2; BotTyp n1
+        check_dim n1 n2; BotTyp n1                                                                                                                                                                                                                                                                                                                                                                                                                              
     | TopTyp n1, TopTyp n2 ->
         check_dim n1 n2; TopTyp n1
     | VarTyp s, TopTyp n1

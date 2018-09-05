@@ -20,6 +20,7 @@ type typ =
     | SamplerTyp of int (* i.e. sampler2D *)
     | AbsTyp of string 
     | AppTyp of string * typ (* type application *)
+    | GenTyp
 
 (* expressions *)
 type exp =
