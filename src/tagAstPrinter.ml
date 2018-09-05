@@ -48,7 +48,6 @@ let rec string_of_params (p: (id * typ) list) : string =
     | (i1, t1)::t -> (string_of_typ t1) ^ " " ^ i1 ^ ", " ^ (string_of_params t)
 
 (* TODO: add stringifying fn declarations *)
-
 let string_of_fn_decl (d: fn_decl) : string = 
     match d with
     | (id, (p, r, _)) -> (string_of_typ r) ^ " " ^ id ^ " (" ^ (string_of_params p) ^ ")"
