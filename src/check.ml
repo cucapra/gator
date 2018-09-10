@@ -442,7 +442,7 @@ and check_arr (d : delta) (g : gamma) (p : phi) (a : exp list) (pm : parametriza
 
 and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (pml: typ list) (pm' : parametrization)
  : (string * TypedAst.args) * typ =    
-    let (_, _, pm) = 
+    let (_, rt, pm) = 
         if Assoc.mem i p
         then Assoc.lookup i p
         else raise (TypeException ("Invocated function " ^ i ^ " not found")) in
@@ -451,15 +451,18 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
     let args_typ = List.map snd args' in
     (* find definition for function in phi *)
     (* looks through overloaded all possible definitions of the function *)
-    let rec find_fn_inv ((params, rt, pr) : fn_type) : fn_type =
+    let rec find_fn_inv ((params, rt, pr) : fn_type) : fn_type=
         let params_typ = List.map snd params in
         let pr_typ = List.map fst pr in 
         if List.length pr_typ == List.length pml then 
+            (* parametrization arguments are subtypes of defined fn parametrizations *)
             if List.fold_left2 (fun acc arg param -> 
             acc && is_subtype arg param d pm)
             true args_typ params_typ 
-            then () else raise (TypeException "parametrization types mismatch")
-        else failwith "number of parametrizations";
+            then 
+            ()
+            else raise (TypeException "parametrization types mismatch")
+        else raise (TypeException "mismatched number of parametrizations");
         (* check number of arg and param types match *)
         if List.length args_typ == List.length params_typ then
             if List.fold_left2 (fun acc arg param -> 
@@ -470,8 +473,19 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
         else raise (TypeException ("function invocation argument count mismatch: expected :"
                 ^ (args_typ |> List.length |> string_of_int) ^ "arguments, found: " ^ 
                 (params_typ |> List.length |> string_of_int)))
+                
     in
-    let (_, rt, pr) = 
+    let rec rt_map pm'' pml'' r = 
+        ( match (pm'', pml'') with 
+        | ([], []) -> raise (TypeException "abstraction type not found in function definition")
+        | (AbsTyp s, _)::t, (at::t') -> if r = s then at else (rt_map t t' r)
+        | _ -> raise (TypeException "expected abstraction type for parametrization") ) 
+    in 
+    let rt = match rt with
+        | AbsTyp rt' -> rt_map pm pml rt'
+        | _ -> rt
+    in
+    let (_, _, _) = 
         if Assoc.mem i p then find_fn_inv (Assoc.lookup i p) 
         else raise (TypeException ("function not found: " ^ i)) in
     ((i, args_exp), rt)
