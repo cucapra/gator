@@ -136,6 +136,13 @@ let check_val (v: value) (d: delta) : typ =
     | Bool b -> BoolTyp
     | Num n -> IntTyp
     | Float f -> FloatTyp
+    | VecLit v -> TagTyp (BotTyp (List.length v))
+    | MatLit m ->
+        (let rows = List.length m in
+        if rows = 0 then trans_bot 0 0 else
+        let cols = List.length (List.hd m) in
+        if List.for_all (fun v -> List.length v = cols) m then trans_bot cols rows
+        else (raise (TypeException ("Matrix must have the same number of elements in each row"))))
     | _ -> raise (TypeException ("Unexpected typechecker value " ^ (string_of_value v)))
 
 let check_tag_typ (tag: tag_typ) (d: delta) : unit =
