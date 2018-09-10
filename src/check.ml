@@ -568,15 +568,18 @@ and check_assign (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) (p: phi
         match (t, etyp) with
         | (BoolTyp, BoolTyp)
         | (IntTyp, IntTyp)
-        | (FloatTyp, FloatTyp) -> Assoc.update s t g
-        | (TagTyp t1, TagTyp t2) ->
+        | (FloatTyp, FloatTyp) 
+        | (GenTyp, GenTyp) -> Assoc.update s t g
+        | (TagTyp t1, TagTyp t2) -> 
             least_common_parent t1 t2 d |> ignore;
             if subsumes_to t2 t1 d then Assoc.update s t g
             else raise (TypeException ("mismatched linear type for var decl: " ^ s))
         | (TransTyp (t1, t2), TransTyp (t3, t4)) ->
             if is_tag_subtype t1 t3 d && is_tag_subtype t4 t2 d then Assoc.update s t g
             else raise (TypeException ("no possible upcast for var decl: " ^ s))
-        | (AbsTyp s1, AbsTyp s2) -> Assoc.update s t g
+        | (AbsTyp s1, AbsTyp s2) -> 
+            if s1 = s2 then Assoc.update s t g
+            else raise (TypeException ("abstraction type for var decl for " ^ s ^ " mismatched"))
         | _ -> raise (TypeException ("mismatched types for var decl for " ^ s ^  ": expected " ^ (string_of_typ t) ^ ", found " ^ (string_of_typ etyp)))
     )
 
