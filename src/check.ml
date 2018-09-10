@@ -66,7 +66,7 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parametrizat
         then let p = (List.assoc target pm) in 
             match p with 
             | Some p' ->  is_subtype to_check p' d pm 
-            | _ -> raise (TypeException ("AbsTyp " ^ s ^ " not found"))
+            | None -> true (* todo *)
         else raise (TypeException ("AbsTyp " ^ s ^ " not found in parametrization"))
     | (AppTyp (s1, t1), AppTyp (s2, t2)) -> s1 == s2
     | _ -> false
@@ -582,7 +582,6 @@ and check_assign (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) (p: phi
             else raise (TypeException ("abstraction type for var decl for " ^ s ^ " mismatched"))
         | _ -> raise (TypeException ("mismatched types for var decl for " ^ s ^  ": expected " ^ (string_of_typ t) ^ ", found " ^ (string_of_typ etyp)))
     )
-
 
 let check_tag (s: string) (l: tag_typ) (d: delta) : delta = 
     debug_print ">> check_tag";
