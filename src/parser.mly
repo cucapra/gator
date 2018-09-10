@@ -185,9 +185,13 @@ comm:
   | RETURN; SEMI;
       { Return(None) }
   | x = ID; LPAREN; RPAREN; SEMI;
-      { FnCall(x, []) }
+      { FnCall(x, [], []) }
   | x = ID; LPAREN; a = arglst; RPAREN; SEMI;
-      { FnCall(x, a) }
+      { FnCall(x, a, []) }
+  | x = ID; LWICK; p = typlst; RWICK; LPAREN; RPAREN; SEMI;
+      { FnCall(x, [], p)}
+  | x = ID; LWICK; p = typlst; RWICK; LPAREN; a = arglst; RPAREN; SEMI;
+      { FnCall(x, a, p)}
 ; 
 
 typ:

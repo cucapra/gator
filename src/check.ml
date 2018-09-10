@@ -393,7 +393,7 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ =
         | CTimes -> build_binop op e1 e2 check_ctimes_exp
         | Index -> build_binop op e1 e2 check_index_exp
     )
-    | FnInv (i, args, pr) -> let ((i, args_exp), rt) = check_fn_inv d g p args i in 
+    | FnInv (i, args, pr) -> let ((i, args_exp), rt) = check_fn_inv d g p args i pr in 
         (FnInv (i, args_exp), rt)
         
 and check_arr (d: delta) (g: gamma) (p: phi) (a: exp list) : (TypedAst.exp * typ) =
@@ -487,7 +487,7 @@ and check_comm (c: comm) (d: delta) (g: gamma) (p: phi): TypedAst.comm * gamma =
         let (e, t) = exp_to_texp (check_exp e d g p) d in
         (TypedAst.Return (Some (e, t)), g)
     | Return None -> (TypedAst.Return None, g)
-    | FnCall (i, args) -> let ((i, args_exp), _) = check_fn_inv d g p args i in 
+    | FnCall (i, args, pm) -> let ((i, args_exp), _) = check_fn_inv d g p args i pm in 
         (TypedAst.FnCall (i, args_exp), g)
 
 and check_comm_lst (cl : comm list) (d: delta) (g: gamma) (p: phi) : TypedAst.comm list * gamma = 
