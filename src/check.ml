@@ -423,28 +423,29 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
     let args_typ = List.map snd args' in
     (* find definition for function in phi *)
     (* looks through overloaded all possible definitions of the function *)
-    let rec find_fn_inv (fn : fn_type) : fn_type =
-        match fn with
-        (* | _ -> raise (TypeException ("No function matching the argument types " ^ 
-        (String.concat ", " (List.map string_of_typ args_typ)) ^ " for the function " ^ i ^ " found")) *)
-        | (params, rt, pr) -> 
-            let params_typ = List.map snd params in
-            let pr_typ = List.map fst pr in 
-            if List.length pr_typ == List.length pml then 
-                if List.fold_left2 (fun acc arg param -> 
-                acc && is_subtype arg param d)
-                true args_typ params_typ 
-                then () else raise (TypeException "parametrization types mismatch")
-            else failwith "number of parametrizations";
-            (* check number of arg and param types match *)
-            if List.length args_typ == List.length params_typ then
-                if List.fold_left2 (fun acc arg param -> 
-                acc && is_subtype arg param d)
-                true args_typ params_typ 
-                then (params, rt, pr) else raise (TypeException "parametrization arg type mismatch")
-            else raise (TypeException "parameterization param type mismatch")
+    let rec find_fn_inv ((params, rt, pr) : fn_type) : fn_type =
+        let params_typ = List.map snd params in
+        let pr_typ = List.map fst pr in 
+        if List.length pr_typ == List.length pml then 
+            if List.fold_left2 (fun acc arg param -> 
+            acc && is_subtype arg param d)
+            true args_typ params_typ 
+            then () else raise (TypeException "parametrization types mismatch")
+        else failwith "number of parametrizations";
+        (* check number of arg and param types match *)
+        if List.length args_typ == List.length params_typ then
+            if List.fold_left2 (fun acc arg param -> 
+            acc && is_subtype arg param d)
+            true args_typ params_typ 
+            then (params, rt, pr) 
+            else raise (TypeException "function invocation argument type mismatch")
+        else raise (TypeException ("function invocation argument count mismatch: expected :"
+                ^ (args_typ |> List.length |> string_of_int) ^ "arguments, found: " ^ 
+                (params_typ |> List.length |> string_of_int)))
     in
-    let (_, rt, pr) = find_fn_inv (Assoc.lookup i p) in
+    let (_, rt, pr) = 
+        if Assoc.mem i p then find_fn_inv (Assoc.lookup i p) 
+        else raise (TypeException ("function not found: " ^ i)) in
     ((i, args_exp), rt)
 
 and check_comm (c: comm) (d: delta) (g: gamma) (p: phi): TypedAst.comm * gamma = 
