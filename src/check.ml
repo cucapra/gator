@@ -335,25 +335,21 @@ let rec tag_erase_param (t: typ) (d: delta) (pm: parametrization) : TypedAst.ety
 
 and tag_erase (t : typ) (d : delta) (pm: parametrization) : TypedAst.etyp =
     debug_print ">> tag_erase";
-    match (t, pm) with
-    | (UnitTyp, []) -> TypedAst.UnitTyp
-    | (BoolTyp, []) -> TypedAst.BoolTyp
-    | (IntTyp, []) -> TypedAst.IntTyp
-    | (FloatTyp, []) -> TypedAst.FloatTyp
-    | (TagTyp tag, []) -> (match tag with
+    match t with
+    | UnitTyp -> TypedAst.UnitTyp
+    | BoolTyp -> TypedAst.BoolTyp
+    | IntTyp -> TypedAst.IntTyp
+    | FloatTyp -> TypedAst.FloatTyp
+    | TagTyp tag -> (match tag with
         | TopTyp n
         | BotTyp n -> TypedAst.VecTyp n
         | VarTyp _ -> TypedAst.VecTyp (vec_dim tag d))
-    | (TransTyp (s1, s2), []) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
-    | (SamplerTyp i, []) -> TypedAst.SamplerTyp i
-    | (AbsTyp s, []) -> TypedAst.AbsTyp (s, None)
-    | (AbsTyp s, pm) -> tag_erase_param t d pm 
-    | (AppTyp (s, t), pm) -> TypedAst.AppTyp (s, tag_erase t d pm)
-    | (GenTyp, []) -> TypedAst.GenTyp
-    | _ -> raise (TypeException ("found unexpected parameterization for type"))
+    | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
+    | SamplerTyp i -> TypedAst.SamplerTyp i
+    | AbsTyp s -> tag_erase_param t d pm 
+    | AppTyp (s, t) -> TypedAst.AppTyp (s, tag_erase t d pm)
+    | GenTyp -> TypedAst.GenTyp
 
-
-    
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
 let check_param ((id, t): (string * typ)) (g: gamma) (d: delta) : gamma = 
     debug_print ">> check_param";
