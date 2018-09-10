@@ -47,7 +47,7 @@ let is_tag_subtype (to_check: tag_typ) (target: tag_typ) (d: delta) : bool =
     | VarTyp s, TopTyp n -> n = (vec_dim to_check d)
     | TopTyp _, _ -> false
 
-let is_subtype (to_check : typ) (target : typ) (d : delta) : bool =
+let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parametrization): bool =
     match (to_check, target) with 
     | (TagTyp t1, TagTyp t2) -> is_tag_subtype t1 t2 d (* MARK *)
     | (SamplerTyp i1, SamplerTyp i2) -> i1 = i2 
@@ -56,6 +56,19 @@ let is_subtype (to_check : typ) (target : typ) (d : delta) : bool =
     | (FloatTyp, FloatTyp) -> true
     | (TransTyp (t1, t2), TransTyp (t3, t4)) -> 
         (is_tag_subtype t3 t1 d && is_tag_subtype t2 t4 d)
+    | (IntTyp, GenTyp)
+    | (FloatTyp, GenTyp)
+    | (TagTyp _, GenTyp)
+    | (TransTyp _, GenTyp) -> true (* todo: is transtyp a subtype of gentyp? *)
+    | (AbsTyp s1, AbsTyp s2) -> s1 == s2
+    | (_, AbsTyp s) -> 
+        if List.mem_assoc target pm 
+        then let p = (List.assoc target pm) in 
+            match p with 
+            | Some p' ->  is_subtype to_check p' d pm 
+            | _ -> raise (TypeException ("AbsTyp " ^ s ^ " not found"))
+        else raise (TypeException ("AbsTyp " ^ s ^ " not found in parametrization"))
+    | (AppTyp (s1, t1), AppTyp (s2, t2)) -> s1 == s2
     | _ -> false
 
 let subsumes_to (to_check: tag_typ) (target: tag_typ) (d: delta) : bool =
@@ -404,7 +417,7 @@ let rec check_exp (e : exp) (d : delta) (g : gamma) (pm : parametrization) (p : 
         | CTimes -> build_binop op e1 e2 check_ctimes_exp
         | Index -> build_binop op e1 e2 check_index_exp
     )
-    | FnInv (i, args, pr) -> let ((i, args_exp), rt) = check_fn_inv d g p args i pr in 
+    | FnInv (i, args, pr) -> let ((i, args_exp), rt) = check_fn_inv d g p args i pr pm in 
         (FnInv (i, args_exp), rt)
         
 and check_arr (d : delta) (g : gamma) (p : phi) (a : exp list) (pm : parametrization) : (TypedAst.exp * typ) =
@@ -427,9 +440,13 @@ and check_arr (d : delta) (g : gamma) (p : phi) (a : exp list) (pm : parametriza
     | None ->  raise (TypeException ("Invalid array definition for " ^ (string_of_exp (Arr a)) ^ ", must be a matrix or vector")))
     
 
-and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (pml: typ list)
- : (string * TypedAst.args) * typ =
-    let args' = List.map (fun a -> check_exp a d g [] p) args in (* todo: fix parametrization argument *)
+and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (pml: typ list) (pm' : parametrization)
+ : (string * TypedAst.args) * typ =    
+    let (_, _, pm) = 
+        if Assoc.mem i p
+        then Assoc.lookup i p
+        else raise (TypeException ("Invocated function " ^ i ^ " not found")) in
+    let args' = List.map (fun a -> check_exp a d g pm p) args in (* todo: fix parametrization argument *)
     let args_exp = List.map fst args' in 
     let args_typ = List.map snd args' in
     (* find definition for function in phi *)
@@ -439,14 +456,14 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
         let pr_typ = List.map fst pr in 
         if List.length pr_typ == List.length pml then 
             if List.fold_left2 (fun acc arg param -> 
-            acc && is_subtype arg param d)
+            acc && is_subtype arg param d pm)
             true args_typ params_typ 
             then () else raise (TypeException "parametrization types mismatch")
         else failwith "number of parametrizations";
         (* check number of arg and param types match *)
         if List.length args_typ == List.length params_typ then
             if List.fold_left2 (fun acc arg param -> 
-            acc && is_subtype arg param d)
+            acc && is_subtype arg param d pm)
             true args_typ params_typ 
             then (params, rt, pr) 
             else raise (TypeException "function invocation argument type mismatch")
@@ -499,7 +516,7 @@ and check_comm (c: comm) (d: delta) (g: gamma) (pm: parametrization) (p: phi) : 
         let (e, t) = exp_to_texp (check_exp e d g pm p) d pm in
         (TypedAst.Return (Some (e, t)), g)
     | Return None -> (TypedAst.Return None, g)
-    | FnCall (i, args, pm) -> let ((i, args_exp), _) = check_fn_inv d g p args i pm in 
+    | FnCall (i, args, pml) -> let ((i, args_exp), _) = check_fn_inv d g p args i pml pm in 
         (TypedAst.FnCall (i, args_exp), g)
 
 and check_comm_lst (cl : comm list) (d: delta) (g: gamma) (pm : parametrization) (p: phi) : TypedAst.comm list * gamma = 
