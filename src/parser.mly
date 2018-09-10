@@ -60,7 +60,6 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %token LWICK
 %token RWICK
 
-
 (* Precedences *)
 
 %left AND OR
@@ -83,7 +82,6 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 
 %%
 
-   
 main:
   | t = taglst; d = declarelst; e = fnlst; EOL 
       { Prog(d, t, e) }
