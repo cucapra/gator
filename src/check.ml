@@ -576,6 +576,7 @@ and check_assign (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) (p: phi
         | (TransTyp (t1, t2), TransTyp (t3, t4)) ->
             if is_tag_subtype t1 t3 d && is_tag_subtype t4 t2 d then Assoc.update s t g
             else raise (TypeException ("no possible upcast for var decl: " ^ s))
+        | (AbsTyp s1, AbsTyp s2) -> Assoc.update s t g
         | _ -> raise (TypeException ("mismatched types for var decl for " ^ s ^  ": expected " ^ (string_of_typ t) ^ ", found " ^ (string_of_typ etyp)))
     )
 
