@@ -322,24 +322,36 @@ let check_index_exp (t1: typ) (t2: typ) (d: delta) : typ =
         (raise (TypeException ("invalid expressions for division: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))))
 
-let rec tag_erase (t : typ) (d : delta) (pm: typ option) : TypedAst.etyp =
+
+let rec tag_erase_param (t: typ) (d: delta) (pm: parametrization) : TypedAst.etyp = 
+    match t with 
+    AbsTyp s -> if List.mem_assoc t pm then 
+        let p = (List.assoc t pm) in 
+        match p with 
+        Some e -> TypedAst.AbsTyp (s, Some (tag_erase e d pm))
+        | None -> TypedAst.AbsTyp (s, None)
+        else raise (TypeException ("AbsTyp " ^ s ^ " was not found in function parametrization definition"))
+    | _ -> raise (TypeException ("found unexpected non-abstraction type for parameterization"))
+
+and tag_erase (t : typ) (d : delta) (pm: parametrization) : TypedAst.etyp =
     debug_print ">> tag_erase";
     match (t, pm) with
-    | (UnitTyp, None) -> TypedAst.UnitTyp
-    | (BoolTyp, None) -> TypedAst.BoolTyp
-    | (IntTyp, None) -> TypedAst.IntTyp
-    | (FloatTyp, None) -> TypedAst.FloatTyp
-    | (TagTyp tag, None) -> (match tag with
+    | (UnitTyp, []) -> TypedAst.UnitTyp
+    | (BoolTyp, []) -> TypedAst.BoolTyp
+    | (IntTyp, []) -> TypedAst.IntTyp
+    | (FloatTyp, []) -> TypedAst.FloatTyp
+    | (TagTyp tag, []) -> (match tag with
         | TopTyp n
         | BotTyp n -> TypedAst.VecTyp n
         | VarTyp _ -> TypedAst.VecTyp (vec_dim tag d))
-    | (TransTyp (s1, s2), None) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
-    | (SamplerTyp i, None) -> TypedAst.SamplerTyp i
-    | (AbsTyp s, None) -> TypedAst.AbsTyp (s, None)
-    | (AbsTyp s, Some t) -> TypedAst.AbsTyp (s, Some (tag_erase t d None))
+    | (TransTyp (s1, s2), []) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
+    | (SamplerTyp i, []) -> TypedAst.SamplerTyp i
+    | (AbsTyp s, []) -> TypedAst.AbsTyp (s, None)
+    | (AbsTyp s, pm) -> tag_erase_param t d pm 
     | (AppTyp (s, t), pm) -> TypedAst.AppTyp (s, tag_erase t d pm)
-    | (GenTyp, None) -> TypedAst.GenTyp
+    | (GenTyp, []) -> TypedAst.GenTyp
     | _ -> raise (TypeException ("found unexpected parameterization for type"))
+
 
     
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
@@ -356,32 +368,32 @@ let check_param ((id, t): (string * typ)) (g: gamma) (d: delta) : gamma =
     )
     
 (* Get list of parameters from param list *)
-let check_params (pl: (id * typ) list) (d: delta): TypedAst.params * gamma = 
+let check_params (pl : (id * typ) list) (d : delta) (pm : parametrization) : TypedAst.params * gamma = 
     let g = List.fold_left (fun (g: gamma) p -> check_param p g d) Assoc.empty pl in 
-    let p = List.map (fun (i, t) -> (i, tag_erase t d)) pl in 
+    let p = List.map (fun (i, t) -> (i, tag_erase t d pm)) pl in 
     (p, g)
 
-let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) : TypedAst.texp = 
-    ((fst checked_exp), (tag_erase (snd checked_exp) d))
+let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parametrization) : TypedAst.texp = 
+    ((fst checked_exp), (tag_erase (snd checked_exp) d pm))
 
-let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ = 
+let rec check_exp (e : exp) (d : delta) (g : gamma) (pm : parametrization) (p : phi) : TypedAst.exp * typ = 
     debug_print ">> check_exp";
     let build_unop (op : unop) (e': exp) (check_fun: typ->delta->typ)
         : TypedAst.exp * typ =
-        let result = check_exp e' d g p in
-            (TypedAst.Unop(op, exp_to_texp result d), check_fun (snd result) d)
+        let result = check_exp e' d g pm p in
+            (TypedAst.Unop(op, exp_to_texp result d pm), check_fun (snd result) d)
     in
     let build_binop (op : binop) (e1: exp) (e2: exp) (check_fun: typ->typ->delta->typ)
         : TypedAst.exp * typ =
-        let e1r = check_exp e1 d g p in
-        let e2r = check_exp e2 d g p in
-            (TypedAst.Binop(op, exp_to_texp e1r d, exp_to_texp e2r d), check_fun (snd e1r) (snd e2r) d)
+        let e1r = check_exp e1 d g pm p in
+        let e2r = check_exp e2 d g pm p in
+            (TypedAst.Binop(op, exp_to_texp e1r d pm, exp_to_texp e2r d pm), check_fun (snd e1r) (snd e2r) d)
     in 
     match e with
     | Val v -> (TypedAst.Val v, check_val v d)
     | Var v -> "\tVar "^v |> debug_print;
         (TypedAst.Var v, Assoc.lookup v g)
-    | Arr a -> check_arr d g p a
+    | Arr a -> check_arr d g p a pm
     | Unop (op, e') -> (match op with
         | Neg -> build_unop op e' check_num_unop
         | Not -> build_unop op e' check_bool_unop
@@ -399,7 +411,7 @@ let rec check_exp (e: exp) (d: delta) (g: gamma) (p: phi): TypedAst.exp * typ =
     | FnInv (i, args, pr) -> let ((i, args_exp), rt) = check_fn_inv d g p args i pr in 
         (FnInv (i, args_exp), rt)
         
-and check_arr (d: delta) (g: gamma) (p: phi) (a: exp list) : (TypedAst.exp * typ) =
+and check_arr (d : delta) (g : gamma) (p : phi) (a : exp list) (pm : parametrization) : (TypedAst.exp * typ) =
     let is_vec (v: TypedAst.texp list) : bool =
         List.fold_left (fun acc (_, t) -> match t with
             | TypedAst.IntTyp | TypedAst.FloatTyp -> acc | _ -> false) true v
@@ -411,7 +423,7 @@ and check_arr (d: delta) (g: gamma) (p: phi) (a: exp list) : (TypedAst.exp * typ
             | TypedAst.VecTyp n -> if (n == size) then acc else None | _ -> None) (Some size) v
         | _ -> None
     in
-    let checked_a = List.map (fun e -> (exp_to_texp (check_exp e d g p) d)) a in
+    let checked_a = List.map (fun e -> (exp_to_texp (check_exp e d g pm p) d pm )) a in
     let length_a = List.length a in
     if is_vec checked_a then (TypedAst.Arr checked_a, TagTyp (BotTyp length_a)) else 
     (match is_mat checked_a with
@@ -419,9 +431,9 @@ and check_arr (d: delta) (g: gamma) (p: phi) (a: exp list) : (TypedAst.exp * typ
     | None ->  raise (TypeException ("Invalid array definition for " ^ (string_of_exp (Arr a)) ^ ", must be a matrix or vector")))
     
 
-and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (pml: typ list) 
+and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (pml: typ list)
  : (string * TypedAst.args) * typ =
-    let args' = List.map (fun a -> check_exp a d g p) args in 
+    let args' = List.map (fun a -> check_exp a d g [] p) args in (* todo: fix parametrization argument *)
     let args_exp = List.map fst args' in 
     let args_typ = List.map snd args' in
     (* find definition for function in phi *)
@@ -451,12 +463,12 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
         else raise (TypeException ("function not found: " ^ i)) in
     ((i, args_exp), rt)
 
-and check_comm (c: comm) (d: delta) (g: gamma) (p: phi): TypedAst.comm * gamma = 
+and check_comm (c: comm) (d: delta) (g: gamma) (pm: parametrization) (p: phi) : TypedAst.comm * gamma = 
     debug_print ">> check_comm";
     match c with
     | Skip -> (TypedAst.Skip, g)
     | Print e -> (
-        let (e, t) = exp_to_texp (check_exp e d g p) d in 
+        let (e, t) = exp_to_texp (check_exp e d g pm p) d pm in 
         match t with
         | UnitTyp -> raise (TypeException "print function cannot print void types")
         | _ -> (TypedAst.Print (e, t), g)
@@ -464,7 +476,7 @@ and check_comm (c: comm) (d: delta) (g: gamma) (p: phi): TypedAst.comm * gamma =
     | Decl (t, s, e) ->
         if Assoc.mem s g then raise (TypeException "variable name shadowing is illegal")
         else 
-        let result = check_exp e d g p in
+        let result = check_exp e d g pm p in
         let t' = (match t with | AutoTyp -> 
             (match (snd result) with
                 | TagTyp (BotTyp _) -> raise (TypeException "Cannot infer the type of a vector literal")
@@ -476,30 +488,30 @@ and check_comm (c: comm) (d: delta) (g: gamma) (p: phi): TypedAst.comm * gamma =
     | Assign (s, e) ->
         if Assoc.mem s g then
             let t = Assoc.lookup s g in
-            let result = check_exp e d g p in
-            (TypedAst.Assign (s, (exp_to_texp result d)), check_assign t s (snd result) d g p)
+            let result = check_exp e d g pm p in
+            (TypedAst.Assign (s, (exp_to_texp result d pm)), check_assign t s (snd result) d g p)
         else raise (TypeException "assignment to undeclared variable")
 
     | If (b, c1, c2) ->
-        let result = (check_exp b d g p) in
-        let c1r = check_comm_lst c1 d g p in
-        let c2r = check_comm_lst c2 d g p in
+        let result = (check_exp b d g pm p) in
+        let c1r = check_comm_lst c1 d g pm p in
+        let c2r = check_comm_lst c2 d g pm p in
         (match (snd result) with 
-        | BoolTyp -> (TypedAst.If ((exp_to_texp result d), (fst c1r), (fst c2r)), g)
+        | BoolTyp -> (TypedAst.If ((exp_to_texp result d pm), (fst c1r), (fst c2r)), g)
         | _ -> raise (TypeException "expected boolean expression for if condition"))
     | Return Some e ->
-        let (e, t) = exp_to_texp (check_exp e d g p) d in
+        let (e, t) = exp_to_texp (check_exp e d g pm p) d pm in
         (TypedAst.Return (Some (e, t)), g)
     | Return None -> (TypedAst.Return None, g)
     | FnCall (i, args, pm) -> let ((i, args_exp), _) = check_fn_inv d g p args i pm in 
         (TypedAst.FnCall (i, args_exp), g)
 
-and check_comm_lst (cl : comm list) (d: delta) (g: gamma) (p: phi) : TypedAst.comm list * gamma = 
+and check_comm_lst (cl : comm list) (d: delta) (g: gamma) (pm : parametrization) (p: phi) : TypedAst.comm list * gamma = 
     debug_print ">> check_comm_lst";
     match cl with
     | [] -> ([], g)
-    | h::t -> let context = check_comm h d g p in
-        let result = check_comm_lst t d (snd context) p in 
+    | h::t -> let context = check_comm h d g pm p in
+        let result = check_comm_lst t d (snd context) pm p in 
         ((fst context) :: (fst result), (snd result))
 
 and check_assign (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) (p: phi) : gamma =
@@ -580,12 +592,12 @@ let check_void_return (c: comm) =
     | Return Some _ -> raise (TypeException ("void functions cannot return a value"))
     | _ -> ()
 
-let check_return (t: typ) (d: delta) (g: gamma) (p: phi) (c: comm) : unit = 
+let check_return (t: typ) (d: delta) (g: gamma) (pm: parametrization) (p: phi) (c: comm) = 
     debug_print ">> check_return";
     match c with
     | Return None -> raise (TypeException ("expected a return value instead of void"))
     | Return Some r -> (
-        let (_, rt) = check_exp r d g p in
+        let (_, rt) = check_exp r d g pm p in
         (* raises return exception of given boolean exp is false *)
         let raise_return_exception b =
             if b then () 
@@ -608,15 +620,15 @@ let check_return (t: typ) (d: delta) (g: gamma) (p: phi) (c: comm) : unit =
 let rec check_fn (((id, (pl, r, pr)), cl): fn) (d: delta) (p: phi) : TypedAst.fn * phi = 
     debug_print ">> check_fn";
     (* fn := fn_decl * comm list *)
-    let (pl', g') = check_params pl d in
-    let (cl', g'') = check_comm_lst cl d g' p in 
+    let (pl', g') = check_params pl d pr in
+    let (cl', g'') = check_comm_lst cl d g' pr p in 
     (* update phi with function declaration *)
     let p' = check_fn_decl d (id, (pl, r, pr)) p in 
     (* check that the last command is a return statement *)
     match r with
     | UnitTyp -> List.iter check_void_return cl; ((((id, (pl', TypedAst.UnitTyp)), cl')), p')
     (* TODO: might want to check that there is exactly one return statement at the end *)
-    | t -> List.iter (check_return t d g'' p) cl; ((((id, (pl', tag_erase t d)), cl')), p')
+    | t -> List.iter (check_return t d g'' pr p) cl; ((((id, (pl', tag_erase t d pr)), cl')), p')
 and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.prog * phi =
     debug_print ">> check_fn_lst";
     match fl with
@@ -630,7 +642,7 @@ let check_main_fn (p: phi) (d: delta) =
     debug_print ">> check_main_fn";
     let (params, ret_type, parameterization) = Assoc.lookup "main" p in 
     match ret_type with
-        | UnitTyp -> check_params params d |> fst
+        | UnitTyp -> check_params params d parameterization |> fst
         | _ -> raise (TypeException ("expected main function to return void"))
 
 
