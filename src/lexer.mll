@@ -11,7 +11,7 @@ let letter = ['a'-'z' 'A'-'Z']
 let mat = "mat" num ['x'] num
 let sampler = "sampler" num ['D']
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
-let floatval = ((['0'-'9']*['.']['0'-'9']+)|(['0'-'9']+['.']['0'-'9']*))
+let floatval = ((['-' '+']?['0'-'9']*['.']['0'-'9']+)|(['-' '+']?['0'-'9']+['.']['0'-'9']*))
 let newline = ('\r' | '\n' | "\r\n" | eof)
 let comment = "//" [^ '\r' '\n']* newline
 
