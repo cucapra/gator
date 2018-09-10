@@ -138,8 +138,7 @@ type delta = (etyp list) Assoc.context
 let rec generate_fn_generics (((id, (p, rt)), cl) : fn) (pm : (string * etyp option) list) = 
     let gens = Assoc.empty 
         |> Assoc.update "genType" [IntTyp; FloatTyp; MatTyp (1,1);
-        MatTyp(2,1); MatTyp(3,1);
-        MatTyp(4,1); VecTyp 2; VecTyp 3; VecTyp 4]
+        MatTyp(2,1); MatTyp(3,1); MatTyp(4,1); VecTyp 2; VecTyp 3; VecTyp 4]
     (* TODO: add into gens all the stuff in pm! *)
     in 
     let plain = (string_of_gl_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (comp_comm cl) ^ "}"
@@ -151,19 +150,19 @@ let rec generate_fn_generics (((id, (p, rt)), cl) : fn) (pm : (string * etyp opt
             let rec replace_generic_helper c =
                 match c with 
                 [] -> ""
-                | s''::t -> Str.global_replace (Str.regexp s') (string_of_gl_typ s'') orig ^ (replace_generic_helper t)
+                | s''::t -> Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ s'') orig ^ (replace_generic_helper t)
             in replace_generic_helper con
         | (s', Some (AbsTyp (s'', e'')))::t -> let con = Assoc.lookup s'' gens in 
             let rec replace_generic_helper c =
                 match c with 
                 [] -> ""
-                | s'''::t -> Str.global_replace (Str.regexp s'') (string_of_gl_typ s''') orig ^ (replace_generic_helper t)
+                | s'''::t -> Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ s''') orig ^ (replace_generic_helper t)
             in replace_generic_helper con
         | (s', Some (GenTyp))::t -> let con = Assoc.lookup "genType" gens in 
             let rec replace_generic_helper c =
                 match c with 
                 [] -> ""
-                | s'''::t -> Str.global_replace (Str.regexp s') (string_of_gl_typ s''') orig ^ (replace_generic_helper t)
+                | s'''::t -> Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ s''') orig ^ (replace_generic_helper t)
             in replace_generic_helper con
         | (s', _)::t -> failwith "unexpectedly reached a parameterized argument that is not an abstracted type"
     in replace_generic plain
