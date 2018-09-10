@@ -21,7 +21,8 @@ let rec string_of_typ (t: etyp) : string =
     | MatTyp (m1, m2) -> "mat" ^ (string_of_int m1) ^ "x" ^ (string_of_int m2)
     | SamplerTyp n -> "sampler" ^ (string_of_int n) ^ "D"
     | AbsTyp (s, typ) -> "`" ^ s (* TODO *)
-    | AppTyp (string, typ) -> failwith "Unimplemented"(* type application *)
+    | AppTyp (string, typ) -> failwith "string_of_typ Unimplemented"(* type application *)
+    | GenTyp -> "genType"
 
 
 let rec string_of_exp (e: exp) : string =

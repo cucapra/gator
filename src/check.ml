@@ -144,7 +144,7 @@ let check_typ_exp (t: typ) (d: delta) : unit =
     | SamplerTyp _ -> ()
     | TagTyp s -> check_tag_typ s d; ()
     | TransTyp (s1, s2) -> check_tag_typ s1 d; check_tag_typ s2 d; ()
-    | _ -> failwith "Unimplemented"
+    | _ -> failwith "check_typ_exp Unimplemented"
 
 
 (* "scalar linear exp", (i.e. ctimes) returns generalized MatTyp *)
@@ -322,7 +322,7 @@ let check_index_exp (t1: typ) (t2: typ) (d: delta) : typ =
         (raise (TypeException ("invalid expressions for division: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))))
 
-let tag_erase (t : typ) (d : delta) : TypedAst.etyp =
+let rec tag_erase (t : typ) (d : delta) : TypedAst.etyp =
     debug_print ">> tag_erase";
     match t with
     | AutoTyp -> raise (TypeException "Illegal use of auto (cannot use auto as part of a function call)")
@@ -336,7 +336,9 @@ let tag_erase (t : typ) (d : delta) : TypedAst.etyp =
         | VarTyp _ -> TypedAst.VecTyp (vec_dim tag d))
     | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
     | SamplerTyp i -> TypedAst.SamplerTyp i
-    | _ -> failwith "Unimplemented"
+    | AbsTyp s -> failwith "Unimplemented" 
+    | AppTyp (s, t) -> TypedAst.AppTyp (s, tag_erase t d)
+    | GenTyp -> TypedAst.GenTyp
 
     
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
