@@ -322,23 +322,24 @@ let check_index_exp (t1: typ) (t2: typ) (d: delta) : typ =
         (raise (TypeException ("invalid expressions for division: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))))
 
-let rec tag_erase (t : typ) (d : delta) : TypedAst.etyp =
+let rec tag_erase (t : typ) (d : delta) (pm: typ option) : TypedAst.etyp =
     debug_print ">> tag_erase";
-    match t with
-    | AutoTyp -> raise (TypeException "Illegal use of auto (cannot use auto as part of a function call)")
-    | UnitTyp -> TypedAst.UnitTyp
-    | BoolTyp -> TypedAst.BoolTyp
-    | IntTyp -> TypedAst.IntTyp
-    | FloatTyp -> TypedAst.FloatTyp
-    | TagTyp tag -> (match tag with
+    match (t, pm) with
+    | (UnitTyp, None) -> TypedAst.UnitTyp
+    | (BoolTyp, None) -> TypedAst.BoolTyp
+    | (IntTyp, None) -> TypedAst.IntTyp
+    | (FloatTyp, None) -> TypedAst.FloatTyp
+    | (TagTyp tag, None) -> (match tag with
         | TopTyp n
         | BotTyp n -> TypedAst.VecTyp n
         | VarTyp _ -> TypedAst.VecTyp (vec_dim tag d))
-    | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
-    | SamplerTyp i -> TypedAst.SamplerTyp i
-    | AbsTyp s -> failwith "Unimplemented" 
-    | AppTyp (s, t) -> TypedAst.AppTyp (s, tag_erase t d)
-    | GenTyp -> TypedAst.GenTyp
+    | (TransTyp (s1, s2), None) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
+    | (SamplerTyp i, None) -> TypedAst.SamplerTyp i
+    | (AbsTyp s, None) -> TypedAst.AbsTyp (s, None)
+    | (AbsTyp s, Some t) -> TypedAst.AbsTyp (s, Some (tag_erase t d None))
+    | (AppTyp (s, t), pm) -> TypedAst.AppTyp (s, tag_erase t d pm)
+    | (GenTyp, None) -> TypedAst.GenTyp
+    | _ -> raise (TypeException ("found unexpected parameterization for type"))
 
     
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
