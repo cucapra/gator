@@ -75,7 +75,7 @@ and padded_mult (left : texp) (right : texp) : string =
                 else (op_wrap le) ^ " * " ^ (comp_exp re))
         | _ -> (op_wrap le) ^ " * " ^ (comp_exp re))
         
-and padded_args (a: exp list) : string = 
+and padded_args (a : exp list) : string = 
     (String.concat ", " (List.map (op_wrap) a))
 
 and comp_exp (e : exp) : string =
@@ -115,12 +115,32 @@ and comp_comm (c : comm list) : string =
         | Return Some (e, _) -> "return " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
         | Return None -> "return;" ^ (comp_comm t)
         | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
-        
+
+let check_generics ((p, rt) : fn_type) : etyp list= 
+    let rec check_generics_rt p' acc : etyp list = 
+        match p' with
+        [] -> acc
+        | s::t -> 
+            match s with
+            (_ , AbsTyp (a, b)) -> AbsTyp(a,b)::(check_generics_rt t acc)
+            | _ -> check_generics_rt t acc
+    in 
+    match rt with
+    AbsTyp _ -> check_generics_rt p (rt::[])
+    | _ -> check_generics_rt p []
+
+
+let rec generate_fn_generics (((id, (p, rt)), cl) : fn) (pm : etyp list) = 
+    failwith "Unimplemented"
 
 let comp_fn (((id, (p, rt)), cl) : fn) : string = 
     match id with 
     | "main" -> "void main() {" ^ (comp_comm cl) ^ "}"
-    | _ -> (string_of_gl_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (comp_comm cl) ^ "}"
+    | _ -> 
+        let pm = check_generics (p, rt) in
+        if List.length pm = 0 then 
+        (string_of_gl_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (comp_comm cl) ^ "}"
+        else generate_fn_generics ((id, (p, rt)), cl) pm
 
 let rec comp_fn_lst (f : fn list) : string =
     match f with 
@@ -136,7 +156,7 @@ let rec decl_attribs (p : TypedAst.params) : string =
             (attrib_type x) ^ " " ^ (string_of_gl_typ et) ^ " " ^ x ^ ";" ^ (decl_attribs t) else
             decl_attribs t
 
-let rec compile_program (prog : prog) (params: TypedAst.params) : string =
+let rec compile_program (prog : prog) (params : TypedAst.params) : string =
     "precision highp float;" ^ (decl_attribs params) ^ 
      (comp_fn_lst prog)
  

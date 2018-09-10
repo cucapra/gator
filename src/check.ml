@@ -68,7 +68,6 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parametrizat
             | Some p' ->  is_subtype to_check p' d pm 
             | None -> true (* todo *)
         else raise (TypeException ("AbsTyp " ^ s ^ " not found in parametrization"))
-    | (AppTyp (s1, t1), AppTyp (s2, t2)) -> s1 == s2
     | _ -> false
 
 let subsumes_to (to_check: tag_typ) (target: tag_typ) (d: delta) : bool =
@@ -367,7 +366,6 @@ and tag_erase (t : typ) (d : delta) (pm: parametrization) : TypedAst.etyp =
     | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
     | SamplerTyp i -> TypedAst.SamplerTyp i
     | AbsTyp s -> tag_erase_param t d pm 
-    | AppTyp (s, t) -> TypedAst.AppTyp (s, tag_erase t d pm)
     | GenTyp -> TypedAst.GenTyp
 
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
@@ -650,7 +648,6 @@ let check_return (t: typ) (d: delta) (g: gamma) (pm: parametrization) (p: phi) (
         | (AutoTyp, _) -> ()
         | (TransTyp (t1, t2), TransTyp (t3, t4)) -> 
             (is_tag_subtype t3 t1 d && is_tag_subtype t2 t4 d) |> raise_return_exception
-        | (AppTyp (s1, t1), AppTyp (s2, t2)) -> failwith "Unimplemented: appstyp"
         | (AbsTyp s1, AbsTyp s2) -> s1 != s2 |> raise_return_exception
         | _ -> false |> raise_return_exception
         )

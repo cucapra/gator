@@ -24,7 +24,6 @@ let rec string_of_typ (t: typ) : string =
     | TransTyp (s1, s2) -> (string_of_tag_typ s1) ^ "->" ^ (string_of_tag_typ s2)
     | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D"
     | AbsTyp s -> "`" ^ s
-    | AppTyp (string, typ) -> failwith "string_of_typ Unimplemented"(* type application *)
     | GenTyp -> "genTyp"
 
 let rec string_of_exp (e:exp) : string =
