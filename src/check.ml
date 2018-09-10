@@ -609,6 +609,8 @@ let check_return (t: typ) (d: delta) (g: gamma) (pm: parametrization) (p: phi) (
         | (AutoTyp, _) -> ()
         | (TransTyp (t1, t2), TransTyp (t3, t4)) -> 
             (is_tag_subtype t3 t1 d && is_tag_subtype t2 t4 d) |> raise_return_exception
+        | (AppTyp (s1, t1), AppTyp (s2, t2)) -> failwith "Unimplemented: appstyp"
+        | (AbsTyp s1, AbsTyp s2) -> s1 != s2 |> raise_return_exception
         | _ -> false |> raise_return_exception
         )
     | _ -> ()
