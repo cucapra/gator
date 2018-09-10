@@ -6,7 +6,7 @@ exception SyntaxError of string
 (* Regex definitons *)
 
 let white = [' ' '\t' '\n' '\r']+
-let num = ['0'-'9']+
+let num = ['-' '+']?['0'-'9']+
 let letter = ['a'-'z' 'A'-'Z']
 let mat = "mat" num ['x'] num
 let sampler = "sampler" num ['D']
