@@ -15,7 +15,7 @@ type gamma = (typ) Assoc.context
 type delta = (tag_typ) Assoc.context
 
 (* Function defs *)
-type phi = (fn_type list) Assoc.context
+type phi = (fn_type) Assoc.context
 
 let trans_top (n1: int) (n2: int) : typ =
     TransTyp ((BotTyp n1), (TopTyp n2))
@@ -416,23 +416,33 @@ and check_arr (d: delta) (g: gamma) (p: phi) (a: exp list) : (TypedAst.exp * typ
     | None ->  raise (TypeException ("Invalid array definition for " ^ (string_of_exp (Arr a)) ^ ", must be a matrix or vector")))
     
 
-and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string)
+and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (pml: typ list) 
  : (string * TypedAst.args) * typ =
     let args' = List.map (fun a -> check_exp a d g p) args in 
     let args_exp = List.map fst args' in 
     let args_typ = List.map snd args' in
-    let rec find_fn_inv (fns : fn_type list) : fn_type =
-        match fns with
-        | [] -> raise (TypeException ("No function matching the argument types " ^ 
-        (String.concat ", " (List.map string_of_typ args_typ)) ^ " for the function " ^ i ^ " found"))
-        | (params, rt, pr)::t -> 
+    (* find definition for function in phi *)
+    (* looks through overloaded all possible definitions of the function *)
+    let rec find_fn_inv (fn : fn_type) : fn_type =
+        match fn with
+        (* | _ -> raise (TypeException ("No function matching the argument types " ^ 
+        (String.concat ", " (List.map string_of_typ args_typ)) ^ " for the function " ^ i ^ " found")) *)
+        | (params, rt, pr) -> 
             let params_typ = List.map snd params in
+            let pr_typ = List.map fst pr in 
+            if List.length pr_typ == List.length pml then 
+                if List.fold_left2 (fun acc arg param -> 
+                acc && is_subtype arg param d)
+                true args_typ params_typ 
+                then () else raise (TypeException "parametrization types mismatch")
+            else failwith "number of parametrizations";
+            (* check number of arg and param types match *)
             if List.length args_typ == List.length params_typ then
                 if List.fold_left2 (fun acc arg param -> 
                 acc && is_subtype arg param d)
                 true args_typ params_typ 
-                then (params, rt, pr) else find_fn_inv t
-            else find_fn_inv t 
+                then (params, rt, pr) else raise (TypeException "parametrization arg type mismatch")
+            else raise (TypeException "parameterization param type mismatch")
     in
     let (_, rt, pr) = find_fn_inv (Assoc.lookup i p) in
     ((i, args_exp), rt)
@@ -549,24 +559,13 @@ let rec check_tags (t: tag_decl list) (d: delta): delta =
         )
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
-let check_fn_decl (d: delta) ((id, t): fn_decl) (p: phi) (no_dupes : bool) : phi =
-    let update_phi (name : string) (ft : fn_type) (p : phi) : phi =
-        let rec check_arg_dups (fns : fn_type list) : unit =
-            match fns with
-            | [] -> ()
-            | h::t -> ()
-        in
-        if not (Assoc.mem name p)
-        then Assoc.update name [ft] p
-        else let fns = Assoc.lookup name p in 
-        check_arg_dups fns; Assoc.update name (ft::(fns)) p
-    in
+let check_fn_decl (d: delta) ((id, t): fn_decl) (p: phi) : phi =
     debug_print ">> check_fn_decl";
     let (pl, _, _) = t in
     let _ = check_params pl d in 
-    if no_dupes && Assoc.mem id p 
+    if Assoc.mem id p 
     then raise (TypeException ("function of duplicate name has been found: " ^ id))
-    else update_phi id t p
+    else Assoc.update id t p
 
 (* Helper function for type checking void functions. 
  * Functions that return void can have any number of void return statements 
@@ -611,10 +610,9 @@ let rec check_fn (((id, (pl, r, pr)), cl): fn) (d: delta) (p: phi) : TypedAst.fn
     let p' = check_fn_decl d (id, (pl, r, pr)) p in 
     (* check that the last command is a return statement *)
     match r with
-    | UnitTyp -> List.iter check_void_return cl; ((((id, (pl', TypedAst.UnitTyp)), cl')), p' true)
+    | UnitTyp -> List.iter check_void_return cl; ((((id, (pl', TypedAst.UnitTyp)), cl')), p')
     (* TODO: might want to check that there is exactly one return statement at the end *)
-    | t -> List.iter (check_return t d g'' p) cl; ((((id, (pl', tag_erase t d)), cl')), p' true)
-
+    | t -> List.iter (check_return t d g'' p) cl; ((((id, (pl', tag_erase t d)), cl')), p')
 and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.prog * phi =
     debug_print ">> check_fn_lst";
     match fl with
@@ -626,16 +624,11 @@ and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.prog * phi =
 (* Check that there is a void main() defined *)
 let check_main_fn (p: phi) (d: delta) =
     debug_print ">> check_main_fn";
-    let main_fns = Assoc.lookup "main" p in
-    let rec check_main (fl: fn_type list) =
-        match fl with 
-        | [] -> raise (TypeException ("expected main function to return void"))
-        | (params, ret_type, parameterization)::t -> (
-            match ret_type with
-                | UnitTyp -> check_params params d |> fst
-                | _ -> check_main t
-        ) in 
-    check_main main_fns
+    let (params, ret_type, parameterization) = Assoc.lookup "main" p in 
+    match ret_type with
+        | UnitTyp -> check_params params d |> fst
+        | _ -> raise (TypeException ("expected main function to return void"))
+
 
 (* Returns the list of fn's which represent the program 
  * and params of the void main() fn *)
@@ -646,8 +639,8 @@ let check_prog (e: prog) : TypedAst.prog * TypedAst.params =
         (* delta from tag declarations *)
         let d = check_tags t Assoc.empty in 
         let p = List.fold_left 
-        (fun (a: phi) (dl': fn_decl) -> check_fn_decl d dl' a false)
-        Assoc.empty dl in
+            (fun (a: phi) (dl': fn_decl) -> check_fn_decl d dl' a) 
+            Assoc.empty dl in
         let (e', p') = check_fn_lst f d p in 
         let pr = check_main_fn p' d in 
         (e', pr)
