@@ -116,20 +116,20 @@ and comp_comm (c : comm list) : string =
         | Return None -> "return;" ^ (comp_comm t)
         | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
 
-let check_generics ((p, rt) : fn_type) : etyp list= 
-    let rec check_generics_rt p' acc : etyp list = 
+let check_generics ((p, rt) : fn_type) : (string * etyp option) list= 
+    let rec check_generics_rt p' acc : (string * etyp option) list = 
         match p' with
         [] -> acc
         | s::t -> 
             match s with
-            (_ , AbsTyp (a, b)) -> AbsTyp(a,b)::(check_generics_rt t acc)
+            (_ , AbsTyp (a, b)) -> (a,b)::(check_generics_rt t acc)
             | _ -> check_generics_rt t acc
     in 
     match rt with
-    AbsTyp _ -> check_generics_rt p (rt::[])
+    AbsTyp (s', e') -> check_generics_rt p ((s', e')::[])
     | _ -> check_generics_rt p []
 
-
+(* GenTyp - int, float, vec(2,3,4), mat(16 possibilites) *)
 let rec generate_fn_generics (((id, (p, rt)), cl) : fn) (pm : etyp list) = 
     failwith "Unimplemented"
 
