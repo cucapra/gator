@@ -47,10 +47,18 @@ let rec string_of_params (p: (id * typ) list) : string =
     | [] -> ""
     | (i1, t1)::t -> (string_of_typ t1) ^ " " ^ i1 ^ ", " ^ (string_of_params t)
 
-(* TODO: add stringifying fn declarations *)
+let rec string_of_parameterization (pm : parametrization) : string = 
+    match pm with 
+    | [] -> ""
+    | (t, None)::tl -> (string_of_typ t) ^ ", " ^ (string_of_parameterization tl)
+    | (t, Some t')::tl -> (string_of_typ t) ^ ":" ^ (string_of_typ t') ^", "^(string_of_parameterization tl)
+
+let string_of_fn_type ((p, r, pm): fn_type) : string = 
+    (string_of_typ r) ^ " <" ^ (string_of_parameterization pm) ^ ">" ^ "(" ^ (string_of_params p) ^ ")"
+
 let string_of_fn_decl (d: fn_decl) : string = 
     match d with
-    | (id, (p, r, _)) -> (string_of_typ r) ^ " " ^ id ^ " (" ^ (string_of_params p) ^ ")"
+    | (id, (p, r, pm)) -> (string_of_typ r) ^ " " ^ id ^ " <" ^ (string_of_parameterization pm) ^ ">" ^ " (" ^ (string_of_params p) ^ ")"
 
 let rec string_of_comm (c: comm) : string =
     match c with

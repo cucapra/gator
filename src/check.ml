@@ -383,6 +383,7 @@ let check_param ((id, t): (string * typ)) (g: gamma) (d: delta) : gamma =
     
 (* Get list of parameters from param list *)
 let check_params (pl : (id * typ) list) (d : delta) (pm : parametrization) : TypedAst.params * gamma = 
+    debug_print ">> check_params";
     let g = List.fold_left (fun (g: gamma) p -> check_param p g d) Assoc.empty pl in 
     let p = List.map (fun (i, t) -> (i, tag_erase t d pm)) pl in 
     (p, g)
@@ -677,10 +678,10 @@ and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.prog * phi =
 let check_main_fn (p: phi) (d: delta) =
     debug_print ">> check_main_fn";
     let (params, ret_type, parameterization) = Assoc.lookup "main" p in 
+    debug_print (">> check_main_fn_2" ^ (string_of_params params) ^ (string_of_parameterization parameterization));
     match ret_type with
         | UnitTyp -> check_params params d parameterization |> fst
         | _ -> raise (TypeException ("expected main function to return void"))
-
 
 (* Returns the list of fn's which represent the program 
  * and params of the void main() fn *)
