@@ -1,4 +1,8 @@
 version: 2
+general:
+  branches:
+    only:
+      - master # ignore development branches, only build master
 jobs:
   build:
     docker:
