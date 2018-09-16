@@ -489,12 +489,12 @@ and check_assign (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) (p: phi
         if not (Assoc.mem t' d) then raise (TypeException ("unknown tag " ^ t'))
     | _ -> ());
     let check_name regexp = if Str.string_match regexp s 0 then raise (TypeException ("Invalid variable name " ^ s)) in
-    check_name (Str.regexp "int");
-    check_name (Str.regexp "float");
-    check_name (Str.regexp "bool");
-    check_name (Str.regexp "vec[0-9]+");
-    check_name (Str.regexp "mat[0-9]+");
-    check_name (Str.regexp "mat[0-9]+x[0-9]+");
+    check_name (Str.regexp "int$");
+    check_name (Str.regexp "float$");
+    check_name (Str.regexp "bool$");
+    check_name (Str.regexp "vec[0-9]+$");
+    check_name (Str.regexp "mat[0-9]+$");
+    check_name (Str.regexp "mat[0-9]+x[0-9]+$");
     if Assoc.mem s d then 
         raise (TypeException ("variable " ^ s ^ " has the name of a tag"))
     else if Assoc.mem s p then

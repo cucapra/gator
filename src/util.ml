@@ -37,7 +37,7 @@ let string_of_unop (op: unop) (e: string) : string =
   match op with
   | Neg -> "-" ^ e
   | Not -> "!" ^ e
-  | Swizzle s -> "." ^ s
+  | Swizzle s -> e ^ "." ^ s
 let string_of_binop (op: binop) (left: string) (right: string) : string =
   let inline_op (op: string) : string =
       left ^ " " ^ op ^ " " ^ right

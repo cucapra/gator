@@ -1,0 +1,30 @@
+tag flatModel is vec3;
+tag model is vec3;
+tag modelHom is vec4;
+tag worldHom is vec4;
+tag cameraHom is vec4;
+tag projectiveHom is vec4;
+
+declare float sin(float x);
+
+void main (model aPosition, model aNormal, cameraHom->projectiveHom uProjection, worldHom->cameraHom uView, modelHom->worldHom uModel, float uTime, flatModel vPosition, flatModel vNormal) {
+    //http://www.lighthouse3d.com/tutorials/glsl-12-tutorial/flatten-shader/
+    model->flatModel flatten = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [.5*sin(aPosition.x + 100.*uTime), 0., 0.]
+    ];
+
+    flatModel->modelHom expand = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.],
+        [0., 0., 0.]
+    ];
+    modelHom expandScalar = [0., 0., 0., 1.];
+
+    vPosition = flatten * aPosition;
+    vNormal = flatten * aNormal;
+    modelHom->projectiveHom pvm = uProjection * uView * uModel;
+    projectiveHom gl_Position = pvm * (expand * (flatten * aPosition) + expandScalar);
+}

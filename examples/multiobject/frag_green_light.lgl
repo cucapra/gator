@@ -1,0 +1,4 @@
+void main(vec3 vPosition, vec3 vNormal) {
+    vec4 color = [0., 1., 0., 1.0];
+    vec4 gl_FragColor = color;
+}

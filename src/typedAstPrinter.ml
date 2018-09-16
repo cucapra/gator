@@ -44,7 +44,7 @@ let string_of_param (i, e) : string =
     (string_of_typ e) ^ " " ^ i
 
 let rec string_of_params (p: params) : string = 
-    (String.concat " " (List.map string_of_param p))
+    (String.concat ", " (List.map string_of_param p))
 
 let rec string_of_comm (c: comm) : string =
     match c with
@@ -54,7 +54,7 @@ let rec string_of_comm (c: comm) : string =
     | If ((b, _), c1, c2) -> "if (" ^ (string_of_exp b) ^ ") {\n" ^ (string_of_comm_list c1) ^
         "} else {\n" ^ (string_of_comm_list c2) ^ "}"
     | Assign (b, (x, _)) -> b ^ " = " ^ (string_of_exp x) ^ ";"
-    | Return Some (x, _) -> "return" ^ (string_of_exp x) ^ ";"
+    | Return Some (x, _) -> "return " ^ (string_of_exp x) ^ ";"
     | Return None -> "return;"
     | FnCall (id, args) -> id ^ "(" ^ (string_of_args args) ^")"
 

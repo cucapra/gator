@@ -1,0 +1,19 @@
+tag model is vec3;
+tag modelHom is vec4;
+tag world is vec3;
+tag worldHom is vec4;
+tag camera is vec3;
+tag cameraHom is vec4;
+tag color is vec3;
+tag alphaColor is vec4;
+
+declare float max(float f1, float f2);
+declare vec4 vec4(vec3 v, float f);
+declare float dot(vec3 v1, vec3 v2);
+declare vec3 normalize(vec3 v1); 
+
+void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView, 
+    world uRedLight, world uGreenLight, world uBlueLight,
+    model vRedLight, model vGreenLight, model vBlueLight) {
+    vec4 gl_FragColor = vec4(vPosition, 1.);
+}

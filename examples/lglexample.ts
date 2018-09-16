@@ -203,6 +203,7 @@ interface Mesh {
  */
 export function getMesh(gl: WebGLRenderingContext, obj: { cells: [number, number, number][], positions: [number, number, number][] }): Mesh {
   let norm = normals.vertexNormals(obj.cells, obj.positions);
+  console.log(obj.cells[0]);
 
   return {
     cells: make_buffer(gl, obj.cells, 'uint16', gl.ELEMENT_ARRAY_BUFFER),
@@ -289,6 +290,48 @@ function group_array<T>(a: T[], size: number) {
     out.push(a.slice(i, i + size));
   }
   return out;
+}
+
+/*
+ *  Get a Mesh object for a unit sphere with 'vertex_count' vertices
+ */
+export function getSphere(gl: WebGLRenderingContext, radius : number,  subdivisions: number) {
+  //https://arxiv.org/ftp/cs/papers/0701/0701164.pdf
+  let r = radius;
+
+  let midpoint = function(p1 : number, p2 : number) {
+    return (p1 + p2) / Math.abs(p1 + p2);
+  }
+
+  let subdivide = function(vertices : [number, number, number], depth : number) : 
+    {verts : [number, number, number][], cells : [number, number, number][]} {
+      if (depth <= 0)
+        return {verts : [vertices], cells : [[0, 1, 2]]}
+      let w0 = midpoint(vertices[1], vertices[2]);
+      let w1 = midpoint(vertices[0], vertices[2]);
+      let w2 = midpoint(vertices[0], vertices[1]);
+      return {verts : [vertices], cells : [[0, 1, 2]]}
+  }
+
+  let positions : [number, number, number][] = []
+  positions.push([0, 0, r])
+  positions.push([r, 0, 0])
+  positions.push([0, r, 0])
+  positions.push([-r, 0, 0])
+  positions.push([0, -r, 0])
+  positions.push([0, 0, -r])
+
+  let cells : [number, number, number][] = [];
+  cells.push([1, 5, 2]);
+  cells.push([2, 5, 3]);
+  cells.push([3, 5, 4]);
+  cells.push([4, 5, 1]);
+  cells.push([1, 0, 4]);
+  cells.push([4, 0, 3]);
+  cells.push([3, 0, 2]);
+  cells.push([2, 0, 1]);
+
+  return getMesh(gl, {cells: cells, positions : positions});
 }
 
 /**

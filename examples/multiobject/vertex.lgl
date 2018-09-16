@@ -1,0 +1,14 @@
+void main (vec3 aPosition, vec3 aNormal, vec3 uRedLight, vec3 uBlueLight, vec3 uGreenLight,
+  vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel, 
+  vec3 vPosition, vec3 vNormal) {
+    vec3->vec4 v3_v4 = [
+      [1., 0., 0.],
+      [0., 1., 0.],
+      [0., 0., 1.],
+      [0., 0., 0.]
+    ];
+
+    vPosition = aPosition;
+    vNormal = aNormal;
+    vec4 gl_Position = uProjection * uView * uModel * (v3_v4 * aPosition + [0., 0., 0., 1.]);
+}
