@@ -27,15 +27,18 @@ let is_core (var_name : string) : bool =
     var_name = "gl_Position" || var_name = "gl_FragColor"
 
 (* Note the column parameter for padding the matrix size *)
-let rec string_of_no_paren_vec (v: exp list) (padding: int) : string = 
-    (String.concat ", " (List.map comp_exp v)) ^ (repeat ", 0." padding)
+let string_of_no_paren_vec (v: vec) (padding: int) : string = 
+    debug_print ">> string_of_no_paren_vec";
+    (String.concat ", " (List.map string_of_float v)) ^ (repeat ", 0." padding)
   
-and string_of_mat_padded (m: exp list list) (max_dim: int) : string =
+let string_of_mat_padded (m: mat) (max_dim: int) : string =
+    debug_print ">> string_of_mat_padded";
     let string_of_vec_padded = (fun v -> (string_of_no_paren_vec v (max_dim - List.length v))) in
     ("(" ^ (String.concat ", " (List.map string_of_vec_padded m)) ^
     (repeat (string_of_no_paren_vec [] max_dim) (max_dim - List.length m)) ^ ")")
   
-and string_of_gl_mat (m: exp list list) : string = 
+let string_of_gl_mat (m: mat) : string = 
+    debug_print ">> string_of_gl_mat";
     (* Note the transpose to match the glsl column-oriented style *)
     let tm = Lin_ops.transpose m in
     let r = (List.length tm) in
@@ -43,13 +46,33 @@ and string_of_gl_mat (m: exp list list) : string =
     let dim = max r c in
     ("mat"^(string_of_int dim)^string_of_mat_padded tm dim)
 
-and string_of_gl_typ (t : etyp) : string =
+let string_of_gl_typ (t : etyp) : string =
+    debug_print ">> string_of_gl_typ";
     match t with
     | UnitTyp -> failwith "Unit type is unwriteable in glsl"
     | MatTyp (m, n) -> "mat" ^ string_of_int (max m n)
     | _ -> string_of_typ t
 
-and op_wrap (op : exp) : string =
+let attrib_type (var_name : string) : string =
+    debug_print ">> attrib_type";
+    if (String.get var_name 0) = 'a' then "attribute" else
+    (if (String.get var_name 0) = 'v' then "varying" else
+    (if (String.get var_name 0) = 'u' then "uniform" else
+    failwith "Not a supported glsl attribute"))
+
+(* Ignore original declarations of attributes and the like *)
+let check_name (var_name : string) : bool = 
+    debug_print ">> check_name";
+    let decl_reg = Str.regexp "[auv][A-Z]" in
+        Str.string_match decl_reg var_name 0
+
+(* Don't write the type of gl_Position or gl_FragColor *)
+let is_core (var_name : string) : bool = 
+    debug_print ">> is_core";
+    var_name = "gl_Position" || var_name = "gl_FragColor"
+
+let rec op_wrap (op : exp) : string =
+    debug_print ">> op_wrap";
     match op with
     | Val _
     | Var _ -> comp_exp op
@@ -57,6 +80,7 @@ and op_wrap (op : exp) : string =
 
 (* Handles the string shenanigans for padding during multiplication *)
 and padded_mult (left : texp) (right : texp) : string =
+    debug_print ">> padded_mult";
     (* Printf.printf "\t\t\t%s\n" (string_of_exp e);  *)
     match (left, right) with
     | ((le, lt), (re, rt)) -> (match (lt, rt) with
@@ -76,9 +100,14 @@ and padded_mult (left : texp) (right : texp) : string =
         | _ -> (op_wrap le) ^ " * " ^ (comp_exp re))
         
 and padded_args (a : exp list) : string = 
+    debug_print ">> padded_args";
     (String.concat ", " (List.map (op_wrap) a))
 
 and comp_exp (e : exp) : string =
+    debug_print "comp_exp";
+    let comp_arr (a: texp list) : string = 
+        "["^(String.concat ", " (List.map comp_exp (List.map fst a)))^"]"
+    in
     match e with
     | Val v -> string_of_value v
     | Var v -> v
@@ -97,6 +126,7 @@ and comp_exp (e : exp) : string =
     | FnInv (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
  
 and comp_comm (c : comm list) : string =
+    debug_print "comp_comm";
     match c with
     | [] -> ""
     | h::t -> match h with
@@ -116,7 +146,8 @@ and comp_comm (c : comm list) : string =
         | Return None -> "return;" ^ (comp_comm t)
         | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
 
-let check_generics ((p, rt) : fn_type) : (string * etyp option) list= 
+let check_generics ((p, rt) : fn_type) : (string * etyp option) list = 
+    debug_print "check_generics";
     let rec check_generics_rt p' acc : (string * etyp option) list = 
         match p' with
         [] -> acc
@@ -136,6 +167,7 @@ type delta = (etyp list) Assoc.context
 
 (* GenTyp - int, float, vec(2,3,4), mat(16 possibilites) *)
 let rec generate_fn_generics (((id, (p, rt)), cl) : fn) (pm : (string * etyp option) list) = 
+    debug_print "generate_fn_generics";
     let gens = Assoc.empty 
         |> Assoc.update "genType" [IntTyp; FloatTyp; MatTyp (1,1);
         MatTyp(2,1); MatTyp(3,1); MatTyp(4,1); VecTyp 2; VecTyp 3; VecTyp 4]
@@ -169,6 +201,7 @@ let rec generate_fn_generics (((id, (p, rt)), cl) : fn) (pm : (string * etyp opt
 
 
 let comp_fn (((id, (p, rt)), cl) : fn) : string = 
+    debug_print ">> comp_fn";
     match id with 
     | "main" -> "void main() {" ^ (comp_comm cl) ^ "}"
     | _ -> 
@@ -178,11 +211,13 @@ let comp_fn (((id, (p, rt)), cl) : fn) : string =
         else generate_fn_generics ((id, (p, rt)), cl) pm
 
 let rec comp_fn_lst (f : fn list) : string =
+    debug_print ">> comp_fn_lst";
     match f with 
     | [] -> ""
     | h::t -> (comp_fn h) ^ (comp_fn_lst t)
 
 let rec decl_attribs (p : TypedAst.params) : string = 
+    debug_print ">> decl_attribs";
     match p with
     | [] -> ""
     | h::t -> match h with
@@ -192,6 +227,7 @@ let rec decl_attribs (p : TypedAst.params) : string =
             decl_attribs t
 
 let rec compile_program (prog : prog) (params : TypedAst.params) : string =
+    debug_print ">> compile_program";
     "precision highp float;" ^ (decl_attribs params) ^ 
      (comp_fn_lst prog)
  

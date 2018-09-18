@@ -385,7 +385,9 @@ let check_param ((id, t): (string * typ)) (g: gamma) (d: delta) : gamma =
 let check_params (pl : (id * typ) list) (d : delta) (pm : parametrization) : TypedAst.params * gamma = 
     debug_print ">> check_params";
     let g = List.fold_left (fun (g: gamma) p -> check_param p g d) Assoc.empty pl in 
+    debug_print ">> check_params2";
     let p = List.map (fun (i, t) -> (i, tag_erase t d pm)) pl in 
+    debug_print ">> check_params3";
     (p, g)
 
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parametrization) : TypedAst.texp = 
@@ -696,4 +698,7 @@ let check_prog (e: prog) : TypedAst.prog * TypedAst.params =
             Assoc.empty dl in
         let (e', p') = check_fn_lst f d p in 
         let pr = check_main_fn p' d in 
+        debug_print "===================";
+        debug_print "Type Check Complete";
+        debug_print "===================\n";
         (e', pr)
