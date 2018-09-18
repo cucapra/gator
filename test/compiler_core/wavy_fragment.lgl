@@ -17,13 +17,13 @@ alphaColor alpha(color c, float f) {
     return cta * c + [0., 0., 0., f];
 }
 
-void main(model vPosition, model vNormal, world uLight, modelHom->worldHom uModel) {   
+void main(model vPosition, model vNormal, world uLight, modelHom->worldHom uModel, worldHom->cameraHom uView) {   
     model->modelHom extendModel = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [0., 0., 0.]];
 
     worldHom->world collapseWorld = [[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.]];
 
     model norm = normalize(vNormal);
-    float intensity = dot(normalize(uLight), collapseWorld * uModel * (extendModel * norm));
+    float intensity = dot(normalize(uLight), collapseWorld * uModel * extendModel * norm);
     color baseColor = [1.0, .5, .5];
     if (intensity <= .2) {
         baseColor = baseColor * .2;

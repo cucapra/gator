@@ -334,6 +334,19 @@ export function getSphere(gl: WebGLRenderingContext, radius : number,  subdivisi
   return getMesh(gl, {cells: cells, positions : positions});
 }
 
+export function getSquare(gl: WebGLRenderingContext, width: number) {
+  let positions : [number, number, number][] = [];
+  positions.push([width, 0, 0]);
+  positions.push([0, width, 0]);
+  positions.push([0, -width, 0]);
+  positions.push([-width, 0, 0]);
+  let cells : [number, number, number][] = [];
+  cells.push([0, 1, 2]);
+  cells.push([3, 1, 2]);
+
+  return getMesh(gl, {cells: cells, positions: positions});
+}
+
 /**
  * Get a Mesh object for the Stanford bunny.
  */

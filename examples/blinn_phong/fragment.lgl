@@ -107,7 +107,7 @@ void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView,
     float lambertian = 0.0;
     float lDot = dot (worldNormal, lightDir);
     bool lDotCheck = (0. <= lDot);
-    if (lDotCheck) { 
+    if (lDotCheck) {
         lambertian = lDot; 
     } else { 
         skip; 
