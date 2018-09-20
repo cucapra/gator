@@ -104,7 +104,7 @@ and padded_args (a : exp list) : string =
     (String.concat ", " (List.map (op_wrap) a))
 
 and comp_exp (e : exp) : string =
-    debug_print "comp_exp";
+    debug_print ">> comp_exp";
     let comp_arr (a: texp list) : string = 
         "["^(String.concat ", " (List.map comp_exp (List.map fst a)))^"]"
     in
@@ -126,7 +126,7 @@ and comp_exp (e : exp) : string =
     | FnInv (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
  
 and comp_comm (c : comm list) : string =
-    debug_print "comp_comm";
+    debug_print ">> comp_comm";
     match c with
     | [] -> ""
     | h::t -> match h with
@@ -147,7 +147,7 @@ and comp_comm (c : comm list) : string =
         | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
 
 let check_generics ((p, rt) : fn_type) : (string * etyp option) list = 
-    debug_print "check_generics";
+    debug_print ">> check_generics";
     let rec check_generics_rt p' acc : (string * etyp option) list = 
         match p' with
         [] -> acc
@@ -167,7 +167,7 @@ type delta = (etyp list) Assoc.context
 
 (* GenTyp - int, float, vec(2,3,4), mat(16 possibilites) *)
 let rec generate_fn_generics (((id, (p, rt)), cl) : fn) (pm : (string * etyp option) list) = 
-    debug_print "generate_fn_generics";
+    debug_print (">> generate_fn_generics " ^ id);
     let gens = Assoc.empty 
         |> Assoc.update "genType" [IntTyp; FloatTyp; MatTyp (1,1);
         MatTyp(2,1); MatTyp(3,1); MatTyp(4,1); VecTyp 2; VecTyp 3; VecTyp 4]
@@ -178,19 +178,25 @@ let rec generate_fn_generics (((id, (p, rt)), cl) : fn) (pm : (string * etyp opt
     let rec replace_generic (orig: string) : string = 
         match pm with
         | [] -> orig
-        | (s', None)::t -> let con = Assoc.lookup s' gens in 
+        | (s', None)::t -> 
+            debug_print ">> generate_fn_generics1";
+            let con = Assoc.lookup s' gens in 
             let rec replace_generic_helper c =
                 match c with 
                 [] -> ""
                 | s''::t -> Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ s'') orig ^ (replace_generic_helper t)
             in replace_generic_helper con
-        | (s', Some (AbsTyp (s'', e'')))::t -> let con = Assoc.lookup s'' gens in 
+        | (s', Some (AbsTyp (s'', e'')))::t -> 
+            debug_print ">> generate_fn_generics2";
+            let con = Assoc.lookup s'' gens in 
             let rec replace_generic_helper c =
                 match c with 
                 [] -> ""
                 | s'''::t -> Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ s''') orig ^ (replace_generic_helper t)
             in replace_generic_helper con
-        | (s', Some (GenTyp))::t -> let con = Assoc.lookup "genType" gens in 
+        | (s', Some (GenTyp))::t -> 
+            debug_print ">> generate_fn_generics3";
+            let con = Assoc.lookup "genType" gens in 
             let rec replace_generic_helper c =
                 match c with 
                 [] -> ""
