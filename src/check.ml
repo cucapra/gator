@@ -165,6 +165,43 @@ let check_typ_exp (t: typ) (d: delta) : unit =
     | TransTyp (s1, s2) -> check_tag_typ s1 d; check_tag_typ s2 d; ()
     | _ -> failwith "check_typ_exp Unimplemented"
 
+let etyp_to_typ (e : TypedAst.etyp) : typ =
+    match e with 
+    | TypedAst.UnitTyp -> UnitTyp
+    | TypedAst.BoolTyp -> BoolTyp
+    | TypedAst.IntTyp -> IntTyp
+    | TypedAst.FloatTyp -> FloatTyp
+    | TypedAst.VecTyp n -> TagTyp(BotTyp n)
+    | TypedAst.MatTyp (n1, n2) -> TransTyp(BotTyp n1, BotTyp n2)
+    | TypedAst.SamplerTyp n -> SamplerTyp n
+    | TypedAst.AbsTyp (s, _) -> AbsTyp s
+    | TypedAst.GenTyp -> GenTyp
+
+let rec tag_erase_param (t: typ) (d: delta) (pm: parametrization) : TypedAst.etyp = 
+    match t with 
+    AbsTyp s -> if List.mem_assoc t pm then 
+        let p = (List.assoc t pm) in 
+        match p with 
+        Some e -> TypedAst.AbsTyp (s, Some (tag_erase e d pm))
+        | None -> TypedAst.AbsTyp (s, None)
+        else raise (TypeException ("AbsTyp " ^ s ^ " was not found in function parametrization definition"))
+    | _ -> tag_erase t d pm 
+
+and tag_erase (t : typ) (d : delta) (pm: parametrization) : TypedAst.etyp =
+    debug_print ">> tag_erase";
+    match t with
+    | UnitTyp -> TypedAst.UnitTyp
+    | BoolTyp -> TypedAst.BoolTyp
+    | IntTyp -> TypedAst.IntTyp
+    | FloatTyp -> TypedAst.FloatTyp
+    | TagTyp tag -> (match tag with
+        | TopTyp n
+        | BotTyp n -> TypedAst.VecTyp n
+        | VarTyp _ -> TypedAst.VecTyp (vec_dim tag d))
+    | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
+    | SamplerTyp i -> TypedAst.SamplerTyp i
+    | AbsTyp s -> tag_erase_param t d pm 
+    | GenTyp -> TypedAst.GenTyp
 
 (* "scalar linear exp", (i.e. ctimes) returns generalized MatTyp *)
 let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) : typ = 
@@ -266,7 +303,7 @@ let check_dot_exp (t1: typ) (t2: typ) (d: delta): typ =
 
 (* Type checking addition operations on scalar (int, float) expressions *)
 (* Types are closed under addition and scalar multiplication *)
-let check_addition_exp (t1: typ) (t2: typ) (d: delta) : typ =
+let check_addition_exp (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ =
     debug_print ">> check_addition";
     match (t1, t2) with 
     | IntTyp, IntTyp -> IntTyp
@@ -276,6 +313,17 @@ let check_addition_exp (t1: typ) (t2: typ) (d: delta) : typ =
     | TagTyp a1, TagTyp a2 -> TagTyp (least_common_parent a1 a2 d)
     | TransTyp (m1, m2), TransTyp (m3, m4) -> 
         TransTyp (greatest_common_child m1 m3 d, least_common_parent m2 m4 d)
+    (* TODO - etyp conversion before abstyp comparison*)
+    | AbsTyp a, AbsTyp a' -> 
+        if a = a' 
+        then 
+        begin
+            match tag_erase_param t1 d pm with
+            AbsTyp (_, Some t) -> etyp_to_typ t
+            | _ -> failwith "unexpected reach in addition" 
+        end
+        else (raise (TypeException ("invalid expressions for addition: "
+        ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))))
     | _ -> 
         (raise (TypeException ("invalid expressions for addition: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))))
@@ -320,7 +368,7 @@ let check_times_exp (t1: typ) (t2: typ) (d: delta) : typ =
 (* Type checking division operations (/) *)
 (* Types are closed under scalar division *)
 let check_division_exp (t1: typ) (t2: typ) (d: delta) : typ =
-    debug_print ">> check_addition";
+    debug_print ">> check_division";
     match (t1, t2) with 
     | IntTyp, IntTyp -> IntTyp
     | FloatTyp, IntTyp
@@ -333,7 +381,7 @@ let check_division_exp (t1: typ) (t2: typ) (d: delta) : typ =
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))))
 
 let check_index_exp (t1: typ) (t2: typ) (d: delta) : typ =
-    debug_print ">> check_addition";
+    debug_print ">> check_index_exp";
     match (t1, t2) with 
     | TagTyp t, IntTyp -> FloatTyp
     | TransTyp (u, v), IntTyp -> TagTyp (TopTyp (vec_dim v d))
@@ -341,32 +389,6 @@ let check_index_exp (t1: typ) (t2: typ) (d: delta) : typ =
         (raise (TypeException ("invalid expressions for division: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))))
 
-
-let rec tag_erase_param (t: typ) (d: delta) (pm: parametrization) : TypedAst.etyp = 
-    match t with 
-    AbsTyp s -> if List.mem_assoc t pm then 
-        let p = (List.assoc t pm) in 
-        match p with 
-        Some e -> TypedAst.AbsTyp (s, Some (tag_erase e d pm))
-        | None -> TypedAst.AbsTyp (s, None)
-        else raise (TypeException ("AbsTyp " ^ s ^ " was not found in function parametrization definition"))
-    | _ -> raise (TypeException ("found unexpected non-abstraction type for parameterization"))
-
-and tag_erase (t : typ) (d : delta) (pm: parametrization) : TypedAst.etyp =
-    debug_print ">> tag_erase";
-    match t with
-    | UnitTyp -> TypedAst.UnitTyp
-    | BoolTyp -> TypedAst.BoolTyp
-    | IntTyp -> TypedAst.IntTyp
-    | FloatTyp -> TypedAst.FloatTyp
-    | TagTyp tag -> (match tag with
-        | TopTyp n
-        | BotTyp n -> TypedAst.VecTyp n
-        | VarTyp _ -> TypedAst.VecTyp (vec_dim tag d))
-    | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
-    | SamplerTyp i -> TypedAst.SamplerTyp i
-    | AbsTyp s -> tag_erase_param t d pm 
-    | GenTyp -> TypedAst.GenTyp
 
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
 let check_param ((id, t): (string * typ)) (g: gamma) (d: delta) : gamma = 
@@ -392,7 +414,7 @@ let check_params (pl : (id * typ) list) (d : delta) (pm : parametrization) : Typ
 
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parametrization) : TypedAst.texp = 
     ((fst checked_exp), (tag_erase (snd checked_exp) d pm))
-
+    
 let rec check_exp (e : exp) (d : delta) (g : gamma) (pm : parametrization) (p : phi) : TypedAst.exp * typ = 
     debug_print ">> check_exp";
     let build_unop (op : unop) (e': exp) (check_fun: typ->delta->typ)
@@ -400,12 +422,15 @@ let rec check_exp (e : exp) (d : delta) (g : gamma) (pm : parametrization) (p : 
         let result = check_exp e' d g pm p in
             (TypedAst.Unop(op, exp_to_texp result d pm), check_fun (snd result) d)
     in
-    let build_binop (op : binop) (e1: exp) (e2: exp) (check_fun: typ->typ->delta->typ)
+    let build_binop (op : binop) (e1: exp) (e2: exp) (check_fun: typ->typ->delta->parametrization->typ) (pm: parametrization)
         : TypedAst.exp * typ =
         let e1r = check_exp e1 d g pm p in
         let e2r = check_exp e2 d g pm p in
-            (TypedAst.Binop(op, exp_to_texp e1r d pm, exp_to_texp e2r d pm), check_fun (snd e1r) (snd e2r) d)
+            (TypedAst.Binop(op, exp_to_texp e1r d pm, exp_to_texp e2r d pm), check_fun (snd e1r) (snd e2r) d pm)
     in 
+    let req_parametrizations (f: typ->typ->delta->typ) : typ->typ->delta->parametrization->typ =
+        fun a b c d -> f a b c
+    in
     match e with
     | Val v -> (TypedAst.Val v, check_val v d)
     | Var v -> "\tVar "^v |> debug_print;
@@ -416,14 +441,14 @@ let rec check_exp (e : exp) (d : delta) (g : gamma) (pm : parametrization) (p : 
         | Not -> build_unop op e' check_bool_unop
         | Swizzle s -> build_unop op e' (check_swizzle s))
     | Binop (op, e1, e2) -> (match op with
-        | Eq -> build_binop op e1 e2 check_equality_exp
-        | Leq -> build_binop op e1 e2 check_comp_binop
-        | Or | And -> build_binop op e1 e2 check_bool_binop
-        | Plus | Minus -> build_binop op e1 e2 check_addition_exp
-        | Times -> build_binop op e1 e2 check_times_exp
-        | Div  -> build_binop op e1 e2 check_division_exp
-        | CTimes -> build_binop op e1 e2 check_ctimes_exp
-        | Index -> build_binop op e1 e2 check_index_exp
+        | Eq -> build_binop op e1 e2 (req_parametrizations check_equality_exp) pm
+        | Leq -> build_binop op e1 e2 (req_parametrizations check_comp_binop) pm
+        | Or | And -> build_binop op e1 e2 (req_parametrizations check_bool_binop) pm
+        | Plus | Minus -> build_binop op e1 e2 check_addition_exp pm
+        | Times -> build_binop op e1 e2 (req_parametrizations check_times_exp) pm
+        | Div  -> build_binop op e1 e2 (req_parametrizations check_division_exp) pm
+        | CTimes -> build_binop op e1 e2 (req_parametrizations check_ctimes_exp) pm
+        | Index -> build_binop op e1 e2 (req_parametrizations check_index_exp) pm
     )
     | FnInv (i, args, pr) -> let ((i, args_exp), rt) = check_fn_inv d g p args i pr pm in 
         (FnInv (i, args_exp), rt)
