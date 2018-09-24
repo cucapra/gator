@@ -1,0 +1,309 @@
+
+>> check_prog
+>> check_tags
+>> check_tag
+>> check_tags
+>> check_tag
+>> check_tags
+>> check_tag
+>> check_tags
+>> check_fn_decl : dot
+>> check_fn_decl : normalize
+>> check_fn_lst
+>> check_fn : normed_dot
+>> check_params
+>> check_param
+>> check_param
+>> check_params2
+>> tag_erase
+>> tag_erase
+>> tag_erase
+>> tag_erase
+>> check_params3
+>> check_comm_lst
+>> check_comm
+>> check_exp
+>> check_exp
+	Var x
+>> is_subtype`t, `t
+>> is_subtype`t, `t
+>> check_decl <<normx>>
+>> tag_erase
+>> tag_erase
+>> tag_erase
+>> tag_erase
+>> check_comm_lst
+>> check_comm
+>> check_exp
+>> check_exp
+	Var y
+>> is_subtype`t, `t
+>> is_subtype`t, `t
+>> check_decl <<normy>>
+>> tag_erase
+>> tag_erase
+>> tag_erase
+>> tag_erase
+>> check_comm_lst
+>> check_comm
+>> check_exp
+>> check_exp
+	Var normx
+>> check_exp
+	Var normy
+>> is_subtype`t, `t
+>> is_subtype`t, `t
+>> is_subtype`t, `t
+>> is_subtype`t, `t
+>> tag_erase
+>> check_comm_lst
+>> check_fn_decl : normed_dot
+>> check_return
+>> check_return
+>> check_return
+>> check_exp
+>> check_exp
+	Var normx
+>> check_exp
+	Var normy
+>> is_subtype`t, `t
+>> is_subtype`t, `t
+>> is_subtype`t, `t
+>> is_subtype`t, `t
+>> tag_erase
+>> check_fn_lst
+>> check_fn : main
+>> check_params
+>> check_params2
+>> check_params3
+>> check_comm_lst
+>> check_comm
+>> check_exp
+>> check_aval
+>> check_decl <<vert>>
+>> vec_dim
+>> vec_dim
+>> vec_dim
+>> vec_dim
+>> tag_erase
+>> tag_erase
+>> vec_dim
+>> vec_dim
+>> check_comm_lst
+>> check_comm
+>> check_exp
+>> check_aval
+>> check_decl <<unitx>>
+>> vec_dim
+>> vec_dim
+>> vec_dim
+>> vec_dim
+>> tag_erase
+>> tag_erase
+>> vec_dim
+>> vec_dim
+>> check_comm_lst
+>> check_comm
+>> check_exp
+>> check_aval
+>> check_decl <<red>>
+>> vec_dim
+>> vec_dim
+>> vec_dim
+>> vec_dim
+>> tag_erase
+>> tag_erase
+>> vec_dim
+>> vec_dim
+>> check_comm_lst
+>> check_comm
+>> check_exp
+>> check_aval
+>> check_decl <<purple>>
+>> vec_dim
+>> vec_dim
+>> vec_dim
+>> vec_dim
+>> tag_erase
+>> tag_erase
+>> vec_dim
+>> vec_dim
+>> check_comm_lst
+>> check_comm
+>> check_exp
+>> check_aval
+>> check_decl <<tred>>
+>> vec_dim
+>> vec_dim
+>> vec_dim
+>> vec_dim
+>> vec_dim
+>> vec_dim
+>> tag_erase
+>> tag_erase
+>> vec_dim
+>> vec_dim
+>> vec_dim
+>> check_comm_lst
+>> check_comm
+>> check_exp
+>> check_exp
+	Var vert
+>> check_exp
+	Var unitx
+>> is_subtypepos, `t
+>> is_subtypepos, genTyp
+>> is_subtypepos, `t
+>> is_subtypepos, genTyp
+>> is_subtypepos, `t
+>> is_subtypepos, genTyp
+>> is_subtypepos, `t
+>> is_subtypepos, genTyp
+>> tag_erase
+>> check_comm_lst
+>> check_comm
+>> check_exp
+>> check_exp
+	Var purple
+>> check_exp
+	Var tred
+>> is_subtypecolor, `t
+>> is_subtypecolor, genTyp
+>> is_subtypetinted, `t
+>> is_subtypetinted, genTyp
+>> is_subtypecolor, `t
+>> is_subtypecolor, genTyp
+>> is_subtypetinted, `t
+>> is_subtypetinted, genTyp
+>> tag_erase
+>> check_comm_lst
+>> check_comm
+>> check_exp
+>> check_exp
+	Var vert
+>> is_subtypepos, `t
+>> is_subtypepos, genTyp
+>> is_subtypepos, `t
+>> is_subtypepos, genTyp
+>> check_decl <<norm_vert>>
+>> vec_dim
+>> vec_dim
+>> vec_dim
+>> vec_dim
+>> tag_erase
+>> vec_dim
+>> vec_dim
+>> tag_erase
+>> vec_dim
+>> vec_dim
+>> check_comm_lst
+>> check_comm
+>> check_exp
+>> check_exp
+	Var red
+>> check_exp
+	Var tred
+>> is_subtypecolor, `t
+>> is_subtypecolor, genTyp
+>> is_subtypetinted, `t
+>> is_subtypetinted, genTyp
+>> is_subtypecolor, `t
+>> is_subtypecolor, genTyp
+>> is_subtypetinted, `t
+>> is_subtypetinted, genTyp
+>> tag_erase
+>> check_comm_lst
+>> check_fn_decl : main
+>> check_void_return
+>> check_void_return
+>> check_void_return
+>> check_void_return
+>> check_void_return
+>> check_void_return
+>> check_void_return
+>> check_void_return
+>> check_void_return
+>> check_fn_lst
+>> check_main_fn
+>> check_main_fn_2
+>> check_params
+>> check_params2
+>> check_params3
+===================
+Type Check Complete
+===================
+
+>> compile_program
+>> comp_fn_lst
+>> comp_fn_lst
+>> comp_fn_lst
+>> comp_fn
+>> comp_comm
+>> check_name
+>> is_core
+>> comp_comm
+>> check_name
+>> is_core
+>> comp_comm
+>> check_name
+>> is_core
+>> comp_comm
+>> check_name
+>> is_core
+>> comp_comm
+>> check_name
+>> is_core
+>> comp_comm
+>> comp_comm
+>> comp_comm
+>> check_name
+>> is_core
+>> comp_comm
+>> comp_comm
+>> comp_exp
+>> padded_args
+>> op_wrap
+>> comp_exp
+>> string_of_gl_typ
+>> comp_exp
+>> string_of_gl_typ
+>> comp_exp
+>> string_of_gl_typ
+>> comp_exp
+>> string_of_gl_typ
+>> comp_exp
+>> string_of_gl_typ
+>> comp_exp
+>> string_of_gl_typ
+>> comp_fn
+>> check_generics
+>> generate_fn_generics normed_dot
+>> comp_comm
+>> check_name
+>> is_core
+>> comp_comm
+>> check_name
+>> is_core
+>> comp_comm
+>> comp_comm
+>> comp_exp
+>> padded_args
+>> op_wrap
+>> comp_exp
+>> string_of_gl_typ
+>> comp_exp
+>> padded_args
+>> op_wrap
+>> comp_exp
+>> string_of_gl_typ
+>> string_of_gl_typ
+>> generate_fn_generics3
+>> string_of_gl_typ
+>> string_of_gl_typ
+>> string_of_gl_typ
+>> string_of_gl_typ
+>> string_of_gl_typ
+>> string_of_gl_typ
+>> string_of_gl_typ
+>> string_of_gl_typ
+>> decl_attribsprecision highp float;float normed_dot(int x int y){int normx = normalize(x);int normy = normalize(y);return dot(normx, normy);}float normed_dot(float x float y){float normx = normalize(x);float normy = normalize(y);return dot(normx, normy);}float normed_dot(mat2 x mat2 y){mat2 normx = normalize(x);mat2 normy = normalize(y);return dot(normx, normy);}float normed_dot(mat3 x mat3 y){mat3 normx = normalize(x);mat3 normy = normalize(y);return dot(normx, normy);}float normed_dot(mat4 x mat4 y){mat4 normx = normalize(x);mat4 normy = normalize(y);return dot(normx, normy);}float normed_dot(vec2 x vec2 y){vec2 normx = normalize(x);vec2 normy = normalize(y);return dot(normx, normy);}float normed_dot(vec3 x vec3 y){vec3 normx = normalize(x);vec3 normy = normalize(y);return dot(normx, normy);}float normed_dot(vec4 x vec4 y){vec4 normx = normalize(x);vec4 normy = normalize(y);return dot(normx, normy);}void main() {vec3 vert = vec3(1., 1., 1.);vec3 unitx = vec3(1., 0., 0.);vec3 red = vec3(1., 0., 0.);vec3 purple = vec3(0.5, 0., 0.5);vec3 tred = vec3(1., 0., 0.2);vec3 norm_vert = normalize(vert);}

@@ -28,13 +28,15 @@ let rec vec_dim (t: tag_typ) (d: delta) : int =
     match t with
     | TopTyp n
     | BotTyp n -> n
-    | VarTyp s -> try vec_dim (Assoc.lookup s d) d with _ -> failwith (string_of_tag_typ t)
+    | VarTyp s -> begin try vec_dim (Assoc.lookup s d) d with _ -> failwith (string_of_tag_typ t) end
+    | AbsTyp s -> failwith "Unimplemented"
 
 let rec get_ancestor_list (t: tag_typ) (d: delta) : id list =
     match t with 
     | TopTyp _ -> []
     | BotTyp _ -> raise (TypeException "Bad failure -- Ancestor list somehow includes the bottom type")
     | VarTyp s -> s :: (get_ancestor_list (Assoc.lookup s d) d)
+    | AbsTyp s -> failwith "Unimplemented"
 
 let is_tag_subtype (to_check: tag_typ) (target: tag_typ) (d: delta) : bool =
     match (to_check, target) with
@@ -46,6 +48,7 @@ let is_tag_subtype (to_check: tag_typ) (target: tag_typ) (d: delta) : bool =
     | VarTyp _, VarTyp s2 -> List.mem s2 (get_ancestor_list to_check d)
     | VarTyp s, TopTyp n -> n = (vec_dim to_check d)
     | TopTyp _, _ -> false
+    | _, _ -> failwith "Unimplemented"
 
 let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parametrization): bool =
     debug_print (">> is_subtype" ^ (string_of_typ to_check) ^ ", " ^(string_of_typ target));
@@ -104,6 +107,7 @@ let least_common_parent (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
         check_dim (vec_dim (VarTyp s1) d) (vec_dim (VarTyp s2) d);
         (if s1 = s2 then VarTyp s1
         else VarTyp (lub (get_ancestor_list t1 d) (get_ancestor_list t2 d)))
+    | _ -> failwith "Unimplemented"
 
 let greatest_common_child (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
     let check_dim (n1: int) (n2: int) : unit =
@@ -123,12 +127,15 @@ let greatest_common_child (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
     | BotTyp n1, VarTyp s ->
         check_dim (vec_dim (VarTyp s) d) n1; BotTyp n1
     | VarTyp s1, VarTyp s2 ->
-        let bot_dim = vec_dim (VarTyp s1) d in
-        check_dim bot_dim (vec_dim (VarTyp s2) d);
-        (* This works since each tag can only have one parent *)
-        (if subsumes_to t1 t2 d then t1
-        else if subsumes_to t2 t1 d then t2
-        else BotTyp bot_dim)
+        begin
+            let bot_dim = vec_dim (VarTyp s1) d in
+            check_dim bot_dim (vec_dim (VarTyp s2) d);
+            (* This works since each tag can only have one parent *)
+            (if subsumes_to t1 t2 d then t1
+            else if subsumes_to t2 t1 d then t2
+            else BotTyp bot_dim)
+        end
+    | _ -> failwith "Unimplemented"
 
 let check_val (v: value) (d: delta) : typ = 
     debug_print ">> check_aval";
@@ -152,6 +159,7 @@ let check_tag_typ (tag: tag_typ) (d: delta) : unit =
         else raise (TypeException "Cannot declare a type with dimension less than 0"))
     | VarTyp s -> (if Assoc.mem s d then ()
         else raise (TypeException ("Undeclared tag" ^ s)))
+    | _ -> failwith "Unimplemented"
 
 let check_typ_exp (t: typ) (d: delta) : unit =
     debug_print ">> check_typ";
@@ -196,10 +204,14 @@ and tag_erase (t : typ) (d : delta) (pm: parametrization) : TypedAst.etyp =
     | BoolTyp -> TypedAst.BoolTyp
     | IntTyp -> TypedAst.IntTyp
     | FloatTyp -> TypedAst.FloatTyp
-    | TagTyp tag -> (match tag with
-        | TopTyp n
-        | BotTyp n -> TypedAst.VecTyp n
-        | VarTyp _ -> TypedAst.VecTyp (vec_dim tag d))
+    | TagTyp tag -> 
+        begin
+            match tag with
+            | TopTyp n
+            | BotTyp n -> TypedAst.VecTyp n
+            | VarTyp _ -> TypedAst.VecTyp (vec_dim tag d)
+            | _ -> failwith "Unimplemented"
+        end
     | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
     | SamplerTyp i -> TypedAst.SamplerTyp i
     | AbsTyp s -> tag_erase_param t d pm 
