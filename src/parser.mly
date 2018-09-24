@@ -214,10 +214,6 @@ typ:
         TopTyp (int_of_string(List.nth dim_lst 0)))}
   | x1 = tagtyp; TRANS; x2 = tagtyp 
       { TransTyp(x1,x2) }
-  | BACKTICK; e = ID; TRANS; x = tagtyp
-      { TransTyp(AbsTyp(e), x) }
-  | x = tagtyp; TRANS; BACKTICK; e = ID
-      { TransTyp(x, AbsTyp(e)) }
   | e = tagtyp                      
       { TagTyp(e) }
   | s = SAMPLER                     
@@ -236,6 +232,8 @@ tagtyp:
         let dim = String.sub x 3 (len-3)in
         TopTyp (int_of_string(dim))
         ) else (VarTyp x) }
+  | BACKTICK; e = ID
+      { TAbsTyp(e) }
 ;
 
 value:

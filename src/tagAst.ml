@@ -7,7 +7,7 @@ type tag_typ =
     | TopTyp of int
     | BotTyp of int
     | VarTyp of id
-    | AbsTyp of string
+    | TAbsTyp of string
 
 (* types *)
 type typ =

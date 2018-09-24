@@ -29,9 +29,10 @@ let rec vec_dim (t: tag_typ) (d: delta) : int =
     | TopTyp n
     | BotTyp n -> n
     | VarTyp s -> begin try vec_dim (Assoc.lookup s d) d with _ -> failwith (string_of_tag_typ t) end
-    | AbsTyp s -> failwith "Unimplemented" (* tag_erase_param t d pm *)
+    | TAbsTyp s -> raise (TypeException ("Cannot give dimension of an abstract type"))
 
 and tag_erase_param (t: typ) (d: delta) (pm: parametrization) : TypedAst.etyp = 
+    debug_print ">> tag_erase_param";
     match t with 
     AbsTyp s -> if List.mem_assoc t pm then 
         let p = (List.assoc t pm) in 
@@ -54,7 +55,7 @@ and tag_erase (t : typ) (d : delta) (pm: parametrization) : TypedAst.etyp =
             | TopTyp n
             | BotTyp n -> TypedAst.VecTyp n
             | VarTyp _ -> TypedAst.VecTyp (vec_dim tag d)
-            | _ -> failwith "Unimplemented"
+            | _ -> failwith "Unimplemented tag_erase"
         end
     | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
     | SamplerTyp i -> TypedAst.SamplerTyp i
@@ -62,13 +63,15 @@ and tag_erase (t : typ) (d : delta) (pm: parametrization) : TypedAst.etyp =
     | GenTyp -> TypedAst.GenTyp
 
 let rec get_ancestor_list (t: tag_typ) (d: delta) : id list =
+    debug_print ">> get_ancestor_list";
     match t with 
     | TopTyp _ -> []
     | BotTyp _ -> raise (TypeException "Bad failure -- Ancestor list somehow includes the bottom type")
     | VarTyp s -> s :: (get_ancestor_list (Assoc.lookup s d) d)
-    | AbsTyp s -> failwith "Unimplemented"
+    | TAbsTyp s -> failwith "Unimplemented get_ancestor_list"
 
 let is_tag_subtype (to_check: tag_typ) (target: tag_typ) (d: delta) : bool =
+    debug_print ">> is_tag_subtype";
     match (to_check, target) with
     | BotTyp n1, BotTyp n2
     | BotTyp n1, TopTyp n2
@@ -78,7 +81,9 @@ let is_tag_subtype (to_check: tag_typ) (target: tag_typ) (d: delta) : bool =
     | VarTyp _, VarTyp s2 -> List.mem s2 (get_ancestor_list to_check d)
     | VarTyp s, TopTyp n -> n = (vec_dim to_check d)
     | TopTyp _, _ -> false
-    | _, _ -> failwith "Unimplemented"
+    | TAbsTyp s1, TAbsTyp s2 -> s1 = s2 (* TODO : more than string equality *)
+    | TAbsTyp _, _ 
+    | _, TAbsTyp _ -> true
 
 let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parametrization): bool =
     debug_print (">> is_subtype" ^ (string_of_typ to_check) ^ ", " ^(string_of_typ target));
@@ -105,11 +110,13 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parametrizat
     | _ -> false
 
 let subsumes_to (to_check: tag_typ) (target: tag_typ) (d: delta) : bool =
+    debug_print ">> subsumes_to";
     match (to_check, target) with
     | VarTyp s, TopTyp n -> false (* Cannot upcast a variable to the toptyp *)
     | _ -> is_tag_subtype to_check target d
 
 let least_common_parent (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
+    debug_print ">> least_common_parent";
     let check_dim (n1: int) (n2: int) : unit =
         if n1 = n2 then () else (raise (DimensionException (n1, n2)))
     in
@@ -137,9 +144,10 @@ let least_common_parent (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
         check_dim (vec_dim (VarTyp s1) d) (vec_dim (VarTyp s2) d);
         (if s1 = s2 then VarTyp s1
         else VarTyp (lub (get_ancestor_list t1 d) (get_ancestor_list t2 d)))
-    | _ -> failwith "Unimplemented"
+    | _ -> failwith "Unimplemented least_common_parent"
 
 let greatest_common_child (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
+    debug_print "greatest_common_child";
     let check_dim (n1: int) (n2: int) : unit =
         if n1 = n2 then () else (raise (DimensionException (n1, n2)))
     in
@@ -165,7 +173,7 @@ let greatest_common_child (t1: tag_typ) (t2: tag_typ) (d: delta) : tag_typ =
             else if subsumes_to t2 t1 d then t2
             else BotTyp bot_dim)
         end
-    | _ -> failwith "Unimplemented"
+    | _ -> failwith "Unimplemented greatest_common_child"
 
 let check_val (v: value) (d: delta) : typ = 
     debug_print ">> check_aval";
@@ -183,13 +191,14 @@ let check_val (v: value) (d: delta) : typ =
     | _ -> raise (TypeException ("Unexpected typechecker value " ^ (string_of_value v)))
 
 let check_tag_typ (tag: tag_typ) (d: delta) : unit =
+    debug_print "check_tag_typ";
     match tag with
     | TopTyp n
     | BotTyp n -> (if (n > 0) then ()
         else raise (TypeException "Cannot declare a type with dimension less than 0"))
     | VarTyp s -> (if Assoc.mem s d then ()
         else raise (TypeException ("Undeclared tag" ^ s)))
-    | _ -> failwith "Unimplemented"
+    | _ -> failwith "Unimplemented check_tag_typ"
 
 let check_typ_exp (t: typ) (d: delta) : unit =
     debug_print ">> check_typ";
@@ -202,9 +211,10 @@ let check_typ_exp (t: typ) (d: delta) : unit =
     | SamplerTyp _ -> ()
     | TagTyp s -> check_tag_typ s d; ()
     | TransTyp (s1, s2) -> check_tag_typ s1 d; check_tag_typ s2 d; ()
-    | _ -> failwith "check_typ_exp Unimplemented"
+    | _ -> failwith "Check_typ_exp Unimplemented"
 
 let rec etyp_to_typ (e : TypedAst.etyp) : typ =
+    debug_print ">> etyp_to_typ";
     match e with 
     | TypedAst.UnitTyp -> UnitTyp
     | TypedAst.BoolTyp -> BoolTyp
@@ -218,7 +228,6 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     | TypedAst.GenTyp -> GenTyp
 
 
-
 (* "scalar linear exp", (i.e. ctimes) returns generalized MatTyp *)
 let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) : typ = 
     debug_print ">> check_scalar_linear_exp";
@@ -228,26 +237,27 @@ let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) : typ =
         let right = (vec_dim m2 d) in
         if left = (vec_dim m3 d) && right = (vec_dim m4 d)
         then trans_top left right
-        else (raise (TypeException "dimension mismatch in ctimes operator"))
+        else (raise (TypeException "Dimension mismatch in ctimes operator"))
     | TagTyp l, TagTyp r -> (
         check_tag_typ l d; check_tag_typ r d;
         let ldim = vec_dim l d in
         let rdim = vec_dim r d in 
         if ldim = rdim 
         then TagTyp (TopTyp (vec_dim l d))
-        else (raise (TypeException "dimension mismatch in ctimes operator"))
+        else (raise (TypeException "Dimension mismatch in ctimes operator"))
     )
-    | _ -> (raise (TypeException ("expected linear types for ctimes operator, found: "^(string_of_typ t1)^", "^(string_of_typ t2))))
+    | _ -> (raise (TypeException ("Expected linear types for ctimes operator, found: "^(string_of_typ t1)^", "^(string_of_typ t2))))
 
 (* Type check norm expressions *)
 let rec check_norm_exp (t: typ) (d: delta) : typ = 
     debug_print ">> check_norm_exp";
     match t with
     | TagTyp a -> t
-    | _ -> (raise (TypeException "expected linear type for norm operator"))
+    | _ -> (raise (TypeException "Expected linear type for norm operator"))
 
 (* Type check binary bool operators (i.e. &&, ||) *)
 let check_bool_binop (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ = 
+    debug_print ">> check_bool_binop";
     let check_bool_abs t =
         match tag_erase_param t d pm with
         AbsTyp (_, None) -> true
@@ -266,11 +276,11 @@ let check_bool_binop (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ =
     | AbsTyp a, BoolTyp
     | BoolTyp, AbsTyp a -> 
         if check_bool_abs t1 then BoolTyp
-        else raise (TypeException "expected boolean expression for binop")
+        else raise (TypeException "Expected boolean expression for binop")
     | AbsTyp a, AbsTyp a' ->
         if check_bool_abs t1 && check_bool_abs t2 then BoolTyp
-        else raise (TypeException "expected boolean expression for binop")
-    | _ -> raise (TypeException "expected boolean expression for binop")
+        else raise (TypeException "Expected boolean expression for binop")
+    | _ -> raise (TypeException "Expected boolean expression for binop")
 
 (* Type check unary number operators (i.e. -) *)
 let check_num_unop (t1: typ) (d: delta) : typ =
@@ -280,21 +290,21 @@ let check_num_unop (t1: typ) (d: delta) : typ =
     | FloatTyp
     | TagTyp _
     | TransTyp _ -> t1
-    | _ -> raise (TypeException "expected integer, float, vector, or matrix expression")
+    | _ -> raise (TypeException "Expected integer, float, vector, or matrix expression")
 
 (* Type check unary bool operators (i.e. !) *)
 let check_bool_unop (t1: typ) (d: delta) : typ =
     debug_print ">> check_bool_unop";
     match t1 with 
     | BoolTyp -> BoolTyp
-    | _ -> raise (TypeException "expected boolean expression")
+    | _ -> raise (TypeException "Expected boolean expression")
 
 (* Type check unary bool operators (i.e. !) *)
 let check_swizzle (s : id) (t1: typ) (d: delta) : typ =
     debug_print ">> check_swizzle";
     let check_reg valid_set = if Str.string_match valid_set s 0 
         then if String.length s == 1 then FloatTyp else TagTyp (TopTyp (String.length s))
-        else raise (TypeException ("invalid characters used for swizzling in " ^ s)) in
+        else raise (TypeException ("Invalid characters used for swizzling in " ^ s)) in
     let valid_length_1 = Str.regexp "[xrs]+" in
     let valid_length_2 = Str.regexp "[xyrgst]+" in
     let valid_length_3 = Str.regexp "[xyzrgbstp]+" in
@@ -306,8 +316,8 @@ let check_swizzle (s : id) (t1: typ) (d: delta) : typ =
         if dim == 2 then check_reg valid_length_2 else
         if dim == 3 then check_reg valid_length_3 else
         if dim >= 4 then check_reg valid_length_4 else
-        raise (TypeException "cannot swizzle a vector of length 0")
-    | _ -> raise (TypeException "expected boolean expression")
+        raise (TypeException "Cannot swizzle a vector of length 0")
+    | _ -> raise (TypeException "Expected boolean expression")
 
 (* Type check equality (==) *)
 (* Only bool, int, float are comparable *)
@@ -317,7 +327,7 @@ let check_equality_exp (t1: typ) (t2: typ) (d: delta) : typ =
     | BoolTyp, BoolTyp -> BoolTyp
     | IntTyp, IntTyp -> BoolTyp
     | FloatTyp, FloatTyp -> BoolTyp
-    | _ -> raise (TypeException "unexpected type for binary comparator operations")
+    | _ -> raise (TypeException "Unexpected type for binary comparator operations")
 
 (* Type check comparative binary operators (i.e. <. <=) *)
 (* Only int and float are comparable *)
@@ -326,15 +336,16 @@ let check_comp_binop (t1: typ) (t2: typ) (d: delta) : typ =
     match (t1, t2) with
     | IntTyp, IntTyp -> BoolTyp
     | FloatTyp, FloatTyp -> BoolTyp
-    | _ -> raise (TypeException "unexpected type for binary comparator operations")
+    | _ -> raise (TypeException "Unexpected type for binary comparator operations")
 
 let check_dot_exp (t1: typ) (t2: typ) (d: delta): typ = 
+    debug_print "check_dot_exp";
     match (t1, t2) with 
     | TagTyp a1, TagTyp a2 ->  
         if subsumes_to a1 a2 d || subsumes_to a2 a1 d
         then FloatTyp 
-        else raise (TypeException "expected tag type of same dimension for dot product exp")
-    | _ -> raise (TypeException "unexpected type for dot product exp")
+        else raise (TypeException "Expected tag type of same dimension for dot product exp")
+    | _ -> raise (TypeException "Unexpected type for dot product exp")
 
 (* Type checking addition operations on scalar (int, float) expressions *)
 (* Types are closed under addition and scalar multiplication *)
@@ -355,12 +366,12 @@ let check_addition_exp (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ
             begin
                 match tag_erase_param t1 d pm with
                 AbsTyp (_, Some t) -> etyp_to_typ t
-                | _ -> failwith "unexpected reach in addition" 
+                | _ -> failwith "Unexpected reach in addition" 
             end
-        else (raise (TypeException ("invalid expressions for addition: "
+        else (raise (TypeException ("Invalid expressions for addition: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))))
     | _ -> 
-        (raise (TypeException ("invalid expressions for addition: "
+        (raise (TypeException ("Invalid expressions for addition: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))))
 
 (* Type checking times operator - on scalar mult & matrix transformations *)
@@ -371,7 +382,7 @@ let check_times_exp (t1: typ) (t2: typ) (d: delta) : typ =
     | FloatTyp, IntTyp
     | IntTyp, FloatTyp
     | FloatTyp, FloatTyp -> FloatTyp
-    | (TagTyp _, TagTyp _) -> raise (TypeException "cannot multiply vectors together")
+    | (TagTyp _, TagTyp _) -> raise (TypeException "Cannot multiply vectors together")
 
     (* Scalar Multiplication *)
     | IntTyp, TagTyp t
@@ -412,7 +423,7 @@ let check_division_exp (t1: typ) (t2: typ) (d: delta) : typ =
     | TagTyp a, IntTyp
     | TagTyp a, FloatTyp -> TagTyp a
     | _ -> 
-        (raise (TypeException ("invalid expressions for division: "
+        (raise (TypeException ("Invalid expressions for division: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))))
 
 let check_index_exp (t1: typ) (t2: typ) (d: delta) : typ =
@@ -421,7 +432,7 @@ let check_index_exp (t1: typ) (t2: typ) (d: delta) : typ =
     | TagTyp t, IntTyp -> FloatTyp
     | TransTyp (u, v), IntTyp -> TagTyp (TopTyp (vec_dim v d))
     | _ -> 
-        (raise (TypeException ("invalid expressions for division: "
+        (raise (TypeException ("Invalid expressions for division: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))))
 
 
@@ -429,7 +440,7 @@ let check_index_exp (t1: typ) (t2: typ) (d: delta) : typ =
 let check_param ((id, t): (string * typ)) (g: gamma) (d: delta) : gamma = 
     debug_print ">> check_param";
     if Assoc.mem id g 
-    then raise (TypeException ("duplicate parameter name in function declaration: " ^ id))
+    then raise (TypeException ("Duplicate parameter name in function declaration: " ^ id))
     else (
         match t with
         TagTyp (VarTyp v) -> 
@@ -442,12 +453,11 @@ let check_param ((id, t): (string * typ)) (g: gamma) (d: delta) : gamma =
 let check_params (pl : (id * typ) list) (d : delta) (pm : parametrization) : TypedAst.params * gamma = 
     debug_print ">> check_params";
     let g = List.fold_left (fun (g: gamma) p -> check_param p g d) Assoc.empty pl in 
-    debug_print ">> check_params2";
     let p = List.map (fun (i, t) -> (i, tag_erase t d pm)) pl in 
-    debug_print ">> check_params3";
     (p, g)
 
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parametrization) : TypedAst.texp = 
+    debug_print ">> exp_to_texp";
     ((fst checked_exp), (tag_erase (snd checked_exp) d pm))
     
 let rec check_exp (e : exp) (d : delta) (g : gamma) (pm : parametrization) (p : phi) : TypedAst.exp * typ = 
@@ -489,6 +499,7 @@ let rec check_exp (e : exp) (d : delta) (g : gamma) (pm : parametrization) (p : 
         (FnInv (i, args_exp), rt)
         
 and check_arr (d : delta) (g : gamma) (p : phi) (a : exp list) (pm : parametrization) : (TypedAst.exp * typ) =
+    debug_print ">> check_arr";
     let is_vec (v: TypedAst.texp list) : bool =
         List.fold_left (fun acc (_, t) -> match t with
             | TypedAst.IntTyp | TypedAst.FloatTyp -> acc | _ -> false) true v
@@ -510,6 +521,7 @@ and check_arr (d : delta) (g : gamma) (p : phi) (a : exp list) (pm : parametriza
 
 and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (pml: typ list) (pm' : parametrization)
  : (string * TypedAst.args) * typ =    
+    debug_print ">> check_fn_inv";
     let (_, rt, pm) = 
         if Assoc.mem i p
         then Assoc.lookup i p
@@ -529,8 +541,8 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
             true args_typ params_typ 
             then 
             ()
-            else raise (TypeException ("parametrization types mismatch for " ^ (string_of_typ (pr_typ |> List.hd) )))
-        else raise (TypeException "mismatched number of parametrizations");
+            else raise (TypeException ("Parametrization types mismatch for " ^ (string_of_typ (pr_typ |> List.hd) )))
+        else raise (TypeException "Mismatched number of parametrizations");
         (* check number of arg and param types match *)
         if List.length args_typ == List.length params_typ then
             if List.fold_left2 (fun acc arg param -> 
@@ -547,7 +559,7 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
         ( match (pm'', pml'') with 
         | ([], []) -> raise (TypeException "abstraction type not found in function definition")
         | (AbsTyp s, _)::t, (at::t') -> if r = s then at else (rt_map t t' r)
-        | _ -> raise (TypeException "expected abstraction type for parametrization") ) 
+        | _ -> raise (TypeException "Expected abstraction type for parametrization") ) 
     in 
     let rt = match rt with
         | AbsTyp rt' -> rt_map pm pml rt'
@@ -555,7 +567,7 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
     in
     let (_, _, _) = 
         if Assoc.mem i p then find_fn_inv (Assoc.lookup i p) 
-        else raise (TypeException ("function not found: " ^ i)) in
+        else raise (TypeException ("Function not found: " ^ i)) in
     ((i, args_exp), rt)
 
 and check_comm (c: comm) (d: delta) (g: gamma) (pm: parametrization) (p: phi) : TypedAst.comm * gamma = 
@@ -565,7 +577,7 @@ and check_comm (c: comm) (d: delta) (g: gamma) (pm: parametrization) (p: phi) : 
     | Print e -> (
         let (e, t) = exp_to_texp (check_exp e d g pm p) d pm in 
         match t with
-        | UnitTyp -> raise (TypeException "print function cannot print void types")
+        | UnitTyp -> raise (TypeException "Print function cannot print void types")
         | _ -> (TypedAst.Print (e, t), g)
     )
     | Decl (t, s, e) ->
@@ -578,14 +590,14 @@ and check_comm (c: comm) (d: delta) (g: gamma) (pm: parametrization) (p: phi) : 
                 | TransTyp (TopTyp _, BotTyp _) -> raise (TypeException "Cannot infer the type of a matrix literal")
                 | t' -> t')
             | _ -> t) in
-        (TypedAst.Decl (tag_erase t' d, s, (exp_to_texp result d)), (check_assign t' s (snd result) d g p))
+        (TypedAst.Decl (tag_erase t' d pm, s, (exp_to_texp result d pm)), (check_assign t' s (snd result) d g p))
 
     | Assign (s, e) ->
         if Assoc.mem s g then
             let t = Assoc.lookup s g in
             let result = check_exp e d g pm p in
             (TypedAst.Assign (s, (exp_to_texp result d pm)), check_assign t s (snd result) d g p)
-        else raise (TypeException "assignment to undeclared variable")
+        else raise (TypeException "Assignment to undeclared variable")
 
     | If (b, c1, c2) ->
         let result = (check_exp b d g pm p) in
@@ -593,7 +605,7 @@ and check_comm (c: comm) (d: delta) (g: gamma) (pm: parametrization) (p: phi) : 
         let c2r = check_comm_lst c2 d g pm p in
         (match (snd result) with 
         | BoolTyp -> (TypedAst.If ((exp_to_texp result d pm), (fst c1r), (fst c2r)), g)
-        | _ -> raise (TypeException "expected boolean expression for if condition"))
+        | _ -> raise (TypeException "Expected boolean expression for if condition"))
     | Return Some e ->
         let (e, t) = exp_to_texp (check_exp e d g pm p) d pm in
         (TypedAst.Return (Some (e, t)), g)
@@ -612,15 +624,17 @@ and check_comm_lst (cl : comm list) (d: delta) (g: gamma) (pm : parametrization)
 and check_assign (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) (p: phi) : gamma =
     debug_print (">> check_assign <<"^s^">>");
     (* Check that t, if not a core type, is a registered tag *)
-    (match t with
+    begin
+    match t with
     | TransTyp (VarTyp t1, VarTyp t2) -> if not (Assoc.mem t1 d)
-        then raise (TypeException ("unknown tag " ^ t2))
+        then raise (TypeException ("Unknown tag " ^ t2))
         else if not (Assoc.mem t2 d) then raise (TypeException ("unknown tag " ^ t1))
     | TagTyp (VarTyp t')
     | TransTyp (VarTyp t', _)
     | TransTyp (_, VarTyp t') ->
         if not (Assoc.mem t' d) then raise (TypeException ("unknown tag " ^ t'))
-    | _ -> ());
+    | _ -> ()
+    end;
     let check_name regexp = if Str.string_match regexp s 0 then raise (TypeException ("Invalid variable name " ^ s)) in
     check_name (Str.regexp "int$");
     check_name (Str.regexp "float$");
@@ -629,10 +643,11 @@ and check_assign (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) (p: phi
     check_name (Str.regexp "mat[0-9]+$");
     check_name (Str.regexp "mat[0-9]+x[0-9]+$");
     if Assoc.mem s d then 
-        raise (TypeException ("variable " ^ s ^ " has the name of a tag"))
+        raise (TypeException ("Variable " ^ s ^ " has the name of a tag"))
     else if Assoc.mem s p then
-        raise (TypeException ("variable " ^ s ^ " has the name of a function"))
-    else (
+        raise (TypeException ("Variable " ^ s ^ " has the name of a function"))
+    else
+        begin 
         match (t, etyp) with
         | (BoolTyp, BoolTyp)
         | (IntTyp, IntTyp)
@@ -641,19 +656,19 @@ and check_assign (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) (p: phi
         | (TagTyp t1, TagTyp t2) -> 
             least_common_parent t1 t2 d |> ignore;
             if subsumes_to t2 t1 d then Assoc.update s t g
-            else raise (TypeException ("mismatched linear type for var decl: " ^ s))
+            else raise (TypeException ("Mismatched linear type for var decl: " ^ s))
         | (TransTyp (t1, t2), TransTyp (t3, t4)) ->
             if is_tag_subtype t1 t3 d && is_tag_subtype t4 t2 d then Assoc.update s t g
-            else raise (TypeException ("no possible upcast for var decl: " ^ s))
+            else raise (TypeException ("No possible upcast for var decl: " ^ s))
         | (AbsTyp s1, AbsTyp s2) -> 
             if s1 = s2 then Assoc.update s t g
-            else raise (TypeException ("abstraction type for var decl for " ^ s ^ " mismatched"))
-        | _ -> raise (TypeException ("mismatched types for var decl for " ^ s ^  ": expected " ^ (string_of_typ t) ^ ", found " ^ (string_of_typ etyp)))
-    )
+            else raise (TypeException ("Abstraction type for var decl for " ^ s ^ " mismatched"))
+        | _ -> raise (TypeException ("Mismatched types for var decl for " ^ s ^  ": expected " ^ (string_of_typ t) ^ ", found " ^ (string_of_typ etyp)))
+        end
 
 let check_tag (s: string) (l: tag_typ) (d: delta) : delta = 
     debug_print ">> check_tag";
-    if Assoc.mem s d then raise (TypeException "cannot redeclare tag")
+    if Assoc.mem s d then raise (TypeException "Cannot redeclare tag")
             else Assoc.update s l d
 
 let rec check_tags (t: tag_decl list) (d: delta): delta =
@@ -667,18 +682,18 @@ let rec check_tags (t: tag_decl list) (d: delta): delta =
             match l with 
             | VarTyp s' -> (
                 if Assoc.mem s' d then check_tag s l d |> check_tags t
-                else raise (TypeException "tag undefined")
+                else raise (TypeException "Tag undefined")
             )
             | _ -> check_tag s l d |> check_tags t
         )
-        | _ -> raise (TypeException "expected linear type for tag declaration")
+        | _ -> raise (TypeException "Expected linear type for tag declaration")
 
 let check_fn_decl (d: delta) ((id, t): fn_decl) (p: phi) : phi =
     debug_print (">> check_fn_decl : " ^ id);
     let (pl, _, _) = t in
     let _ = check_params pl d in 
     if Assoc.mem id p 
-    then raise (TypeException ("function of duplicate name has been found: " ^ id))
+    then raise (TypeException ("Function of duplicate name has been found: " ^ id))
     else Assoc.update id t p
 
 (* Helper function for type checking void functions. 
@@ -687,19 +702,19 @@ let check_fn_decl (d: delta) ((id, t): fn_decl) (p: phi) : phi =
 let check_void_return (c: comm) =
     debug_print ">> check_void_return";
     match c with
-    | Return Some _ -> raise (TypeException ("void functions cannot return a value"))
+    | Return Some _ -> raise (TypeException ("Void functions cannot return a value"))
     | _ -> ()
 
 let check_return (t: typ) (d: delta) (g: gamma) (pm: parametrization) (p: phi) (c: comm) = 
     debug_print ">> check_return";
     match c with
-    | Return None -> raise (TypeException ("expected a return value instead of void"))
+    | Return None -> raise (TypeException ("Expected a return value instead of void"))
     | Return Some r -> (
         let (_, rt) = check_exp r d g pm p in
         (* raises return exception of given boolean exp is false *)
         let raise_return_exception b =
             if b then () 
-            else raise (TypeException ("mismatched return types, expected: " ^ 
+            else raise (TypeException ("Mismatched return types, expected: " ^ 
             (string_of_typ t) ^ ", found: " ^ (string_of_typ rt)))
         in
         match (t, rt) with
@@ -743,7 +758,7 @@ let check_main_fn (p: phi) (d: delta) =
     debug_print (">> check_main_fn_2" ^ (string_of_params params) ^ (string_of_parameterization parameterization));
     match ret_type with
         | UnitTyp -> check_params params d parameterization |> fst
-        | _ -> raise (TypeException ("expected main function to return void"))
+        | _ -> raise (TypeException ("Expected main function to return void"))
 
 (* Returns the list of fn's which represent the program 
  * and params of the void main() fn *)
