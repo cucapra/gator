@@ -40,7 +40,7 @@ To simulate a Linguine-compiled shader on your browser:
 
 For example:
 
-    $ make run src=lighting
+    $ make run src=phong
 
 You can run the compiler by passing the `*.lgl` source file as an argument to `lingc`.
 For example:
