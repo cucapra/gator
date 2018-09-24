@@ -218,7 +218,7 @@ let check_val (v: value) (d: delta) : typ =
     | _ -> raise (TypeException ("Unexpected typechecker value " ^ (string_of_value v)))
 
 let check_tag_typ (tag: tag_typ) (d: delta) : unit =
-    debug_print "check_tag_typ";
+    debug_print ">> check_tag_typ";
     match tag with
     | TopTyp n
     | BotTyp n -> (if (n > 0) then ()
@@ -252,8 +252,8 @@ let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) (pm : parametrization): typ 
         else (raise (TypeException "Dimension mismatch in ctimes operator"))
     | TagTyp l, TagTyp r -> (
         check_tag_typ l d; check_tag_typ r d;
-        let ldim = vec_dim l d in
-        let rdim = vec_dim r d in 
+        let ldim = vec_dim l d pm in
+        let rdim = vec_dim r d pm in 
         if ldim = rdim 
         then TagTyp (TopTyp (vec_dim l d pm))
         else (raise (TypeException "Dimension mismatch in ctimes operator"))
