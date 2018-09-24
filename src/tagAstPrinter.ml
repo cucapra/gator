@@ -12,7 +12,7 @@ let string_of_tag_typ (t: tag_typ) : string =
     | TopTyp n -> "vec"^(string_of_int n)
     | BotTyp n -> "vec"^(string_of_int n)^"lit"
     | VarTyp s -> s
-    | _ -> failwith "Unimplemented string_of_tag_typ"
+    | TAbsTyp s -> "`"^s
 
 let rec string_of_typ (t: typ) : string = 
     match t with

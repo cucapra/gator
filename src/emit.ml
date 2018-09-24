@@ -39,11 +39,8 @@ let string_of_mat_padded (m: mat) (max_dim: int) : string =
   
 let string_of_gl_mat (m: mat) : string = 
     debug_print ">> string_of_gl_mat";
-    (* Note the transpose to match the glsl column-oriented style *)
     let tm = Lin_ops.transpose m in
-    let r = (List.length tm) in
-    let c = (if r = 0 then 0 else List.length (List.hd tm)) in
-    let dim = max r c in
+    let dim = get_mat_square_dim m in
     ("mat"^(string_of_int dim)^string_of_mat_padded tm dim)
 
 let string_of_gl_typ (t : etyp) : string =
