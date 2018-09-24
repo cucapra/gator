@@ -1,1 +1,0 @@
-precision highp float;int id(int t){return t;}float id(float t){return t;}mat2 id(mat2 t){return t;}mat3 id(mat3 t){return t;}mat4 id(mat4 t){return t;}vec2 id(vec2 t){return t;}vec3 id(vec3 t){return t;}vec4 id(vec4 t){return t;}void main() {float f = id(1.);}

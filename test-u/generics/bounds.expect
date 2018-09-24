@@ -1,1 +1,0 @@
-precision highp float;vec2 add_op(vec2 x vec2 y){return x + y;}int id(int x){return x;}float id(float x){return x;}mat2 id(mat2 x){return x;}mat3 id(mat3 x){return x;}mat4 id(mat4 x){return x;}vec2 id(vec2 x){return x;}vec3 id(vec3 x){return x;}vec4 id(vec4 x){return x;}void main() {}

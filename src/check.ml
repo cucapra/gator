@@ -29,7 +29,37 @@ let rec vec_dim (t: tag_typ) (d: delta) : int =
     | TopTyp n
     | BotTyp n -> n
     | VarTyp s -> begin try vec_dim (Assoc.lookup s d) d with _ -> failwith (string_of_tag_typ t) end
-    | AbsTyp s -> failwith "Unimplemented"
+    | AbsTyp s -> failwith "Unimplemented" (* tag_erase_param t d pm *)
+
+and tag_erase_param (t: typ) (d: delta) (pm: parametrization) : TypedAst.etyp = 
+    match t with 
+    AbsTyp s -> if List.mem_assoc t pm then 
+        let p = (List.assoc t pm) in 
+        match p with 
+        Some e -> TypedAst.AbsTyp (s, Some (tag_erase e d pm))
+        | None -> TypedAst.AbsTyp (s, None)
+        else raise (TypeException ("AbsTyp " ^ s ^ " was not found in function parametrization definition"))
+    | _ -> tag_erase t d pm 
+
+and tag_erase (t : typ) (d : delta) (pm: parametrization) : TypedAst.etyp =
+    debug_print ">> tag_erase";
+    match t with
+    | UnitTyp -> TypedAst.UnitTyp
+    | BoolTyp -> TypedAst.BoolTyp
+    | IntTyp -> TypedAst.IntTyp
+    | FloatTyp -> TypedAst.FloatTyp
+    | TagTyp tag -> 
+        begin
+            match tag with
+            | TopTyp n
+            | BotTyp n -> TypedAst.VecTyp n
+            | VarTyp _ -> TypedAst.VecTyp (vec_dim tag d)
+            | _ -> failwith "Unimplemented"
+        end
+    | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
+    | SamplerTyp i -> TypedAst.SamplerTyp i
+    | AbsTyp s -> tag_erase_param t d pm 
+    | GenTyp -> TypedAst.GenTyp
 
 let rec get_ancestor_list (t: tag_typ) (d: delta) : id list =
     match t with 
@@ -187,35 +217,7 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     | TypedAst.AbsTyp (s, Some e') -> etyp_to_typ e'
     | TypedAst.GenTyp -> GenTyp
 
-let rec tag_erase_param (t: typ) (d: delta) (pm: parametrization) : TypedAst.etyp = 
-    match t with 
-    AbsTyp s -> if List.mem_assoc t pm then 
-        let p = (List.assoc t pm) in 
-        match p with 
-        Some e -> TypedAst.AbsTyp (s, Some (tag_erase e d pm))
-        | None -> TypedAst.AbsTyp (s, None)
-        else raise (TypeException ("AbsTyp " ^ s ^ " was not found in function parametrization definition"))
-    | _ -> tag_erase t d pm 
 
-and tag_erase (t : typ) (d : delta) (pm: parametrization) : TypedAst.etyp =
-    debug_print ">> tag_erase";
-    match t with
-    | UnitTyp -> TypedAst.UnitTyp
-    | BoolTyp -> TypedAst.BoolTyp
-    | IntTyp -> TypedAst.IntTyp
-    | FloatTyp -> TypedAst.FloatTyp
-    | TagTyp tag -> 
-        begin
-            match tag with
-            | TopTyp n
-            | BotTyp n -> TypedAst.VecTyp n
-            | VarTyp _ -> TypedAst.VecTyp (vec_dim tag d)
-            | _ -> failwith "Unimplemented"
-        end
-    | TransTyp (s1, s2) -> TypedAst.MatTyp ((vec_dim s2 d), (vec_dim s1 d))
-    | SamplerTyp i -> TypedAst.SamplerTyp i
-    | AbsTyp s -> tag_erase_param t d pm 
-    | GenTyp -> TypedAst.GenTyp
 
 (* "scalar linear exp", (i.e. ctimes) returns generalized MatTyp *)
 let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) : typ = 
