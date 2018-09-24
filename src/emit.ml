@@ -165,12 +165,27 @@ let check_generics ((p, rt) : fn_type) : (string * etyp option) list =
 type delta = (etyp list) Assoc.context
 
 
+let rec get_parametrization_generic_types (p: etyp option) = 
+    match p with
+    | None -> [IntTyp; FloatTyp; MatTyp(2,1); MatTyp(3,1); MatTyp(4,1); 
+            VecTyp 2; VecTyp 3; VecTyp 4; BoolTyp; SamplerTyp 2; SamplerTyp 3]
+    | Some GenTyp -> [IntTyp; FloatTyp; MatTyp(2,1); MatTyp(3,1); MatTyp(4,1); 
+            VecTyp 2; VecTyp 3; VecTyp 4]
+    | Some AbsTyp (s, e) -> get_parametrization_generic_types (Some (AbsTyp (s, e)))
+    | Some t -> [t]
+
+let rec process_parametrizations (pm: (string * etyp option) list) (gs: (etyp list) context) = 
+    match pm with 
+    [] -> gs 
+    | (s, e)::t -> Assoc.update s (get_parametrization_generic_types e) gs
+
 (* GenTyp - int, float, vec(2,3,4), mat(16 possibilites) *)
 let rec generate_fn_generics (((id, (p, rt)), cl) : fn) (pm : (string * etyp option) list) = 
-    debug_print (">> generate_fn_generics " ^ id);
+    debug_print (">> generate_fn_generics " ^ id);   
     let gens = Assoc.empty 
-        |> Assoc.update "genType" [IntTyp; FloatTyp; MatTyp (1,1);
+        |> Assoc.update "genType" [IntTyp; FloatTyp; 
         MatTyp(2,1); MatTyp(3,1); MatTyp(4,1); VecTyp 2; VecTyp 3; VecTyp 4]
+        |> process_parametrizations pm;
     (* TODO: add into gens all the stuff in pm! *)
     in 
     let plain = (string_of_gl_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (comp_comm cl) ^ "}"
@@ -179,7 +194,7 @@ let rec generate_fn_generics (((id, (p, rt)), cl) : fn) (pm : (string * etyp opt
         match pm with
         | [] -> orig
         | (s', None)::t -> 
-            debug_print ">> generate_fn_generics1";
+            debug_print (">> generate_fn_generics1 "^ s');
             let con = Assoc.lookup s' gens in 
             let rec replace_generic_helper c =
                 match c with 
