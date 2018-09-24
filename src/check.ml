@@ -48,6 +48,7 @@ let is_tag_subtype (to_check: tag_typ) (target: tag_typ) (d: delta) : bool =
     | TopTyp _, _ -> false
 
 let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parametrization): bool =
+    debug_print (">> is_subtype" ^ (string_of_typ to_check) ^ ", " ^(string_of_typ target));
     match (to_check, target) with 
     | (TagTyp t1, TagTyp t2) -> is_tag_subtype t1 t2 d (* MARK *)
     | (SamplerTyp i1, SamplerTyp i2) -> i1 = i2 
@@ -60,7 +61,7 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parametrizat
     | (FloatTyp, GenTyp)
     | (TagTyp _, GenTyp)
     | (TransTyp _, GenTyp) -> true (* todo: is transtyp a subtype of gentyp? *)
-    | (AbsTyp s1, AbsTyp s2) -> s1 == s2
+    | (AbsTyp s1, AbsTyp s2) -> s1 = s2
     | (_, AbsTyp s) -> 
         if List.mem_assoc target pm 
         then let p = (List.assoc target pm) in 
@@ -514,7 +515,7 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
             true args_typ params_typ 
             then 
             ()
-            else raise (TypeException "parametrization types mismatch")
+            else raise (TypeException ("parametrization types mismatch for " ^ (string_of_typ (pr_typ |> List.hd) )))
         else raise (TypeException "mismatched number of parametrizations");
         (* check number of arg and param types match *)
         if List.length args_typ == List.length params_typ then
@@ -659,7 +660,7 @@ let rec check_tags (t: tag_decl list) (d: delta): delta =
         | _ -> raise (TypeException "expected linear type for tag declaration")
 
 let check_fn_decl (d: delta) ((id, t): fn_decl) (p: phi) : phi =
-    debug_print ">> check_fn_decl";
+    debug_print (">> check_fn_decl : " ^ id);
     let (pl, _, _) = t in
     let _ = check_params pl d in 
     if Assoc.mem id p 
@@ -702,7 +703,7 @@ let check_return (t: typ) (d: delta) (g: gamma) (pm: parametrization) (p: phi) (
     | _ -> ()
 
 let rec check_fn (((id, (pl, r, pr)), cl): fn) (d: delta) (p: phi) : TypedAst.fn * phi = 
-    debug_print ">> check_fn";
+    debug_print (">> check_fn : " ^ id);
     (* fn := fn_decl * comm list *)
     let (pl', g') = check_params pl d pr in
     let (cl', g'') = check_comm_lst cl d g' pr p in 
