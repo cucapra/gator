@@ -11,6 +11,7 @@ let string_of_vec (v: vec) : string =
 let string_of_mat (m: mat) : string = 
     "["^(String.concat ", " (List.map string_of_vec m))^"]"
 
+
 let rec string_of_typ (t: etyp) : string = 
     match t with
     | UnitTyp -> "void"

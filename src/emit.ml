@@ -217,7 +217,8 @@ let rec generate_fn_generics (((id, (p, rt)), cl) : fn) (pm : (string * etyp opt
                 [] -> ""
                 | s'''::t -> Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ s''') orig ^ (replace_generic_helper t)
             in replace_generic_helper con
-        | (s', _)::t -> failwith "unexpectedly reached a parameterized argument that is not an abstracted type"
+        | (s', Some k)::t -> debug_print ">> generate_fn_generics3";
+            Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ k) orig
     in replace_generic plain
 
 
