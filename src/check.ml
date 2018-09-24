@@ -165,7 +165,7 @@ let check_typ_exp (t: typ) (d: delta) : unit =
     | TransTyp (s1, s2) -> check_tag_typ s1 d; check_tag_typ s2 d; ()
     | _ -> failwith "check_typ_exp Unimplemented"
 
-let etyp_to_typ (e : TypedAst.etyp) : typ =
+let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     match e with 
     | TypedAst.UnitTyp -> UnitTyp
     | TypedAst.BoolTyp -> BoolTyp
@@ -174,7 +174,8 @@ let etyp_to_typ (e : TypedAst.etyp) : typ =
     | TypedAst.VecTyp n -> TagTyp(BotTyp n)
     | TypedAst.MatTyp (n1, n2) -> TransTyp(BotTyp n1, BotTyp n2)
     | TypedAst.SamplerTyp n -> SamplerTyp n
-    | TypedAst.AbsTyp (s, _) -> AbsTyp s
+    | TypedAst.AbsTyp (s, None) -> AbsTyp s
+    | TypedAst.AbsTyp (s, Some e') -> etyp_to_typ e'
     | TypedAst.GenTyp -> GenTyp
 
 let rec tag_erase_param (t: typ) (d: delta) (pm: parametrization) : TypedAst.etyp = 
@@ -231,10 +232,29 @@ let rec check_norm_exp (t: typ) (d: delta) : typ =
     | _ -> (raise (TypeException "expected linear type for norm operator"))
 
 (* Type check binary bool operators (i.e. &&, ||) *)
-let check_bool_binop (t1: typ) (t2: typ) (d: delta) : typ = 
+let check_bool_binop (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ = 
+    let check_bool_abs t =
+        match tag_erase_param t d pm with
+        AbsTyp (_, None) -> true
+        | AbsTyp (_, Some t) -> 
+            begin
+                match etyp_to_typ t with 
+                BoolTyp 
+                | AbsTyp _ -> true
+                | _ -> false
+            end
+        | _ -> false
+    in 
     debug_print ">> check_bool_binop";
     match (t1, t2) with 
     | BoolTyp, BoolTyp -> BoolTyp
+    | AbsTyp a, BoolTyp
+    | BoolTyp, AbsTyp a -> 
+        if check_bool_abs t1 then BoolTyp
+        else raise (TypeException "expected boolean expression for binop")
+    | AbsTyp a, AbsTyp a' ->
+        if check_bool_abs t1 && check_bool_abs t2 then BoolTyp
+        else raise (TypeException "expected boolean expression for binop")
     | _ -> raise (TypeException "expected boolean expression for binop")
 
 (* Type check unary number operators (i.e. -) *)
@@ -317,11 +337,11 @@ let check_addition_exp (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ
     | AbsTyp a, AbsTyp a' -> 
         if a = a' 
         then 
-        begin
-            match tag_erase_param t1 d pm with
-            AbsTyp (_, Some t) -> etyp_to_typ t
-            | _ -> failwith "unexpected reach in addition" 
-        end
+            begin
+                match tag_erase_param t1 d pm with
+                AbsTyp (_, Some t) -> etyp_to_typ t
+                | _ -> failwith "unexpected reach in addition" 
+            end
         else (raise (TypeException ("invalid expressions for addition: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))))
     | _ -> 
@@ -443,7 +463,7 @@ let rec check_exp (e : exp) (d : delta) (g : gamma) (pm : parametrization) (p : 
     | Binop (op, e1, e2) -> (match op with
         | Eq -> build_binop op e1 e2 (req_parametrizations check_equality_exp) pm
         | Leq -> build_binop op e1 e2 (req_parametrizations check_comp_binop) pm
-        | Or | And -> build_binop op e1 e2 (req_parametrizations check_bool_binop) pm
+        | Or | And -> build_binop op e1 e2 check_bool_binop pm
         | Plus | Minus -> build_binop op e1 e2 check_addition_exp pm
         | Times -> build_binop op e1 e2 (req_parametrizations check_times_exp) pm
         | Div  -> build_binop op e1 e2 (req_parametrizations check_division_exp) pm
@@ -484,7 +504,7 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
     let args_typ = List.map snd args' in
     (* find definition for function in phi *)
     (* looks through overloaded all possible definitions of the function *)
-    let rec find_fn_inv ((params, rt, pr) : fn_type) : fn_type=
+    let rec find_fn_inv ((params, rt, pr) : fn_type) : fn_type =
         let params_typ = List.map snd params in
         let pr_typ = List.map fst pr in 
         if List.length pr_typ == List.length pml then 
