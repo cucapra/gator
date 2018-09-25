@@ -18,6 +18,8 @@ type typ =
     | TagTyp of tag_typ
     | TransTyp of tag_typ * tag_typ
     | SamplerTyp of int (* i.e. sampler2D *)
+    | AbsTyp of string 
+    | AppTyp of string * typ (* type application *)
 
 (* expressions *)
 type exp =
@@ -26,15 +28,19 @@ type exp =
     | Arr of exp list
     | Unop of unop * exp
     | Binop of binop * exp * exp
-    | FnInv of string * args (* function invocation *)
+    | FnInv of string * args * typ list (* function invocation *)
 
 and args = exp list
+
+(* function parameterization,
+ * which may extend another type. *)
+type parametrization = (typ * typ option) list
 
 (* function parameters *)
 type params = (string * typ) list
 type ret_type = typ
-(* our functions are not first-order *)
-type fn_type = params * ret_type
+(* our functions are not first-order! *)
+type fn_type = params * ret_type * parametrization
 (* function declaration *)
 type fn_decl = string * fn_type
 
