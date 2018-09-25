@@ -2,32 +2,30 @@
 
 // Bounds should be sound because they INCREASE strictness
 // Note that explicit bounds can help with providing nicer error messages
-vec2 add_op<t extends vec2>(t x, t y) {
+vec2 add_op<`t : vec2>(`t x, `t y) {
     return x + y;
 }
 
 // Indeed, certain bounds make functions impossible to parameterize (and thus invoke!)
 // We shouldn't check for conditions like this in the typechecker imo
 // If a user makes a function impossible to call, oh well
-bool uninvokable<t extends vec2>(t x) {
+// Above comment was considered but this should fail
+bool uninvokable<`t>(`t x) {
     return x && true;
 }
 
-t vec_id<t extends vec>(t x) {
+`t id<`t : genType>(`t x) {
     return x;
 }
 
-t mat_id<t extends mat>(t x) {
-    return x;
-}
 
 void main() {
     print add_op<vec2>([1., 1.], [2., 1.]);
 
-    print vec_id<vec2>([1., 2.]);
-    print vec_id<vec3>([1., 2., 3.]);
+    print id<vec2>([1., 2.]);
+    print id<vec3>([1., 2., 3.]);
 
-    print mat_id<mat2x2>([[1., 0.], [0., 1.]]);
-    print mat_id<vec2->vec2>([[1., 0.], [0., 1.]]);
-    print mat_id<vec2->vec3>([[1., 0.], [0., 1.], [1., 1.]]);
+    print id<mat2x2>([[1., 0.], [0., 1.]]);
+    print id<vec2->vec2>([[1., 0.], [0., 1.]]);
+    print id<vec2->vec3>([[1., 0.], [0., 1.], [1., 1.]]);
 }

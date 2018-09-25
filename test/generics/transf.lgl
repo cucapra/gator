@@ -1,0 +1,11 @@
+tag a is vec3;
+
+// Can be parameterized to literally anything!
+`t id_vec3<`t:vec3>(`t x) {
+    `t->`t id = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]];
+    return x;
+}
+
+void main() {
+    print id_vec3<a>([2., 1., 1.]);
+}

@@ -18,6 +18,13 @@ let string_of_mat (m: mat) : string =
 let rec repeat (s : string) (count : int) : string = 
   if count <= 0 then "" else (if count > 1 then (s ^ (repeat s (count-1))) else s)
 
+let get_mat_square_dim (m : mat) = 
+    (* Note the transpose to match the glsl column-oriented style *)
+    let tm = Lin_ops.transpose m in
+    let r = (List.length tm) in
+    let c = (if r = 0 then 0 else List.length (List.hd tm)) in
+    max r c
+
 let string_of_vec (v: vec) : string = 
   "("^(String.concat ", " (List.map string_of_float v))^")"
 

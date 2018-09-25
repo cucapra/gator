@@ -6,12 +6,12 @@ exception SyntaxError of string
 (* Regex definitons *)
 
 let white = [' ' '\t' '\n' '\r']+
-let num = ['0'-'9']+
+let num = ['-' '+']?['0'-'9']+
 let letter = ['a'-'z' 'A'-'Z']
 let mat = "mat" num ['x'] num
 let sampler = "sampler" num ['D']
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
-let floatval = ((['0'-'9']*['.']['0'-'9']+)|(['0'-'9']+['.']['0'-'9']*))
+let floatval = ((['-' '+']?['0'-'9']*['.']['0'-'9']+)|(['-' '+']?['0'-'9']+['.']['0'-'9']*))
 let newline = ('\r' | '\n' | "\r\n" | eof)
 let comment = "//" [^ '\r' '\n']* newline
 
@@ -41,6 +41,8 @@ rule read = parse
   | ".*"            { CTIMES }
   | "["             { LBRACK }
   | "]"             { RBRACK }
+  | "<"             { LWICK }
+  | ">"             { RWICK }
   | "{"             { LBRACE }
   | "}"             { RBRACE }
   | "("             { LPAREN }
@@ -54,11 +56,13 @@ rule read = parse
   | "!"             { NOT }
   | ","             { COMMA }
   | ";"             { SEMI }
-  | "."             { DOT }
+  | ":"             { COLON }
+  | "`"             { BACKTICK }
   | sampler as sm   { SAMPLER sm }
   | "void"          { VOID }
   | "return"        { RETURN }
   | "declare"       { DECLARE }
+  | "genType"       { GENTYPE }
   | "attribute"
   | "const"
   | "uniform"

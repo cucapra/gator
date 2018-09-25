@@ -8,33 +8,33 @@ tag c is b;
 tag d is b;
 tag e is c;
 
-t id<t>(t x) {
+`t id<`t>(`t x) {
     return x;
 }
 
 // Note that we will also use this to check bounds!
-vec2 to_top<t extends vec2>(t x) {
-    t->vec2 m = [[1., 0.], [0., 1.]];
+vec2 to_top<`t extends vec2>(`t x) {
+    `t->vec2 m = [[1., 0.], [0., 1.]];
     return m * x;
 }
 
 // Note that, as before, bounds just increase the strictness of the operation
-b as_b<t extends c>(t x) {
+b as_b<`t extends c>(`t x) {
     return x;
 }
 
 // Note also that bounds using tags can make using a function impossible
-vec2 uninvokable<t extends a>(t x) {
+vec2 uninvokable<`t : a>(`t x) {
     return x;
 }
 
-t low_cast<t extends b>(a x) {
+`t low_cast<`t : b>(a x) {
     a->b a_b = [[.5, .5], [1.5, .5]];
-    b->t id = [[1., 0.], [0., 1.]];
+    b->`t id = [[1., 0.], [0., 1.]];
     return id * a_b * x;
 }
 
-t very_low_cast<t extends c>(a x) {
+`t very_low_cast<`t : c>(a x) {
     return low_cast(x);
 }
 

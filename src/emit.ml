@@ -49,7 +49,26 @@ and string_of_gl_typ (t : etyp) : string =
     | MatTyp (m, n) -> "mat" ^ string_of_int (max m n)
     | _ -> string_of_typ t
 
+and attrib_type (var_name : string) : string =
+    debug_print ">> attrib_type";
+    if (String.get var_name 0) = 'a' then "attribute" else
+    (if (String.get var_name 0) = 'v' then "varying" else
+    (if (String.get var_name 0) = 'u' then "uniform" else
+    failwith "Not a supported glsl attribute"))
+
+(* Ignore original declarations of attributes and the like *)
+and check_name (var_name : string) : bool = 
+    debug_print ">> check_name";
+    let decl_reg = Str.regexp "[auv][A-Z]" in
+        Str.string_match decl_reg var_name 0
+
+(* Don't write the type of gl_Position or gl_FragColor *)
+and is_core (var_name : string) : bool = 
+    debug_print ">> is_core";
+    var_name = "gl_Position" || var_name = "gl_FragColor"
+
 and op_wrap (op : exp) : string =
+    debug_print ">> op_wrap";
     match op with
     | Val _
     | Var _ -> comp_exp op
@@ -57,6 +76,7 @@ and op_wrap (op : exp) : string =
 
 (* Handles the string shenanigans for padding during multiplication *)
 and padded_mult (left : texp) (right : texp) : string =
+    debug_print ">> padded_mult";
     (* Printf.printf "\t\t\t%s\n" (string_of_exp e);  *)
     match (left, right) with
     | ((le, lt), (re, rt)) -> (match (lt, rt) with
@@ -75,10 +95,12 @@ and padded_mult (left : texp) (right : texp) : string =
                 else (op_wrap le) ^ " * " ^ (comp_exp re))
         | _ -> (op_wrap le) ^ " * " ^ (comp_exp re))
         
-and padded_args (a: exp list) : string = 
+and padded_args (a : exp list) : string = 
+    debug_print ">> padded_args";
     (String.concat ", " (List.map (op_wrap) a))
 
 and comp_exp (e : exp) : string =
+    debug_print ">> comp_exp";
     match e with
     | Val v -> string_of_value v
     | Var v -> v
@@ -97,6 +119,7 @@ and comp_exp (e : exp) : string =
     | FnInv (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
  
 and comp_comm (c : comm list) : string =
+    debug_print ">> comp_comm";
     match c with
     | [] -> ""
     | h::t -> match h with
@@ -115,19 +138,101 @@ and comp_comm (c : comm list) : string =
         | Return Some (e, _) -> "return " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
         | Return None -> "return;" ^ (comp_comm t)
         | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
-        
+
+let check_generics ((p, rt) : fn_type) : (string * etyp option) list = 
+    debug_print ">> check_generics";
+    let rec check_generics_rt p' acc : (string * etyp option) list = 
+        match p' with
+        [] -> acc
+        | s::t -> 
+            match s with
+            (_ , AbsTyp (a, b)) -> (a,b)::(check_generics_rt t acc)
+            | (_, GenTyp) -> ("genType" , None)::(check_generics_rt t acc)
+            | _ -> check_generics_rt t acc
+    in 
+    match rt with
+    AbsTyp (s', e') -> check_generics_rt p ((s', e')::[])
+    | GenTyp -> check_generics_rt p (("genType", None)::[])
+    | _ -> check_generics_rt p []
+
+type delta = (etyp list) Assoc.context
+
+
+let rec get_parametrization_generic_types (p: etyp option) = 
+    match p with
+    | None -> [IntTyp; FloatTyp; MatTyp(2,1); MatTyp(3,1); MatTyp(4,1); 
+            VecTyp 2; VecTyp 3; VecTyp 4; BoolTyp; SamplerTyp 2; SamplerTyp 3]
+    | Some GenTyp -> [IntTyp; FloatTyp; MatTyp(2,1); MatTyp(3,1); MatTyp(4,1); 
+            VecTyp 2; VecTyp 3; VecTyp 4]
+    | Some AbsTyp (s, e) -> get_parametrization_generic_types (Some (AbsTyp (s, e)))
+    | Some t -> [t]
+
+let rec process_parametrizations (pm: (string * etyp option) list) (gs: (etyp list) context) = 
+    match pm with 
+    [] -> gs 
+    | (s, e)::t -> Assoc.update s (get_parametrization_generic_types e) gs
+
+(* GenTyp - int, float, vec(2,3,4), mat(16 possibilites) *)
+let rec generate_fn_generics (((id, (p, rt)), cl) : fn) (pm : (string * etyp option) list) = 
+    debug_print (">> generate_fn_generics " ^ id);   
+    let gens = Assoc.empty 
+        |> Assoc.update "genType" [IntTyp; FloatTyp; 
+        MatTyp(2,1); MatTyp(3,1); MatTyp(4,1); VecTyp 2; VecTyp 3; VecTyp 4]
+        |> process_parametrizations pm;
+    (* TODO: add into gens all the stuff in pm! *)
+    in 
+    let plain = (string_of_gl_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (comp_comm cl) ^ "}"
+    in 
+    let rec replace_generic (orig: string) : string = 
+        match pm with
+        | [] -> orig
+        | (s', None)::t -> 
+            debug_print (">> generate_fn_generics1 "^ s');
+            let con = Assoc.lookup s' gens in 
+            let rec replace_generic_helper c =
+                match c with 
+                [] -> ""
+                | s''::t -> Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ s'') orig ^ (replace_generic_helper t)
+            in replace_generic_helper con
+        | (s', Some (AbsTyp (s'', e'')))::t -> 
+            debug_print ">> generate_fn_generics2";
+            let con = Assoc.lookup s'' gens in 
+            let rec replace_generic_helper c =
+                match c with 
+                [] -> ""
+                | s'''::t -> Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ s''') orig ^ (replace_generic_helper t)
+            in replace_generic_helper con
+        | (s', Some (GenTyp))::t -> 
+            debug_print ">> generate_fn_generics3";
+            let con = Assoc.lookup "genType" gens in 
+            let rec replace_generic_helper c =
+                match c with 
+                [] -> ""
+                | s'''::t -> Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ s''') orig ^ (replace_generic_helper t)
+            in replace_generic_helper con
+        | (s', Some k)::t -> debug_print ">> generate_fn_generics3";
+            Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ k) orig
+    in replace_generic plain
+
 
 let comp_fn (((id, (p, rt)), cl) : fn) : string = 
+    debug_print ">> comp_fn";
     match id with 
     | "main" -> "void main() {" ^ (comp_comm cl) ^ "}"
-    | _ -> (string_of_gl_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (comp_comm cl) ^ "}"
+    | _ -> 
+        let pm = check_generics (p, rt) in
+        if List.length pm = 0 then 
+        (string_of_gl_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (comp_comm cl) ^ "}"
+        else generate_fn_generics ((id, (p, rt)), cl) pm
 
 let rec comp_fn_lst (f : fn list) : string =
+    debug_print ">> comp_fn_lst";
     match f with 
     | [] -> ""
     | h::t -> (comp_fn h) ^ (comp_fn_lst t)
 
 let rec decl_attribs (p : TypedAst.params) : string = 
+    debug_print ">> decl_attribs";
     match p with
     | [] -> ""
     | h::t -> match h with
@@ -136,7 +241,8 @@ let rec decl_attribs (p : TypedAst.params) : string =
             (attrib_type x) ^ " " ^ (string_of_gl_typ et) ^ " " ^ x ^ ";" ^ (decl_attribs t) else
             decl_attribs t
 
-let rec compile_program (prog : prog) (params: TypedAst.params) : string =
+let rec compile_program (prog : prog) (params : TypedAst.params) : string =
+    debug_print ">> compile_program";
     "precision highp float;" ^ (decl_attribs params) ^ 
      (comp_fn_lst prog)
  

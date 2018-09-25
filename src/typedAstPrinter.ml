@@ -11,6 +11,7 @@ let string_of_vec (v: vec) : string =
 let string_of_mat (m: mat) : string = 
     "["^(String.concat ", " (List.map string_of_vec m))^"]"
 
+
 let rec string_of_typ (t: etyp) : string = 
     match t with
     | UnitTyp -> "void"
@@ -20,6 +21,9 @@ let rec string_of_typ (t: etyp) : string =
     | VecTyp v -> "vec" ^ (string_of_int v)
     | MatTyp (m1, m2) -> "mat" ^ (string_of_int m1) ^ "x" ^ (string_of_int m2)
     | SamplerTyp n -> "sampler" ^ (string_of_int n) ^ "D"
+    | AbsTyp (s, typ) -> "`" ^ s (* TODO *)
+    | GenTyp -> "genType"
+
 
 let rec string_of_exp (e: exp) : string =
     let string_of_arr (a: texp list) : string = 

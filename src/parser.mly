@@ -8,7 +8,6 @@ exception ParseException of string
 
 (* let matr = Str.regexp "mat\\([0-9]+\\)x\\([0-9]+\\)" *)
 let vec = Str.regexp "vec\\([0-9]+\\)"
-let mat = Str.regexp "mat\\([0-9]+\\)"
 
 %}
 
@@ -37,7 +36,6 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token OR
 %token NOT
 %token COMMA
-%token DOT
 %token TAG
 %token IS
 %token TRUE
@@ -56,6 +54,11 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token RETURN
 %token VOID
 %token DECLARE
+%token COLON
+%token BACKTICK
+%token GENTYPE
+%token LWICK
+%token RWICK
 
 (* Precedences *)
 
@@ -63,8 +66,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %left NOT EQ LEQ
 
 %left PLUS MINUS
-%left TIMES DIV CTIMES
-%left LBRACK DOT
+%left TIMES DIV CTIMES 
 (*%left TRANS*)
 
 (* After declaring associativity and precedence, we need to declare what
@@ -80,7 +82,6 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 
 %%
 
-   
 main:
   | t = taglst; d = declarelst; e = fnlst; EOL 
       { Prog(d, t, e) }
@@ -140,20 +141,38 @@ params:
       { (x, t)::p }
 ;
 
+parametrization:
+  | t = typ;
+      { (t, None) }
+  | t1 = typ; COLON; t2 = typ;
+      { (t1, Some t2) }
+
+parametrizations:
+  | p = parametrization;
+      { p::[] }
+  | p = parametrization; COMMA; pl = parametrizations;
+      { p::pl }
+
 fn_decl:
   | t = typ; x = ID; LPAREN; RPAREN;
-      { (x, ([], t)) }
+      { (x, ([], t, [])) }
   | t = typ; x = ID; LPAREN; p = params ; RPAREN;
-      { (x, (p, t)) }
+      { (x, (p, t, [])) }
+  | t = typ; x = ID; LWICK; pt = parametrizations; RWICK; LPAREN; p = params ; RPAREN;
+      { (x, (p, t, pt)) }
 ;
 
 comm:
   | SKIP; SEMI;                            
       { Skip }
   | t = typ; x = ID; GETS; e1 = exp; SEMI; 
-      { Decl(t, x, e1) }
+      { if (Str.string_match vec x 0) then (
+        raise (ParseException "invalid id specified for variable declaration")
+        ) else Decl(t, x, e1) }
   | x = ID; GETS; e1 = exp; SEMI;          
-      { Assign(x, e1) }
+      { if (Str.string_match vec x 0) then (
+        raise (ParseException "invalid id specified for variable declaration")
+        ) else Assign(x, e1) }
   | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; 
     ELSE; LBRACE; c2 = commlst; RBRACE     
       { If(b1, c1, c2) }
@@ -164,15 +183,23 @@ comm:
   | RETURN; SEMI;
       { Return(None) }
   | x = ID; LPAREN; RPAREN; SEMI;
-      { FnCall(x, []) }
+      { FnCall(x, [], []) }
   | x = ID; LPAREN; a = arglst; RPAREN; SEMI;
-      { FnCall(x, a) }
+      { FnCall(x, a, []) }
+  | x = ID; LWICK; p = typlst; RWICK; LPAREN; RPAREN; SEMI;
+      { FnCall(x, [], p)}
+  | x = ID; LWICK; p = typlst; RWICK; LPAREN; a = arglst; RPAREN; SEMI;
+      { FnCall(x, a, p)}
 ; 
 
 typ:
   | AUTOTYP 
-      { AutoTyp }
-  | BOOLTYP 
+      { AutoTyp }    
+  | BACKTICK; e = ID
+      { AbsTyp(e) }
+  | GENTYPE
+      { GenTyp }
+  | BOOLTYP                         
       { BoolTyp }
   | FLOATTYP                        
       { FloatTyp }
@@ -186,18 +213,8 @@ typ:
         TopTyp (int_of_string(List.nth dim_lst 0)))}
   | x1 = tagtyp; TRANS; x2 = tagtyp 
       { TransTyp(x1,x2) }
-  | x = ID 
-      { if (Str.string_match vec x 0) then (
-        let len = String.length x in 
-        let dim = int_of_string (String.sub x 3 (len-3)) in
-        TagTyp (TopTyp dim)
-        ) else
-        if (Str.string_match mat x 0) then (
-        let len = String.length x in 
-        let dim = int_of_string (String.sub x 3 (len-3)) in
-        TransTyp ((TopTyp dim), (TopTyp dim))
-        ) 
-        else (TagTyp (VarTyp x)) }
+  | e = tagtyp                      
+      { TagTyp(e) }
   | s = SAMPLER                     
       { let len = String.length s in
         let dim = String.sub s 7 (len-7) in 
@@ -214,14 +231,23 @@ tagtyp:
         let dim = String.sub x 3 (len-3)in
         TopTyp (int_of_string(dim))
         ) else (VarTyp x) }
+  | BACKTICK; e = ID
+      { TAbsTyp(e) }
+;
+
+arr:
+  | e = exp 
+      { e::[] }
+  | e = exp; COMMA; a = arr 
+      { e::a@[] }
 ;
 
 value:
-  | b = bool 
+  | b = bool                    
       { Bool b }
-  | i = NUM 
+  | i = NUM                     
       { Num i }
-  | f = FLOAT 
+  | f = FLOAT                   
       { Float f }
 ;
 
@@ -232,20 +258,19 @@ bool:
       { false }
 ;
 
-arr:
-  | e = exp 
-      { e::[] }
-  | e = exp; COMMA; a = arr 
-      { e::a@[] }
-;
-
 arglst:
   | e = exp 
      { e::[] }
   | e = exp; COMMA; a = arglst;
      { e::a@[] }
 ;
+
   
+typlst: 
+  | t = typ 
+      { t::[] }
+  | t = typ; COMMA; tl = typlst
+      { t::tl }
 exp:
   | LPAREN; a = exp; RPAREN    
       { a }
@@ -258,9 +283,13 @@ exp:
   | LBRACK; e = arr; RBRACK;
     { Arr e }
   | x = ID; LPAREN; RPAREN;
-      { FnInv(x, []) }
+      { FnInv(x, [], []) }
   | x = ID; LPAREN; a = arglst; RPAREN;
-      { FnInv(x, a) }
+      { FnInv(x, a, []) }
+  | x = ID; LWICK; t = typlst; RWICK; LPAREN; a = arglst; RPAREN;
+      { FnInv(x, a, t) }
+  | x = ID; LWICK; t = typlst; RWICK; LPAREN; RPAREN;
+      { FnInv(x, [], t) }
   | e1 = exp; PLUS; e2 = exp   
       { Binop(Plus,e1,e2) }
   | e1 = exp; TIMES; e2 = exp  
@@ -271,9 +300,7 @@ exp:
       { Binop(Div,e1,e2) }
   | e1 = exp; CTIMES; e2 = exp 
       { Binop(CTimes,e1,e2) }
-  | MINUS; e1 = exp;
-      { Unop(Neg,e1) }
-  | NOT; e1 = exp;
+  | NOT; e1 = exp;             
       { Unop(Not,e1) }
   | e1 = exp; EQ; e2 = exp      
       { Binop(Eq,e1,e2) }
@@ -283,10 +310,6 @@ exp:
       { Binop(Or,e1,e2) }
   | e1 = exp; AND; e2 = exp    
       { Binop(And,e1,e2) }
-  | e1 = exp; DOT; s = ID;
-      { Unop(Swizzle s,e1) }
-  | e1 = exp; LBRACK; e2 = exp; RBRACK;
-      { Binop(Index,e1,e2) }
 ;
 
 %%

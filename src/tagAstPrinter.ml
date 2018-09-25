@@ -12,6 +12,7 @@ let string_of_tag_typ (t: tag_typ) : string =
     | TopTyp n -> "vec"^(string_of_int n)
     | BotTyp n -> "vec"^(string_of_int n)^"lit"
     | VarTyp s -> s
+    | TAbsTyp s -> "`"^s
 
 let rec string_of_typ (t: typ) : string = 
     match t with
@@ -23,6 +24,8 @@ let rec string_of_typ (t: typ) : string =
     | TagTyp s -> string_of_tag_typ s
     | TransTyp (s1, s2) -> (string_of_tag_typ s1) ^ "->" ^ (string_of_tag_typ s2)
     | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D"
+    | AbsTyp s -> "`" ^ s
+    | GenTyp -> "genTyp"
 
 let rec string_of_exp (e:exp) : string =
     let string_of_arr (a: exp list) : string = 
@@ -38,16 +41,25 @@ let rec string_of_exp (e:exp) : string =
         let rs = (string_of_exp r) in
         (match op with
         | _ -> (string_of_binop op ls rs))
-    | _ -> failwith "Unimplemented"
+    | _ -> failwith "string_of_exp Unimplemented"
 
 let rec string_of_params (p: (id * typ) list) : string =
     match p with
     | [] -> ""
     | (i1, t1)::t -> (string_of_typ t1) ^ " " ^ i1 ^ ", " ^ (string_of_params t)
 
+let rec string_of_parameterization (pm : parametrization) : string = 
+    match pm with 
+    | [] -> ""
+    | (t, None)::tl -> (string_of_typ t) ^ ", " ^ (string_of_parameterization tl)
+    | (t, Some t')::tl -> (string_of_typ t) ^ ":" ^ (string_of_typ t') ^", "^(string_of_parameterization tl)
+
+let string_of_fn_type ((p, r, pm): fn_type) : string = 
+    (string_of_typ r) ^ " <" ^ (string_of_parameterization pm) ^ ">" ^ "(" ^ (string_of_params p) ^ ")"
+
 let string_of_fn_decl (d: fn_decl) : string = 
     match d with
-    | (id, (p, r)) -> (string_of_typ r) ^ " " ^ id ^ " (" ^ (string_of_params p) ^ ")"
+    | (id, (p, r, pm)) -> (string_of_typ r) ^ " " ^ id ^ " <" ^ (string_of_parameterization pm) ^ ">" ^ " (" ^ (string_of_params p) ^ ")"
 
 let rec string_of_comm (c: comm) : string =
     match c with
@@ -59,7 +71,8 @@ let rec string_of_comm (c: comm) : string =
     | Assign (b, x) -> b ^ " = " ^ (string_of_exp x) ^ ";"
     | Return None -> "return;"
     | Return Some e -> "return" ^ (string_of_exp e) ^ ";"
-    | FnCall (id, e) -> id ^ "(" ^ (String.concat "," (List.map string_of_exp e)) ^ "^"
+    | FnCall (id, e, _) -> id ^ "(" ^ (String.concat "," (List.map string_of_exp e)) ^ "^" (* TODO *)
+    
 
 and 
 string_of_comm_list (cl : comm list) : string = 
