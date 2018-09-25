@@ -88,7 +88,7 @@ and tag_erase (t : typ) (d : delta) (pm: parametrization) : TypedAst.etyp =
     | SamplerTyp i -> TypedAst.SamplerTyp i
     | AbsTyp s -> tag_erase_param t d pm 
     | GenTyp -> TypedAst.GenTyp
-    | _ -> failwith "Unimplemented"
+    | AutoTyp -> raise (TypeException "Illegal use of auto (cannot use auto as part of a function call)")
 
 let rec get_ancestor_list (t: tag_typ) (d: delta) : id list =
     debug_print ">> get_ancestor_list";
