@@ -235,6 +235,13 @@ tagtyp:
       { TAbsTyp(e) }
 ;
 
+arr:
+  | e = exp 
+      { e::[] }
+  | e = exp; COMMA; a = arr 
+      { e::a@[] }
+;
+
 value:
   | b = bool                    
       { Bool b }
@@ -242,30 +249,6 @@ value:
       { Num i }
   | f = FLOAT                   
       { Float f }
-  | LBRACK; RBRACK              
-      { VecLit([]) }
-  | LBRACK; v = veclit; RBRACK; 
-      { VecLit(v@[]) }
-  | LBRACK; m = matlit; RBRACK; 
-      { MatLit(m@[]) }
-;
-
-veclit:
-  | f = FLOAT                     
-      { f::[] }
-  | f = FLOAT; COMMA; v2 = veclit 
-      { f::v2@[] }
-;
-
-matlit:
-  | LBRACK; v = veclit; RBRACK                     
-      { [v] }
-  | LBRACK; RBRACK                                 
-      { [[]] }
-  | LBRACK; v = veclit; RBRACK; COMMA; m2 = matlit 
-      { [v]@m2 }
-  | LBRACK; RBRACK; COMMA; m2 = matlit             
-      { [[]]@m2 }
 ;
 
 bool:
@@ -295,6 +278,10 @@ exp:
       { Val v }
   | x = ID                     
       { Var x }
+  | LBRACK; RBRACK;
+    { Arr [] }
+  | LBRACK; e = arr; RBRACK;
+    { Arr e }
   | x = ID; LPAREN; RPAREN;
       { FnInv(x, [], []) }
   | x = ID; LPAREN; a = arglst; RPAREN;
