@@ -88,6 +88,7 @@ and tag_erase (t : typ) (d : delta) (pm: parametrization) : TypedAst.etyp =
     | SamplerTyp i -> TypedAst.SamplerTyp i
     | AbsTyp s -> tag_erase_param t d pm 
     | GenTyp -> TypedAst.GenTyp
+    | _ -> failwith "Unimplemented"
 
 let rec get_ancestor_list (t: tag_typ) (d: delta) : id list =
     debug_print ">> get_ancestor_list";
@@ -607,8 +608,8 @@ and check_comm (c: comm) (d: delta) (g: gamma) (pm: parametrization) (p: phi) : 
             | _ -> t) in
         begin
             try
-            (TypedAst.Decl (tag_erase t d pm, s, (exp_to_texp result d pm)), (check_assign t s (snd result) d g p pm))
-            with | AbstractTypeException -> (TypedAst.Decl (tag_erase (snd result) d pm, s, (exp_to_texp result d pm)), (check_assign t s (snd result) d g p pm))
+            (TypedAst.Decl (tag_erase t' d pm, s, (exp_to_texp result d pm)), (check_assign t' s (snd result) d g p pm))
+            with | AbstractTypeException -> (TypedAst.Decl (tag_erase (snd result) d pm, s, (exp_to_texp result d pm)), (check_assign t' s (snd result) d g p pm))
             | e -> raise e
         end
     | Assign (s, e) ->

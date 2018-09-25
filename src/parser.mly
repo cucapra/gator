@@ -194,8 +194,7 @@ comm:
 
 typ:
   | AUTOTYP 
-      { AutoTyp }
-  | BOOLTYP 
+      { AutoTyp }    
   | BACKTICK; e = ID
       { AbsTyp(e) }
   | GENTYPE
