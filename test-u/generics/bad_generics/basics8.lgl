@@ -1,0 +1,3 @@
+void main<`t : vec2>(`t x) {  // It seems nonsenical to use generics in the main function -- should we just disallow it?
+    print 1;
+}

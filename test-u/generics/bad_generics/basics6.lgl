@@ -1,0 +1,7 @@
+int f(`t x) {  // Can't use a generic that hasn't been declared
+    return 1;
+}
+
+void main() {
+    print 1;
+}

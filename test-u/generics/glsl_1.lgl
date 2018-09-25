@@ -1,0 +1,79 @@
+// Fully generic declare statements for every glsl function -- we should support all of these
+// Includes a standard example of each
+// TODO: Add interpreter support for each
+// TODO: Make a way to link lgl files so we can just include these declarations
+
+// https://www.khronos.org/files/opengles_shading_language.pdf
+// FROM THE SPECS:  "For any specific use of a function, the actual type has to be the same for all arguments and for the return type"
+
+// 8.1
+// These all operate component-wise
+genType radians (genType degrees)
+genType degrees (genType radians)
+genType sin (genType angle)
+genType cos (genType angle)
+genType tan (genType angle)
+genType asin (genType x)
+genType acos (genType x)
+genType atan (genType y, genType x)
+genType atan (genType y_over_x)
+
+// 8.2
+genType pow (genType x, genType y)
+genType exp (genType x)
+genType log (genType x)
+genType exp2 (genType x)
+genType log2 (genType x)
+genType sqrt (genType x)
+genType inversesqrt (genType x)
+
+// 8.3
+genType abs (genType x)
+genType sign (genType x)
+genType floor (genType x)
+genType ceil (genType x)
+genType fract (genType x)
+genType mod (genType x, genType y)
+genType min (genType x, genType y) 
+genType min (genType x, float y)
+genType max (genType x, genType y) 
+genType max (genType x, float y)
+genType clamp (genType x, genType minVal, genType maxVal) 
+genType clamp (genType x, float minVal, float maxVal)
+genType mix (genType x, genType y, genType a)
+genType mix (genType x, genType y, float a)
+genType step (genType edge, genType x) 
+genType step (float edge, genType x)
+genType smoothstep (genType edge0, genType edge1, genType x) 
+genType smoothstep (float edge0, float edge1, genType x)
+
+// 8.4
+float length (genType x)
+float distance (genType p0, genType p1)
+float dot (genType x, genType y)
+vec3 cross (vec3 x, vec3 y)
+genType normalize (genType x)
+genType faceforward(genType N, genType I, genType Nref)
+genType reflect (genType I, genType N)
+
+// 8.5
+// These operate on vectors as vectors, not component-wise
+float length (genType x)
+float distance (genType p0, genType p1)
+float dot (genType x, genType y)
+vec3 cross (vec3 x, vec3 y)
+genType normalize (genType x)
+genType faceforward(genType N, genType I, genType Nref)
+genType reflect (genType I, genType N)
+genType refract(genType I, genType N, float eta)
+
+// 8.6
+mat matrixCompMult (mat x, mat y)
+
+// 8.7
+// Vector Relational Functions
+
+
+void main() {
+    print 1;
+}
