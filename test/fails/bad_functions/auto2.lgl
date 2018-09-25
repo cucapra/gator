@@ -1,0 +1,7 @@
+auto f(auto x) {
+    return x;
+}
+
+void main() {
+    print f(1);
+}

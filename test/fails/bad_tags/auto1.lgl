@@ -1,0 +1,3 @@
+void main() {
+    auto v = [1., 2.];
+}

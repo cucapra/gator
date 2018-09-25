@@ -50,6 +50,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token INTTYP
 %token FLOATTYP 
 %token BOOLTYP
+%token AUTOTYP
 %token LBRACE
 %token RBRACE
 %token RETURN
@@ -169,7 +170,9 @@ comm:
 ; 
 
 typ:
-  | BOOLTYP                         
+  | AUTOTYP 
+      { AutoTyp }
+  | BOOLTYP 
       { BoolTyp }
   | FLOATTYP                        
       { FloatTyp }

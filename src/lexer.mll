@@ -31,6 +31,7 @@ rule read = parse
   | "print"         { PRINT }
   | "int"           { INTTYP }
   | "float"         { FLOATTYP }
+  | "auto"          { AUTOTYP }
   | mat as mat      { MATTYP mat }
   | "bool"          { BOOLTYP }
   | "+"             { PLUS }

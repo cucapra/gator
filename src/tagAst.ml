@@ -10,6 +10,7 @@ type tag_typ =
 
 (* types *)
 type typ =
+    | AutoTyp
     | UnitTyp
     | BoolTyp
     | IntTyp

@@ -15,6 +15,7 @@ let string_of_tag_typ (t: tag_typ) : string =
 
 let rec string_of_typ (t: typ) : string = 
     match t with
+    | AutoTyp -> "auto"
     | UnitTyp -> "void"
     | BoolTyp -> "bool"
     | IntTyp -> "int"

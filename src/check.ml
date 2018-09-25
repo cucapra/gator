@@ -136,6 +136,7 @@ let check_tag_typ (tag: tag_typ) (d: delta) : unit =
 let check_typ_exp (t: typ) (d: delta) : unit =
     debug_print ">> check_typ";
     match t with
+    | AutoTyp -> raise (TypeException "Cannot use type auto as a function argument")
     | UnitTyp
     | BoolTyp
     | IntTyp
@@ -323,6 +324,7 @@ let check_index_exp (t1: typ) (t2: typ) (d: delta) : typ =
 let tag_erase (t : typ) (d : delta) : TypedAst.etyp =
     debug_print ">> tag_erase";
     match t with
+    | AutoTyp -> raise (TypeException "Illegal use of auto (cannot use auto as part of a function call)")
     | UnitTyp -> TypedAst.UnitTyp
     | BoolTyp -> TypedAst.BoolTyp
     | IntTyp -> TypedAst.IntTyp
@@ -444,11 +446,18 @@ and check_comm (c: comm) (d: delta) (g: gamma) (p: phi): TypedAst.comm * gamma =
     )
     | Decl (t, s, e) ->
         if Assoc.mem s g then raise (TypeException "variable name shadowing is illegal")
-        else let result = check_exp e d g p in
-            (TypedAst.Decl (tag_erase t d, s, (exp_to_texp result d)), (check_assign t s (snd result) d g p))
+        else 
+        let result = check_exp e d g p in
+        let t' = (match t with | AutoTyp -> 
+            (match (snd result) with
+                | TagTyp (BotTyp _) -> raise (TypeException "Cannot infer the type of a vector literal")
+                | TransTyp (TopTyp _, BotTyp _) -> raise (TypeException "Cannot infer the type of a matrix literal")
+                | t' -> t')
+            | _ -> t) in
+        (TypedAst.Decl (tag_erase t' d, s, (exp_to_texp result d)), (check_assign t' s (snd result) d g p))
 
     | Assign (s, e) ->
-        if Assoc.mem s g then 
+        if Assoc.mem s g then
             let t = Assoc.lookup s g in
             let result = check_exp e d g p in
             (TypedAst.Assign (s, (exp_to_texp result d)), check_assign t s (snd result) d g p)
@@ -477,7 +486,7 @@ and check_comm_lst (cl : comm list) (d: delta) (g: gamma) (p: phi) : TypedAst.co
         ((fst context) :: (fst result), (snd result))
 
 and check_assign (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) (p: phi) : gamma =
-    debug_print (">> check_decl <<"^s^">>");
+    debug_print (">> check_assign <<"^s^">>");
     (* Check that t, if not a core type, is a registered tag *)
     (match t with
     | TransTyp (VarTyp t1, VarTyp t2) -> if not (Assoc.mem t1 d)
@@ -565,7 +574,7 @@ let check_void_return (c: comm) =
     | Return Some _ -> raise (TypeException ("void functions cannot return a value"))
     | _ -> ()
 
-let check_return (t: typ) (d: delta) (g: gamma) (p: phi) (c: comm) = 
+let check_return (t: typ) (d: delta) (g: gamma) (p: phi) (c: comm) : unit = 
     debug_print ">> check_return";
     match c with
     | Return None -> raise (TypeException ("expected a return value instead of void"))
@@ -577,12 +586,13 @@ let check_return (t: typ) (d: delta) (g: gamma) (p: phi) (c: comm) =
             else raise (TypeException ("mismatched return types, expected: " ^ 
             (string_of_typ t) ^ ", found: " ^ (string_of_typ rt)))
         in
-        match (t,rt) with 
+        match (t, rt) with
         | (TagTyp t1, TagTyp t2) -> subsumes_to t2 t1 d |> raise_return_exception
         | (SamplerTyp i1, SamplerTyp i2) -> i1 = i2 |> raise_return_exception 
         | (BoolTyp, BoolTyp)
         | (IntTyp, IntTyp)
-        | (FloatTyp, FloatTyp) -> ()
+        | (FloatTyp, FloatTyp)
+        | (AutoTyp, _) -> ()
         | (TransTyp (t1, t2), TransTyp (t3, t4)) -> 
             (is_tag_subtype t3 t1 d && is_tag_subtype t2 t4 d) |> raise_return_exception
         | _ -> false |> raise_return_exception
@@ -601,6 +611,7 @@ let rec check_fn (((id, (pl, r)), cl): fn) (d: delta) (p: phi) : TypedAst.fn * p
     | UnitTyp -> List.iter check_void_return cl; ((((id, (pl', TypedAst.UnitTyp)), cl')), p' true)
     (* TODO: might want to check that there is exactly one return statement at the end *)
     | t -> List.iter (check_return t d g'' p) cl; ((((id, (pl', tag_erase t d)), cl')), p' true)
+
 and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.prog * phi =
     debug_print ">> check_fn_lst";
     match fl with
