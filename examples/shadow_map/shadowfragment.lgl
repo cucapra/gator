@@ -19,19 +19,11 @@ alphaColor alpha(color c, float f) {
 
 void main(model vPosition, model vNormal, world uLight, modelHom->worldHom uModel, worldHom->cameraHom uView) {   
     model->modelHom extendModel = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [0., 0., 0.]];
-    modelHom modelScale = [0., 0., 0., 1.];
-
     worldHom->world collapseWorld = [[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.]];
+    vec3->color evil = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]];
 
     model norm = normalize(vNormal);
-    float intensity = dot(normalize(uLight), collapseWorld * uModel * (extendModel * norm + modelScale));
-    color baseColor = [1.0, .5, .5];
-    if (intensity <= .2) {
-        baseColor = baseColor * .2;
-    } else { if (intensity <= .4) {
-        baseColor = baseColor * .4;
-    } else { if (intensity <= .7) {
-        baseColor = baseColor * .6;
-    } else {skip;}}}
-    alphaColor gl_FragColor = alpha(baseColor, 1.);
+    //float intensity = dot(normalize(uLight), collapseWorld * uModel * (extendModel * norm));
+    color baseColor = [0.5, 1.0, .5];
+    alphaColor gl_FragColor = [0.5, 1.0, .5, 1.];
 }

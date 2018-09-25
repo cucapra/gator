@@ -8,6 +8,8 @@ void main (model aPosition, model aNormal, cameraHom->projectiveHom uProjection,
     model->modelHom expand = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [0., 0., 0.]];
     modelHom expandScalar = [0., 0., 0., 1.];
 
+    vNormal = aNormal;
+    vPosition = aPosition;
     modelHom->projectiveHom pvm = uProjection * uView * uModel;
     projectiveHom gl_Position = pvm * (expand * aPosition + expandScalar);
 }
