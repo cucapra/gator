@@ -151,5 +151,5 @@ void main(model vPosition, model vNormal, color uBaseColor, float uBrightness, f
     c2 = c2 .* baseColor;
     c3 = c3 .* baseColor;
 
-    alphaColor gl_FragColor = alpha(asColor(c1), stupid);
+    alphaColor gl_FragColor = alpha(brightness * asColor(c1*0.7 + c2*0.9 + c3*0.1), stupid);
 }

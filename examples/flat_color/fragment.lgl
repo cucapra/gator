@@ -13,7 +13,7 @@ void main() {
                 [0., 0., 0., 1.]
                 ];
                 
-    vec4 color = [.15, 0.4, 0.25, 1.0];
-    vec4 gl_FragColor = red_to_blue * as_red * color;
+    vec4 color = [1., 0.4, 0.25, 1.];
+    vec4 gl_FragColor = color;
     print gl_FragColor;
 }

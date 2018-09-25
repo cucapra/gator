@@ -45,6 +45,8 @@ function main() {
       // Use our shader pair.
       gl.useProgram(program);
 
+      gl.clearColor(0, 0, 0, 1);
+
       // Set the shader "uniform" parameters.
       gl.uniformMatrix4fv(loc_uProjection, false, projection);
       gl.uniformMatrix4fv(loc_uView, false, view);

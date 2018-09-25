@@ -85,6 +85,25 @@ declare module 'canvas-orbit-camera' {
   export default function attachCamera(canvas: HTMLCanvasElement, opts?: Options): CanvasOrbitCamera;
 }
 
+declare module 'primitive-cube' {
+  function cube(sx: number, sy: number, sz: number, ny: number, nz: number):
+    {positions: [number, number, number][],
+    cells: [number, number, number][]};
+  export default cube;
+}
+
+declare module 'icosphere' {
+  function icosphere(subdivisions: number):
+    {positions: [number, number, number][],
+    cells: [number, number, number][]};
+  export default icosphere;
+}
+
+declare module 'stanford-dragon' {
+  const positions: [number, number, number][];
+  const cells: [number, number, number][];
+}
+
 declare module 'teapot' {
   const positions: [number, number, number][];
   const cells: [number, number, number][];

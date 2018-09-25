@@ -5,6 +5,9 @@
 import { mat4 } from 'gl-matrix';
 import * as teapot from 'teapot';
 import * as bunny from 'bunny';
+import * as dragon from 'stanford-dragon';
+import cube from 'primitive-cube';
+import icosphere from 'icosphere';
 import * as normals from 'normals';
 import pack from 'array-pack-2d';
 import canvasOrbitCamera from 'canvas-orbit-camera';
@@ -42,7 +45,7 @@ export function compileShader(gl: WebGLRenderingContext, shaderType: number, sha
  * Link two compiled shaders (a vertex shader and a fragment shader) together
  * to create a *shader program*, which can be used to issue a draw call.
  */
-export function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader): WebGLProgram {
+export function createProgram(gl: WebGLRenderingContext, shaders: WebGLShader[]): WebGLProgram {
   // create a program.
   let program = gl.createProgram();
   if (!program) {
@@ -50,8 +53,9 @@ export function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShad
   }
 
   // attach the shaders.
-  gl.attachShader(program, vertexShader);
-  gl.attachShader(program, fragmentShader);
+  shaders.forEach(function(shader: WebGLBuffer) {
+    gl.attachShader(program, shader);
+  });
 
   // link the program.
   gl.linkProgram(program);
@@ -64,8 +68,9 @@ export function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShad
   }
 
   // Delete shader objects after linked to program.
-  gl.deleteShader(vertexShader);
-  gl.deleteShader(fragmentShader);
+  shaders.forEach(function(shader: WebGLBuffer) {
+    gl.deleteShader(shader);
+  });
 
   return program;
 }
@@ -76,7 +81,18 @@ export function createProgram(gl: WebGLRenderingContext, vertexShader: WebGLShad
 export function compileProgram(gl: WebGLRenderingContext, vtx: string, frag: string): WebGLProgram {
   let vertexShader = compileShader(gl, gl.VERTEX_SHADER, vtx);
   let fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, frag);
-  return createProgram(gl, vertexShader, fragmentShader);
+  return createProgram(gl, [vertexShader, fragmentShader]);
+}
+
+/**
+ * Compile and link a list of shaders
+ */
+export function compileMultipassProgram(gl: WebGLRenderingContext, shaders: {shader: string, context: number}[]): WebGLProgram {
+  let toReturn: WebGLShader[] = [];
+  shaders.forEach(function (shader) {
+    toReturn.push(compileShader(gl, shader.context, shader.shader));
+  });
+  return createProgram(gl, toReturn);
 }
 
 /**
@@ -170,7 +186,7 @@ export function bind_element_buffer(gl: WebGLRenderingContext, buffer: WebGLBuff
 /**
  * Contains buffers for a single 3D object model.
  */
-interface Mesh {
+export interface Mesh {
   /**
    * A 3-dimensional uint16 element array buffer.
    */
@@ -203,7 +219,6 @@ interface Mesh {
  */
 export function getMesh(gl: WebGLRenderingContext, obj: { cells: [number, number, number][], positions: [number, number, number][] }): Mesh {
   let norm = normals.vertexNormals(obj.cells, obj.positions);
-  console.log(obj.cells[0]);
 
   return {
     cells: make_buffer(gl, obj.cells, 'uint16', gl.ELEMENT_ARRAY_BUFFER),
@@ -221,7 +236,7 @@ export function getMesh(gl: WebGLRenderingContext, obj: { cells: [number, number
  * @param gl      rendering context
  * @param obj_src string literal content of OBJ source file
  */
-export function load_obj (gl: WebGLRenderingContext, obj_src: string) {
+export function load_obj (gl: WebGLRenderingContext, obj_src: string): Mesh {
 
   if (typeof obj_src !== "string") {
     throw "obj source must be a string";
@@ -229,6 +244,7 @@ export function load_obj (gl: WebGLRenderingContext, obj_src: string) {
 
   // // Create a WebGL buffer.
   let mesh = new obj_loader.Mesh(obj_src);
+  console.log(mesh.vertices);
   // Match the interface we're using for Mesh objects that come from
   // StackGL.
   let cell = group_array(mesh.indices, 3) as Vec3Array;
@@ -257,7 +273,7 @@ export function load_obj (gl: WebGLRenderingContext, obj_src: string) {
  * Load image texture.
  * @param gl rendering context
  */
-export function load_texture(gl: WebGLRenderingContext, img_src: string) {
+export function load_texture(gl: WebGLRenderingContext, img_src: string)  {
   // Create a texture.
   // Asynchronously load an image
   var image = new Image();
@@ -292,59 +308,25 @@ function group_array<T>(a: T[], size: number) {
   return out;
 }
 
-/*
- *  Get a Mesh object for a unit sphere with 'vertex_count' vertices
+/**
+ * Get a Mesh object for a sphere
  */
-export function getSphere(gl: WebGLRenderingContext, radius : number,  subdivisions: number) {
-  //https://arxiv.org/ftp/cs/papers/0701/0701164.pdf
-  let r = radius;
-
-  let midpoint = function(p1 : number, p2 : number) {
-    return (p1 + p2) / Math.abs(p1 + p2);
-  }
-
-  let subdivide = function(vertices : [number, number, number], depth : number) : 
-    {verts : [number, number, number][], cells : [number, number, number][]} {
-      if (depth <= 0)
-        return {verts : [vertices], cells : [[0, 1, 2]]}
-      let w0 = midpoint(vertices[1], vertices[2]);
-      let w1 = midpoint(vertices[0], vertices[2]);
-      let w2 = midpoint(vertices[0], vertices[1]);
-      return {verts : [vertices], cells : [[0, 1, 2]]}
-  }
-
-  let positions : [number, number, number][] = []
-  positions.push([0, 0, r])
-  positions.push([r, 0, 0])
-  positions.push([0, r, 0])
-  positions.push([-r, 0, 0])
-  positions.push([0, -r, 0])
-  positions.push([0, 0, -r])
-
-  let cells : [number, number, number][] = [];
-  cells.push([1, 5, 2]);
-  cells.push([2, 5, 3]);
-  cells.push([3, 5, 4]);
-  cells.push([4, 5, 1]);
-  cells.push([1, 0, 4]);
-  cells.push([4, 0, 3]);
-  cells.push([3, 0, 2]);
-  cells.push([2, 0, 1]);
-
-  return getMesh(gl, {cells: cells, positions : positions});
+export function getCube(gl: WebGLRenderingContext, sx: number, sy: number, sz: number, ny: number, nz: number) {
+  return getMesh(gl, cube(sx, sy, sz, ny, nz));
 }
 
-export function getSquare(gl: WebGLRenderingContext, width: number) {
-  let positions : [number, number, number][] = [];
-  positions.push([width, 0, 0]);
-  positions.push([0, width, 0]);
-  positions.push([0, -width, 0]);
-  positions.push([-width, 0, 0]);
-  let cells : [number, number, number][] = [];
-  cells.push([0, 1, 2]);
-  cells.push([3, 1, 2]);
+/**
+ * Get a Mesh object for a sphere
+ */
+export function getSphere(gl: WebGLRenderingContext, subdivisions: number) {
+  return getMesh(gl, icosphere(subdivisions));
+}
 
-  return getMesh(gl, {cells: cells, positions: positions});
+/**
+ * Get a Mesh object for the Stanford bunny.
+ */
+export function getDragon(gl: WebGLRenderingContext) {
+  return getMesh(gl, dragon);
 }
 
 /**
