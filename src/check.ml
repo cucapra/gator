@@ -738,13 +738,8 @@ let check_return (t: typ) (d: delta) (g: gamma) (pm: parametrization) (p: phi) (
             else raise (TypeException ("Mismatched return types, expected: " ^ 
             (string_of_typ t) ^ ", found: " ^ (string_of_typ rt)))
         in
-<<<<<<< HEAD
-        match (t, rt) with
-        | (TagTyp t1, TagTyp t2) -> subsumes_to t2 t1 d |> raise_return_exception
-=======
         match (t,rt) with 
         | (TagTyp t1, TagTyp t2) -> subsumes_to t2 t1 d pm |> raise_return_exception
->>>>>>> implement generic transformations
         | (SamplerTyp i1, SamplerTyp i2) -> i1 = i2 |> raise_return_exception 
         | (BoolTyp, BoolTyp)
         | (IntTyp, IntTyp)
