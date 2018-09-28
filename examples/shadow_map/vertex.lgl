@@ -1,12 +1,14 @@
-void main(vec3 aPosition, vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel, vec2 aTexCoord, vec2 vTexCoord) {
-  vec3->vec4 v3_v4 = [
-    [1., 0., 0.],
-    [0., 1., 0.],
-    [0., 0., 1.],
-    [0., 0., 0.]
-  ];
-  
-  vTexCoord = aTexCoord;
+declare vec4 vec4(vec3 v, float f);
+declare vec3 vec3(vec4 v);
 
-  vec4 gl_Position = uProjection * uView * uModel * (v3_v4 * aPosition + [0., 0., 0., 1.]);
+void main(vec3 aPosition, vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel, vec3 vPosition) {
+  vec4->vec4 texUnitConverter = [
+    [.5, 0., 0., .5],
+    [0., .5, 0., .5],
+    [0., 0., .5, .5],
+    [0., 0., 0., 1.]
+  ];
+
+  vPosition = vec3(uProjection * uView * uModel * vec4(aPosition, 1.));
+  vec4 gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
 }

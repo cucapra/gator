@@ -1,5 +1,9 @@
-declare vec4 texture2D(sampler2D txt, vec2 texCoord);
+tag world is vec3;
+tag flatWorld is vec2;
 
-void main(sampler2D uTexture, vec2 vTexCoord) {
-  vec4 gl_FragColor = texture2D(uTexture, vTexCoord);
+declare vec4 texture2D(sampler2D texture, vec2 coord);
+
+void main(sampler2D uTexture, vec3 vPosition) {
+  vec4 v = texture2D(uTexture, vPosition.xy);
+  vec4 gl_FragColor = v;
 }

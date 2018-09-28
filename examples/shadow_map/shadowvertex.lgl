@@ -1,15 +1,7 @@
-tag model is vec3;
-tag modelHom is vec4;
-tag worldHom is vec4;
-tag cameraHom is vec4;
-tag projectiveHom is vec4;
+declare vec4 vec4(vec3 v, float f);
 
-void main (model aPosition, model aNormal, cameraHom->projectiveHom uProjection, worldHom->cameraHom uView, modelHom->worldHom uModel, float uTime, model vPosition, model vNormal) {
-    model->modelHom expand = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [0., 0., 0.]];
-    modelHom expandScalar = [0., 0., 0., 1.];
+void main(vec3 aPosition, vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel) {
 
-    vNormal = aNormal;
-    vPosition = aPosition;
-    modelHom->projectiveHom pvm = uProjection * uView * uModel;
-    projectiveHom gl_Position = pvm * (expand * aPosition + expandScalar);
+    
+    vec4 gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
 }
