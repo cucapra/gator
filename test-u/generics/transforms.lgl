@@ -1,5 +1,0 @@
-tag a is vec2;
-tag b is vec2;
-tag c is b;
-tag d is b;
-tag e is c;
