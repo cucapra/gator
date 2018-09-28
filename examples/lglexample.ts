@@ -350,6 +350,10 @@ export function getTeapot(gl: WebGLRenderingContext) {
 export function drawMesh(gl: WebGLRenderingContext, mesh: Mesh) {
   bind_element_buffer(gl, mesh.cells);
   gl.drawElements(gl.TRIANGLES, mesh.cell_count, gl.UNSIGNED_SHORT, 0);
+  let errorCode = gl.getError();
+  if (errorCode != 0) {
+    throw errorCode;
+  }
 }
 
 /**

@@ -10,7 +10,6 @@ tag alphaColor is vec4;
 declare `t normalize<`t : vec3>(`t v);
 declare float dot(world v1, world v2);
 declare float log(float f);
-declare vec4 gl_FragCoord;
 
 void main(model vPosition) {
     alphaColor gl_FragColor = [1., 0.5, 0.5, 1.];

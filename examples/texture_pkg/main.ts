@@ -28,7 +28,7 @@ function main() {
   let loc_aTexCoord = lgl.attribLoc(gl, program, 'aTexCoord');
   let loc_uTexture = lgl.uniformLoc(gl, program, 'uTexture');
 
-  // We'll draw a bunny.
+  // We'll draw a teapot
   let mesh = lgl.getTeapot(gl);
 
   // Initialize the model position.
@@ -53,7 +53,6 @@ function main() {
     //lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
     lgl.bind_attrib_buffer(gl, loc_aTexCoord, mesh.texcoords, 3);
-   
   
     // Draw the object.
     lgl.drawMesh(gl, mesh);

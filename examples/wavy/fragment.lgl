@@ -7,9 +7,8 @@ tag cameraHom is vec4;
 tag color is vec3;
 tag alphaColor is vec4;
 
-declare world normalize(world v);
-declare model normalize(model v);
-declare float dot(world v1, world v2);
+declare `t normalize<`t : vec3>(`t v);
+declare float dot<`t : vec3>(`t v1, `t v2);
 declare float log(float f);
 
 alphaColor alpha(color c, float f) {
@@ -22,8 +21,8 @@ void main(model vPosition, model vNormal, world uLight, modelHom->worldHom uMode
 
     worldHom->world collapseWorld = [[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.]];
 
-    model norm = normalize(vNormal);
-    float intensity = dot(normalize(uLight), collapseWorld * uModel * (extendModel * norm));
+    model norm = normalize<model>(vNormal);
+    float intensity = dot<world>(normalize<world>(uLight), collapseWorld * uModel * (extendModel * norm));
     color baseColor = [1.0, .5, .5];
     if (intensity <= .2) {
         baseColor = baseColor * .2;
