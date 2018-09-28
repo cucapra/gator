@@ -8,6 +8,7 @@ exception ParseException of string
 
 (* let matr = Str.regexp "mat\\([0-9]+\\)x\\([0-9]+\\)" *)
 let vec = Str.regexp "vec\\([0-9]+\\)"
+let mat = Str.regexp "mat\\([0-9]+\\)"
 
 %}
 
@@ -36,6 +37,7 @@ let vec = Str.regexp "vec\\([0-9]+\\)"
 %token OR
 %token NOT
 %token COMMA
+%token DOT
 %token TAG
 %token IS
 %token TRUE
@@ -213,8 +215,18 @@ typ:
         TopTyp (int_of_string(List.nth dim_lst 0)))}
   | x1 = tagtyp; TRANS; x2 = tagtyp 
       { TransTyp(x1,x2) }
-  | e = tagtyp                      
-      { TagTyp(e) }
+  | x = ID 
+      { if (Str.string_match vec x 0) then (
+        let len = String.length x in 
+        let dim = int_of_string (String.sub x 3 (len-3)) in
+        TagTyp (TopTyp dim)
+        ) else
+        if (Str.string_match mat x 0) then (
+        let len = String.length x in 
+        let dim = int_of_string (String.sub x 3 (len-3)) in
+        TransTyp ((TopTyp dim), (TopTyp dim))
+        ) 
+        else (TagTyp (VarTyp x)) }
   | s = SAMPLER                     
       { let len = String.length s in
         let dim = String.sub s 7 (len-7) in 
@@ -310,6 +322,10 @@ exp:
       { Binop(Or,e1,e2) }
   | e1 = exp; AND; e2 = exp    
       { Binop(And,e1,e2) }
+  | e1 = exp; DOT; s = ID;
+      { Unop(Swizzle s,e1) }
+  | e1 = exp; LBRACK; e2 = exp; RBRACK;
+      { Binop(Index,e1,e2) }
 ;
 
 %%
