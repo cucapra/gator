@@ -312,6 +312,8 @@ exp:
       { Binop(Div,e1,e2) }
   | e1 = exp; CTIMES; e2 = exp 
       { Binop(CTimes,e1,e2) }
+  | MINUS; e1 = exp;
+      { Unop(Neg,e1) }
   | NOT; e1 = exp;             
       { Unop(Not,e1) }
   | e1 = exp; EQ; e2 = exp      
