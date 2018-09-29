@@ -7,15 +7,10 @@ tag cameraHom is vec4;
 tag color is vec3;
 tag alphaColor is vec4;
 
-declare camera normalize(camera v);
-declare world normalize(world v);
-declare model normalize(model v);
-declare world reflect(world i, world n);
-declare camera reflect(camera i, camera n);
-declare float length(world v);
-declare float length(camera v);
-declare float dot(world v1, world v2);
-declare float dot(camera v1, camera v2);
+declare `t normalize<`t: vec3>(`t v);
+declare `t reflect<`t: vec3>(`t i, `t n);
+declare float length<`t : vec3>(`t v);
+declare float dot<`t: vec3>(`t v1, `t v2);
 declare float abs(float f);
 declare float max(float f1, float f2);
 declare float min(float f1, float f2);
@@ -30,38 +25,20 @@ alphaColor alpha(color c, float f) {
     return cta * c + [0., 0., 0., f];
 }
 
-color world_phong_light(color baseColor, world lightPos, world fragPos, world normalDir, float specStrength, float linear, float quad) {
-    float lambertian = max(0., dot(normalDir, normalize(lightPos)));
+color phong_light<`t: vec3>(color baseColor, `t lightPos, `t fragPos, `t normalDir, float specStrength, float linear, float quad) {
+    float lambertian = max(0., dot<`t>(normalDir, normalize<`t>(lightPos)));
 
-    world viewDir = normalize(-fragPos);
-    world reflectDir = reflect(-normalize(lightPos), normalDir);
+    `t viewDir = normalize<`t>(fragPos * -1.);
+    `t reflectDir = reflect<`t>(normalize<`t>(lightPos) * -1., normalDir);
     float specular = 0.;
     if (0. <= lambertian) {
-        specular = pow(max(0., dot(viewDir, reflectDir)), 8.);
+        specular = pow(max(0., dot<`t>(viewDir, reflectDir)), 8.);
     }
     else { 
         skip; 
     }
 
-    float distance = length(lightPos - fragPos);
-    float attenuation = 1.0 / (linear * distance + quad * (distance * distance)); 
-    return (lambertian * baseColor + specStrength * specular * [1., 1., 1.]) * attenuation;
-}
-
-color camera_phong_light(color baseColor, camera lightPos, camera fragPos, camera normalDir, float specStrength, float linear, float quad) {
-    float lambertian = max(0., dot(normalDir, normalize(lightPos)));
-
-    camera viewDir = normalize(-fragPos);
-    camera reflectDir = reflect(-normalize(lightPos), normalDir);
-    float specular = 0.;
-    if (0. <= lambertian) {
-        specular = pow(max(0., dot(viewDir, reflectDir)), 8.);
-    }
-    else { 
-        skip; 
-    }
-
-    float distance = length(lightPos - fragPos);
+    float distance = length<`t>(lightPos - fragPos);
     float attenuation = 1.0 / (linear * distance + quad * (distance * distance)); 
     return (lambertian * baseColor + specStrength * specular * [1., 1., 1.]) * attenuation;
 }
@@ -75,20 +52,20 @@ void main(model vPosition, model vNormal, world uLight, camera uFlashLight, mode
     cameraHom->camera collapseCamera = [[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.]];
 
     world worldPosition = collapseWorld * uModel * (extendModel * vPosition + modelScale);
-    world worldNormalDir = normalize(collapseWorld * uModel * (extendModel * normalize(vNormal)));
+    world worldNormalDir = normalize<world>(collapseWorld * uModel * (extendModel * normalize<model>(vNormal)));
     camera camPosition = collapseCamera * uView * (extendWorld * worldPosition + worldScale);
-    camera camNormalDir = normalize(collapseCamera * uView * (extendWorld * worldNormalDir));
+    camera camNormalDir = normalize<camera>(collapseCamera * uView * (extendWorld * worldNormalDir));
     
     color lightColor = [0.6, 1.0, 0.3];
-    color light = world_phong_light(lightColor, uLight, worldPosition, worldNormalDir, .5, .01, .00008);
+    color light = phong_light<world>(lightColor, uLight, worldPosition, worldNormalDir, .5, .01, .00008);
 
     float phi = .95;
-    camera flashLightDir = normalize(uFlashLight);
-    float theta = dot(flashLightDir, normalize(camPosition));
+    camera flashLightDir = normalize<camera>(uFlashLight);
+    float theta = dot<camera>(flashLightDir, normalize<camera>(camPosition));
     color flashLightColor = [0.5, 0.5, 0.5];
     color flashLight = [0., 0., 0.];
     if (phi <= theta) {
-        flashLight = camera_phong_light(flashLightColor, uFlashLight, camPosition, camNormalDir, 1., .001, .0001);
+        flashLight = phong_light<camera>(flashLightColor, uFlashLight, camPosition, camNormalDir, 1., .001, .0001);
     } else {skip;}
 
     color ambient = [0.2, 0.1, .2];

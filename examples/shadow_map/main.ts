@@ -33,15 +33,16 @@ function main() {
 
   // We'll draw a teapot over a plane with a wall next door
   let teapot = lgl.getTeapot(gl);
-  let plane = lgl.getCube(gl, 100, 100, .01, 1, 1);
+  //let plane = lgl.getCube(gl, 100, 100, .01, 1, 1);
+  let plane = lgl.getCube(gl, 1400, 1000, .01, 1, 1);
   let wall = lgl.getCube(gl, 100, 50, .01, 1, 1);
 
   // Initialize the model positions.
   let teapotModel = mat4.create();
   //mat4.translate(teapotModel, teapotModel, [-30.+25., 0., 0.]);
   let planeModel = mat4.create();
-  mat4.translate(planeModel, planeModel, [25., -50., 0.]);
-  mat4.rotateX(planeModel, planeModel, Math.PI/2);
+  //mat4.translate(planeModel, planeModel, [25., -50., 0.]);
+  //mat4.rotateX(planeModel, planeModel, Math.PI/2);
   let wallModel = mat4.create();
   mat4.translate(wallModel, wallModel, [-100./2.+25., -(100.-50.)/2, 0.]);
   mat4.rotateY(wallModel, wallModel, Math.PI/2);
@@ -52,14 +53,15 @@ function main() {
   // Setup the shadow buffer
   let shadowFramebuffer = gl.createFramebuffer();
   gl.bindFramebuffer(gl.FRAMEBUFFER, shadowFramebuffer)
-  let shadowDepthTextureSize = 1024;
+  let shadowDepthTextureWidth = 1024;
+  let shadowDepthTextureHeight = 1024;
 
   let shadowDepthTexture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, shadowDepthTexture);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, shadowDepthTextureSize, shadowDepthTextureSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, shadowDepthTextureWidth, shadowDepthTextureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, shadowDepthTexture, 0);
 
   /*var renderBuffer = gl.createRenderbuffer();
@@ -79,7 +81,7 @@ function main() {
     function buildShadowBuffers(mesh: lgl.Mesh, model: mat4) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, shadowFramebuffer);
 
-      gl.viewport(0, 0, shadowDepthTextureSize, shadowDepthTextureSize);
+      gl.viewport(0, 0, shadowDepthTextureWidth, shadowDepthTextureHeight);
       gl.clearColor(0, 0, 1, 1);
       gl.clearDepth(1.0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -123,8 +125,8 @@ function main() {
     gl.bindTexture(gl.TEXTURE_2D, shadowDepthTexture);
     gl.uniform1i(programLocations["uTexture"], 0);
     
-    drawObject(teapot, teapotModel);
-    //drawObject(plane, planeModel);
+    //drawObject(teapot, teapotModel);
+    drawObject(plane, planeModel);
     //drawObject(wall, wallModel);
   }
   

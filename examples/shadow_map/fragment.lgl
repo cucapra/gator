@@ -4,6 +4,6 @@ tag flatWorld is vec2;
 declare vec4 texture2D(sampler2D texture, vec2 coord);
 
 void main(sampler2D uTexture, vec3 vPosition) {
-  vec4 v = texture2D(uTexture, vPosition.xy);
+  vec4 v = texture2D(uTexture, [(vPosition.x + 512.) / 1024., (vPosition.y + 512.) / 1024.]);
   vec4 gl_FragColor = v;
 }

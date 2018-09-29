@@ -1,16 +1,3 @@
-tag model is vec3;
-tag modelHom is vec4;
-tag world is vec3;
-tag worldHom is vec4;
-tag camera is vec3;
-tag cameraHom is vec4;
-tag color is vec3;
-tag alphaColor is vec4;
-
-declare `t normalize<`t : vec3>(`t v);
-declare float dot(world v1, world v2);
-declare float log(float f);
-
-void main(model vPosition) {
-    alphaColor gl_FragColor = [1., 0.5, 0.5, 1.];
+void main(vec3 vPosition) {
+    vec4 gl_FragColor = [1., 0.5, 0.5, 1.];
 }

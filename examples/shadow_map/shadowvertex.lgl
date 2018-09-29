@@ -1,7 +1,12 @@
 declare vec4 vec4(vec3 v, float f);
 
-void main(vec3 aPosition, vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel) {
-
-    
-    vec4 gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
+void main(vec3 aPosition, vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel, vec3 vPosition) {
+    vec4->vec4 removeZ = [
+        [1., 0., 0., 0.],
+        [0., 1., 0., 0.],
+        [0., 0., 0., 0.],
+        [0., 0., 0., 1.]
+    ];
+    vPosition = aPosition;
+    vec4 gl_Position = removeZ * uProjection * uView * uModel * vec4(aPosition, 1.);
 }
