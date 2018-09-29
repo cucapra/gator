@@ -38,14 +38,15 @@ function main() {
   let flashLight = [0., 0., 1.];
 
   function render(view: mat4, projection: mat4) {
+    gl.clearColor(0., 0., 0., 1.);
+    gl.clearDepth(1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     for (let i = 0; i < 5; i++) {
       // Rotate the model a little bit on each frame.
       mat4.rotateY(models[i], models[i], i * .005 - .0125);
 
       // Use our shader pair.
       gl.useProgram(program);
-
-      gl.clearColor(0, 0, 0, 1);
 
       // Set the shader "uniform" parameters.
       gl.uniformMatrix4fv(loc_uProjection, false, projection);
@@ -57,8 +58,7 @@ function main() {
       // Set the attribute arrays.
       lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
       lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
-      lgl.bind_element_buffer(gl, mesh.cells);
-      gl.drawElements(gl.TRIANGLES, mesh.cell_count, gl.UNSIGNED_SHORT, 0);
+      lgl.drawMesh(gl, mesh);
     }
   }
 }
