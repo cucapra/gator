@@ -21,6 +21,7 @@
     "icosphere": "^1.0.0",
     "normals": "^0.1.0",
     "primitive-cube": "^2.0.1",
+    "stanford-dragon": "^1.1.1",
     "teapot": "^1.0.0",
     "webgl-obj-loader": "^1.1.3"
   }
