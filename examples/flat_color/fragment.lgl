@@ -1,18 +1,4 @@
-void main() {
-    vec4->vec4 as_red = [
-                [1., 1., 1., 0.],
-                [0., 0., 0., 0.],
-                [0., 0., 0., 0.],
-                [0., 0., 0., 1.]
-                ];
-
-    vec4->vec4 red_to_blue = [
-                [0., 0., 0., 0.],
-                [0., 0., 0., 0.],
-                [1., 0., 0., 0.],
-                [0., 0., 0., 1.]
-                ];
-                
+void main() { 
     vec4 color = [1., 0.4, 0.25, 1.];
     vec4 gl_FragColor = color;
     print gl_FragColor;

@@ -1,4 +1,5 @@
 declare vec4 vec4(vec3 v, float f);
+declare vec3 vec3(vec4 v);
 
 void main(vec3 aPosition, vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel, vec3 vPosition) {
     vec4->vec4 removeZ = [
@@ -7,6 +8,6 @@ void main(vec3 aPosition, vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 u
         [0., 0., 0., 0.],
         [0., 0., 0., 1.]
     ];
-    vPosition = aPosition;
-    vec4 gl_Position = removeZ * uProjection * uView * uModel * vec4(aPosition, 1.);
+    vPosition = vec3(uProjection * uView * uModel * vec4(aPosition, 1.));
+    vec4 gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
 }

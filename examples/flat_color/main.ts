@@ -15,7 +15,7 @@ function main() {
   let loc_uView = lgl.uniformLoc(gl, program, 'uView');
   let loc_uModel = lgl.uniformLoc(gl, program, 'uModel');
   let loc_aPosition = lgl.attribLoc(gl, program, 'aPosition');
-  let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
+  // let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
 
   // We'll draw a teapot.
   let mesh = lgl.getTeapot(gl);
@@ -36,7 +36,7 @@ function main() {
     gl.uniformMatrix4fv(loc_uModel, false, model);
 
     // Set the attribute arrays.
-    lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
+    // lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
 
     // Draw the object.

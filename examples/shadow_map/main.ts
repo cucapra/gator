@@ -34,7 +34,7 @@ function main() {
   // We'll draw a teapot over a plane with a wall next door
   let teapot = lgl.getTeapot(gl);
   //let plane = lgl.getCube(gl, 100, 100, .01, 1, 1);
-  let plane = lgl.getCube(gl, 1400, 1000, .01, 1, 1);
+  let plane = lgl.getCube(gl, 100, 100, .01, 1, 1);
   let wall = lgl.getCube(gl, 100, 50, .01, 1, 1);
 
   // Initialize the model positions.
@@ -63,6 +63,12 @@ function main() {
   //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, shadowDepthTextureWidth, shadowDepthTextureHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, shadowDepthTexture, 0);
+
+  let projectionMatrix = mat4.create();
+  mat4.perspective(projectionMatrix, Math.PI/2, 1.4, 1, 2000);
+  let viewMatrix = mat4.create();
+  mat4.lookAt(viewMatrix, [0., 0., -50.], [0., 0., 0.], [0., 1., 0.]);
+  mat4.invert(viewMatrix, viewMatrix);
 
   /*var renderBuffer = gl.createRenderbuffer();
   gl.bindRenderbuffer(gl.RENDERBUFFER, renderBuffer);
@@ -106,8 +112,8 @@ function main() {
     gl.useProgram(shadowmap);
 
     // Set the shader "uniform" parameters.
-    gl.uniformMatrix4fv(shadowLocations["uProjection"], false, projection);
-    gl.uniformMatrix4fv(shadowLocations["uView"], false, view);
+    gl.uniformMatrix4fv(shadowLocations["uProjection"], false, projectionMatrix);
+    gl.uniformMatrix4fv(shadowLocations["uView"], false, viewMatrix);
     //gl.uniform3fv(shadowLocations["uLight"], light);
 
     buildShadowBuffers(teapot, teapotModel);
@@ -125,8 +131,8 @@ function main() {
     gl.bindTexture(gl.TEXTURE_2D, shadowDepthTexture);
     gl.uniform1i(programLocations["uTexture"], 0);
     
-    //drawObject(teapot, teapotModel);
-    drawObject(plane, planeModel);
+    drawObject(teapot, teapotModel);
+    //drawObject(plane, planeModel);
     //drawObject(wall, wallModel);
   }
   

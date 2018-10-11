@@ -2,7 +2,14 @@ declare vec4 vec4(vec3 v, float f);
 declare vec3 vec3(vec4 v);
 
 void main(vec3 aPosition, vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel, vec3 vPosition) {
-  auto position = (uProjection * uView * uModel * vec4(aPosition, 1.));
+  vec4->vec4 texUnitConverter = [
+    [.5, 0., 0., .5],
+    [0., .5, 0., .5],
+    [0., 0., .5, .5],
+    [0., 0., 0., 1.]
+  ];
+
+  vec4 position = (uProjection * uView * uModel * vec4(aPosition, 1.));
   vPosition = vec3(position);
-  vec4 gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
+  vec4 gl_Position = position;
 }

@@ -1,3 +1,5 @@
+declare vec4 vec4(vec3 v, float f);
+
 void main(vec3 vPosition) {
-    vec4 gl_FragColor = [1., 0.5, 0.5, 1.];
+    vec4 gl_FragColor = vec4(vPosition, 1.);
 }
