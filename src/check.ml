@@ -544,8 +544,6 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
     let args' = List.map (fun a -> check_exp a d g pm p) args in (* todo: fix parametrization argument *)
     let args_exp = List.map fst args' in
     let args_typ = List.map snd args' in
-    print_endline ("[" ^ (String.concat "," (List.map TagAstPrinter.string_of_typ args_typ)) ^ "]");
-    print_endline ("[" ^ (String.concat "," (List.map TagAstPrinter.string_of_typ pml)) ^ "]");
     (* find definition for function in phi *)
     (* looks through overloaded all possible definitions of the function *)
     let rec find_fn_inv ((params, rt, pr) : fn_type) : fn_type = (* TODO *)
