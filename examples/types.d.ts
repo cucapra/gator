@@ -99,11 +99,6 @@ declare module 'icosphere' {
   export default icosphere;
 }
 
-declare module 'stanford-dragon' {
-  const positions: [number, number, number][];
-  const cells: [number, number, number][];
-}
-
 declare module 'teapot' {
   const positions: [number, number, number][];
   const cells: [number, number, number][];

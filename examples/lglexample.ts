@@ -5,7 +5,6 @@
 import { mat4 } from 'gl-matrix';
 import * as teapot from 'teapot';
 import * as bunny from 'bunny';
-import * as dragon from 'stanford-dragon';
 import cube from 'primitive-cube';
 import icosphere from 'icosphere';
 import * as normals from 'normals';
@@ -320,13 +319,6 @@ export function getCube(gl: WebGLRenderingContext, sx: number, sy: number, sz: n
  */
 export function getSphere(gl: WebGLRenderingContext, subdivisions: number) {
   return getMesh(gl, icosphere(subdivisions));
-}
-
-/**
- * Get a Mesh object for the Stanford bunny.
- */
-export function getDragon(gl: WebGLRenderingContext) {
-  return getMesh(gl, dragon);
 }
 
 /**
