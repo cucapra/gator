@@ -43,10 +43,10 @@ let rec string_of_exp (e:exp) : string =
         | _ -> (string_of_binop op ls rs))
     | _ -> failwith "string_of_exp Unimplemented"
 
-let rec string_of_params (p: (id * typ) list) : string =
+let rec string_of_params (p: (id * typ * typ option) list) : string =
     match p with
     | [] -> ""
-    | (i1, t1)::t -> (string_of_typ t1) ^ " " ^ i1 ^ ", " ^ (string_of_params t)
+    | (i1, t1, None)::t -> (string_of_typ t1) ^ " " ^ i1 ^ ", " ^ (string_of_params t)
 
 let rec string_of_parameterization (pm : parametrization) : string = 
     match pm with 
@@ -65,7 +65,7 @@ let rec string_of_comm (c: comm) : string =
     match c with
     | Skip -> "skip;"
     | Print e -> "print " ^ (string_of_exp e) ^ ";"
-    | Decl (t, s, e) -> (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_exp e) ^ ";"
+    | Decl (t, None, s, e) -> (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_exp e) ^ ";"
     | If (b, c1, c2) -> "if (" ^ (string_of_exp b) ^ ") {\n" ^ (string_of_comm_list c1) ^
         "} else {\n" ^ (string_of_comm_list c2) ^ "}"
     | Assign (b, x) -> b ^ " = " ^ (string_of_exp x) ^ ";"

@@ -450,7 +450,8 @@ let check_index_exp (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ =
 
 
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
-let check_param ((id, t): (string * typ)) (g: gamma) (d: delta) : gamma = 
+(* TODO : parametrized types *)
+let check_param ((id, t, t'): (string * typ * typ option)) (g: gamma) (d: delta) : gamma = 
     debug_print ">> check_param";
     if Assoc.mem id g 
     then raise (TypeException ("Duplicate parameter name in function declaration: " ^ id))
@@ -463,10 +464,10 @@ let check_param ((id, t): (string * typ)) (g: gamma) (d: delta) : gamma =
     )
     
 (* Get list of parameters from param list *)
-let check_params (pl : (id * typ) list) (d : delta) (pm : parametrization) : TypedAst.params * gamma = 
+let check_params (pl : (id * typ * typ option) list) (d : delta) (pm : parametrization) : TypedAst.params * gamma = 
     debug_print ">> check_params";
     let g = List.fold_left (fun (g: gamma) p -> check_param p g d) Assoc.empty pl in 
-    let p = List.map (fun (i, t) -> (i, tag_erase t d pm)) pl in 
+    let p = List.map (fun (i, t, t') -> (i, tag_erase t d pm)) pl in 
     (p, g)
 
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parametrization) : TypedAst.texp = 
@@ -547,8 +548,9 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
     let args_typ = List.map snd args' in
     (* find definition for function in phi *)
     (* looks through overloaded all possible definitions of the function *)
-    let rec find_fn_inv ((params, rt, pr) : fn_type) : fn_type =
-        let params_typ = List.map snd params in
+    let rec find_fn_inv ((params, rt, pr) : fn_type) : fn_type = (* TODO *)
+        let get_2_3 (_,a,_) = a in
+        let params_typ = List.map get_2_3 params in
         let pr_typ = List.map fst pr in 
         if List.length pr_typ == List.length pml then 
             (* parametrization arguments are subtypes of defined fn parametrizations *)
@@ -596,7 +598,7 @@ and check_comm (c: comm) (d: delta) (g: gamma) (pm: parametrization) (p: phi) : 
         | UnitTyp -> raise (TypeException "Print function cannot print void types")
         | _ -> (TypedAst.Print (e, t), g)
     )
-    | Decl (t, s, e) ->
+    | Decl (t, tp, s, e) -> (* TODO: tp *)
         if Assoc.mem s g then raise (TypeException "variable name shadowing is illegal")
         else 
         let result = check_exp e d g pm p in

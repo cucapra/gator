@@ -14,7 +14,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 
 (* Tokens *)
 
-%token EOL 
+%token EOL  
 %token <int> NUM
 %token <float> FLOAT
 %token <string> MATTYP
@@ -138,9 +138,13 @@ commlst:
 
 params: 
   | t = typ; x = ID
-      { (x, t)::[] }
+      { (x, t, None)::[] }
+  | t1 = typ; LWICK; t2 = typ; RWICK; x = ID
+      { (x, t1, Some t2)::[] }
   | t = typ; x = ID; COMMA; p = params
-      { (x, t)::p }
+      { (x, t, None)::p }
+  | t1 = typ; LWICK; t2 = typ; RWICK; x = ID; COMMA; p = params
+      { (x, t1, Some t2)::p }
 ;
 
 parametrization:
@@ -170,7 +174,11 @@ comm:
   | t = typ; x = ID; GETS; e1 = exp; SEMI; 
       { if (Str.string_match vec x 0) then (
         raise (ParseException "invalid id specified for variable declaration")
-        ) else Decl(t, x, e1) }
+        ) else Decl(t, None, x, e1) }
+  | t1= typ; x = ID; LWICK; t2 = typ; RWICK; GETS; e1 = exp; SEMI; 
+      { if (Str.string_match vec x 0) then (
+        raise (ParseException "invalid id specified for variable declaration")
+        ) else Decl(t1, Some t2, x, e1) }
   | x = ID; GETS; e1 = exp; SEMI;          
       { if (Str.string_match vec x 0) then (
         raise (ParseException "invalid id specified for variable declaration")

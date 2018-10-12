@@ -1,5 +1,7 @@
-declare vec4 texture2D(sampler2D txt, vec2 texCoord);
+tag color is vec4;
 
-void main(sampler2D uTexture, vec2 vTexCoord) {
-  vec4 gl_FragColor = texture2D(uTexture, vTexCoord);
+declare `t texture2D<`t>(sampler2D<`t> txt, vec2 texCoord);
+
+void main(sampler2D<color> uTexture, vec2 vTexCoord) {
+  color gl_FragColor = texture2D(uTexture, vTexCoord);
 }
