@@ -20,7 +20,10 @@ type typ =
     | TransTyp of tag_typ * tag_typ
     | SamplerTyp of int (* i.e. sampler2D *)
     | AbsTyp of string
+    (* Built-in generic types for usability *)
     | GenTyp
+    | GenVecTyp
+    | GenMatTyp
 
 (* expressions *)
 type exp =
@@ -38,7 +41,8 @@ and args = exp list
 type parametrization = (typ * typ option) list
 
 (* function parameters *)
-type params = (string * typ) list
+(* arguments may have an optional parametrization type *)
+type params = (string * typ * typ option) list
 type ret_type = typ
 (* our functions are not first-order! *)
 type fn_type = params * ret_type * parametrization
@@ -49,7 +53,7 @@ type fn_decl = string * fn_type
 type comm =
     Skip
     | Print of exp
-    | Decl of typ * string * exp
+    | Decl of typ * typ option * string * exp
     | Assign of string * exp
     | If of exp * comm list * comm list
     | Return of exp option

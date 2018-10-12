@@ -178,6 +178,8 @@ let rec generate_fn_generics (((id, (p, rt)), cl) : fn) (pm : (string * etyp opt
     let gens = Assoc.empty 
         |> Assoc.update "genType" [IntTyp; FloatTyp; 
         MatTyp(2,1); MatTyp(3,1); MatTyp(4,1); VecTyp 2; VecTyp 3; VecTyp 4]
+        |> Assoc.update "vec" [VecTyp 2; VecTyp 3; VecTyp 4]
+        |> Assoc.update "mat" [MatTyp(2,1); MatTyp(3,1); MatTyp(4,1)]
         |> process_parametrizations pm;
     (* TODO: add into gens all the stuff in pm! *)
     in 
@@ -205,6 +207,20 @@ let rec generate_fn_generics (((id, (p, rt)), cl) : fn) (pm : (string * etyp opt
         | (s', Some (GenTyp))::t -> 
             debug_print ">> generate_fn_generics3";
             let con = Assoc.lookup "genType" gens in 
+            let rec replace_generic_helper c =
+                match c with 
+                [] -> ""
+                | s'''::t -> Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ s''') orig ^ (replace_generic_helper t)
+            in replace_generic_helper con
+        | (s', Some (GenMatTyp))::t -> 
+            let con = Assoc.lookup "mat" gens in 
+            let rec replace_generic_helper c =
+                match c with 
+                [] -> ""
+                | s'''::t -> Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ s''') orig ^ (replace_generic_helper t)
+            in replace_generic_helper con
+        | (s', Some (GenVecTyp))::t -> 
+            let con = Assoc.lookup "vec" gens in 
             let rec replace_generic_helper c =
                 match c with 
                 [] -> ""

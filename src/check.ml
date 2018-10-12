@@ -37,6 +37,8 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     | TypedAst.AbsTyp (s, None) -> AbsTyp s
     | TypedAst.AbsTyp (s, Some e') -> etyp_to_typ e'
     | TypedAst.GenTyp -> GenTyp
+    | TypedAst.GenMatTyp -> GenMatTyp
+    | TypedAst.GenVecTyp -> GenVecTyp
 
 let rec vec_dim (t: tag_typ) (d: delta) (pm : parametrization): int =
     debug_print ">> vec_dim";
@@ -88,6 +90,8 @@ and tag_erase (t : typ) (d : delta) (pm: parametrization) : TypedAst.etyp =
     | SamplerTyp i -> TypedAst.SamplerTyp i
     | AbsTyp s -> tag_erase_param t d pm 
     | GenTyp -> TypedAst.GenTyp
+    | GenVecTyp -> TypedAst.GenVecTyp
+    | GenMatTyp -> TypedAst.GenMatTyp
     | AutoTyp -> raise (TypeException "Illegal use of auto (cannot use auto as part of a function call)")
 
 let rec get_ancestor_list (t: tag_typ) (d: delta) : id list =
@@ -134,6 +138,8 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parametrizat
     | (FloatTyp, GenTyp)
     | (TagTyp _, GenTyp)
     | (TransTyp _, GenTyp) -> true (* todo: is transtyp a subtype of gentyp? *)
+    | (TransTyp _, GenMatTyp) -> true
+    | (TagTyp _, GenVecTyp) -> true 
     | (AbsTyp s1, AbsTyp s2) -> s1 = s2
     | (_, AbsTyp s) -> 
         if List.mem_assoc target pm 
@@ -366,7 +372,7 @@ let check_addition_exp (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ
         TransTyp (greatest_common_child m1 m3 d pm, least_common_parent m2 m4 d pm)
     (* TODO - etyp conversion before abstyp comparison*)
     | AbsTyp a, AbsTyp a' -> 
-        if a = a' 
+        if a = a'
         then 
             begin
                 match tag_erase_param t1 d pm with
@@ -442,7 +448,8 @@ let check_index_exp (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ =
 
 
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
-let check_param ((id, t): (string * typ)) (g: gamma) (d: delta) : gamma = 
+(* TODO : parametrized types *)
+let check_param ((id, t, t'): (string * typ * typ option)) (g: gamma) (d: delta) : gamma = 
     debug_print ">> check_param";
     if Assoc.mem id g 
     then raise (TypeException ("Duplicate parameter name in function declaration: " ^ id))
@@ -455,10 +462,10 @@ let check_param ((id, t): (string * typ)) (g: gamma) (d: delta) : gamma =
     )
     
 (* Get list of parameters from param list *)
-let check_params (pl : (id * typ) list) (d : delta) (pm : parametrization) : TypedAst.params * gamma = 
+let check_params (pl : (id * typ * typ option) list) (d : delta) (pm : parametrization) : TypedAst.params * gamma = 
     debug_print ">> check_params";
     let g = List.fold_left (fun (g: gamma) p -> check_param p g d) Assoc.empty pl in 
-    let p = List.map (fun (i, t) -> (i, tag_erase t d pm)) pl in 
+    let p = List.map (fun (i, t, t') -> (i, tag_erase t d pm)) pl in 
     (p, g)
 
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parametrization) : TypedAst.texp = 
@@ -541,12 +548,11 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
     print_endline ("[" ^ (String.concat "," (List.map TagAstPrinter.string_of_typ pml)) ^ "]");
     (* find definition for function in phi *)
     (* looks through overloaded all possible definitions of the function *)
-    let rec find_fn_inv ((params, rt, pr) : fn_type) : fn_type =
-        let params_typ = List.map snd params in
-        print_endline ("[" ^ (String.concat "," (List.map TagAstPrinter.string_of_typ params_typ)) ^ "]");
-        let pr_typ = List.map fst pr in
-        print_endline ("[" ^ (String.concat "," (List.map TagAstPrinter.string_of_typ pr_typ)) ^ "]");
-        if List.length pr_typ == List.length pml then
+    let rec find_fn_inv ((params, rt, pr) : fn_type) : fn_type = (* TODO *)
+        let get_2_3 (_,a,_) = a in
+        let params_typ = List.map get_2_3 params in
+        let pr_typ = List.map fst pr in 
+        if List.length pr_typ == List.length pml then 
             (* parametrization arguments are subtypes of defined fn parametrizations *)
             if List.fold_left2 (fun acc arg param -> acc && is_subtype arg param d pm false) true pr_typ pml
             then ()
@@ -566,7 +572,8 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
         ( match (pm'', pml'') with 
         | ([], []) -> raise (TypeException "abstraction type not found in function definition")
         | (AbsTyp s, _)::t, (at::t') -> if r = s then at else (rt_map t t' r)
-        | _ -> raise (TypeException "Expected abstraction type for parametrization") ) 
+        (* | (AbsTyp s, _)::t, [] -> if r = s then at else (rt_map t t' r) *)
+        | (_, _) -> raise (TypeException "Expected abstraction type for parametrization") ) 
     in 
     let rt = match rt with
         | AbsTyp rt' -> rt_map pm pml rt'
@@ -587,7 +594,7 @@ and check_comm (c: comm) (d: delta) (g: gamma) (pm: parametrization) (p: phi) : 
         | UnitTyp -> raise (TypeException "Print function cannot print void types")
         | _ -> (TypedAst.Print (e, t), g)
     )
-    | Decl (t, s, e) ->
+    | Decl (t, tp, s, e) -> (* TODO: tp *)
         if Assoc.mem s g then raise (TypeException "variable name shadowing is illegal")
         else 
         let result = check_exp e d g pm p in
@@ -736,6 +743,8 @@ let check_return (t: typ) (d: delta) (g: gamma) (pm: parametrization) (p: phi) (
         | (BoolTyp, BoolTyp)
         | (IntTyp, IntTyp)
         | (FloatTyp, FloatTyp)
+        | (TagTyp _, GenVecTyp)
+        | (TransTyp _, GenMatTyp)
         | (AutoTyp, _) -> ()
         | (TransTyp (t1, t2), TransTyp (t3, t4)) -> 
             (is_tag_subtype t3 t1 d pm && is_tag_subtype t2 t4 d pm) |> raise_return_exception

@@ -21,6 +21,8 @@ rule read = parse
   | comment         { read lexbuf }
   | white           { read lexbuf }
   | num as num      { NUM (int_of_string num) }
+  | "vec"           { VEC }
+  | "mat"           { MAT }
   | "tag"           { TAG }
   | "is"            { IS }
   | "true"          { TRUE }
