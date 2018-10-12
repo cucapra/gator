@@ -113,10 +113,17 @@ let is_tag_subtype (to_check: tag_typ) (target: tag_typ) (d: delta) (pm: paramet
     | TAbsTyp _, _ 
     | _, TAbsTyp _ -> true
 
-let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parametrization): bool =
+let subsumes_to (to_check: tag_typ) (target: tag_typ) (d: delta) (pm: parametrization) : bool =
+    debug_print ">> subsumes_to";
+    match (to_check, target) with
+    | VarTyp s, TopTyp n -> false (* Cannot upcast a variable to the toptyp *)
+    | _ -> is_tag_subtype to_check target d pm
+
+(* Note that the 'strict' parameter controls whether or not we allow casting to the top type *)
+let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parametrization) (strict : bool): bool =
     debug_print (">> is_subtype" ^ (string_of_typ to_check) ^ ", " ^(string_of_typ target));
     match (to_check, target) with 
-    | (TagTyp t1, TagTyp t2) -> is_tag_subtype t1 t2 d pm (* MARK *)
+    | (TagTyp t1, TagTyp t2) -> let f = if strict then subsumes_to else is_tag_subtype in f t1 t2 d pm (* MARK *)
     | (SamplerTyp i1, SamplerTyp i2) -> i1 = i2 
     | (BoolTyp, BoolTyp)
     | (IntTyp, IntTyp)
@@ -132,16 +139,10 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parametrizat
         if List.mem_assoc target pm 
         then let p = (List.assoc target pm) in 
             match p with 
-            | Some p' ->  is_subtype to_check p' d pm 
+            | Some p' ->  is_subtype to_check p' d pm strict
             | None -> true (* todo *)
         else raise (TypeException ("AbsTyp " ^ s ^ " not found in parametrization"))
     | _ -> false
-
-let subsumes_to (to_check: tag_typ) (target: tag_typ) (d: delta) (pm: parametrization) : bool =
-    debug_print ">> subsumes_to";
-    match (to_check, target) with
-    | VarTyp s, TopTyp n -> false (* Cannot upcast a variable to the toptyp *)
-    | _ -> is_tag_subtype to_check target d pm
 
 let least_common_parent (t1: tag_typ) (t2: tag_typ) (d: delta) (pm: parametrization): tag_typ =
     debug_print ">> least_common_parent";
@@ -351,15 +352,6 @@ let check_comp_binop (t1: typ) (t2: typ) (d: delta) : typ =
     | FloatTyp, FloatTyp -> BoolTyp
     | _ -> raise (TypeException "Unexpected type for binary comparator operations")
 
-let check_dot_exp (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ = 
-    debug_print "check_dot_exp";
-    match (t1, t2) with 
-    | TagTyp a1, TagTyp a2 ->  
-        if subsumes_to a1 a2 d pm|| subsumes_to a2 a1 d pm
-        then FloatTyp 
-        else raise (TypeException "Expected tag type of same dimension for dot product exp")
-    | _ -> raise (TypeException "Unexpected type for dot product exp")
-
 (* Type checking addition operations on scalar (int, float) expressions *)
 (* Types are closed under addition and scalar multiplication *)
 let check_addition_exp (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ =
@@ -543,27 +535,26 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
         then Assoc.lookup i p
         else raise (TypeException ("Invocated function " ^ i ^ " not found")) in
     let args' = List.map (fun a -> check_exp a d g pm p) args in (* todo: fix parametrization argument *)
-    let args_exp = List.map fst args' in 
+    let args_exp = List.map fst args' in
     let args_typ = List.map snd args' in
+    print_endline ("[" ^ (String.concat "," (List.map TagAstPrinter.string_of_typ args_typ)) ^ "]");
+    print_endline ("[" ^ (String.concat "," (List.map TagAstPrinter.string_of_typ pml)) ^ "]");
     (* find definition for function in phi *)
     (* looks through overloaded all possible definitions of the function *)
     let rec find_fn_inv ((params, rt, pr) : fn_type) : fn_type =
         let params_typ = List.map snd params in
-        let pr_typ = List.map fst pr in 
-        if List.length pr_typ == List.length pml then 
+        print_endline ("[" ^ (String.concat "," (List.map TagAstPrinter.string_of_typ params_typ)) ^ "]");
+        let pr_typ = List.map fst pr in
+        print_endline ("[" ^ (String.concat "," (List.map TagAstPrinter.string_of_typ pr_typ)) ^ "]");
+        if List.length pr_typ == List.length pml then
             (* parametrization arguments are subtypes of defined fn parametrizations *)
-            if List.fold_left2 (fun acc arg param -> 
-            acc && is_subtype arg param d pm)
-            true args_typ params_typ 
-            then 
-            ()
-            else raise (TypeException ("Parametrization types mismatch for " ^ (string_of_typ (pr_typ |> List.hd) )))
+            if List.fold_left2 (fun acc arg param -> acc && is_subtype arg param d pm false) true pr_typ pml
+            then ()
+            else raise (TypeException ("Parametrization types mismatch " ^ (string_of_typ (pr_typ |> List.hd) )))
         else raise (TypeException "Mismatched number of parametrizations");
         (* check number of arg and param types match *)
         if List.length args_typ == List.length params_typ then
-            if List.fold_left2 (fun acc arg param -> 
-            acc && is_subtype arg param d pm)
-            true args_typ params_typ 
+            if List.fold_left2 (fun acc arg param -> acc && is_subtype arg param d pm true) true args_typ params_typ 
             then (params, rt, pr) 
             else raise (TypeException "function invocation argument type mismatch")
         else raise (TypeException ("function invocation argument count mismatch: expected :"
