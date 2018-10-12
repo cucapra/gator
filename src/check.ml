@@ -355,7 +355,7 @@ let check_dot_exp (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ =
     debug_print "check_dot_exp";
     match (t1, t2) with 
     | TagTyp a1, TagTyp a2 ->  
-        if subsumes_to a1 a2 d pm|| subsumes_to a2 a1 d pm
+        if subsumes_to a1 a2 d pm || subsumes_to a2 a1 d pm
         then FloatTyp 
         else raise (TypeException "Expected tag type of same dimension for dot product exp")
     | _ -> raise (TypeException "Unexpected type for dot product exp")
