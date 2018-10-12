@@ -124,10 +124,10 @@ let subsumes_to (to_check: tag_typ) (target: tag_typ) (d: delta) (pm: parametriz
     | _ -> is_tag_subtype to_check target d pm
 
 (* Note that the 'strict' parameter controls whether or not we allow casting to the top type *)
-let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parametrization) (strict : bool): bool =
+let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parametrization): bool =
     debug_print (">> is_subtype" ^ (string_of_typ to_check) ^ ", " ^(string_of_typ target));
     match (to_check, target) with 
-    | (TagTyp t1, TagTyp t2) -> let f = if strict then subsumes_to else is_tag_subtype in f t1 t2 d pm (* MARK *)
+    | (TagTyp t1, TagTyp t2) -> subsumes_to t1 t2 d pm (* MARK *)
     | (SamplerTyp i1, SamplerTyp i2) -> i1 = i2 
     | (BoolTyp, BoolTyp)
     | (IntTyp, IntTyp)
@@ -145,7 +145,7 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parametrizat
         if List.mem_assoc target pm 
         then let p = (List.assoc target pm) in 
             match p with 
-            | Some p' ->  is_subtype to_check p' d pm strict
+            | Some p' ->  is_subtype to_check p' d pm
             | None -> true (* todo *)
         else raise (TypeException ("AbsTyp " ^ s ^ " not found in parametrization"))
     | _ -> false
@@ -551,14 +551,11 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
         let params_typ = List.map get_2_3 params in
         let pr_typ = List.map fst pr in 
         if List.length pr_typ == List.length pml then 
-            (* parametrization arguments are subtypes of defined fn parametrizations *)
-            if List.fold_left2 (fun acc arg param -> acc && is_subtype arg param d pm false) true pr_typ pml
-            then ()
-            else raise (TypeException ("Parametrization types mismatch " ^ (string_of_typ (pr_typ |> List.hd) )))
+            ()
         else raise (TypeException "Mismatched number of parametrizations");
         (* check number of arg and param types match *)
         if List.length args_typ == List.length params_typ then
-            if List.fold_left2 (fun acc arg param -> acc && is_subtype arg param d pm true) true args_typ params_typ 
+            if List.fold_left2 (fun acc arg param -> acc && is_subtype arg param d pm) true args_typ params_typ 
             then (params, rt, pr) 
             else raise (TypeException "function invocation argument type mismatch")
         else raise (TypeException ("function invocation argument count mismatch: expected :"
