@@ -20,7 +20,10 @@ type typ =
     | TransTyp of tag_typ * tag_typ
     | SamplerTyp of int (* i.e. sampler2D *)
     | AbsTyp of string
+    (* Built-in generic types for usability *)
     | GenTyp
+    | GenVecTyp
+    | GenMatTyp
 
 (* expressions *)
 type exp =

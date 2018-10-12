@@ -37,6 +37,8 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     | TypedAst.AbsTyp (s, None) -> AbsTyp s
     | TypedAst.AbsTyp (s, Some e') -> etyp_to_typ e'
     | TypedAst.GenTyp -> GenTyp
+    | TypedAst.GenMatTyp -> GenMatTyp
+    | TypedAst.GenVecTyp -> GenVecTyp
 
 let rec vec_dim (t: tag_typ) (d: delta) (pm : parametrization): int =
     debug_print ">> vec_dim";
@@ -88,6 +90,8 @@ and tag_erase (t : typ) (d : delta) (pm: parametrization) : TypedAst.etyp =
     | SamplerTyp i -> TypedAst.SamplerTyp i
     | AbsTyp s -> tag_erase_param t d pm 
     | GenTyp -> TypedAst.GenTyp
+    | GenVecTyp -> TypedAst.GenVecTyp
+    | GenMatTyp -> TypedAst.GenMatTyp
     | AutoTyp -> raise (TypeException "Illegal use of auto (cannot use auto as part of a function call)")
 
 let rec get_ancestor_list (t: tag_typ) (d: delta) : id list =
@@ -127,6 +131,8 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parametrizat
     | (FloatTyp, GenTyp)
     | (TagTyp _, GenTyp)
     | (TransTyp _, GenTyp) -> true (* todo: is transtyp a subtype of gentyp? *)
+    | (TransTyp _, GenMatTyp) -> true
+    | (TagTyp _, GenVecTyp) -> true 
     | (AbsTyp s1, AbsTyp s2) -> s1 = s2
     | (_, AbsTyp s) -> 
         if List.mem_assoc target pm 
@@ -748,6 +754,8 @@ let check_return (t: typ) (d: delta) (g: gamma) (pm: parametrization) (p: phi) (
         | (BoolTyp, BoolTyp)
         | (IntTyp, IntTyp)
         | (FloatTyp, FloatTyp)
+        | (TagTyp _, GenVecTyp)
+        | (TransTyp _, GenMatTyp)
         | (AutoTyp, _) -> ()
         | (TransTyp (t1, t2), TransTyp (t3, t4)) -> 
             (is_tag_subtype t3 t1 d pm && is_tag_subtype t2 t4 d pm) |> raise_return_exception

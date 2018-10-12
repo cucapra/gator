@@ -61,6 +61,8 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token GENTYPE
 %token LWICK
 %token RWICK
+%token VEC
+%token MAT
 
 (* Precedences *)
 
@@ -203,6 +205,10 @@ comm:
 ; 
 
 typ:
+  | VEC
+      { GenVecTyp }
+  | MAT
+      { GenMatTyp }
   | AUTOTYP 
       { AutoTyp }    
   | BACKTICK; e = ID

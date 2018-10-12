@@ -26,6 +26,8 @@ let rec string_of_typ (t: typ) : string =
     | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D"
     | AbsTyp s -> "`" ^ s
     | GenTyp -> "genTyp"
+    | GenMatTyp -> "mat"
+    | GenVecTyp -> "vec"
 
 let rec string_of_exp (e:exp) : string =
     let string_of_arr (a: exp list) : string = 

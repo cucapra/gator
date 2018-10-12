@@ -12,6 +12,8 @@ type etyp =
     | SamplerTyp of int
     | AbsTyp of string * etyp option
     | GenTyp
+    | GenMatTyp
+    | GenVecTyp
 
 (* expressions *)
 type texp = exp * etyp

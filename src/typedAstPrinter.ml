@@ -23,6 +23,8 @@ let rec string_of_typ (t: etyp) : string =
     | SamplerTyp n -> "sampler" ^ (string_of_int n) ^ "D"
     | AbsTyp (s, typ) -> "`" ^ s (* TODO *)
     | GenTyp -> "genType"
+    | GenMatTyp -> "mat"
+    | GenVecTyp -> "vec"
 
 
 let rec string_of_exp (e: exp) : string =
