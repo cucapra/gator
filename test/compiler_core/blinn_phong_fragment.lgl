@@ -14,8 +14,8 @@ tag cameraHom is vec4;
 tag color is vec3;
 tag alphaColor is vec4;
 
-declare float dot(vec3 v1, vec3 v2);
-declare vec3 normalize(vec3 v1); 
+declare float dot<`t: genType>(`t v1, `t v2);
+declare `t normalize<`t : genType>(`t x);
 
 // parsing error : allow empty mains
 void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView, model vNormal, world uLight) {
@@ -101,32 +101,32 @@ void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView,
     // ****************
     // Calculate the real position of this pixel in 3d space
     world worldPosition = collapseWorld * (uModel * ((extendModel * vPosition) + modelScale));
-    world worldNormal = vecAsWorld * normalize(collapseWorld * (uModel * (extendModel * vNormal)));
-    world lightDir = vecAsWorld * normalize(uLight - worldPosition);
+    world worldNormal = normalize<world>(collapseWorld * (uModel * (extendModel * vNormal)));
+    world lightDir = normalize<world>(uLight - worldPosition);
 
     float lambertian = 0.0;
-    float lDot = dot (worldNormal, lightDir);
+    float lDot = dot<world>(worldNormal, lightDir);
     bool lDotCheck = (0. <= lDot);
-    if (lDotCheck) { 
-        lambertian = lDot; 
+    if (lDotCheck) {
+        lambertian = lDot;
     } else { 
         skip; 
     }
 
     bool lCheck = (0.0 <= lambertian && !(lambertian == 0.0));
-    world viewDir = vecAsWorld * normalize([0., 0., 0.] - collapseCamera * (uView * ((extendWorld * worldPosition) + [0., 0., 0., 1.])));
+    world viewDir = normalize<world>([0., 0., 0.] - collapseCamera * (uView * ((extendWorld * worldPosition) + [0., 0., 0., 1.])));
     world negLight = [0., 0., 0.] - lightDir;
 
     // ****************
     // Specular lighting
     // ****************
     // See glsl reflection definition
-    world reflectDir = negLight - (2. * (dot(worldNormal, negLight)) * worldNormal);
+    world reflectDir = negLight - (2. * (dot<world>(worldNormal, negLight)) * worldNormal);
     float specular = 0.0;
 
     if (lCheck) {
         float specAngle = 0.;
-        float specDot = dot (viewDir, reflectDir);
+        float specDot = dot<world>(viewDir, reflectDir);
         bool specDotCheck = (0. <= specDot);
         if (specDotCheck) { 
             specAngle = specDot; 

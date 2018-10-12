@@ -9,7 +9,6 @@ vec2 add_op<`t : vec>(`t x, `t y) {
 // Indeed, certain bounds make functions impossible to parameterize (and thus invoke!)
 // We shouldn't check for conditions like this in the typechecker imo
 // If a user makes a function impossible to call, oh well
-// Above comment was considered but this should fail
 bool uninvokable<`t>(`t x) {
     return x && true;
 }
