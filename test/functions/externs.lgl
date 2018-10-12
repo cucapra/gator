@@ -1,8 +1,8 @@
 declare int f();
 declare int g(int x);
 declare vec2 h(vec2 x, int y, int z);
-declare vec4 gl_FragCoord; // See issue #19
-declare vec3->vec3 m;
+//declare vec4 gl_FragCoord; // See issue #19
+//declare vec3->vec3 m;
 
 void main() {
     int s1 = g(f());
@@ -11,6 +11,6 @@ void main() {
     vec2 s4 = h(h(h([1., 2.], g(g(f())), 2), 2, g(g(f()))), g(2), f());
     int s5 = g(f()) + g(1) * g(f());
     vec2 s6 = h([1., 2.] + h([2., 1.], 2, 3), 2, 3) * g(f());
-    vec4 s7 = gl_FragCoord + [1., 0., 1., 0.];
-    vec3 s8 = m * [1., 2., 3.];
+    //vec4 s7 = gl_FragCoord + [1., 0., 1., 0.];
+    //vec3 s8 = m * [1., 2., 3.];
 }

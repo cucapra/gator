@@ -1,5 +1,5 @@
 // Can be parameterized to literally anything!
-`t id<`t>(`t x) {
+`t id<`t : int>(`t x) {
     return x;
 }
 
