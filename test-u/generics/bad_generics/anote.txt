@@ -1,4 +1,0 @@
-This folder will be moved into fails, of course
-Just wanted to give some expected failures that you might want to be aware of
-Also, they should be renamed
-But initially the names are just the associated test file that the error pops up in
