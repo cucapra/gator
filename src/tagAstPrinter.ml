@@ -47,6 +47,7 @@ let rec string_of_params (p: (id * typ * typ option) list) : string =
     match p with
     | [] -> ""
     | (i1, t1, None)::t -> (string_of_typ t1) ^ " " ^ i1 ^ ", " ^ (string_of_params t)
+    | (i1, t1, Some s)::t -> (string_of_typ t1) ^ " " ^ i1 ^ ", " ^ (string_of_params t)
 
 let rec string_of_parameterization (pm : parametrization) : string = 
     match pm with 

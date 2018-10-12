@@ -577,7 +577,8 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
         ( match (pm'', pml'') with 
         | ([], []) -> raise (TypeException "abstraction type not found in function definition")
         | (AbsTyp s, _)::t, (at::t') -> if r = s then at else (rt_map t t' r)
-        | _ -> raise (TypeException "Expected abstraction type for parametrization") ) 
+        (* | (AbsTyp s, _)::t, [] -> if r = s then at else (rt_map t t' r) *)
+        | (_, _) -> raise (TypeException "Expected abstraction type for parametrization") ) 
     in 
     let rt = match rt with
         | AbsTyp rt' -> rt_map pm pml rt'
