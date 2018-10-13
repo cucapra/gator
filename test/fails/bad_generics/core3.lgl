@@ -1,6 +1,6 @@
 // Note that t cannot be a bool
-t add_op<t>(t x, t y) {
-    t result = x + y;
+`t add_op<`t>(`t x, `t y) {
+    `t result = x + y;
     return result;
 }
 

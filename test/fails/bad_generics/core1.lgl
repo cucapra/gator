@@ -2,7 +2,7 @@ int id_int(int x) {
     return x;
 }
 
-t restrict<t>(t x) {
+`t restrict<`t>(`t x) {
     return id_int(x);  // Must be an int!
 }
 

@@ -1,4 +1,4 @@
-v multiop<t, u, v>(t x, u y, v z) {
+v multiop<`t, `u, `v>(`t x, `u y, `v z) {
     return x * y * z
 }
 

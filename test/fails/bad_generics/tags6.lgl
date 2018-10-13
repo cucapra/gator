@@ -4,9 +4,9 @@ tag c is b;
 tag d is b;
 tag e is c;
 
-t low_cast<t extends b>(a x) {
+`t low_cast<`t : b>(a x) {
     a->b a_b = [[.5, .5], [1.5, .5]];
-    b->t id = [[1., 0.], [0., 1.]];
+    b->`t id = [[1., 0.], [0., 1.]];
     return id * a_b * x;
 }
 

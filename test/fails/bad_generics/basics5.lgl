@@ -1,5 +1,5 @@
-t fst<t, u>(t x, u y) {
-    t z = x;
+`t fst<`t, `u>(`t x, `u y) {
+    `t z = x;
     return z;
 }
 

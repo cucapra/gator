@@ -4,8 +4,8 @@ tag c is b;
 tag d is b;
 tag e is c;
 
-vec2 to_top<t extends vec2>(t x) {
-    t->vec2 m = [[1., 0.], [0., 1.]];
+vec2 to_top<`t : vec2>(`t x) {
+    `t->vec2 m = [[1., 0.], [0., 1.]];
     return m * x;
 }
 

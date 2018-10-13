@@ -1,5 +1,5 @@
 // Note that 't' and 'u' MUST be vecs, regardless if we explicitely require it or not!
-u app_mat<t, u>(t->u m, t x) {
+`u app_mat<`t, `u>(`t->`u m, t x) {
     return m * x;
 }
 

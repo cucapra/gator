@@ -4,7 +4,7 @@ tag c is b;
 tag d is b;
 tag e is c;
 
-t id<t>(t x) {
+`t id<`t>(`t x) {
     return x;
 }
 

@@ -1,9 +1,9 @@
-u app_mat<t, u>(t->u m, t x) {
+`u app_mat<`t, `u>(`t->`u m, `t x) {
     return m * x;
 }
 
-t project_r3_r2<t>(t x) {
-    t->vec2 proj = [[1., 0., 0.], [0., 1., 0.]];
+`t project_r3_r2<`t>(`t x) {
+    `t->vec2 proj = [[1., 0., 0.], [0., 1., 0.]];
     // Multiply, but annoying as a test
     return app_mat(x, proj); // Make sure functions actually are checked!
 }
