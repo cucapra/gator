@@ -31,8 +31,18 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token RPAREN
 %token TRANS
 %token GETS
+%token INC
+%token DEC
+%token PLUSEQ
+%token MINUSEQ
+%token TIMESEQ
+%token DIVEQ
+%token CTIMESEQ
 %token EQ
 %token LEQ
+%token LT
+%token GEQ
+%token GT
 %token AND
 %token OR
 %token NOT
@@ -44,6 +54,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token FALSE
 %token IF
 %token ELSE
+%token FOR
 %token SKIP
 %token PRINT
 %token SEMI
@@ -67,7 +78,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 (* Precedences *)
 
 %left AND OR
-%left NOT EQ LEQ
+%left NOT EQ LEQ LT GEQ GT
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
@@ -170,30 +181,60 @@ fn_decl:
       { (x, (p, t, pt)) }
 ;
 
+elif:
+  | ELSE; IF; LPAREN; b = exp; RPAREN; LBRACE; c = commlst; RBRACE
+    { (b, c) }
+
+eliflst:
+  | e = elif
+      { e::[] }
+  | e = elif; a = eliflst
+      { e::a@[] }
+;
+
 comm:
   | SKIP; SEMI;                            
       { Skip }
   | t = typ; x = ID; GETS; e1 = exp; SEMI; 
-      { if (Str.string_match vec x 0) then (
-        raise (ParseException "invalid id specified for variable declaration")
-        ) else Decl(t, None, x, e1) }
+      { Decl(t, None, x, e1) }
   | t1= typ; x = ID; LWICK; t2 = typ; RWICK; GETS; e1 = exp; SEMI; 
-      { if (Str.string_match vec x 0) then (
-        raise (ParseException "invalid id specified for variable declaration")
-        ) else Decl(t1, Some t2, x, e1) }
-  | x = ID; GETS; e1 = exp; SEMI;          
-      { if (Str.string_match vec x 0) then (
-        raise (ParseException "invalid id specified for variable declaration")
-        ) else Assign(x, e1) }
+      { Decl(t1, Some t2, x, e1) }
+  | x = ID; GETS; e1 = exp; SEMI; 
+      { Assign(x, e1) }
+  | x = ID; PLUSEQ; e1 = exp; SEMI; 
+      { AssignOp(x, Plus, e1) }
+  | x = ID; MINUSEQ; e1 = exp; SEMI; 
+      { AssignOp(x, Minus, e1) }
+  | x = ID; TIMESEQ; e1 = exp; SEMI; 
+      { AssignOp(x, Times, e1) }
+  | x = ID; DIVEQ; e1 = exp; SEMI; 
+      { AssignOp(x, Div, e1) }
+  | x = ID; CTIMESEQ; e1 = exp; SEMI; 
+      { AssignOp(x, CTimes, e1) }
+  | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE;   
+      { If((b1, c1), [], None) }
   | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; 
     ELSE; LBRACE; c2 = commlst; RBRACE     
-      { If(b1, c1, c2) }
-  | PRINT; e = exp; SEMI;                  
+      { If((b1, c1), [], Some c2) }
+  | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; 
+    el = eliflst; ELSE; LBRACE; c2 = commlst; RBRACE 
+      { If((b1, c1), el, None) }
+  | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; 
+    el = eliflst; ELSE; LBRACE; c2 = commlst; RBRACE 
+      { If((b1, c1), el, Some c2) }
+  | FOR; LPAREN; c1 = comm; b = exp; SEMI; c2 = comm; RPAREN;
+    LBRACE; cl = commlst; RBRACE; 
+      { For(c1, b, c2, cl) }
+  | PRINT; e = exp; SEMI; 
       { Print(e) }
   | RETURN; e = exp; SEMI;
       { Return(Some e) }
   | RETURN; SEMI;
       { Return(None) }
+  | x = ID; INC;
+      { Inc(x) }
+  | x = ID; DEC;
+      { Dec(x) }
   | x = ID; LPAREN; RPAREN; SEMI;
       { FnCall(x, [], []) }
   | x = ID; LPAREN; a = arglst; RPAREN; SEMI;
@@ -334,6 +375,12 @@ exp:
       { Binop(Eq,e1,e2) }
   | e1 = exp; LEQ; e2 = exp    
       { Binop(Leq,e1,e2) }
+  | e1 = exp; LT; e2 = exp    
+      { Binop(Lt,e1,e2) }
+  | e1 = exp; GEQ; e2 = exp    
+      { Binop(Geq,e1,e2) }
+  | e1 = exp; GT; e2 = exp    
+      { Binop(Gt,e1,e2) }
   | e1 = exp; OR; e2 = exp    
       { Binop(Or,e1,e2) }
   | e1 = exp; AND; e2 = exp    

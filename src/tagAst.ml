@@ -51,13 +51,18 @@ type fn_decl = string * fn_type
 
 (* commands *)
 type comm =
-    Skip
+    | Skip
     | Print of exp
+    | Inc of id
+    | Dec of id
     | Decl of typ * typ option * string * exp
     | Assign of string * exp
-    | If of exp * comm list * comm list
+    | AssignOp of string * binop * exp
+    | If of if_block * if_block list * (comm list) option  (* if - elif list - else *)
+    | For of comm * exp * comm * comm list
     | Return of exp option
     | FnCall of string * args * typ list
+and if_block = exp * comm list
 
 type fn = fn_decl * comm list
 

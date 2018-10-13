@@ -40,26 +40,32 @@ let rec string_of_value (v: value) : string =
   | VecLit v -> "vec" ^ (string_of_int (List.length v)) ^ string_of_vec v
   | MatLit m -> string_of_mat m
 
+let binop_string (op: binop) : string =
+  match op with
+  | Eq -> "=="
+  | Leq -> "<="
+  | Lt -> "<"
+  | Geq -> ">="
+  | Gt -> ">"
+  | Or -> "||"
+  | And -> "&&"
+  | Plus -> "+"
+  | Minus -> "-"
+  | Times -> "*"
+  | Div -> "/"
+  | CTimes -> ".*"
+  | Index -> "[]"
+
 let string_of_unop (op: unop) (e: string) : string =
   match op with
   | Neg -> "-" ^ e
   | Not -> "!" ^ e
   | Swizzle s -> e ^ "." ^ s
 let string_of_binop (op: binop) (left: string) (right: string) : string =
-  let inline_op (op: string) : string =
-      left ^ " " ^ op ^ " " ^ right
-  in
   match op with
-  | Eq -> inline_op "=="
-  | Leq -> inline_op "<="
-  | Or -> inline_op "||"
-  | And -> inline_op "&&"
-  | Plus -> inline_op "+"
-  | Minus -> inline_op "-"
-  | Times -> inline_op "*"
-  | Div -> inline_op "/"
-  | CTimes -> inline_op ".*"
   | Index -> left ^ "[" ^ right ^ "]"
+  | _ -> left ^ " " ^ binop_string op ^ " " ^ right
+  
 
 (*****************************************************
  * Debug-printer

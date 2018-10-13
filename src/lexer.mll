@@ -29,6 +29,7 @@ rule read = parse
   | "false"         { FALSE }
   | "if"            { IF }
   | "else"          { ELSE }
+  | "for"           { FOR }
   | "skip"          { SKIP }
   | "print"         { PRINT }
   | "int"           { INTTYP }
@@ -41,6 +42,13 @@ rule read = parse
   | "*"             { TIMES }
   | "/"             { DIV }
   | ".*"            { CTIMES }
+  | "+="            { PLUSEQ }
+  | "-="            { MINUSEQ }
+  | "*="            { TIMESEQ }
+  | "/="            { DIVEQ }
+  | ".*="           { CTIMESEQ }
+  | "++"            { INC }
+  | "--"            { DEC }
   | "["             { LBRACK }
   | "]"             { RBRACK }
   | "<"             { LWICK }
@@ -53,6 +61,9 @@ rule read = parse
   | "="             { GETS }
   | "=="            { EQ }
   | "<="            { LEQ }
+  | "<"             { LT }
+  | ">="            { GEQ }
+  | ">"             { GT }
   | "||"            { OR }
   | "&&"            { AND }
   | "!"             { NOT }
@@ -73,7 +84,6 @@ rule read = parse
   | "break"
   | "continue"
   | "do"
-  | "for"
   | "while"
   | "in"
   | "out"

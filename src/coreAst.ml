@@ -19,6 +19,9 @@ type unop =
 type binop =
   | Eq
   | Leq
+  | Lt
+  | Geq
+  | Gt
   | Or
   | And
   | Plus

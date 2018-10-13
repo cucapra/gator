@@ -56,14 +56,24 @@ let rec string_of_comm (c: comm) : string =
     match c with
     | Skip -> "skip;"
     | Print (e, _) -> "print " ^ (string_of_exp e) ^ ";"
+    | Inc x -> x ^ "++"
+    | Dec x -> x ^ "--"
     | Decl (t, s, (e, _)) -> (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_exp e) ^ ";"
-    | If ((b, _), c1, c2) -> "if (" ^ (string_of_exp b) ^ ") {\n" ^ (string_of_comm_list c1) ^
-        "} else {\n" ^ (string_of_comm_list c2) ^ "}"
     | Assign (b, (x, _)) -> b ^ " = " ^ (string_of_exp x) ^ ";"
+    | AssignOp (x, op, (e, _)) -> x ^ " " ^  binop_string op ^ "= " ^ (string_of_exp e)
+    | If (((b, _), c1), elif_list, c2) -> 
+        let block_string c = "{\n " ^ (string_of_comm_list c) ^ "}" in
+        let rec string_of_elif lst = (match lst with 
+        | [] -> "" 
+        | ((b, _), c)::t -> "elif (" ^ (string_of_exp b) ^ ")" ^ block_string c ^ (string_of_elif t))
+        in
+        "if (" ^ (string_of_exp b) ^ ") {\n" ^ (string_of_comm_list c1) ^ "} " 
+        ^ string_of_elif elif_list ^ (match c2 with | None -> "" | Some c2 -> "else {\n" ^ (string_of_comm_list c2) ^ "}")
+      | For (d, (b, _), u, cl) -> "for (" ^ string_of_comm d ^ string_of_exp b ^ "; " ^ string_of_comm u ^ ") {\n" ^ string_of_comm_list cl ^ "}"
     | Return Some (x, _) -> "return " ^ (string_of_exp x) ^ ";"
     | Return None -> "return;"
     | FnCall (id, args) -> id ^ "(" ^ (string_of_args args) ^")"
-
+ 
 and string_of_comm_list (cl : comm list) : string = 
    (String.concat "\n" (List.map string_of_comm cl))
 

@@ -68,10 +68,21 @@ let rec string_of_comm (c: comm) : string =
     match c with
     | Skip -> "skip;"
     | Print e -> "print " ^ (string_of_exp e) ^ ";"
+    | Inc x -> x ^ "++"
+    | Dec x -> x ^ "--"
     | Decl (t, None, s, e) -> (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_exp e) ^ ";"
-    | If (b, c1, c2) -> "if (" ^ (string_of_exp b) ^ ") {\n" ^ (string_of_comm_list c1) ^
-        "} else {\n" ^ (string_of_comm_list c2) ^ "}"
+    | Decl (t, _, s, e) -> failwith "unsupported"
     | Assign (b, x) -> b ^ " = " ^ (string_of_exp x) ^ ";"
+    | AssignOp (x, op, e) -> x ^ " " ^  binop_string op ^ "= " ^ (string_of_exp e)
+    | If ((b, c1), elif_list, c2) -> 
+        let block_string c = "{\n " ^ (string_of_comm_list c) ^ "}" in
+        let rec string_of_elif lst = (match lst with 
+        | [] -> "" 
+        | (b, c)::t -> "elif (" ^ (string_of_exp b) ^ ")" ^ block_string c ^ (string_of_elif t))
+        in
+        "if (" ^ (string_of_exp b) ^ ") {\n" ^ (string_of_comm_list c1) ^ "} " 
+        ^ string_of_elif elif_list ^ (match c2 with | None -> "" | Some c2 -> "else {\n" ^ (string_of_comm_list c2) ^ "}")
+    | For (d, b, u, cl) -> "for (" ^ string_of_comm d ^ string_of_exp b ^ "; " ^ string_of_comm u ^ ") {\n" ^ string_of_comm_list cl ^ "}"
     | Return None -> "return;"
     | Return Some e -> "return" ^ (string_of_exp e) ^ ";"
     | FnCall (id, e, _) -> id ^ "(" ^ (String.concat "," (List.map string_of_exp e)) ^ "^" (* TODO *)
