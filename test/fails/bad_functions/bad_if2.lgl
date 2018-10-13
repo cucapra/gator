@@ -1,0 +1,11 @@
+void main() {
+    if (true) {
+        print 2.;
+    }
+    else {
+        print 3.;
+    }
+    else if (true) {
+        print 5.;
+    }
+}

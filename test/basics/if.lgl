@@ -8,6 +8,9 @@ void main() {
     bool b = false; 
     if (b) { 
         print 2.2; 
+    } 
+    else if (!b) {
+        print 2.5;
     }
     else {
         print 3.2;
@@ -18,8 +21,5 @@ void main() {
 
     if (y <= x) {
         print 2;
-    } else {
-        print 3;
     }
-
 }
