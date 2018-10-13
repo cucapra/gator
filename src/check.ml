@@ -547,12 +547,10 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
     (* find definition for function in phi *)
     (* looks through overloaded all possible definitions of the function *)
     let rec find_fn_inv ((params, rt, pr) : fn_type) : fn_type = (* TODO *)
-        let get_2_3 (_,a,_) = a in
-        let params_typ = List.map get_2_3 params in
-        let pr_typ = List.map fst pr in 
-        if List.length pr_typ == List.length pml then 
-            ()
-        else raise (TypeException "Mismatched number of parametrizations");
+        let params_typ = List.map (fun (_,a,_) -> a) params in
+        let pr_typ = List.map fst pr in
+        (* print_endline (String.concat "," (List.map TagAstPrinter.string_of_typ pr_typ)); *)
+        if List.length pr_typ != List.length pml then raise (TypeException "Mismatched number of parametrizations") else
         (* check number of arg and param types match *)
         if List.length args_typ == List.length params_typ then
             if List.fold_left2 (fun acc arg param -> acc && is_subtype arg param d pm) true args_typ params_typ 
