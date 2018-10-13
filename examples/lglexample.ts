@@ -53,7 +53,7 @@ export function createProgram(gl: WebGLRenderingContext, shaders: WebGLShader[])
 
   // attach the shaders.
   shaders.forEach(function(shader: WebGLBuffer) {
-    gl.attachShader(program, shader);
+    gl.attachShader(program!, shader);
   });
 
   // link the program.
@@ -281,7 +281,7 @@ export function load_texture(gl: WebGLRenderingContext, img_src: string)  {
   
   image.addEventListener('load', function() {
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
     
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
