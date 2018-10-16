@@ -29,6 +29,7 @@ rule read = parse
   | "false"         { FALSE }
   | "if"            { IF }
   | "else"          { ELSE }
+  | "elif"          { ELIF }
   | "for"           { FOR }
   | "skip"          { SKIP }
   | "print"         { PRINT }
@@ -61,9 +62,7 @@ rule read = parse
   | "="             { GETS }
   | "=="            { EQ }
   | "<="            { LEQ }
-  | "<"             { LT }
   | ">="            { GEQ }
-  | ">"             { GT }
   | "||"            { OR }
   | "&&"            { AND }
   | "!"             { NOT }

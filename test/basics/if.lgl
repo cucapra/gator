@@ -9,7 +9,7 @@ void main() {
     if (b) { 
         print 2.2; 
     } 
-    else if (!b) {
+    elif (b) {
         print 2.5;
     }
     else {
@@ -19,7 +19,21 @@ void main() {
     float x = 1.2;
     float y = 2.1;
 
-    if (y <= x) {
+    if (y > x) {
         print 2;
+    }
+
+    b = true;
+    if (!b) { 
+        print 2.2; 
+    } 
+    elif (!b) {
+        print 2.5;
+    }
+    elif (b) {
+        print 2.3;
+    }
+    elif (!b) {
+        print 2.7;
     }
 }

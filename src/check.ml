@@ -503,6 +503,9 @@ let rec check_exp (e : exp) (d : delta) (g : gamma) (pm : parametrization) (p : 
     | Binop (op, e1, e2) -> (match op with
         | Eq -> build_binop op e1 e2 (req_parametrizations check_equality_exp) pm
         | Leq -> build_binop op e1 e2 (req_parametrizations check_comp_binop) pm
+        | Lt -> build_binop op e1 e2 (req_parametrizations check_comp_binop) pm
+        | Geq -> build_binop op e1 e2 (req_parametrizations check_comp_binop) pm
+        | Gt -> build_binop op e1 e2 (req_parametrizations check_comp_binop) pm
         | Or | And -> build_binop op e1 e2 check_bool_binop pm
         | Plus | Minus -> build_binop op e1 e2 check_addition_exp pm
         | Times -> build_binop op e1 e2 check_times_exp pm
@@ -587,6 +590,14 @@ and check_comm (c: comm) (d: delta) (g: gamma) (pm: parametrization) (p: phi) : 
         | UnitTyp -> raise (TypeException "Print function cannot print void types")
         | _ -> (TypedAst.Print (e, t), g)
     )
+    | Inc x -> let x_typ = (Assoc.lookup x g) in (match x_typ with
+        | IntTyp -> (TypedAst.Inc (x, TypedAst.IntTyp), g)
+        | FloatTyp -> (TypedAst.Inc (x, TypedAst.FloatTyp), g)
+        | _ -> raise (TypeException "increment must be applied to an integer or float"))
+    | Dec x -> let x_typ = (Assoc.lookup x g) in (match x_typ with
+        | IntTyp -> (TypedAst.Dec (x, TypedAst.IntTyp), g)
+        | FloatTyp -> (TypedAst.Dec (x, TypedAst.FloatTyp), g)
+        | _ -> raise (TypeException "decrement must be applied to an integer or float"))
     | Decl (t, tp, s, e) -> (* TODO: tp *)
         if Assoc.mem s g then raise (TypeException "variable name shadowing is illegal")
         else 
@@ -609,14 +620,22 @@ and check_comm (c: comm) (d: delta) (g: gamma) (pm: parametrization) (p: phi) : 
             let result = check_exp e d g pm p in
             (TypedAst.Assign (s, (exp_to_texp result d pm)), check_assign t s (snd result) d g p pm)
         else raise (TypeException "Assignment to undeclared variable")
-
-    | If (b, c1, c2) ->
-        let result = (check_exp b d g pm p) in
-        let c1r = check_comm_lst c1 d g pm p in
-        let c2r = check_comm_lst c2 d g pm p in
-        (match (snd result) with 
-        | BoolTyp -> (TypedAst.If ((exp_to_texp result d pm), (fst c1r), (fst c2r)), g)
-        | _ -> raise (TypeException "Expected boolean expression for if condition"))
+    | AssignOp (s, b, e) -> 
+        let result = check_comm (Assign (s, Binop(b, Var s, e))) d g pm p in
+        (match (fst result) with
+        | TypedAst.Assign (_, (TypedAst.Binop (_, (_, st), e), _)) -> (TypedAst.AssignOp((s, st), b, e), snd result)
+        | _ -> failwith "Assign must return an assign?")
+    | If ((b, c1), el, c2) ->
+        let check_if b c =
+            let er = (check_exp b d g pm p) in
+            let cr = check_comm_lst c d g pm p in
+            (match (snd er) with 
+            | BoolTyp -> ((exp_to_texp er d pm), (fst cr))
+            | _ -> raise (TypeException "Expected boolean expression for if condition"))
+        in
+        let c2r = (match c2 with | Some e -> Some (fst (check_comm_lst e d g pm p)) | None -> None) in
+        (TypedAst.If (check_if b c1, List.map (fun (b, c) -> check_if b c) el, c2r), g)
+    | For (d, b, u, cl) -> failwith "check unimplemented"
     | Return Some e ->
         let (e, t) = exp_to_texp (check_exp e d g pm p) d pm in
         (TypedAst.Return (Some (e, t)), g)

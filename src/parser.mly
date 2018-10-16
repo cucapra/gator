@@ -40,9 +40,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token CTIMESEQ
 %token EQ
 %token LEQ
-%token LT
 %token GEQ
-%token GT
 %token AND
 %token OR
 %token NOT
@@ -54,6 +52,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token FALSE
 %token IF
 %token ELSE
+%token ELIF
 %token FOR
 %token SKIP
 %token PRINT
@@ -78,7 +77,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 (* Precedences *)
 
 %left AND OR
-%left NOT EQ LEQ LT GEQ GT
+%left NOT EQ LEQ LWICK GEQ RWICK
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
@@ -182,7 +181,7 @@ fn_decl:
 ;
 
 elif:
-  | ELSE; IF; LPAREN; b = exp; RPAREN; LBRACE; c = commlst; RBRACE
+  | ELIF; LPAREN; b = exp; RPAREN; LBRACE; c = commlst; RBRACE;
     { (b, c) }
 
 eliflst:
@@ -214,13 +213,12 @@ comm:
   | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE;   
       { If((b1, c1), [], None) }
   | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; 
-    ELSE; LBRACE; c2 = commlst; RBRACE     
+    ELSE; LBRACE; c2 = commlst; RBRACE;
       { If((b1, c1), [], Some c2) }
-  | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; 
-    el = eliflst; ELSE; LBRACE; c2 = commlst; RBRACE 
+  | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; el = eliflst;
       { If((b1, c1), el, None) }
-  | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; 
-    el = eliflst; ELSE; LBRACE; c2 = commlst; RBRACE 
+  | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; el = eliflst; 
+    ELSE; LBRACE; c2 = commlst; RBRACE;
       { If((b1, c1), el, Some c2) }
   | FOR; LPAREN; c1 = comm; b = exp; SEMI; c2 = comm; RPAREN;
     LBRACE; cl = commlst; RBRACE; 
@@ -231,9 +229,9 @@ comm:
       { Return(Some e) }
   | RETURN; SEMI;
       { Return(None) }
-  | x = ID; INC;
+  | x = ID; INC; SEMI;
       { Inc(x) }
-  | x = ID; DEC;
+  | x = ID; DEC; SEMI;
       { Dec(x) }
   | x = ID; LPAREN; RPAREN; SEMI;
       { FnCall(x, [], []) }
@@ -371,19 +369,19 @@ exp:
       { Unop(Neg,e1) }
   | NOT; e1 = exp;             
       { Unop(Not,e1) }
-  | e1 = exp; EQ; e2 = exp      
+  | e1 = exp; EQ; e2 = exp 
       { Binop(Eq,e1,e2) }
-  | e1 = exp; LEQ; e2 = exp    
+  | e1 = exp; LEQ; e2 = exp 
       { Binop(Leq,e1,e2) }
-  | e1 = exp; LT; e2 = exp    
+  | e1 = exp; LWICK; e2 = exp 
       { Binop(Lt,e1,e2) }
-  | e1 = exp; GEQ; e2 = exp    
+  | e1 = exp; GEQ; e2 = exp 
       { Binop(Geq,e1,e2) }
-  | e1 = exp; GT; e2 = exp    
+  | e1 = exp; RWICK; e2 = exp 
       { Binop(Gt,e1,e2) }
-  | e1 = exp; OR; e2 = exp    
+  | e1 = exp; OR; e2 = exp 
       { Binop(Or,e1,e2) }
-  | e1 = exp; AND; e2 = exp    
+  | e1 = exp; AND; e2 = exp 
       { Binop(And,e1,e2) }
   | e1 = exp; DOT; s = ID;
       { Unop(Swizzle s,e1) }

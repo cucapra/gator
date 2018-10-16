@@ -31,11 +31,11 @@ and args = exp list
 type comm =
     | Skip
     | Print of texp
-    | Inc of id
-    | Dec of id
+    | Inc of id * etyp
+    | Dec of id * etyp
     | Decl of etyp * id * texp
     | Assign of id * texp
-    | AssignOp of string * binop * texp
+    | AssignOp of (string * etyp) * binop * texp
     | If of if_block * if_block list * (comm list) option  (* if - elif list - else *)
     | For of comm * texp * comm * comm list
     | Return of texp option

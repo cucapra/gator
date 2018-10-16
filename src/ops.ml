@@ -90,6 +90,18 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
             | (Num n1, Num n2) -> Bool (n1 <= n2)
             | (Float f1, Float f2) -> Bool (f1 <= f2)
             | _ -> bad_binop ())
+        | Lt -> (match (left, right) with
+            | (Num n1, Num n2) -> Bool (n1 < n2)
+            | (Float f1, Float f2) -> Bool (f1 < f2)
+            | _ -> bad_binop ())
+        | Geq -> (match (left, right) with
+            | (Num n1, Num n2) -> Bool (n1 >= n2)
+            | (Float f1, Float f2) -> Bool (f1 >= f2)
+            | _ -> bad_binop ())
+        | Gt -> (match (left, right) with
+            | (Num n1, Num n2) -> Bool (n1 > n2)
+            | (Float f1, Float f2) -> Bool (f1 > f2)
+            | _ -> bad_binop ())
         | Or -> (match (left, right) with
             | (Bool b1, Bool b2) -> Bool (b1 || b2)
             | _ -> bad_binop ())
@@ -154,11 +166,30 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) : sigma =
     match c with
     | Skip -> s
     | Print (e, _) -> print_string (string_of_value (eval_exp e fns s) ^ "\n"); s
+    | Inc (x, t) -> let x_val = Assoc.lookup x s in (match (x_val, t) with
+        | (Num n, IntTyp) -> Assoc.update x (Num (n + 1)) s 
+        | (Float f, FloatTyp) -> Assoc.update x (Float (f +. 1.)) s
+        | _ -> failwith "Typchecker error: cannot apply inc to a non-int/float type")
+    | Dec (x, t) -> let x_val = Assoc.lookup x s in (match (x_val, t) with
+        | (Num n, IntTyp) -> Assoc.update x (Num (n - 1)) s 
+        | (Float f, FloatTyp) -> Assoc.update x (Float (f -. 1.)) s
+        | _ -> failwith "Typchecker error: cannot apply dec to a non-int/float type")
     | Decl (_, x, (e, _))
     | Assign (x, (e, _)) -> Assoc.update x (eval_exp e fns s) s
-    | If ((e, _), c1, c2) -> snd (eval_cl (match (eval_exp e fns s) with
-        | Bool b -> if b then c1 else c2
-        | _ -> failwith "Expected a boolean in 'if' exception") fns s)
+    | AssignOp ((x, xt), op, e) -> Assoc.update x (eval_exp (TypedAst.Binop (op, ((TypedAst.Var x), xt), e)) fns s) s
+    | If (((b, _), c1), el, c2) ->
+        let check_if b = (match (eval_exp b fns s) with
+        | Bool b -> b
+        | _ -> failwith ("Typechecker failure: expected a boolean in 'if' expression"))
+        in
+        let check_cmd b c acc = (match acc with
+        | Some _ -> acc
+        | None -> if (check_if b) then Some (snd (eval_cl c fns s)) else None)
+        in
+        (match List.fold_left (fun acc ((b, _), c) -> check_cmd b c acc) (check_cmd b c1 None) el with
+        | Some s' -> s'
+        | None -> (match c2 with | Some c -> (snd (eval_cl c fns s)) | None -> s))
+    | For (d, (b, _), u, cl) -> failwith "ops unimplemented"
     | Return e -> s
     | FnCall (id, args) -> (eval_exp (FnInv (id, args))) |> ignore; s
 

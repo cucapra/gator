@@ -23,10 +23,12 @@ void main() {
     float r8 = (1.5+ 1.);
     print r8;
 
-    float r9 = 1.;
-    r9 += 1.;
-    r9 -= 1.5;
-    r9 *= .5;
+    int r9 = 1;
+    r9++;
+    r9--;
+    r9 += 3;
+    r9 -= 2;
+    r9 *= 2;
     print r9;
 
     float r10 = 2.;

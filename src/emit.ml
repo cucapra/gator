@@ -125,16 +125,23 @@ and comp_comm (c : comm list) : string =
     | h::t -> match h with
         | Skip -> comp_comm t
         | Print e -> comp_comm t
+        | Inc (x, _) -> x ^ "++;" ^ (comp_comm t)
+        | Dec (x, _) -> x ^ "--;" ^ (comp_comm t)
         (* Super janky, but we need to have rules for weird glsl declarations and variables *)
         | Decl (ty, x, (e, _)) -> (
             if check_name x then ""^ (comp_comm t) else  
             if is_core x  then x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
             else string_of_gl_typ ty ^ " "^ x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t))
         | Assign (x, (e, _)) -> x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
-        | If ((e, _), c1, c2) -> ("if " ^ "(" ^ (comp_exp e) ^ ")"
+        | AssignOp ((x, _), op, (e, _)) -> x ^ " " ^ (binop_string op) ^ "= " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
+        | If (((b, _), c1), el, c2) -> 
+            ("if " ^ "(" ^ (comp_exp b) ^ ")"
             ^ "{ " ^ (comp_comm c1) ^ " }"
-            ^ "{ " ^ (comp_comm c2) ^ " }" 
+            ^ (List.fold_left (fun acc ((b, _), c) -> "if " ^ "(" ^ (comp_exp b) ^ ")"
+                ^ "{ " ^ (comp_comm c) ^ " }" ^ acc) "" el)
+            ^ (match c2 with | Some c2 -> "{ " ^ (comp_comm c2) ^ " }" | None -> "")
             ^ (comp_comm t))
+        | For (d, (b, _), u, cl) -> failwith "emit unimplemented"
         | Return Some (e, _) -> "return " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
         | Return None -> "return;" ^ (comp_comm t)
         | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
