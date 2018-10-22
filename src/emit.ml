@@ -141,7 +141,9 @@ and comp_comm (c : comm list) : string =
                 ^ "{ " ^ (comp_comm c) ^ " }" ^ acc) "" el)
             ^ (match c2 with | Some c2 -> "{ " ^ (comp_comm c2) ^ " }" | None -> "")
             ^ (comp_comm t))
-        | For (d, (b, _), u, cl) -> failwith "emit unimplemented"
+        | For (c1, (b, _), c2, cl) -> 
+            ("for (" ^ (comp_comm [c1]) ^ "; " ^ (comp_exp b) ^ "; " ^ (comp_comm [c2])
+            ^ "{ " ^ (comp_comm cl) ^ " }" ^ (comp_comm t))
         | Return Some (e, _) -> "return " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
         | Return None -> "return;" ^ (comp_comm t)
         | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"

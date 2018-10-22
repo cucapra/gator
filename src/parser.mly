@@ -142,7 +142,7 @@ fnlst:
       { (x, c1)::fl }
 
 commlst:
-  | c = comm                
+  | c = comm 
       { c::[] }
   | c1 = comm; c2 = commlst 
       { c1::c2 }
@@ -192,24 +192,12 @@ eliflst:
 ;
 
 comm:
-  | SKIP; SEMI;                            
-      { Skip }
-  | t = typ; x = ID; GETS; e1 = exp; SEMI; 
-      { Decl(t, None, x, e1) }
-  | t1= typ; x = ID; LWICK; t2 = typ; RWICK; GETS; e1 = exp; SEMI; 
-      { Decl(t1, Some t2, x, e1) }
-  | x = ID; GETS; e1 = exp; SEMI; 
-      { Assign(x, e1) }
-  | x = ID; PLUSEQ; e1 = exp; SEMI; 
-      { AssignOp(x, Plus, e1) }
-  | x = ID; MINUSEQ; e1 = exp; SEMI; 
-      { AssignOp(x, Minus, e1) }
-  | x = ID; TIMESEQ; e1 = exp; SEMI; 
-      { AssignOp(x, Times, e1) }
-  | x = ID; DIVEQ; e1 = exp; SEMI; 
-      { AssignOp(x, Div, e1) }
-  | x = ID; CTIMESEQ; e1 = exp; SEMI; 
-      { AssignOp(x, CTimes, e1) }
+  | c = comm_block;
+    { c }
+  | c = comm_element; SEMI;
+    { c }
+
+comm_block:
   | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE;   
       { If((b1, c1), [], None) }
   | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; 
@@ -220,26 +208,46 @@ comm:
   | IF; LPAREN; b1 = exp; RPAREN; LBRACE; c1 = commlst; RBRACE; el = eliflst; 
     ELSE; LBRACE; c2 = commlst; RBRACE;
       { If((b1, c1), el, Some c2) }
-  | FOR; LPAREN; c1 = comm; b = exp; SEMI; c2 = comm; RPAREN;
+  | FOR; LPAREN; c1 = comm_element; SEMI; b = exp; SEMI; c2 = comm_element; RPAREN;
     LBRACE; cl = commlst; RBRACE; 
       { For(c1, b, c2, cl) }
-  | PRINT; e = exp; SEMI; 
+
+comm_element:
+  | SKIP;                            
+      { Skip }
+  | t = typ; x = ID; GETS; e1 = exp; 
+      { Decl(t, None, x, e1) }
+  | t1= typ; x = ID; LWICK; t2 = typ; RWICK; GETS; e1 = exp; 
+      { Decl(t1, Some t2, x, e1) }
+  | x = ID; GETS; e1 = exp; 
+      { Assign(x, e1) }
+  | x = ID; PLUSEQ; e1 = exp; 
+      { AssignOp(x, Plus, e1) }
+  | x = ID; MINUSEQ; e1 = exp; 
+      { AssignOp(x, Minus, e1) }
+  | x = ID; TIMESEQ; e1 = exp; 
+      { AssignOp(x, Times, e1) }
+  | x = ID; DIVEQ; e1 = exp; 
+      { AssignOp(x, Div, e1) }
+  | x = ID; CTIMESEQ; e1 = exp; 
+      { AssignOp(x, CTimes, e1) }
+  | PRINT; e = exp; 
       { Print(e) }
-  | RETURN; e = exp; SEMI;
+  | RETURN; e = exp; 
       { Return(Some e) }
-  | RETURN; SEMI;
+  | RETURN; 
       { Return(None) }
-  | x = ID; INC; SEMI;
+  | x = ID; INC; 
       { Inc(x) }
-  | x = ID; DEC; SEMI;
+  | x = ID; DEC; 
       { Dec(x) }
-  | x = ID; LPAREN; RPAREN; SEMI;
+  | x = ID; LPAREN; RPAREN; 
       { FnCall(x, [], []) }
-  | x = ID; LPAREN; a = arglst; RPAREN; SEMI;
+  | x = ID; LPAREN; a = arglst; RPAREN; 
       { FnCall(x, a, []) }
-  | x = ID; LWICK; p = typlst; RWICK; LPAREN; RPAREN; SEMI;
+  | x = ID; LWICK; p = typlst; RWICK; LPAREN; RPAREN; 
       { FnCall(x, [], p)}
-  | x = ID; LWICK; p = typlst; RWICK; LPAREN; a = arglst; RPAREN; SEMI;
+  | x = ID; LWICK; p = typlst; RWICK; LPAREN; a = arglst; RPAREN; 
       { FnCall(x, a, p)}
 ; 
 

@@ -1,7 +1,7 @@
 void main() {
     int x = 10;
     int y = 0;
-    for (int i = 0; i < x; i++) {
+    for (int i = 0; i <= x; i++) {   // Can't use non-constants in the boolean expression
         y += 1;
     }
     print y;

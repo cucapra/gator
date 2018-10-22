@@ -189,7 +189,12 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) : sigma =
         (match List.fold_left (fun acc ((b, _), c) -> check_cmd b c acc) (check_cmd b c1 None) el with
         | Some s' -> s'
         | None -> (match c2 with | Some c -> (snd (eval_cl c fns s)) | None -> s))
-    | For (d, (b, _), u, cl) -> failwith "ops unimplemented"
+    | For (c1, (b, _), c2, cl) ->
+        let rec loop s = (match (eval_exp b fns s) with
+        | Bool br -> if br then loop (eval_comm c2 fns (snd (eval_cl cl fns s))) else s
+        | _ -> failwith "Typechecker failure -- expected a boolean expression")
+        in
+        loop (eval_comm c1 fns s)
     | Return e -> s
     | FnCall (id, args) -> (eval_exp (FnInv (id, args))) |> ignore; s
 

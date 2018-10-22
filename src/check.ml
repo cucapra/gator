@@ -635,7 +635,27 @@ and check_comm (c: comm) (d: delta) (g: gamma) (pm: parametrization) (p: phi) : 
         in
         let c2r = (match c2 with | Some e -> Some (fst (check_comm_lst e d g pm p)) | None -> None) in
         (TypedAst.If (check_if b c1, List.map (fun (b, c) -> check_if b c) el, c2r), g)
-    | For (d, b, u, cl) -> failwith "check unimplemented"
+    | For (c1, b, c2, cl) ->
+        let (c1r, g') = check_comm c1 d g pm p in
+        let (br, brt) = check_exp b d g' pm p in
+        let btexp = exp_to_texp (br, brt) d pm in
+        let (c2r, _) = check_comm c2 d g' pm p in
+        (match c1r with
+        | Skip
+        | Decl _
+        | Assign _ -> (match (br, c2r) with
+            | (Binop (Leq, (Var x, TypedAst.IntTyp), (Val _, TypedAst.IntTyp)), Inc (y, TypedAst.IntTyp))
+            | (Binop (Lt, (Var x, TypedAst.IntTyp), (Val _, TypedAst.IntTyp)), Inc (y, TypedAst.IntTyp))
+            | (Binop (Geq, (Val _, TypedAst.IntTyp), (Var x, TypedAst.IntTyp)), Inc (y, TypedAst.IntTyp))
+            | (Binop (Gt, (Val _, TypedAst.IntTyp), (Var x, TypedAst.IntTyp)), Inc (y, TypedAst.IntTyp))
+            | (Binop (Geq, (Var x, TypedAst.IntTyp), (Val _, TypedAst.IntTyp)), Dec (y, TypedAst.IntTyp))
+            | (Binop (Gt, (Var x, TypedAst.IntTyp), (Val _, TypedAst.IntTyp)), Dec (y, TypedAst.IntTyp))
+            | (Binop (Leq, (Val _, TypedAst.IntTyp), (Var x, TypedAst.IntTyp)), Dec (y, TypedAst.IntTyp))
+            | (Binop (Lt, (Val _, TypedAst.IntTyp), (Var x, TypedAst.IntTyp)), Dec (y, TypedAst.IntTyp)) -> 
+                if x = y then (TypedAst.For (c1r, btexp, c2r, (fst (check_comm_lst cl d g' pm p))), g)
+                else raise (TypeException "Must use the same variable when checking and progressing toward termination")
+            | _ -> raise (TypeException "For loop must progress toward termination with a comparative expression between an id and constant using precisely the increment or decrement operator"))
+        | _ -> raise (TypeException "First statement in for loop must be a skip, declaration, or assignment"))
     | Return Some e ->
         let (e, t) = exp_to_texp (check_exp e d g pm p) d pm in
         (TypedAst.Return (Some (e, t)), g)
