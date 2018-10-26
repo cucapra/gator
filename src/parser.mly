@@ -114,10 +114,16 @@ main:
 ;
 
 declarelst: 
-  | DECLARE; f = fn_decl; SEMI;
-      { f::[] }
-  | DECLARE; f = fn_decl; SEMI; dl = declarelst
-      { f::dl }
+  | DECLARE; d = decl_extern; SEMI;
+      { d::[] }
+  | DECLARE; d = decl_extern; SEMI; dl = declarelst
+      { d::dl }
+
+decl_extern:
+  | t = typ; x = ID; p = fn_params; 
+      { ExternFn((x, (fst p, t, snd p))) }
+  | t = typ; x = ID;
+      { ExternVar(t, Var x) }
 
 taglst: 
   | t = tag               
@@ -172,13 +178,17 @@ parametrizations:
       { p::pl }
 
 fn_decl:
-  | t = typ; x = ID; LPAREN; RPAREN;
-      { (x, ([], t, [])) }
-  | t = typ; x = ID; LPAREN; p = params ; RPAREN;
-      { (x, (p, t, [])) }
-  | t = typ; x = ID; LWICK; pt = parametrizations; RWICK; LPAREN; p = params ; RPAREN;
-      { (x, (p, t, pt)) }
+  | t = typ; x = ID; p = fn_params;
+      { (x, (fst p, t, snd p)) }
 ;
+
+fn_params:
+  | LPAREN; RPAREN;
+      { ([], []) }
+  | LPAREN; p = params ; RPAREN;
+      { (p, []) }
+  | LWICK; pt = parametrizations; RWICK; LPAREN; p = params ; RPAREN;
+      { (p, pt) }
 
 elif:
   | ELIF; LPAREN; b = exp; RPAREN; LBRACE; c = commlst; RBRACE;

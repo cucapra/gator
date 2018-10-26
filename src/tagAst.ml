@@ -48,6 +48,9 @@ type ret_type = typ
 type fn_type = params * ret_type * parametrization
 (* function declaration *)
 type fn_decl = string * fn_type
+type extern_decl =
+    | ExternFn of fn_decl
+    | ExternVar of (typ * exp)
 
 (* commands *)
 type comm =
@@ -74,5 +77,5 @@ type tag_decl = string * typ
  * list of vector space tags,
  * and list of functions with at least one void main() function. *)
 type prog =
-    | Prog of fn_decl list * tag_decl list * fn list
+    | Prog of extern_decl list * tag_decl list * fn list
 

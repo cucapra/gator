@@ -462,11 +462,11 @@ let check_param ((id, t, t'): (string * typ * typ option)) (g: gamma) (d: delta)
     )
     
 (* Get list of parameters from param list *)
-let check_params (pl : (id * typ * typ option) list) (d : delta) (pm : parametrization) : TypedAst.params * gamma = 
+let check_params (pl : (id * typ * typ option) list) (g: gamma) (d : delta) (pm : parametrization) : TypedAst.params * gamma = 
     debug_print ">> check_params";
-    let g = List.fold_left (fun (g: gamma) p -> check_param p g d) Assoc.empty pl in 
+    let g' = List.fold_left (fun (g: gamma) p -> check_param p g d) g pl in 
     let p = List.map (fun (i, t, t') -> (i, tag_erase t d pm)) pl in 
-    (p, g)
+    (p, g')
 
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parametrization) : TypedAst.texp = 
     debug_print ">> exp_to_texp";
@@ -740,10 +740,10 @@ let rec check_tags (t: tag_decl list) (d: delta): delta =
         )
         | _ -> raise (TypeException "Expected linear type for tag declaration")
 
-let check_fn_decl (d: delta) ((id, t): fn_decl) (p: phi) : phi =
+let check_fn_decl (g: gamma) (d: delta) ((id, t): fn_decl) (p: phi) : phi =
     debug_print (">> check_fn_decl : " ^ id);
     let (pl, _, _) = t in
-    let _ = check_params pl d in 
+    let _ = check_params pl g d in 
     if Assoc.mem id p 
     then raise (TypeException ("Function of duplicate name has been found: " ^ id))
     else Assoc.update id t p
@@ -785,34 +785,40 @@ let check_return (t: typ) (d: delta) (g: gamma) (pm: parametrization) (p: phi) (
         )
     | _ -> ()
 
-let rec check_fn (((id, (pl, r, pr)), cl): fn) (d: delta) (p: phi) : TypedAst.fn * phi = 
+let rec check_fn (((id, (pl, r, pr)), cl): fn) (g: gamma) (d: delta) (p: phi) : TypedAst.fn * phi = 
     debug_print (">> check_fn : " ^ id);
     (* fn := fn_decl * comm list *)
-    let (pl', g') = check_params pl d pr in
+    let (pl', g') = check_params pl g d pr in
     let (cl', g'') = check_comm_lst cl d g' pr p in 
     (* update phi with function declaration *)
-    let p' = check_fn_decl d (id, (pl, r, pr)) p in 
+    let p' = check_fn_decl g d (id, (pl, r, pr)) p in 
     (* check that the last command is a return statement *)
     match r with
     | UnitTyp -> List.iter check_void_return cl; ((((id, (pl', TypedAst.UnitTyp)), cl')), p')
     (* TODO: might want to check that there is exactly one return statement at the end *)
     | t -> List.iter (check_return t d g'' pr p) cl; ((((id, (pl', tag_erase t d pr)), cl')), p')
-and check_fn_lst (fl: fn list) (d: delta) (p: phi) : TypedAst.prog * phi =
+and check_fn_lst (fl: fn list) (g: gamma) (d: delta) (p: phi) : TypedAst.prog * phi =
     debug_print ">> check_fn_lst";
     match fl with
     | [] -> ([], p)
-    | h::t -> let (fn', p') = check_fn h d p in
-        let (fn'', p'') = check_fn_lst t d p' in 
+    | h::t -> let (fn', p') = check_fn h g d p in
+        let (fn'', p'') = check_fn_lst t g d p' in 
         ((fn' :: fn''), p'')
 
 (* Check that there is a void main() defined *)
-let check_main_fn (p: phi) (d: delta) =
+let check_main_fn (g: gamma) (d: delta) (p: phi) =
     debug_print ">> check_main_fn";
     let (params, ret_type, parameterization) = Assoc.lookup "main" p in 
     debug_print (">> check_main_fn_2" ^ (string_of_params params) ^ (string_of_parameterization parameterization));
     match ret_type with
-        | UnitTyp -> check_params params d parameterization |> fst
+        | UnitTyp -> check_params params g d parameterization |> fst
         | _ -> raise (TypeException ("Expected main function to return void"))
+
+let check_decls (g: gamma) (d: delta) (dl : extern_decl) (p: phi) : (gamma * phi)=
+    match dl with
+    | ExternFn f -> (g, check_fn_decl g d f p)
+    | ExternVar (t, Var x) -> (Assoc.update x t g, p)
+    | _ -> raise (TypeException ("Invalid declaration, must be a function or variable"))
 
 (* Returns the list of fn's which represent the program 
  * and params of the void main() fn *)
@@ -822,11 +828,11 @@ let check_prog (e: prog) : TypedAst.prog * TypedAst.params =
     | Prog (dl, t, f) -> (*(d: delta) ((id, t): fn_decl) (p: phi) *)
         (* delta from tag declarations *)
         let d = check_tags t Assoc.empty in 
-        let p = List.fold_left 
-            (fun (a: phi) (dl': fn_decl) -> check_fn_decl d dl' a) 
-            Assoc.empty dl in
-        let (e', p') = check_fn_lst f d p in 
-        let pr = check_main_fn p' d in 
+        let (g, p) = List.fold_left 
+            (fun (g', p') (dl': extern_decl) -> check_decls g' d dl' p') 
+            (Assoc.empty, Assoc.empty) dl in
+        let (e', p') = check_fn_lst f g d p in 
+        let pr = check_main_fn g d p' in 
         debug_print "===================";
         debug_print "Type Check Complete";
         debug_print "===================\n";
