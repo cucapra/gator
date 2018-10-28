@@ -140,13 +140,12 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parametrizat
     | (TransTyp _, GenTyp) -> true (* todo: is transtyp a subtype of gentyp? *)
     | (TransTyp _, GenMatTyp) -> true
     | (TagTyp _, GenVecTyp) -> true 
-    | (AbsTyp s1, AbsTyp s2) -> s1 = s2
     | (_, AbsTyp s) -> 
         if List.mem_assoc target pm 
         then let p = (List.assoc target pm) in 
             match p with 
             | Some p' ->  is_subtype to_check p' d pm
-            | None -> true (* todo *)
+            | None -> true 
         else raise (TypeException ("AbsTyp " ^ s ^ " not found in parametrization"))
     | _ -> false
 
@@ -540,29 +539,37 @@ and check_arr (d : delta) (g : gamma) (p : phi) (a : exp list) (pm : parametriza
 and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (pml: typ list) (pm' : parametrization)
  : (string * TypedAst.args) * typ =    
     debug_print ">> check_fn_inv";
-    let (_, rt, pm) = 
-        if Assoc.mem i p
+    let fn_invocated = if Assoc.mem i p
         then Assoc.lookup i p
         else raise (TypeException ("Invocated function " ^ i ^ " not found")) in
-    let args' = List.map (fun a -> check_exp a d g pm p) args in (* todo: fix parametrization argument *)
+    let (_, rt, pm) = fn_invocated in
+    let args' = List.map (fun a -> check_exp a d g pm p) args in 
     let args_exp = List.map fst args' in
     let args_typ = List.map snd args' in
     (* find definition for function in phi *)
     (* looks through overloaded all possible definitions of the function *)
-    let rec find_fn_inv ((params, rt, pr) : fn_type) : fn_type = (* TODO *)
+    let find_fn_inv ((params, rt, pr) : fn_type) : bool =
         let params_typ = List.map (fun (_,a,_) -> a) params in
         let pr_typ = List.map fst pr in
-        (* print_endline (String.concat "," (List.map TagAstPrinter.string_of_typ pr_typ)); *)
-        if List.length pr_typ != List.length pml then raise (TypeException "Mismatched number of parametrizations") else
-        (* check number of arg and param types match *)
+        if List.length pr_typ != List.length pml then false else
+        (* raise (TypeException "Mismatched number of parametrizations") *) 
+        (* ^^ put this back in if we want the invariant that every overloaded function has the same number of generic parameters *)
+
+        (* Get the parameters types and replace them in params_typ *)
+        let params_typ_corrected =
+            let pm_map = List.fold_left2 (fun acc x y -> Assoc.update x y acc) Assoc.empty
+                (List.map (fun x -> (match x with | AbsTyp s -> s | _ -> raise (TypeException "parameters must be generic"))) pr_typ) pml 
+            in
+            List.map (fun x -> (match x with | AbsTyp s -> Assoc.lookup s pm_map | _ -> x)) params_typ
+        in
+        (* check arg and param types match *)
         if List.length args_typ == List.length params_typ then
-            if List.fold_left2 (fun acc arg param -> acc && is_subtype arg param d pm) true args_typ params_typ 
-            then (params, rt, pr) 
-            else raise (TypeException "function invocation argument type mismatch")
-        else raise (TypeException ("function invocation argument count mismatch: expected :"
+            List.fold_left2 (fun acc arg param -> acc && is_subtype arg param d pm) true args_typ params_typ_corrected
+        else false 
+        (* (TypeException ("function invocation argument count mismatch: expected :"
                 ^ (args_typ |> List.length |> string_of_int) ^ "arguments, found: " ^ 
                 (params_typ |> List.length |> string_of_int)))
-                
+                 *)
     in
     let rec rt_map pm'' pml'' r = 
         ( match (pm'', pml'') with 
@@ -575,10 +582,12 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
         | AbsTyp rt' -> rt_map pm pml rt'
         | _ -> rt
     in
-    let (_, _, _) = 
-        if Assoc.mem i p then find_fn_inv (Assoc.lookup i p) 
-        else raise (TypeException ("Function not found: " ^ i)) in
-    ((i, args_exp), rt)
+    (* (if (List.fold_left (fun acc x -> (find_fn_inv x) || acc) false fn_invocated)  *)
+    (if find_fn_inv fn_invocated
+    then ((i, args_exp), rt)
+    else raise (TypeException ("No overloaded function declaration of " ^ i
+    ^ if List.length pml > 0 then "<" ^ (String.concat "," (List.map string_of_typ pml)) ^ ">" else ""
+    ^ " matching types (" ^ (String.concat "," (List.map string_of_typ args_typ)) ^ ") found"))) 
 
 and check_comm (c: comm) (d: delta) (g: gamma) (pm: parametrization) (p: phi) : TypedAst.comm * gamma = 
     debug_print ">> check_comm";
@@ -808,10 +817,10 @@ and check_fn_lst (fl: fn list) (g: gamma) (d: delta) (p: phi) : TypedAst.prog * 
 (* Check that there is a void main() defined *)
 let check_main_fn (g: gamma) (d: delta) (p: phi) =
     debug_print ">> check_main_fn";
-    let (params, ret_type, parameterization) = Assoc.lookup "main" p in 
-    debug_print (">> check_main_fn_2" ^ (string_of_params params) ^ (string_of_parameterization parameterization));
+    let (params, ret_type, paramet) = Assoc.lookup "main" p in 
+    debug_print (">> check_main_fn_2" ^ (string_of_params params) ^ (string_of_parametrization paramet));
     match ret_type with
-        | UnitTyp -> check_params params g d parameterization |> fst
+        | UnitTyp -> check_params params g d paramet |> fst
         | _ -> raise (TypeException ("Expected main function to return void"))
 
 let check_decls (g: gamma) (d: delta) (dl : extern_decl) (p: phi) : (gamma * phi)=

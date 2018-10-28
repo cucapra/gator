@@ -45,24 +45,24 @@ let rec string_of_exp (e:exp) : string =
         | _ -> (string_of_binop op ls rs))
     | _ -> failwith "string_of_exp Unimplemented"
 
-let rec string_of_params (p: (id * typ * typ option) list) : string =
+let rec string_of_params (p: params) : string =
     match p with
     | [] -> ""
     | (i1, t1, None)::t -> (string_of_typ t1) ^ " " ^ i1 ^ ", " ^ (string_of_params t)
     | (i1, t1, Some s)::t -> (string_of_typ t1) ^ " " ^ i1 ^ ", " ^ (string_of_params t)
 
-let rec string_of_parameterization (pm : parametrization) : string = 
+let rec string_of_parametrization (pm : parametrization) : string = 
     match pm with 
     | [] -> ""
-    | (t, None)::tl -> (string_of_typ t) ^ ", " ^ (string_of_parameterization tl)
-    | (t, Some t')::tl -> (string_of_typ t) ^ ":" ^ (string_of_typ t') ^", "^(string_of_parameterization tl)
+    | (t, None)::tl -> (string_of_typ t) ^ ", " ^ (string_of_parametrization tl)
+    | (t, Some t')::tl -> (string_of_typ t) ^ ":" ^ (string_of_typ t') ^", "^(string_of_parametrization tl)
 
 let string_of_fn_type ((p, r, pm): fn_type) : string = 
-    (string_of_typ r) ^ " <" ^ (string_of_parameterization pm) ^ ">" ^ "(" ^ (string_of_params p) ^ ")"
+    (string_of_typ r) ^ " <" ^ (string_of_parametrization pm) ^ ">" ^ "(" ^ (string_of_params p) ^ ")"
 
 let string_of_fn_decl (d: fn_decl) : string = 
     match d with
-    | (id, (p, r, pm)) -> (string_of_typ r) ^ " " ^ id ^ " <" ^ (string_of_parameterization pm) ^ ">" ^ " (" ^ (string_of_params p) ^ ")"
+    | (id, (p, r, pm)) -> (string_of_typ r) ^ " " ^ id ^ " <" ^ (string_of_parametrization pm) ^ ">" ^ " (" ^ (string_of_params p) ^ ")"
 
 let rec string_of_comm (c: comm) : string =
     match c with

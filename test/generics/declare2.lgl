@@ -24,9 +24,6 @@ void main() {
     color purple = [.5, 0., .5];
     tinted tred = [1., 0., .2];
 
-    print dot<pos>(vert, unitx);
-    print dot<color>(purple, tred);
-
     color norm_color = normalize<color>(red);
     tinted norm_tinted = normalize<tinted>(tred);
     print normed_dot<tinted>(tred, norm_tinted);
