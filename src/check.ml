@@ -461,7 +461,8 @@ let check_param ((id, t, t'): (string * typ * typ option)) (g: gamma) (d: delta)
     )
     
 (* Get list of parameters from param list *)
-let check_params (pl : (id * typ * typ option) list) (g: gamma) (d : delta) (pm : parametrization) : TypedAst.params * gamma = 
+let check_params (pl : (id * typ * typ option) list) (g: gamma) (d : delta) (pm : parametrization) 
+: TypedAst.params * gamma = 
     debug_print ">> check_params";
     let g' = List.fold_left (fun (g: gamma) p -> check_param p g d) g pl in 
     let p = List.map (fun (i, t, t') -> (i, tag_erase t d pm)) pl in 
@@ -819,6 +820,7 @@ let check_main_fn (g: gamma) (d: delta) (p: phi) =
     debug_print ">> check_main_fn";
     let (params, ret_type, paramet) = Assoc.lookup "main" p in 
     debug_print (">> check_main_fn_2" ^ (string_of_params params) ^ (string_of_parametrization paramet));
+    if (List.length paramet) > 0 then raise (TypeException "Cannot provide generic parameters to main") else
     match ret_type with
         | UnitTyp -> check_params params g d paramet |> fst
         | _ -> raise (TypeException ("Expected main function to return void"))
