@@ -1,0 +1,18 @@
+declare vec4 vec4<`t : genType>(`t v, float x);
+
+void main(vec3 aPosition, vec3 aDerivU, vec3 aDerivV, vec3 aNormal, vec3->vec3 uNormal, vec2 aUv, vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel, vec2 aTexCoord, vec2 vTexCoord, vec2 vUv, vec3 vNormal, vec4 vPosition, vec3->vec3 vNormalMatrix, vec3 vDerivU, vec3 vDerivV) {
+  vec3->vec4 v3_v4 = [
+    [1., 0., 0.],
+    [0., 1., 0.],
+    [0., 0., 1.],
+    [0., 0., 0.]
+  ];
+  
+  vec4 gl_Position = uProjection * uView * vec4<vec3>(aPosition, 1.);
+  vUv = aUv;
+  vNormal = aNormal;
+  vPosition = uView * vec4<vec3>(aPosition, 1.);
+  vNormalMatrix = uNormal;
+  vDerivU = aDerivU;
+  vDerivV = aDerivV;
+}
