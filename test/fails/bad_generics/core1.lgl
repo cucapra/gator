@@ -1,11 +1,9 @@
-int id_int(int x) {
-    return x;
-}
-
-`t restrict<`t>(`t x) {
-    return id_int(x);  // Must be an int!
+// Note that t cannot be a bool, so `t should be a genTyp
+`t add_op<`t>(`t x, `t y) {
+    `t result = x + y;
+    return result;
 }
 
 void main() {
-    bool fail = id_int<bool>(true);
+    int fail = add_op<int>(1, 2);
 }

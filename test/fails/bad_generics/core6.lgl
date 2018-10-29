@@ -1,0 +1,7 @@
+`u app_mat<`t : mat, `u : vec>(`t->`u m, `t x) { // mat->vec makes no sense
+    return m * x;
+}
+
+void main() {
+    print 1;
+}

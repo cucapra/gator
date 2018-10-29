@@ -1,0 +1,15 @@
+tag a is vec2;
+tag b is vec2;
+tag c is b;
+tag d is b;
+tag e is c;
+
+`u downcast2<`t : vec2, `u : `t>(`t x) {
+  `t->`u caster = [[1., 0.], [0., 1.]];
+  return caster * x;
+}
+
+void main() {
+    a avec = [1., 0.];
+    e fail = downcast2<a, e>(avec);
+}

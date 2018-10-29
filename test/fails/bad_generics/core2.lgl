@@ -1,4 +1,4 @@
-// Note that t cannot be a bool
+// Note that this means `t cannot be a bool
 `t add_op<`t : genType>(`t x, `t y) {
     `t result = x + y;
     return result;
