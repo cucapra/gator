@@ -11,31 +11,23 @@ int id_int(int x) {
 }
 
 // Note that t cannot be a bool
-`t add_op<`t>(`t x, `t y) {
+`t add_op<`t : genType>(`t x, `t y) {
     `t result = x + y;
     return result;
 }
 
-// Note that 't' and 'u' MUST be vecs, regardless if we explicitely require it or not!
-`u app_mat<`t, `u>(`t->`u m, `t x) {
+`u app_mat<`t : vec, `u : vec>(`t->`u m, `t x) {
     return m * x;
 }
 
-// Note that 't' MUST be a vec3
-`t project_r3_r2<`t>(`t x) {
+`t project_r3_r2<`t : vec3>(`t x) {
     `t->vec2 proj = [[1., 0., 0.], [0., 1., 0.]];
     // Multiply, but annoying as a test
     return app_mat<`t, vec2>(proj, x);
 }
 
-// But here, the restriction is actually fairly complicated
-// In particular, `t \in [float | vec | mat]`
-`t double<`t>(`t x) {
+`t double<`t : genType>(`t x) {
     return 2. * x;
-}
-
-`v multiop<`t, `u, `v>(`t x, `u y, `v z) {
-    return x * y * z
 }
 
 void main() {
@@ -53,9 +45,4 @@ void main() {
     print double<float>(3.);
     print double<vec2>([1., 2.]);
     print double<mat2x2>([[1., 0.], [0., 1.]]);
-
-    print multiop<float, float, float>(1., 2., 3.);
-    print multiop<float, float, vec2>(1., 2., [1., 2.]);
-    vec2 result = multiop<float, vec2->vec2, vec2>(1., [[1., 0.], [0., 1.]], [1., 2.]);
-    print result;
 }

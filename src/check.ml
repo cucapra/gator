@@ -454,14 +454,21 @@ let check_param ((id, t, t'): (string * typ * typ option)) (g: gamma) (d: delta)
     then raise (TypeException ("Duplicate parameter name in function declaration: " ^ id))
     else (
         match t with
-        TagTyp (VarTyp v) -> 
-            if Assoc.mem v d then Assoc.update id t g 
-            else raise (TypeException ("Tag in parameter not defined : " ^ v))
+        | TransTyp (VarTyp t1, VarTyp t2) -> if not (Assoc.mem t1 d)
+            then raise (TypeException ("Tag in parameter not defined : " ^ t1))
+            else if not (Assoc.mem t2 d) then raise (TypeException ("Tag in parameter not defined : " ^ t2))
+            else Assoc.update id t g
+        | TagTyp (VarTyp t')
+        | TransTyp (VarTyp t', _)
+        | TransTyp (_, VarTyp t') ->
+            if Assoc.mem t' d then Assoc.update id t g 
+            else raise (TypeException ("Tag in parameter not defined : " ^ t'))
         | _ -> Assoc.update id t g
     )
     
 (* Get list of parameters from param list *)
-let check_params (pl : (id * typ * typ option) list) (g: gamma) (d : delta) (pm : parametrization) : TypedAst.params * gamma = 
+let check_params (pl : (id * typ * typ option) list) (g: gamma) (d : delta) (pm : parametrization) 
+: TypedAst.params * gamma = 
     debug_print ">> check_params";
     let g' = List.fold_left (fun (g: gamma) p -> check_param p g d) g pl in 
     let p = List.map (fun (i, t, t') -> (i, tag_erase t d pm)) pl in 
@@ -586,7 +593,7 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
     (if find_fn_inv fn_invocated
     then ((i, args_exp), rt)
     else raise (TypeException ("No overloaded function declaration of " ^ i
-    ^ if List.length pml > 0 then "<" ^ (String.concat "," (List.map string_of_typ pml)) ^ ">" else ""
+    ^ (if List.length pml > 0 then "<" ^ (String.concat "," (List.map string_of_typ pml)) ^ ">" else "")
     ^ " matching types (" ^ (String.concat "," (List.map string_of_typ args_typ)) ^ ") found"))) 
 
 and check_comm (c: comm) (d: delta) (g: gamma) (pm: parametrization) (p: phi) : TypedAst.comm * gamma = 
@@ -686,12 +693,12 @@ and check_assign (t: typ) (s: string) (etyp : typ)  (d: delta) (g: gamma) (p: ph
     begin
     match t with
     | TransTyp (VarTyp t1, VarTyp t2) -> if not (Assoc.mem t1 d)
-        then raise (TypeException ("Unknown tag " ^ t2))
-        else if not (Assoc.mem t2 d) then raise (TypeException ("unknown tag " ^ t1))
+        then raise (TypeException ("Unknown tag " ^ t1))
+        else if not (Assoc.mem t2 d) then raise (TypeException ("Unknown tag " ^ t2))
     | TagTyp (VarTyp t')
     | TransTyp (VarTyp t', _)
     | TransTyp (_, VarTyp t') ->
-        if not (Assoc.mem t' d) then raise (TypeException ("unknown tag " ^ t'))
+        if not (Assoc.mem t' d) then raise (TypeException ("Unknown tag " ^ t'))
     | _ -> ()
     end;
     let check_name regexp = if Str.string_match regexp s 0 then raise (TypeException ("Invalid variable name " ^ s)) in
@@ -819,6 +826,7 @@ let check_main_fn (g: gamma) (d: delta) (p: phi) =
     debug_print ">> check_main_fn";
     let (params, ret_type, paramet) = Assoc.lookup "main" p in 
     debug_print (">> check_main_fn_2" ^ (string_of_params params) ^ (string_of_parametrization paramet));
+    if (List.length paramet) > 0 then raise (TypeException "Cannot provide generic parameters to main") else
     match ret_type with
         | UnitTyp -> check_params params g d paramet |> fst
         | _ -> raise (TypeException ("Expected main function to return void"))
