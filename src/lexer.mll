@@ -1,11 +1,12 @@
 {
 open Parser
+open Printf
 exception SyntaxError of string
 }
 
 (* Regex definitons *)
 
-let white = [' ' '\t' '\n' '\r']+
+let white = [' ' '\t']+
 let num = ['0'-'9']+
 let letter = ['a'-'z' 'A'-'Z']
 let mat = "mat" num ['x'] num
@@ -13,13 +14,14 @@ let sampler = "sampler" num ['D']
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let floatval = ((['0'-'9']*['.']['0'-'9']+)|(['0'-'9']+['.']['0'-'9']*))
 let newline = ('\r' | '\n' | "\r\n" | eof)
-let comment = "//" [^ '\r' '\n']* newline
+let comment = "//" [^ '\r' '\n']* 
 
 (* Lexer definition *)
 
 rule read = parse
   | comment         { read lexbuf }
   | white           { read lexbuf }
+  | newline         { Lexing.new_line lexbuf; read lexbuf }
   | num as num      { NUM (int_of_string num) }
   | "vec"           { VEC }
   | "mat"           { MAT }
@@ -152,5 +154,10 @@ rule read = parse
   | id as id        { ID id }
   | floatval as fl  { FLOAT (float_of_string fl) }
   | eof             { EOL }
-  | _               { raise (SyntaxError ("Unexpected char: " ^ Lexing.lexeme lexbuf)) }
+  | _ as c  {
+            let pos = lexbuf.Lexing.lex_curr_p in
+            printf "Error at line %d\n" pos.Lexing.pos_lnum;
+            printf "Unrecognized character: [%c]\n" c;
+            exit 1
+          }
 

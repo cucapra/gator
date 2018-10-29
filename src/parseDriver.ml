@@ -25,6 +25,11 @@ let load (filename : string) : unit =
     print_endline prog_str;
     close_in ch
   with
+  | Parsing.Parse_error ->
+      let pos = lexbuf.Lexing.lex_curr_p in
+      Format.printf "Syntax error at %d:%d\n"
+        pos.Lexing.pos_lnum (pos.Lexing.pos_cnum - pos.Lexing.pos_bol);
+      exit 1
   | _ ->
     close_in ch;
     let pos = lexbuf.Lexing.lex_curr_p in
@@ -32,6 +37,7 @@ let load (filename : string) : unit =
     let col = pos.Lexing.pos_cnum in
     let tok = Lexing.lexeme lexbuf in
     failwith (Format.sprintf "Syntax error on line %d, column %d near %s" line col tok)
+    
 
 let _ = 
   print_endline "Parser tester";

@@ -27,15 +27,17 @@ let _ =
         let lexbuf = Lexing.from_channel ch in
         try
             Parser.main Lexer.read lexbuf
-        with _ ->
-            begin
-                close_in ch;
-            let pos = lexbuf.Lexing.lex_curr_p in
-            let tok = (Lexing.lexeme lexbuf) in
-            (* let line = pos.Lexing.pos_lnum in *)
-            let cnum = pos.Lexing.pos_cnum - pos.Lexing.pos_bol in
-            failwith ("Parsing error at character " ^ tok ^ ", character " ^ string_of_int cnum)
-            end in
+        with 
+            | _ ->
+                begin
+                    close_in ch;
+                let pos = lexbuf.Lexing.lex_curr_p in
+                let tok = (Lexing.lexeme lexbuf) in
+                (* let line = pos.Lexing.pos_lnum in *)
+                let cnum = pos.Lexing.pos_cnum - pos.Lexing.pos_bol in
+                failwith ("Parsing error at token '" ^ tok ^ "', line "
+                     ^ (string_of_int pos.Lexing.pos_lnum) ^ ", column " ^ string_of_int cnum)
+                end in
         close_in ch;
     let (typedProg, params) = Check.check_prog prog in
     if !run_interp then Ops.eval_prog typedProg 
