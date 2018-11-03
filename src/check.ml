@@ -454,9 +454,15 @@ let check_param ((id, t, t'): (string * typ * typ option)) (g: gamma) (d: delta)
     then raise (TypeException ("Duplicate parameter name in function declaration: " ^ id))
     else (
         match t with
-        TagTyp (VarTyp v) -> 
-            if Assoc.mem v d then Assoc.update id t g 
-            else raise (TypeException ("Tag in parameter not defined : " ^ v))
+        | TransTyp (VarTyp t1, VarTyp t2) -> if not (Assoc.mem t1 d)
+            then raise (TypeException ("Tag in parameter not defined : " ^ t1))
+            else if not (Assoc.mem t2 d) then raise (TypeException ("Tag in parameter not defined : " ^ t2))
+            else Assoc.update id t g
+        | TagTyp (VarTyp t')
+        | TransTyp (VarTyp t', _)
+        | TransTyp (_, VarTyp t') ->
+            if Assoc.mem t' d then Assoc.update id t g 
+            else raise (TypeException ("Tag in parameter not defined : " ^ t'))
         | _ -> Assoc.update id t g
     )
     
@@ -587,7 +593,7 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
     (if find_fn_inv fn_invocated
     then ((i, args_exp), rt)
     else raise (TypeException ("No overloaded function declaration of " ^ i
-    ^ if List.length pml > 0 then "<" ^ (String.concat "," (List.map string_of_typ pml)) ^ ">" else ""
+    ^ (if List.length pml > 0 then "<" ^ (String.concat "," (List.map string_of_typ pml)) ^ ">" else "")
     ^ " matching types (" ^ (String.concat "," (List.map string_of_typ args_typ)) ^ ") found"))) 
 
 and check_comm (c: comm) (d: delta) (g: gamma) (pm: parametrization) (p: phi) : TypedAst.comm * gamma = 
@@ -629,7 +635,7 @@ and check_comm (c: comm) (d: delta) (g: gamma) (pm: parametrization) (p: phi) : 
             let t = Assoc.lookup s g in
             let result = check_exp e d g pm p in
             (TypedAst.Assign (s, (exp_to_texp result d pm)), check_assign t s (snd result) d g p pm)
-        else raise (TypeException "Assignment to undeclared variable")
+        else raise (TypeException ("Assignment to undeclared variable: " ^ s))
     | AssignOp (s, b, e) -> 
         let result = check_comm (Assign (s, Binop(b, Var s, e))) d g pm p in
         (match (fst result) with
@@ -687,12 +693,12 @@ and check_assign (t: typ) (s: string) (etyp : typ)  (d: delta) (g: gamma) (p: ph
     begin
     match t with
     | TransTyp (VarTyp t1, VarTyp t2) -> if not (Assoc.mem t1 d)
-        then raise (TypeException ("Unknown tag " ^ t2))
-        else if not (Assoc.mem t2 d) then raise (TypeException ("unknown tag " ^ t1))
+        then raise (TypeException ("Unknown tag " ^ t1))
+        else if not (Assoc.mem t2 d) then raise (TypeException ("Unknown tag " ^ t2))
     | TagTyp (VarTyp t')
     | TransTyp (VarTyp t', _)
     | TransTyp (_, VarTyp t') ->
-        if not (Assoc.mem t' d) then raise (TypeException ("unknown tag " ^ t'))
+        if not (Assoc.mem t' d) then raise (TypeException ("Unknown tag " ^ t'))
     | _ -> ()
     end;
     let check_name regexp = if Str.string_match regexp s 0 then raise (TypeException ("Invalid variable name " ^ s)) in
