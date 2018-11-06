@@ -219,7 +219,7 @@ void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView,
 
     float exposure = 0.2;
     color sRGBColor = to_sRGB(finalColor * exposure);
-    vec4 gl_FragColor = vec4<color>(sRGBColor, 1.0);
+    vec4 gl_FragColor = vec4<color>(sRGBColor, 1.0); // how to convert this to alphaColor appropriately
 
     if(gl_FrontFacing) {
         skip;

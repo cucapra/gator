@@ -1,19 +1,21 @@
 {
 open Parser
 open Printf
+exception Eof
+exception Err
 exception SyntaxError of string
 }
 
 (* Regex definitons *)
 
-let white = [' ' '\t']+
+let white = [' ' '\t']
 let num = ['0'-'9']+
 let letter = ['a'-'z' 'A'-'Z']
 let mat = "mat" num ['x'] num
 let sampler = "sampler" num ['D']
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let floatval = ((['0'-'9']*['.']['0'-'9']+)|(['0'-'9']+['.']['0'-'9']*))
-let newline = ('\r' | '\n' | "\r\n" | eof)
+let newline = ['\n' '\r']
 let comment = "//" [^ '\r' '\n']* 
 
 (* Lexer definition *)

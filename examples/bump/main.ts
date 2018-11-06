@@ -1,8 +1,9 @@
 import * as lgl from '../lglexample';
 import { mat4 } from 'gl-matrix';
 
-// Texture for LPSHead
-const head_lambert : string = require('../resources/lpshead/lambertian.jpg');
+// Textures
+const earthmap1k : string = require('../resources/textures/earthmap1k.jpg');
+const earthbump1k : string = require('../resources/textures/earthbump1k.jpg');
 
 // Loads file system implementation in parcel
 // * can only call synchronous functions *
@@ -24,22 +25,30 @@ function main() {
   let loc_uView = lgl.uniformLoc(gl, program, 'uView');
   let loc_uModel = lgl.uniformLoc(gl, program, 'uModel');
   let loc_aPosition = lgl.attribLoc(gl, program, 'aPosition');
+  let loc_uNormal = lgl.attribLoc(gl, location, 'uNormal');
+
   
   // Texture things
   let loc_aTexCoord = lgl.attribLoc(gl, program, 'aTexCoord');
   let loc_uTexture = lgl.uniformLoc(gl, program, 'uTexture');
+  let loc_aDerivU = lgl.uniformLoc(gl, program, 'aDerivU');
+  let loc_aDerivV = lgl.uniformLoc(gl, program, 'aDerivV');
+  let loc_aNormal = lgl.uniformLoc(gl, program, 'aNormal');
+  let loc_aUv = lgl.uniformLoc(gl, program, 'aUv');
+
+
 
   // Read in lpshead obj
   // URL must be statically analyzable other than (__dirname) and (__filename)
-  let src = fs.readFileSync(__dirname + './../resources/lpshead/head.OBJ', 'utf8');
+  let src = fs.readFileSync(__dirname + './../resources/OBJ/sphere_highres.obj', 'utf8');
 
   let mesh = lgl.load_obj (gl, src);
-  
+
   // Initialize the model position.
   let model = mat4.create();
 
   // Load image texture
-  lgl.load_texture(gl, head_lambert);
+  lgl.load_texture(gl, earthmap1k);
 
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
@@ -59,6 +68,7 @@ function main() {
     // Set the attribute arrays.
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
     lgl.bind_attrib_buffer(gl, loc_aTexCoord, mesh.texcoords, 2);
+    // lgl.bind_attrib_buffer(gl, loc_aDerivU, mesh.derivU, 2); // TODO 
    
     // Draw the object.
     lgl.drawMesh(gl, mesh);
