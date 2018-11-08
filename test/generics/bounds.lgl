@@ -2,7 +2,7 @@
 
 // Bounds should be sound because they INCREASE strictness
 // Note that explicit bounds can help with providing nicer error messages
-vec2 add_op<`t : vec>(`t x, `t y) {
+`t add_op<`t : vec>(`t x, `t y) {
     return x + y;
 }
 
@@ -20,6 +20,7 @@ bool uninvokable<`t>(`t x) {
 
 void main() {
     print add_op<vec2>([1., 1.], [2., 1.]);
+    print add_op<vec3>([1., 1., 1.], [2., 1., 1.]);
 
     print id<vec2>([1., 2.]);
     print id<vec3>([1., 2., 3.]);

@@ -33,6 +33,16 @@ t low_cast<t : b>(a x) {
     return id * a_b * x;
 }
 
+`u downcast2<`t : vec2, `u : `t>(`t x) {
+  `t->`u caster = [[1., 0.], [0., 1.]];
+  return caster * x;
+}
+
+`t downcast2dumb<`t : vec2, `u : `t>(`t x) {
+  `t->`u caster = [[1., 0.], [0., 1.]];
+  return caster * x;
+}
+
 void main() {
     a avec = [1., 1.];
     b bvec = [1., 2.];
@@ -52,6 +62,11 @@ void main() {
 
     d s8 = low_cast<d>(avec);
     c s9 = low_cast<e>(avec);
+
+    b s10 = downcast2<b, b>(bvec);
+    e s11 = downcast2<c, e>(cvec);
+    d s12 = downcast2<b, d>(cvec);
+    b s13 = downcast2dumb<b, e>(bvec);
 
     print 1;
 }

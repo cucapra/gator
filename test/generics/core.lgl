@@ -1,15 +1,3 @@
-// All of the following should typecheck in principle
-// I actually think this sort of reasoning is probably complete
-// But the priority is that this MUST be sound (see fails for things to avoid, of course)
-
-int id_int(int x) {
-    return x;
-}
-
-`t restrict<`t>(`t x) {
-    return id_int(x);
-}
-
 // Note that t cannot be a bool
 `t add_op<`t : genType>(`t x, `t y) {
     `t result = x + y;
@@ -20,29 +8,35 @@ int id_int(int x) {
     return m * x;
 }
 
-`t project_r3_r2<`t : vec3>(`t x) {
-    `t->vec2 proj = [[1., 0., 0.], [0., 1., 0.]];
+//`t project_r3_r2<`t : vec3>(`t x) {
+//    `t->vec2 proj = [[1., 0., 0.], [0., 1., 0.]];
     // Multiply, but annoying as a test
-    return app_mat<`t, vec2>(proj, x);
-}
+//    return app_mat<`t, vec2>(proj, x);
+//}
 
-`t double<`t : genType>(`t x) {
-    return 2. * x;
-}
+//`t triple<`t : genType>(`t x) {
+//    return 3. * x;
+//}
+
+//`t scale_mat<`t : mat>(`t m1, `t m2) {
+//    `t l = 3. * m1;
+//    `t r = 5. * m2;
+//    return l + r;
+//}
 
 void main() {
-    print restrict<int>(5);
-
     print add_op<int>(1, 2);
     print add_op<float>(1., .3);
     print add_op<vec2>([1., 2.], [2., 1.]);
     print add_op<mat2x2>([[1., 0.], [0., 1.]], [[0., 1.], [1., 0.]]);
-    print add_op<int>(restrict<int>(3), restrict<int>(2));
+    print add_op<int>(add_op<int>(1, 2), add_op<int>(2, 3));
 
-    print app_mat<vec2, vec3>([[1., 0.], [0., 1.], [1., 1.]], [1., 2.]);
-    print project_r3_r2<vec3>([1., 1., 1.]);
+    //print app_mat<vec2, vec3>([[1., 0.], [0., 1.], [1., 1.]], [1., 2.]);
+    //print project_r3_r2<vec3>([1., 1., 1.]);
 
-    print double<float>(3.);
-    print double<vec2>([1., 2.]);
-    print double<mat2x2>([[1., 0.], [0., 1.]]);
+    //print triple<float>(3.);
+    //print triple<vec2>([1., 2.]);
+    //print triple<mat2x2>([[1., 0.], [0., 1.]]);
+    //print scale_mat<vec2->vec2>([[1., 0.], [0., 1.]], [[1., 0.], [0., 1.]]);
+    //print scale_mat<mat2x2>([[1., 0.], [0., 1.]], [[1., 0.], [0., 1.]]);
 }
