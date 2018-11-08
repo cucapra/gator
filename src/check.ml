@@ -466,7 +466,7 @@ let check_params (pl : (string * typ * constrain) list) (g: gamma) (d : delta) (
 : TypedAst.params * gamma = 
     debug_print ">> check_params";
     let g' = List.fold_left (fun (g: gamma) p -> check_param p g d) g pl in 
-    let p = List.map (fun (i, t, t') -> (i, constrain_erase (TypConstraint t) d pm)) pl in 
+    let p = List.fold_left (fun acc (i, t, t') -> Assoc.update i (constrain_erase (TypConstraint t) d pm) acc) Assoc.empty pl in 
     (p, g')
 
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parametrization) : TypedAst.texp = 

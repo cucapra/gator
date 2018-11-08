@@ -30,7 +30,7 @@ let rec string_of_constraint (t: constrain) : string =
     | GenTyp -> "genType"
     | GenMatTyp -> "mat"
     | GenVecTyp -> "vec"
-    | TypConstraint t -> string_of_typ t
+    | ETypConstraint t -> string_of_typ t
 
 let rec string_of_exp (e: exp) : string =
     let string_of_arr (a: texp list) : string = 
@@ -55,7 +55,7 @@ let string_of_param (i, e) : string =
     (string_of_constraint e) ^ " " ^ i
 
 let rec string_of_params (p: params) : string = 
-    (String.concat ", " (List.map string_of_param p))
+    Assoc.to_string string_of_constraint p
 
 let rec string_of_comm (c: comm) : string =
     match c with

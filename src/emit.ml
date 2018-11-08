@@ -6,6 +6,7 @@ open Lin_ops
 open Util
 
 (* type epsilon = (id, etyp) Assoc.context *)
+type delta = (etyp list) Assoc.context
 
 type ltyp_top =
     | VecDim of int
@@ -35,7 +36,7 @@ and string_of_mat_padded (m: exp list list) (max_dim: int) : string =
     ("(" ^ (String.concat ", " (List.map string_of_vec_padded m)) ^
     (repeat (string_of_no_paren_vec [] max_dim) (max_dim - List.length m)) ^ ")")
   
-and string_of_gl_mat (m: exp list list) : string = 
+and string_of_glsl_mat (m: exp list list) : string = 
     (* Note the transpose to match the glsl column-oriented style *)
     let tm = Lin_ops.transpose m in
     let r = (List.length tm) in
@@ -43,7 +44,7 @@ and string_of_gl_mat (m: exp list list) : string =
     let dim = max r c in
     ("mat"^(string_of_int dim)^string_of_mat_padded tm dim)
 
-and string_of_gl_typ (t : etyp) : string =
+and string_of_glsl_typ (t : etyp) : string =
     match t with
     | UnitTyp -> failwith "Unit type is unwriteable in glsl"
     | MatTyp (m, n) -> "mat" ^ string_of_int (max m n)
@@ -109,7 +110,7 @@ and comp_exp (e : exp) : string =
         | (_, t)::_ -> (match t with
             | FloatTyp | IntTyp -> "vec" ^ (string_of_int (List.length a)) ^ "(" ^ (String.concat ", " (List.map (fun x -> comp_exp (fst x)) a)) ^ ")"
             | VecTyp n -> let as_vec_list = (fun v -> (match v with | (Arr a', _) -> (List.map fst a') | _ -> failwith "Typechecker error, a matrix must be a list of vectors")) in
-                string_of_gl_mat (List.map as_vec_list a)
+                string_of_glsl_mat (List.map as_vec_list a)
             | _ -> failwith "Typechecker error, every array must be a list of ints, floats, or vectors"))
     | Binop (op, l, r) -> (match op with
         | Times -> padded_mult l r
@@ -131,7 +132,7 @@ and comp_comm (c : comm list) : string =
         | Decl (ty, x, (e, _)) -> (
             if check_name x then ""^ (comp_comm t) else  
             if is_core x  then x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
-            else string_of_gl_typ ty ^ " "^ x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t))
+            else string_of_glsl_typ ty ^ " "^ x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t))
         | Assign (x, (e, _)) -> x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
         | AssignOp ((x, _), op, (e, _)) -> x ^ " " ^ (binop_string op) ^ "= " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
         | If (((b, _), c1), el, c2) -> 
@@ -148,107 +149,38 @@ and comp_comm (c : comm list) : string =
         | Return None -> "return;" ^ (comp_comm t)
         | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
 
-let check_generics ((p, rt) : fn_type) : (string * etyp option) list = 
-    debug_print ">> check_generics";
-    let rec check_generics_rt p' acc : (string * etyp option) list = 
-        match p' with
-        [] -> acc
-        | s::t -> 
-            match s with
-            (_ , AbsTyp (a, b)) -> (a,b)::(check_generics_rt t acc)
-            | (_, GenTyp) -> ("genType" , None)::(check_generics_rt t acc)
-            | _ -> check_generics_rt t acc
-    in 
-    match rt with
-    AbsTyp (s', e') -> check_generics_rt p ((s', e')::[])
-    | GenTyp -> check_generics_rt p (("genType", None)::[])
-    | _ -> check_generics_rt p []
-
-type delta = (etyp list) Assoc.context
-
-
-let rec get_parametrization_generic_types (p: etyp option) = 
-    match p with
-    | None -> [IntTyp; FloatTyp; MatTyp(2,1); MatTyp(3,1); MatTyp(4,1); 
-            VecTyp 2; VecTyp 3; VecTyp 4; BoolTyp; SamplerTyp 2; SamplerTyp 3]
-    | Some GenTyp -> [IntTyp; FloatTyp; MatTyp(2,1); MatTyp(3,1); MatTyp(4,1); 
-            VecTyp 2; VecTyp 3; VecTyp 4]
-    | Some AbsTyp (s, e) -> get_parametrization_generic_types (Some (AbsTyp (s, e)))
-    | Some t -> [t]
-
-let rec process_parametrizations (pm: (string * etyp option) list) (gs: (etyp list) context) = 
-    match pm with 
-    [] -> gs 
-    | (s, e)::t -> Assoc.update s (get_parametrization_generic_types e) gs
+let rec strings_of_constraint (c: constrain) : string list =
+    match c with
+    | AnyTyp -> string_of_glsl_typ BoolTyp :: strings_of_constraint GenTyp
+    | GenTyp -> ["genType"]
+    | GenVecTyp -> List.map string_of_glsl_typ [VecTyp 2; VecTyp 3; VecTyp 4]
+    | GenMatTyp -> List.map string_of_glsl_typ [MatTyp(2,1); MatTyp(3,1); MatTyp(4,1)]
+    | ETypConstraint t -> [string_of_glsl_typ t]
 
 (* GenTyp - int, float, vec(2,3,4), mat(16 possibilites) *)
-let rec generate_fn_generics (((id, (p, rt)), cl) : fn) (pm : (string * etyp option) list) = 
-    debug_print (">> generate_fn_generics " ^ id);   
-    let gens = Assoc.empty 
-        |> Assoc.update "genType" [IntTyp; FloatTyp; 
-        MatTyp(2,1); MatTyp(3,1); MatTyp(4,1); VecTyp 2; VecTyp 3; VecTyp 4]
-        |> Assoc.update "vec" [VecTyp 2; VecTyp 3; VecTyp 4]
-        |> Assoc.update "mat" [MatTyp(2,1); MatTyp(3,1); MatTyp(4,1)]
-        |> process_parametrizations pm;
-    (* TODO: add into gens all the stuff in pm! *)
-    in 
-    let plain = (string_of_gl_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (comp_comm cl) ^ "}"
-    in 
-    let rec replace_generic (orig: string) : string = 
-        match pm with
+let rec generate_fn_generics (orig : string) (((id, (pm, rt)), cl) : fn) = 
+    debug_print (">> generate_fn_generics " ^ id);
+    let pm_list = Assoc.bindings pm in
+    let rec replace_generic (orig: string) : string =
+        match pm_list with
         | [] -> orig
-        | (s', None)::t -> 
-            debug_print (">> generate_fn_generics1 "^ s');
-            let con = Assoc.lookup s' gens in 
-            let rec replace_generic_helper c =
-                match c with 
-                [] -> ""
-                | s''::t -> Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ s'') orig ^ (replace_generic_helper t)
-            in replace_generic_helper con
-        | (s', Some (AbsTyp (s'', e'')))::t -> 
-            debug_print ">> generate_fn_generics2";
-            let con = Assoc.lookup s'' gens in 
-            let rec replace_generic_helper c =
-                match c with 
-                [] -> ""
-                | s'''::t -> Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ s''') orig ^ (replace_generic_helper t)
-            in replace_generic_helper con
-        | (s', Some (GenTyp))::t -> 
-            debug_print ">> generate_fn_generics3";
-            let con = Assoc.lookup "genType" gens in 
-            let rec replace_generic_helper c =
-                match c with 
-                [] -> ""
-                | s'''::t -> Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ s''') orig ^ (replace_generic_helper t)
-            in replace_generic_helper con
-        | (s', Some (GenMatTyp))::t -> 
-            let con = Assoc.lookup "mat" gens in 
-            let rec replace_generic_helper c =
-                match c with 
-                [] -> ""
-                | s'''::t -> Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ s''') orig ^ (replace_generic_helper t)
-            in replace_generic_helper con
-        | (s', Some (GenVecTyp))::t -> 
-            let con = Assoc.lookup "vec" gens in 
-            let rec replace_generic_helper c =
-                match c with 
-                [] -> ""
-                | s'''::t -> Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ s''') orig ^ (replace_generic_helper t)
-            in replace_generic_helper con
-        | (s', Some k)::t -> debug_print ">> generate_fn_generics3";
-            Str.global_replace (Str.regexp ("`"^s')) (string_of_gl_typ k) orig
-    in replace_generic plain
+        | (s,c)::t -> 
+            let regex = (Str.regexp ("`"^s)) in
+            let str_lst = strings_of_constraint c in
+            let result = List.fold_left (fun acc r -> Str.global_replace regex r acc) orig str_lst in
+            replace_generic result
+    in replace_generic orig
 
 
-let comp_fn (((id, (p, rt)), cl) : fn) : string = 
+let comp_fn (f : fn) : string = 
     debug_print ">> comp_fn";
+    let ((id, (p, rt)), cl) = f in
     match id with 
     | "main" -> "void main() {" ^ (comp_comm cl) ^ "}"
     | _ -> 
-        let pm = check_generics (p, rt) in
-        if List.length pm = 0 then 
-        (string_of_gl_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (comp_comm cl) ^ "}"
-        else generate_fn_generics ((id, (p, rt)), cl) pm
+        let fn_str = ((string_of_glsl_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (comp_comm cl) ^ "}") in
+        generate_fn_generics fn_str f
+
 
 let rec comp_fn_lst (f : fn list) : string =
     debug_print ">> comp_fn_lst";
@@ -256,17 +188,23 @@ let rec comp_fn_lst (f : fn list) : string =
     | [] -> ""
     | h::t -> (comp_fn h) ^ (comp_fn_lst t)
 
-let rec decl_attribs (p : TypedAst.params) : string = 
+let decl_attribs (p : params) : string = 
     debug_print ">> decl_attribs";
-    match p with
-    | [] -> ""
-    | h::t -> match h with
-        (* Super janky, but we need to have rules for weird glsl declarations and variables *)
-        | (x, et) -> if check_name x then 
-            (attrib_type x) ^ " " ^ (string_of_gl_typ et) ^ " " ^ x ^ ";" ^ (decl_attribs t) else
-            decl_attribs t
+    let rec decl_attribs_list (pl : (string * constrain) list) =
+        match pl with
+        | [] -> ""
+        | (x, c)::t -> 
+            if check_name x then begin
+                match c with
+                | ETypConstraint et ->
+                    (attrib_type x) ^ " " ^ (string_of_glsl_typ et) ^ " " ^ x ^ ";" ^ (decl_attribs_list t)
+                | _ -> failwith "Typechecker error: cannot include generic constraints in main"
+            end
+            else decl_attribs_list t
+    in
+    decl_attribs_list (Assoc.bindings p)
 
-let rec compile_program (prog : prog) (params : TypedAst.params) : string =
+let rec compile_program (prog : prog) (params : params) : string =
     debug_print ">> compile_program";
     "precision highp float;" ^ (decl_attribs params) ^ 
      (comp_fn_lst prog)

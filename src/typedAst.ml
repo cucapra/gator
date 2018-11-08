@@ -47,7 +47,7 @@ type comm =
     | FnCall of id * args
 and if_block = texp * comm list
 
-type params = (string * constrain) list
+type params = constrain Assoc.context
 type ret_type = etyp
 type fn_type = params * ret_type
 type fn_decl = string * fn_type

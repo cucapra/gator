@@ -12,7 +12,7 @@ let rec fn_lookup (name : id) (fns : fn list) : (fn option * id list) =
     match fns with
     | [] -> (None, [])
     | h::t -> match h with ((id, (p, _)), _) -> 
-        (if name = id then (Some h, List.map fst p) else fn_lookup name t)
+        (if name = id then (Some h, List.map fst (Assoc.bindings p)) else fn_lookup name t)
 
 let rec eval_glsl_fn (name : id) (args : exp list) (fns : fn list) (s : sigma) : value =
         let as_vec (e : exp) : vec =
@@ -160,7 +160,7 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) : value =
         | None -> eval_glsl_fn id args fns s
         | Some f -> (match f with ((_, (names, _)), _) ->
             let add_arg = (fun acc (name, _) ex -> Assoc.update name (eval_exp ex fns s) acc) in
-            eval_funct f fns (List.fold_left2 (add_arg) Assoc.empty names args))
+            eval_funct f fns (List.fold_left2 (add_arg) Assoc.empty (Assoc.bindings names) args))
 
 and eval_comm (c : comm) (fns : fn list) (s : sigma) : sigma =
     match c with

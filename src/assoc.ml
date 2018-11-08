@@ -19,6 +19,9 @@ let update x v c = let c' = (if List.mem_assoc x c then List.remove_assoc x c el
 (* Produce bindings as an association list. *)
 let bindings c = c
 
+(* Generates a context from a list *)
+let gen_context l = List.fold_left (fun acc (s, v) -> update s v acc) empty l
+
 (* Check var exists in context *)
 let mem x c = List.mem_assoc x c
 
