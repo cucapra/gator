@@ -21,4 +21,8 @@ val bindings : 'a context -> (string * 'a) list
 val mem : string -> 'a context -> bool
 (* val state_to_string : ('a, 'a) context -> string *)
 
+val map : ('a -> 'b) -> 'a context -> 'b context
+
+val size : 'a context -> int
+
 val to_string : ('a -> string) -> 'a context -> string

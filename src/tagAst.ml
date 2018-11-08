@@ -7,7 +7,6 @@ type tag_typ =
     | TopTyp of int
     | BotTyp of int
     | VarTyp of id
-    | TAbsTyp of string
 
 (* types *)
 type typ =
@@ -17,13 +16,17 @@ type typ =
     | IntTyp
     | FloatTyp
     | TagTyp of tag_typ
-    | TransTyp of tag_typ * tag_typ
+    | TransTyp of typ * typ
     | SamplerTyp of int (* i.e. sampler2D *)
     | AbsTyp of string
-    (* Built-in generic types for usability *)
+
+type constrain =
+    (* Special constraint types *)
+    | AnyTyp
     | GenTyp
-    | GenVecTyp
     | GenMatTyp
+    | GenVecTyp
+    | TypConstraint of typ
 
 (* expressions *)
 type exp =
@@ -38,11 +41,11 @@ and args = exp list
 
 (* function parameterization,
  * which may extend another type. *)
-type parametrization = (typ * typ option) list
+type parametrization = constrain Assoc.context
 
 (* function parameters *)
 (* arguments may have an optional parametrization type *)
-type params = (string * typ * typ option) list
+type params = (string * typ * constrain) list
 type ret_type = typ
 (* our functions are not first-order! *)
 type fn_type = params * ret_type * parametrization

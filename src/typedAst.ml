@@ -9,11 +9,16 @@ type etyp =
     | FloatTyp
     | VecTyp of int
     | MatTyp of int * int
+    | TransTyp of etyp * etyp
     | SamplerTyp of int
-    | AbsTyp of string * etyp option
+    | AbsTyp of string * constrain
+
+and constrain =
+    | AnyTyp
     | GenTyp
     | GenMatTyp
     | GenVecTyp
+    | ETypConstraint of etyp
 
 (* expressions *)
 type texp = exp * etyp
@@ -42,7 +47,7 @@ type comm =
     | FnCall of id * args
 and if_block = texp * comm list
 
-type params = (string * etyp) list
+type params = (string * constrain) list
 type ret_type = etyp
 type fn_type = params * ret_type
 type fn_decl = string * fn_type

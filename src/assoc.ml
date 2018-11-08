@@ -22,5 +22,9 @@ let bindings c = c
 (* Check var exists in context *)
 let mem x c = List.mem_assoc x c
 
+let map f c = List.map (fun (s, x) -> (s, f x)) c
+
+let size c = List.length c
+
 let to_string f c = let pair_f (x : (string * 'a)) : string = (fst x) ^ " : " ^ (f (snd x)) in
   "[" ^ (String.concat "," (List.map pair_f c)) ^ "]"

@@ -76,8 +76,10 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 
 (* Precedences *)
 
+%left TRANS
+%left DOT
 %left AND OR
-%left NOT EQ LEQ LWICK GEQ RWICK
+%left NOT EQ LEQ LWICK GEQ RWICK 
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
@@ -156,26 +158,26 @@ commlst:
 
 params: 
   | t = typ; x = ID
-      { (x, t, None)::[] }
-  | t1 = typ; LWICK; t2 = typ; RWICK; x = ID
-      { (x, t1, Some t2)::[] }
+      { (x, t, AnyTyp)::[] }
+  | t = typ; LWICK; c = constrain; RWICK; x = ID
+      { (x, t, c)::[] }
   | t = typ; x = ID; COMMA; p = params
-      { (x, t, None)::p }
-  | t1 = typ; LWICK; t2 = typ; RWICK; x = ID; COMMA; p = params
-      { (x, t1, Some t2)::p }
+      { (x, t, AnyTyp)::p }
+  | t = typ; LWICK; c = constrain; RWICK; x = ID; COMMA; p = params
+      { (x, t, c)::p }
 ;
 
 parametrization:
-  | t = typ;
-      { (t, None) }
-  | t1 = typ; COLON; t2 = typ;
-      { (t1, Some t2) }
+  | BACKTICK; t = ID;
+      { (t, AnyTyp) }
+  | BACKTICK; t = ID; COLON; c = constrain;
+      { (t, c) }
 
 parametrizations:
   | p = parametrization;
-      { p::[] }
+      { Assoc.update (fst p) (snd p) Assoc.empty }
   | p = parametrization; COMMA; pl = parametrizations;
-      { p::pl }
+      { Assoc.update (fst p) (snd p) pl }
 
 fn_decl:
   | t = typ; x = ID; p = fn_params;
@@ -184,9 +186,9 @@ fn_decl:
 
 fn_params:
   | LPAREN; RPAREN;
-      { ([], []) }
+      { ([], Assoc.empty) }
   | LPAREN; p = params ; RPAREN;
-      { (p, []) }
+      { (p, Assoc.empty) }
   | LWICK; pt = parametrizations; RWICK; LPAREN; p = params ; RPAREN;
       { (p, pt) }
 
@@ -261,17 +263,21 @@ comm_element:
       { FnCall(x, a, p)}
 ; 
 
-typ:
-  | VEC
+constrain:
+  | VEC 
       { GenVecTyp }
-  | MAT
+  | MAT 
       { GenMatTyp }
+  | GENTYPE 
+      { GenTyp }
+  | t = typ 
+      { TypConstraint t }
+
+typ:
   | AUTOTYP 
       { AutoTyp }    
   | BACKTICK; e = ID
       { AbsTyp(e) }
-  | GENTYPE
-      { GenTyp }
   | BOOLTYP                         
       { BoolTyp }
   | FLOATTYP                        
@@ -282,9 +288,9 @@ typ:
       { let len = String.length m in
         let dim = String.sub m 3 (len-3) in
         let dim_lst = Str.split_delim (regexp "x") dim in
-        TransTyp (TopTyp (int_of_string(List.nth dim_lst 1)),
-        TopTyp (int_of_string(List.nth dim_lst 0)))}
-  | x1 = tagtyp; TRANS; x2 = tagtyp 
+        TransTyp (TagTyp (TopTyp (int_of_string(List.nth dim_lst 1))),
+        (TagTyp (TopTyp (int_of_string(List.nth dim_lst 0)))))}
+  | x1 = typ; TRANS; x2 = typ 
       { TransTyp(x1,x2) }
   | x = ID 
       { if (Str.string_match vec x 0) then (
@@ -295,7 +301,7 @@ typ:
         if (Str.string_match mat x 0) then (
         let len = String.length x in 
         let dim = int_of_string (String.sub x 3 (len-3)) in
-        TransTyp ((TopTyp dim), (TopTyp dim))
+        TransTyp (TagTyp (TopTyp dim), TagTyp (TopTyp dim))
         ) 
         else (TagTyp (VarTyp x)) }
   | s = SAMPLER                     
@@ -314,8 +320,6 @@ tagtyp:
         let dim = String.sub x 3 (len-3)in
         TopTyp (int_of_string(dim))
         ) else (VarTyp x) }
-  | BACKTICK; e = ID
-      { TAbsTyp(e) }
 ;
 
 arr:

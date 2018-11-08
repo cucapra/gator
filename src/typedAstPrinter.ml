@@ -20,12 +20,17 @@ let rec string_of_typ (t: etyp) : string =
     | FloatTyp -> "float"
     | VecTyp v -> "vec" ^ (string_of_int v)
     | MatTyp (m1, m2) -> "mat" ^ (string_of_int m1) ^ "x" ^ (string_of_int m2)
+    | TransTyp (s1, s2) -> (string_of_typ s1) ^ "->" ^ (string_of_typ s2)
     | SamplerTyp n -> "sampler" ^ (string_of_int n) ^ "D"
     | AbsTyp (s, typ) -> "`" ^ s (* TODO *)
+
+let rec string_of_constraint (t: constrain) : string =
+    match t with
+    | AnyTyp -> "any"
     | GenTyp -> "genType"
     | GenMatTyp -> "mat"
     | GenVecTyp -> "vec"
-
+    | TypConstraint t -> string_of_typ t
 
 let rec string_of_exp (e: exp) : string =
     let string_of_arr (a: texp list) : string = 
@@ -47,7 +52,7 @@ and string_of_args (a: exp list) : string =
     (String.concat ", " (List.map string_of_exp a))
 
 let string_of_param (i, e) : string = 
-    (string_of_typ e) ^ " " ^ i
+    (string_of_constraint e) ^ " " ^ i
 
 let rec string_of_params (p: params) : string = 
     (String.concat ", " (List.map string_of_param p))
