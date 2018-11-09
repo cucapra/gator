@@ -22,7 +22,7 @@ let rec string_of_typ (t: etyp) : string =
     | MatTyp (m1, m2) -> "mat" ^ (string_of_int m1) ^ "x" ^ (string_of_int m2)
     | TransTyp (s1, s2) -> (string_of_typ s1) ^ "->" ^ (string_of_typ s2)
     | SamplerTyp n -> "sampler" ^ (string_of_int n) ^ "D"
-    | AbsTyp (s, typ) -> "`" ^ s (* TODO *)
+    | AbsTyp (s, typ) -> "`" ^ s
 
 let rec string_of_constraint (t: constrain) : string =
     match t with
@@ -54,8 +54,11 @@ and string_of_args (a: exp list) : string =
 let string_of_param (i, e) : string = 
     (string_of_constraint e) ^ " " ^ i
 
-let rec string_of_params (p: params) : string = 
-    Assoc.to_string string_of_constraint p
+let rec string_of_params (p: params) : string =
+  String.concat ", " (List.map (fun (i, t) -> (string_of_typ t) ^ " " ^ i) p)
+
+let string_of_parametrization (pm : parametrization) : string = 
+  Assoc.to_string string_of_constraint pm
 
 let rec string_of_comm (c: comm) : string =
     match c with
@@ -82,10 +85,10 @@ let rec string_of_comm (c: comm) : string =
 and string_of_comm_list (cl : comm list) : string = 
    (String.concat "\n" (List.map string_of_comm cl))
 
-let string_of_fn ((((id, (p, rt)), cl)) : fn) : string = 
+let string_of_fn ((((id, (p, rt, pm)), cl)) : fn) : string = 
     match id with 
     | "main" -> "void main() {" ^ (string_of_comm_list cl) ^ "}"
-    | _ -> (string_of_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (string_of_comm_list cl) ^ "}"
+    | _ -> (string_of_typ rt) ^ " " ^ id ^ "<" ^ (string_of_parametrization pm) ^ ">(" ^ (string_of_params p) ^ "){" ^ (string_of_comm_list cl) ^ "}"
 
 let string_of_prog (e : prog) : string =
     (String.concat "" (List.map string_of_fn e))

@@ -275,17 +275,17 @@ let rec greatest_common_child (t1: typ) (t2: typ) (d: delta) (pm: parametrizatio
 
 let rec least_common_parent (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ =
     debug_print ">> least_common_parent";
+    let fail _ = raise (TypeException ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2))) in
     let rec step_abstyp s1 s2 =
-        (* Safe cause we already ran is_vector *)
         begin
             match (Assoc.lookup s2 pm) with
-            | TypConstraint (TagTyp t') -> TagTyp(least_common_vector_parent (abstype_as_vec s1 pm) t' d pm)
             | TypConstraint (AbsTyp s') -> if (is_subtype t1 (AbsTyp s') d pm) then (AbsTyp s') else step_abstyp s1 s'
-            | _ -> failwith "is_vector failed!!!"
+            | TypConstraint (t) -> least_common_parent t t2 d pm
+            | c -> fail ()
         end
     in
     if (is_subtype t1 t2 d pm) then t2 else if (is_subtype t2 t1 d pm ) then t1 
-    else (match (t1, t2) with
+    else match (t1, t2) with
         | (TagTyp t1', TagTyp t2') -> (TagTyp (least_common_vector_parent t1' t2' d pm))
         | (AbsTyp s1, AbsTyp s2) -> (step_abstyp s1 s2)
         | (AbsTyp s, TagTyp t) 
@@ -293,7 +293,7 @@ let rec least_common_parent (t1: typ) (t2: typ) (d: delta) (pm: parametrization)
         | (TransTyp (t1, t2), TransTyp(t3, t4)) -> 
             (TransTyp (greatest_common_child t1 t3 d pm, least_common_parent t2 t4 d pm))
         (* Note that every other possible pair of legal joins would be caught by the is_subtype calls above *)
-        | _ -> raise (TypeException ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2))))
+        | _ -> fail ()
 
 let check_subtype_list (t: typ) (l: typ list) (d: delta) (pm: parametrization) : bool =
     List.fold_left (fun acc t' -> acc || (is_subtype t t' d pm)) false l
@@ -478,7 +478,7 @@ let check_params (pl : (string * typ * constrain) list) (g: gamma) (d : delta) (
 : TypedAst.params * gamma = 
     debug_print ">> check_params";
     let g' = List.fold_left (fun (g: gamma) p -> check_param p g d pm) g pl in 
-    let p = Assoc.gen_context (List.map (fun (i, t, t') -> (i, (constrain_erase (TypConstraint t) d pm))) pl) in 
+    let p = (List.map (fun (i, t, t') -> (i, tag_erase t d pm)) pl) in 
     (p, g')
 
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parametrization) : TypedAst.texp = 
@@ -741,13 +741,14 @@ let rec check_tags (t: tag_decl list) (d: delta): delta =
         )
         | _ -> raise (TypeException "Expected linear type for tag declaration")
 
-let check_fn_decl (g: gamma) (d: delta) ((id, (pl, rt, pm)): fn_decl) (p: phi) : (TypedAst.params * gamma) * phi =
+let check_fn_decl (g: gamma) (d: delta) ((id, (pl, rt, pm)): fn_decl) (p: phi) : (TypedAst.params * gamma) * TypedAst.parametrization * phi =
     debug_print (">> check_fn_decl : " ^ id);
     check_typ_valid rt d pm;
-    let _ = check_params pl g d in 
+    let pr = check_params pl g d pm in 
+    let pme = Assoc.gen_context (List.map (fun (s, c) -> (s, constrain_erase c d pm)) (Assoc.bindings pm)) in
     if Assoc.mem id p 
     then raise (TypeException ("Function of duplicate name has been found: " ^ id))
-    else (check_params pl g d pm, Assoc.update id (pl, rt, pm) p)
+    else (pr, pme, Assoc.update id (pl, rt, pm) p)
 
 (* Helper function for type checking void functions. 
  * Functions that return void can have any number of void return statements 
@@ -775,13 +776,16 @@ let rec check_fn (((id, (pl, r, pr)), cl): fn) (g: gamma) (d: delta) (p: phi) : 
     debug_print (">> check_fn : " ^ id);
     (* fn := fn_decl * comm list *)
     (* update phi with function declaration *)
-    let ((pl', g'), p') = check_fn_decl g d (id, (pl, r, pr)) p in 
+    let ((pl', g'), pm, p') = check_fn_decl g d (id, (pl, r, pr)) p in 
     let (cl', g'') = check_comm_lst cl d g' pr p in 
     (* check that the last command is a return statement *)
+    (* print_endline (TypedAstPrinter.string_of_parametrization pm); *)
+    (* print_endline (TypedAstPrinter.string_of_params pl'); *)
     match r with
-    | UnitTyp -> List.iter check_void_return cl; ((((id, (pl', TypedAst.UnitTyp)), cl')), p')
+    | UnitTyp -> List.iter check_void_return cl; ((((id, (pl', TypedAst.UnitTyp, pm)), cl')), p')
     (* TODO: might want to check that there is exactly one return statement at the end *)
-    | t -> List.iter (check_return t d g'' pr p) cl; ((((id, (pl', tag_erase t d pr)), cl')), p')
+    | t -> List.iter (check_return t d g'' pr p) cl; ((((id, (pl', tag_erase t d pr, pm)), cl')), p')
+
 and check_fn_lst (fl: fn list) (g: gamma) (d: delta) (p: phi) : TypedAst.prog * phi =
     debug_print ">> check_fn_lst";
     match fl with
@@ -802,7 +806,7 @@ let check_main_fn (g: gamma) (d: delta) (p: phi) =
 
 let check_decls (g: gamma) (d: delta) (dl : extern_decl) (p: phi) : (gamma * phi)=
     match dl with
-    | ExternFn f -> (g, snd (check_fn_decl g d f p))
+    | ExternFn f -> let (_, _, p') = (check_fn_decl g d f p) in (g, p')
     | ExternVar (t, Var x) -> (Assoc.update x t g, p)
     | _ -> raise (TypeException ("Invalid declaration, must be a function or variable"))
 

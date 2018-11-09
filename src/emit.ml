@@ -160,28 +160,32 @@ let rec strings_of_constraint (c: constrain) : string list =
     | ETypConstraint t -> [string_of_glsl_typ t]
 
 
-let rec generate_fn_generics (orig : string) (((id, (pm, rt)), cl) : fn) : string = 
+let rec generate_fn_generics (orig : string) (((id, (p, rt, pm)), cl) : fn) : string = 
     debug_print (">> generate_fn_generics " ^ id);
+    (* TODO: get this to work properly with trans and var generics *)
+    (* I think this will need to be rewritten to essentially run the function through emit multiple times *)
+    (* BUT LIKE, EFFORT *)
+    (* See the commented out code in test/compiler_core/generic_functions.lgl for a test case / example *)
     let pm_list = Assoc.bindings pm in
     let rec replace_generic (orig: string) (pml : (string * constrain) list) : string =
-        print_endline orig;
         match pml with
         | [] -> orig
         | (s,c)::t -> 
             let regex = (Str.regexp ("`"^s)) in
             let str_lst = strings_of_constraint c in
-            let result = List.fold_left (fun acc r -> Str.global_replace regex r acc) orig str_lst in
+            let result = List.fold_left (fun acc r -> Str.global_replace regex r orig ^ acc) "" str_lst in
             replace_generic result t
     in replace_generic orig pm_list
 
 
 let comp_fn (f : fn) : string = 
     debug_print ">> comp_fn";
-    let ((id, (p, rt)), cl) = f in
+    let ((id, (p, rt, pm)), cl) = f in
     match id with 
     | "main" -> "void main() {" ^ (comp_comm cl) ^ "}"
     | _ -> 
-        let fn_str = ((string_of_glsl_typ rt) ^ " " ^ id ^ "(" ^ (string_of_params p) ^ "){" ^ (comp_comm cl) ^ "}") in
+        let param_string = String.concat ", " (List.map (fun (i, t) -> (string_of_glsl_typ t) ^ " " ^ i) p) in
+        let fn_str = ((string_of_glsl_typ rt) ^ " " ^ id ^ "(" ^ param_string ^ "){" ^ (comp_comm cl) ^ "}") in
         generate_fn_generics fn_str f
 
 
@@ -191,22 +195,18 @@ let rec comp_fn_lst (f : fn list) : string =
     | [] -> ""
     | h::t -> (comp_fn h) ^ (comp_fn_lst t)
 
-    
+
 let decl_attribs (p : params) : string = 
     debug_print ">> decl_attribs";
-    let rec decl_attribs_list (pl : (string * constrain) list) =
+    let rec decl_attribs_list (pl : (string * etyp) list) : string =
         match pl with
         | [] -> ""
-        | (x, c)::t -> 
-            if check_name x then begin
-                match c with
-                | ETypConstraint et ->
-                    (attrib_type x) ^ " " ^ (string_of_glsl_typ et) ^ " " ^ x ^ ";" ^ (decl_attribs_list t)
-                | _ -> failwith "Typechecker error: cannot include generic constraints in main"
-            end
+        | (x, et)::t -> 
+            if check_name x then
+                (attrib_type x) ^ " " ^ (string_of_glsl_typ et) ^ " " ^ x ^ ";" ^ (decl_attribs_list t)
             else decl_attribs_list t
     in
-    decl_attribs_list (Assoc.bindings p)
+    decl_attribs_list p
 
 let rec compile_program (prog : prog) (params : params) : string =
     debug_print ">> compile_program";

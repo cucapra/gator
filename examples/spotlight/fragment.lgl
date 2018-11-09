@@ -27,20 +27,19 @@ alphaColor alpha(color c, float f) {
 
 color phong_light<`t: vec3>(color baseColor, `t lightPos, `t fragPos, `t normalDir, float specStrength, float linear, float quad) {
     float lambertian = max(0., dot<`t>(normalDir, normalize<`t>(lightPos)));
-    return [0., 0., 0.];
-    //`t viewDir = normalize<`t>(fragPos * -1.);
-    //`t reflectDir = reflect<`t>(normalize<`t>(lightPos) * -1., normalDir);
-    //float specular = 0.;
-    //if (0. <= lambertian) {
-    //    specular = pow(max(0., dot<`t>(viewDir, reflectDir)), 8.);
-    //}
-    //else { 
-    //    skip; 
-    //}
+    `t viewDir = normalize<`t>(fragPos * -1.);
+    `t reflectDir = reflect<`t>(normalize<`t>(lightPos) * -1., normalDir);
+    float specular = 0.;
+    if (0. <= lambertian) {
+        specular = pow(max(0., dot<`t>(viewDir, reflectDir)), 8.);
+    }
+    else { 
+        skip; 
+    }
 
-    //float distance = length<`t>(lightPos - fragPos);
-    //float attenuation = 1.0 / (linear * distance + quad * (distance * distance)); 
-    //return (lambertian * baseColor + specStrength * specular * [1., 1., 1.]) * attenuation;
+    float distance = length<`t>(lightPos - fragPos);
+    float attenuation = 1.0 / (linear * distance + quad * (distance * distance)); 
+    return (lambertian * baseColor + specStrength * specular * [1., 1., 1.]) * attenuation;
 }
 
 void main(model vPosition, model vNormal, world uLight, camera uFlashLight, modelHom->worldHom uModel, worldHom->cameraHom uView) {   
