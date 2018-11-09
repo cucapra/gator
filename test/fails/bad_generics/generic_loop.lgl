@@ -1,0 +1,7 @@
+int f<`t : `t>(int x) {
+    return x;
+}
+
+void main() {
+    print 1;
+}

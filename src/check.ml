@@ -188,7 +188,7 @@ let as_vector (t: typ) (d: delta) (pm: parametrization) : tag_typ =
     (* Checks whether the given abstract type is a vector *)
     let fail _ = failwith ("Cannot treat " ^ (string_of_typ t) ^ " as a vector") in
     match t with
-    | TagTyp t' -> t'
+    | TagTyp t' -> t' 
     | AbsTyp s -> (match unwrap_abstyp s pm with
         | TypConstraint (TagTyp t') -> t'
         | _ -> fail ())
@@ -465,6 +465,18 @@ let check_index_exp (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ =
         else fail () 
     else fail ()
 
+let check_parametrization (d: delta) (pm: parametrization) : unit =
+    let rec check_para_list param found = 
+    match param with
+    | [] -> ()
+    | (s,c)::t -> if Assoc.mem s found then raise (TypeException ("Duplicate parameter `" ^ s)) 
+        else (match c with
+        | TypConstraint t' -> check_typ_valid t' d found
+        | _ -> ()); 
+        check_para_list t (Assoc.update s c found)
+    in
+    check_para_list (Assoc.bindings pm) Assoc.empty
+
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
 (* TODO : parametrized types *)
 let check_param ((id, t, t'): (string * typ * constrain)) (g: gamma) (d: delta) (pm : parametrization) : gamma = 
@@ -550,14 +562,14 @@ and check_arr (d : delta) (g : gamma) (p : phi) (a : exp list) (pm : parametriza
     | None ->  raise (TypeException ("Invalid array definition for " ^ (string_of_exp (Arr a)) ^ ", must be a matrix or vector")))
     
 
-and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (pml: typ list) (pm' : parametrization)
+and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (pml: typ list) (pm : parametrization)
  : (string * TypedAst.args) * typ =    
     debug_print ">> check_fn_inv";
     let fn_invocated = if Assoc.mem i p
         then Assoc.lookup i p
         else raise (TypeException ("Invocated function " ^ i ^ " not found")) in
-    let (_, rt, pm) = fn_invocated in
-    let args' = List.map (fun a -> check_exp a d g pm' p) args in 
+    let (_, rt, _) = fn_invocated in
+    let args' = List.map (fun a -> check_exp a d g pm p) args in 
     let args_exp = List.map fst args' in
     let args_typ = List.map snd args' in
     (* find definition for function in phi *)
@@ -567,12 +579,28 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
         (* Check that the parameterization is valid *)
         if Assoc.size pr != List.length pml then None else
         
-        if not (List.fold_left2 (fun acc given_pm (_, bound) -> acc && is_bounded_by given_pm bound d pm') 
-            true pml (Assoc.bindings pr)) then None else
+        (* Jankily adding the new parameters introduced in the function checking against as we go *)
+        (* Note that this is safe (though super hacky) because ``t is rejected by the parser *)
+        let apply_fpm (c: constrain) (fpm : typ Assoc.context) =
+            let rec in_function_t t = 
+                match t with
+                | AbsTyp s -> Assoc.lookup s fpm
+                | TransTyp (t1, t2) -> TransTyp (in_function_t t1, in_function_t t2)
+                | _ -> t
+            in
+            match c with
+            | TypConstraint t -> TypConstraint (in_function_t t)
+            | _ -> c
+        in
+        let param_check = List.fold_left2 (fun acc given_pm (s, c) -> let bound = apply_fpm c (snd acc) in
+            (fst acc && is_bounded_by given_pm bound d pm, Assoc.update s given_pm (snd acc))) (true, Assoc.empty) pml (Assoc.bindings pr)
+        in
+        if not (fst param_check) then None else
         (* raise (TypeException "Mismatched number of parametrizations") *) 
         (* ^^ put this back in if we want the invariant that every overloaded function has the same number of generic parameters *)
 
         (* Get the parameters types and replace them in params_typ *)
+        
         let pm_map = 
             List.fold_left2 (fun acc x y -> Assoc.update x y acc) Assoc.empty (List.map fst (Assoc.bindings pr)) pml 
         in
@@ -743,8 +771,9 @@ let rec check_tags (t: tag_decl list) (d: delta): delta =
 
 let check_fn_decl (g: gamma) (d: delta) ((id, (pl, rt, pm)): fn_decl) (p: phi) : (TypedAst.params * gamma) * TypedAst.parametrization * phi =
     debug_print (">> check_fn_decl : " ^ id);
-    check_typ_valid rt d pm;
+    check_parametrization d pm;
     let pr = check_params pl g d pm in 
+    check_typ_valid rt d pm;
     let pme = Assoc.gen_context (List.map (fun (s, c) -> (s, constrain_erase c d pm)) (Assoc.bindings pm)) in
     if Assoc.mem id p 
     then raise (TypeException ("Function of duplicate name has been found: " ^ id))
@@ -772,19 +801,16 @@ let check_return (t: typ) (d: delta) (g: gamma) (pm: parametrization) (p: phi) (
         )
     | _ -> ()
 
-let rec check_fn (((id, (pl, r, pr)), cl): fn) (g: gamma) (d: delta) (p: phi) : TypedAst.fn * phi = 
+let rec check_fn (((id, (pr, r, pm)), cl): fn) (g: gamma) (d: delta) (p: phi) : TypedAst.fn * phi = 
     debug_print (">> check_fn : " ^ id);
-    (* fn := fn_decl * comm list *)
     (* update phi with function declaration *)
-    let ((pl', g'), pm, p') = check_fn_decl g d (id, (pl, r, pr)) p in 
-    let (cl', g'') = check_comm_lst cl d g' pr p in 
+    let ((pl', g'), pm', p') = check_fn_decl g d (id, (pr, r, pm)) p in 
+    let (cl', g'') = check_comm_lst cl d g' pm p in 
     (* check that the last command is a return statement *)
-    (* print_endline (TypedAstPrinter.string_of_parametrization pm); *)
-    (* print_endline (TypedAstPrinter.string_of_params pl'); *)
     match r with
-    | UnitTyp -> List.iter check_void_return cl; ((((id, (pl', TypedAst.UnitTyp, pm)), cl')), p')
+    | UnitTyp -> List.iter check_void_return cl; ((((id, (pl', TypedAst.UnitTyp, pm')), cl')), p')
     (* TODO: might want to check that there is exactly one return statement at the end *)
-    | t -> List.iter (check_return t d g'' pr p) cl; ((((id, (pl', tag_erase t d pr, pm)), cl')), p')
+    | t -> List.iter (check_return t d g'' pm p) cl; ((((id, (pl', tag_erase t d pm, pm')), cl')), p')
 
 and check_fn_lst (fl: fn list) (g: gamma) (d: delta) (p: phi) : TypedAst.prog * phi =
     debug_print ">> check_fn_lst";

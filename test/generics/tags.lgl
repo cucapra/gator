@@ -33,7 +33,7 @@ b as_b<`t : c>(`t x) {
   return caster * x;
 }
 
-`t downcast2dumb<`t : vec2, `u : `t>(`t x) {
+`t notreallydowncast<`t : vec2, `u : `t>(`t x) {
   `t->`u caster = [[1., 0.], [0., 1.]];
   return caster * x;
 }
@@ -61,7 +61,7 @@ void main() {
     b s10 = downcast2<b, b>(bvec);
     e s11 = downcast2<c, e>(cvec);
     d s12 = downcast2<b, d>(cvec);
-    b s13 = downcast2dumb<b, e>(bvec);
+    b s13 = notreallydowncast<b, e>(bvec);
 
     print 1;
 }
