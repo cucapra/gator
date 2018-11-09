@@ -7,6 +7,8 @@ lingl
 This is a language with a type system that enforces the correctness of linear algebra operations.
 There is a compiler, pretty printer, and interpreter.
 
+OCaml 4.04 or higher required
+
 
 Set Up
 ------

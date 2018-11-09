@@ -1,0 +1,230 @@
+// Microfacet BDRF Shader
+
+tag model is vec3;
+tag modelHom is vec4;
+tag world is vec3;
+tag worldHom is vec4;
+tag camera is vec3;
+tag cameraHom is vec4;
+tag color is vec3;
+tag alphaColor is vec4;
+
+declare bool gl_FrontFacing;
+declare float abs(float x);
+declare float exp(float x);
+declare float sqrt(float x);
+declare float max(float v1, float v2);
+declare float length<`t : vec>(`t x);
+declare float dot<`t: genType>(`t v1, `t v2);
+declare `t normalize<`t : genType>(`t x);
+declare `t pow<`t : genType>(`t v1, `t v2);
+declare vec4 vec4<`t : genType>(`t v, float x);
+declare alphaColor texture2D<`t : vec3>(sampler2D<`t> txt, vec2 texCoord);
+
+color to_sRGB(color c) { return pow<color>(c, [1.0/2.2, 1.0/2.2, 1.0/2.2]); }
+color from_sRGB(color c) { return pow<color>(c, [2.2, 2.2, 2.2]); }
+
+// Compute Fresnel term for microfacet shading
+//    L: vector from the light source
+//    H: half vector between the vector from the light source and the vector to the camera with unit length
+// (for unpolarized light)
+float computeF(model L, model H) {
+    // material-dependent constants for Beckmann distribution
+    float ni = 1.0;
+    float nt = 2.0;
+
+    float c = abs(dot<model>(L, H));
+    float gSquared = (nt * nt) / (ni * ni) - 1.0 + c * c;
+    // clamp if irrational
+    float f = 1.0;
+    if (0.0 <= gSquared) {
+        float g = sqrt(gSquared);
+        f = 0.5 * ((g - c) * (g - c)) / ((g + c) * (g + c));
+        f = f * (1.0 + ((c * (g + c) - 1.0) / (c * (g - c) + 1.0)) * ((c * (g + c) - 1.0) / (c * (g - c) + 1.0)));
+    } else {
+        skip;
+    }
+    return f;
+}
+
+// Compute microfacet distribution using Beckmann distribution
+// Arguments:
+//    N: normal vector
+//    H: half vector between the vector from the light and the vector to the camera with unit length
+float computeD(model N, model H) {
+    float pi = 3.141592653589793238;
+    float alpha = 0.7;
+    float d = 0.0;
+    float d2 = dot<model>(H, N);
+    if (0.0 <= d2) { 
+        float cos_thetam = dot<model>(H, N);
+        float cos_thetam2 = cos_thetam * cos_thetam;
+        float sin_thetam2 = 1.0 - cos_thetam2;
+        float cos_thetam4 = cos_thetam2 * cos_thetam2;
+        float tan_thetam2 = sin_thetam2 / cos_thetam2;
+        d = exp(-tan_thetam2 / (alpha * alpha));
+        d = d / (pi * alpha * alpha * cos_thetam4);
+    } else {
+        skip;
+    }
+    return d;
+}
+
+// Called only by computeG()
+// Arguments:
+//   I: vector
+//   H: half vector between the vector from the light and the vector to the camera with unit length
+//   N: normal vector
+float gHelper(model I, model H, model N) {
+    float alpha = 0.7;
+    float g = 0.0;
+    float vm = dot<model>(I, H);
+    float vn = dot<model>(I, N);
+    float vm_over_vn = vm / vn;
+    if (0.0 <= vm_over_vn) {
+        float cos_thetav = dot<model>(normalize<model>(I), normalize<model>(N));
+        float sin_thetav = sqrt(1.0 - cos_thetav * cos_thetav);
+        float tan_thetav = sin_thetav / cos_thetav;
+        float a = 1.0 / (alpha * tan_thetav);
+        if (1.6 <= a) {
+            g = 1.0;
+        } else {
+            g = 3.535 * a + 2.181 * a * a;
+            g = g / (1.0 + 2.276 * a + 2.577 * a * a);
+        }
+    } else {
+        skip;
+    }
+    return g;
+}
+
+// Compute geometric attenuation for Beckmann microfacet shading
+//    N: normal vector
+//    H: half vector between the vector from the light and the vector to the camera with unit length
+//    L: vector from the light source
+//    V: vector to the camera
+float computeG(model N, model H, model L, model V) {
+    float g_im = gHelper(L, H, N);
+    float g_om = gHelper(V, H, N);
+    float g = g_im * g_om;
+    return g;
+}
+
+void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView, model vNormal, sampler2D<color> uTexture, vec2 vTexCoord) {
+    model->modelHom extendModel = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.],
+        [0., 0., 0.]
+    ];
+
+    modelHom modelScale = [0., 0., 0., 1.];
+    modelHom->model collapseModel = [ 
+        [1., 0., 0., 0.],
+        [0., 1., 0., 0.], 
+        [0., 0., 1., 0.]
+    ];
+
+    world->worldHom extendWorld = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.],
+        [0., 0., 0.]
+    ];
+    worldHom worldScale = [0., 0., 0., 1.];
+    worldHom->world collapseWorld = [ 
+        [1., 0., 0., 0.],
+        [0., 1., 0., 0.], 
+        [0., 0., 1., 0.]
+    ];
+
+    camera->cameraHom extendCamera = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.],
+        [0., 0., 0.]
+    ];
+    cameraHom cameraScale = [0., 0., 0., 1.];
+    cameraHom->camera collapseCamera = [ 
+        [1., 0., 0., 0.],
+        [0., 1., 0., 0.], 
+        [0., 0., 1., 0.]
+    ];
+
+    color->alphaColor extendColor = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.],
+        [0., 0., 0.]
+    ];
+
+    alphaColor->color collapseColor = [
+        [1., 0., 0., 0.],
+        [0., 1., 0., 0.], 
+        [0., 0., 1., 0.]
+    ];
+
+    vec4->vec3 v4_v3 = [
+        [1., 0., 0., 0.],
+        [0., 1., 0., 0.],
+        [0., 0., 1., 0.]
+    ];
+
+    alphaColor opaque = [0., 0., 0., 1.];
+
+    worldHom getWorldW = [0., 0., 0., 1.];
+
+    model->color modelAsColor = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.]
+    ];
+
+    world->color worldAsColor = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.]
+    ];
+
+    vec3->world vecAsWorld = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.]
+    ]; 
+
+    // Microfacet
+    float alpha = 0.7;
+    model N = normalize<model>(vNormal);
+    model V = normalize<model>(-vPosition);
+
+    model lightPosition = [10., 20., 30.];
+    color finalColor = [0.002, 0.004, 0.009];
+
+    for (int i = 1; i <= 2; i++) {
+        float r = length<model>(lightPosition - vPosition);
+        model L = normalize<model>(lightPosition - vPosition);
+        model H = normalize<model>(L + V);
+        float f = computeF(L, H);
+        float g = computeG(N, H, L, V);
+        float d = computeD(N, H);
+        float fr = f * g * d / (4.0 * dot<model>(L, N) * dot<model>(V, N));
+        color Idiff = [0., 0., 0.];
+        color IdiffColor = collapseColor * texture2D<color>(uTexture, vTexCoord);
+        Idiff = from_sRGB(IdiffColor); // error if called as function call
+        color Ispec = [0., 0., 0.];
+        Ispec = [alpha, alpha, alpha] * fr; 
+        finalColor = finalColor + (Idiff + Ispec) * max(dot<model>(N, L), 0.0) / (r * r);
+        lightPosition = [-10., 0., -10.];
+    }
+
+    float exposure = 0.2;
+    color sRGBColor = to_sRGB(finalColor * exposure);
+    vec4 gl_FragColor = vec4<color>(sRGBColor, 1.0); // how to convert this to alphaColor appropriately
+
+    if(gl_FrontFacing) {
+        skip;
+    } else {
+        skip;
+    }
+    
+}

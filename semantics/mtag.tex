@@ -9,7 +9,7 @@
 \usepackage{nccmath}
 \usepackage{xxx}
 
-\title{Unnamed Language with Linear Algebra Types: \\ Syntax and Semantics}
+\title{Linguine: Linear Algebra Types: \\ Syntax and Semantics}
 \author{Dietrich Geisler \and Irene Yoon \and Adrian Sampson}
 \date{}
 
@@ -59,14 +59,14 @@ The $.*$ operator represents elementwise multiplication (whereas $*$ is proper l
 Our type system consists of user-defined \emph{tags}, $T$, alongside built-in types:
 %
 \begin{leftalign}
-n &\in \mathbb{N} \\
-T &\in \text{tags} \\
+n &\in \mathbb{N} &
 \nu &\defas \top_n \alt
-    \bot_n \alt T \\
+\bot_n \alt T \\
+T &\in \text{tags} &
 \tau &\defas \mathsf{unit} \alt
-    \mathsf{scalar} \alt
-    \nu \alt
-    \nu_1->\nu_2
+\mathsf{scalar} \alt
+\nu \alt
+\nu_1->\nu_2
 \end{leftalign}
 %
 Function types $\nu_1 -> \nu_2$ are not ordinary functions; they are matrices used to map from one vector space to another using matrix--vector multiplication.  As a convenience (as well as to match expected GLSL behavior), the top type $\top_n$ can be written in code as $\mathsf{vec}_n$ and the $\top_{n_1}->\top_{n_2}$ type can be written in code as $\mathsf{mat}n_1\mathsf{x}n_2$.  The $\bot_n$ type is purely meant for use by the typechecker and so is not part of the surface syntax of the language.  

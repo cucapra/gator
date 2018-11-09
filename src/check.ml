@@ -638,7 +638,7 @@ and check_comm (c: comm) (d: delta) (g: gamma) (pm: parametrization) (p: phi) : 
             let t = Assoc.lookup s g in
             let result = check_exp e d g pm p in
             (TypedAst.Assign (s, (exp_to_texp result d pm)), check_assign t s (snd result) d g p pm)
-        else raise (TypeException "Assignment to undeclared variable")
+        else raise (TypeException ("Assignment to undeclared variable: " ^ s))
     | AssignOp (s, b, e) -> 
         let result = check_comm (Assign (s, Binop(b, Var s, e))) d g pm p in
         (match (fst result) with
