@@ -149,27 +149,30 @@ and comp_comm (c : comm list) : string =
         | Return None -> "return;" ^ (comp_comm t)
         | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
 
+(* GenTyp - int, float, vec(2,3,4), mat(16 possibilites) *)
 let rec strings_of_constraint (c: constrain) : string list =
     match c with
     | AnyTyp -> string_of_glsl_typ BoolTyp :: strings_of_constraint GenTyp
-    | GenTyp -> ["genType"]
+    | GenTyp -> List.map string_of_glsl_typ [IntTyp; FloatTyp] @ 
+        (strings_of_constraint GenVecTyp @ strings_of_constraint GenMatTyp)
     | GenVecTyp -> List.map string_of_glsl_typ [VecTyp 2; VecTyp 3; VecTyp 4]
     | GenMatTyp -> List.map string_of_glsl_typ [MatTyp(2,1); MatTyp(3,1); MatTyp(4,1)]
     | ETypConstraint t -> [string_of_glsl_typ t]
 
-(* GenTyp - int, float, vec(2,3,4), mat(16 possibilites) *)
-let rec generate_fn_generics (orig : string) (((id, (pm, rt)), cl) : fn) = 
+
+let rec generate_fn_generics (orig : string) (((id, (pm, rt)), cl) : fn) : string = 
     debug_print (">> generate_fn_generics " ^ id);
     let pm_list = Assoc.bindings pm in
-    let rec replace_generic (orig: string) : string =
-        match pm_list with
+    let rec replace_generic (orig: string) (pml : (string * constrain) list) : string =
+        print_endline orig;
+        match pml with
         | [] -> orig
         | (s,c)::t -> 
             let regex = (Str.regexp ("`"^s)) in
             let str_lst = strings_of_constraint c in
             let result = List.fold_left (fun acc r -> Str.global_replace regex r acc) orig str_lst in
-            replace_generic result
-    in replace_generic orig
+            replace_generic result t
+    in replace_generic orig pm_list
 
 
 let comp_fn (f : fn) : string = 
@@ -188,6 +191,7 @@ let rec comp_fn_lst (f : fn list) : string =
     | [] -> ""
     | h::t -> (comp_fn h) ^ (comp_fn_lst t)
 
+    
 let decl_attribs (p : params) : string = 
     debug_print ">> decl_attribs";
     let rec decl_attribs_list (pl : (string * constrain) list) =

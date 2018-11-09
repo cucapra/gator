@@ -18,7 +18,7 @@ type typ =
     | TagTyp of tag_typ
     | TransTyp of typ * typ
     | SamplerTyp of int (* i.e. sampler2D *)
-    | AbsTyp of string
+    | AbsTyp of id
 
 type constrain =
     (* Special constraint types *)

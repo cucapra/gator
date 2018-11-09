@@ -206,7 +206,7 @@ and eval_cl (cl : comm list) (fns : fn list) (s : sigma) : (value * sigma) =
         | Return None -> (Unit, s)
         | _ -> eval_cl t fns (eval_comm h fns s))
 
-and eval_funct ((_, cl) : fn) (fns : fn list) (s : sigma) : value =
+and eval_funct (((p, rt), cl) : fn) (fns : fn list) (s : sigma) : value =
     fst (eval_cl cl fns s)
     
 let start_eval (fns : fn list) : unit =

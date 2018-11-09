@@ -189,6 +189,8 @@ fn_params:
       { ([], Assoc.empty) }
   | LPAREN; p = params ; RPAREN;
       { (p, Assoc.empty) }
+  | LWICK; pt = parametrizations; RWICK; LPAREN; RPAREN;
+      { ([], pt) }
   | LWICK; pt = parametrizations; RWICK; LPAREN; p = params ; RPAREN;
       { (p, pt) }
 
