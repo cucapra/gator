@@ -5,7 +5,7 @@ tag tinted is color;
 declare float dot<`t : vec>(`t x, `t y);
 
 // This could be even more powerful, but we're not there yet
-declare t normalize<t : vec>(t x);
+declare `t normalize<`t : vec>(t x);
 
 float normed_dot<`t : vec>(`t x, `t y) {
     `t normx = normalize<`t>(x);

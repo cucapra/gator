@@ -1,7 +1,7 @@
-t vec_id<t : vec>(t x) {
+`t vec_id<`t : vec>(`t x) {
     return x;
 }
 
 void main() {
-    int fail = vec_id<int>(1);
+    int fail = vec_id<int>(1); // fails the bounds
 }

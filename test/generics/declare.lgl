@@ -17,6 +17,12 @@ float normed_dot<`t : genType>(`t x, `t y) {
     return dot<`t>(normx, normy);
 }
 
+float normed_dot2<`u : genType>(`u x, `u y) { // To make sure that the typename `t doesn't matter
+    `u normx = normalize<`u>(x);
+    `u normy = normalize<`u>(y);
+    return dot<`u>(normx, normy);
+}
+
 void main() {
     pos vert = [1., 1., 1.];
     pos unitx = [1., 0., 0.];

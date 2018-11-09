@@ -1,0 +1,67 @@
+// Tags are a big funky
+// Explicit generic requirements do help a lot though
+// We assume that bounds work as per 'bounds.lgl'
+
+tag a is vec2;
+tag b is vec2;
+tag c is b;
+tag d is b;
+tag e is c;
+
+`t id<`t>(`t x) {
+    return x;
+}
+
+vec2 to_top<`t : vec2>(`t x) {
+    `t->vec2 m = [[1., 0.], [0., 1.]];
+    return m * x;
+}
+
+// Note that, as before, bounds just increase the strictness of the operation
+b as_b<`t : c>(`t x) {
+    return x;
+}
+
+`t low_cast<`t : b>(a x) {
+    a->b a_b = [[.5, .5], [1.5, .5]];
+    b->`t id_m = [[1., 0.], [0., 1.]];
+    return id_m * a_b * x;
+}
+
+`u downcast2<`t : vec2, `u : `t>(`t x) {
+  `t->`u caster = [[1., 0.], [0., 1.]];
+  return caster * x;
+}
+
+`t downcast2dumb<`t : vec2, `u : `t>(`t x) {
+  `t->`u caster = [[1., 0.], [0., 1.]];
+  return caster * x;
+}
+
+void main() {
+    a avec = [1., 1.];
+    b bvec = [1., 2.];
+    c cvec = [0., 2.];
+    d dvec = [1., 0.];
+    e evec = [0., 1.];
+
+    a s1 = id<a>(avec);
+    b s2 = id<c>(cvec);
+    b s3 = id<b>(evec);
+
+    vec2 s4 = to_top<a>(avec);
+    vec2 s5 = to_top<c>(id<e>(evec));
+
+    b s6 = as_b<c>(cvec);
+    b s7 = as_b<e>(evec);
+
+    d s8 = low_cast<d>(avec);
+    c s9 = low_cast<e>(avec);
+
+    b s10 = downcast2<b, b>(bvec);
+    e s11 = downcast2<c, e>(cvec);
+    d s12 = downcast2<b, d>(cvec);
+    b s13 = downcast2dumb<b, e>(bvec);
+
+    print 1;
+}

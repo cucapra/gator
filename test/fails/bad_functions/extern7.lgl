@@ -1,0 +1,5 @@
+declare a f(int x);  // Invalid return type
+
+void main() {
+    return;
+}

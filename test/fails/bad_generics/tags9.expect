@@ -1,1 +1,1 @@
-Fatal error: exception Lingl__Check.AbstractTypeException
+Fatal error: exception Lingl__Check.TypeException("Invocated function downcast2dumb not found")

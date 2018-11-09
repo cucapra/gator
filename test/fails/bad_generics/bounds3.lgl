@@ -1,4 +1,4 @@
-t vec_id<t : vec>(t x) {
+`t vec_id<`t : vec>(`t x) {
     return x;
 }
 

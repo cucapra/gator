@@ -6,17 +6,13 @@
     return x + y;
 }
 
-// Indeed, certain bounds make functions impossible to parameterize (and thus invoke!)
-// We shouldn't check for conditions like this in the typechecker imo
-// If a user makes a function impossible to call, oh well
-bool uninvokable<`t>(`t x) {
-    return x && true;
-}
-
 `t id<`t : genType>(`t x) {
     return x;
 }
 
+`t as_t<`t : vec3>() {
+    return [0., 1., 2.];
+}
 
 void main() {
     print add_op<vec2>([1., 1.], [2., 1.]);
@@ -28,4 +24,6 @@ void main() {
     print id<mat2x2>([[1., 0.], [0., 1.]]);
     print id<vec2->vec2>([[1., 0.], [0., 1.]]);
     print id<vec2->vec3>([[1., 0.], [0., 1.], [1., 1.]]);
+
+    print as_t<vec3>();
 }

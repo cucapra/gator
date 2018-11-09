@@ -1,1 +1,1 @@
-Fatal error: exception Lingl__Check.AbstractTypeException
+Fatal error: exception Lingl__Check.TypeException("No overloaded function declaration of low_cast<vec2> matching types (vec2lit) found")

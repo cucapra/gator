@@ -1,0 +1,22 @@
+`t anyt<`t>(`t x) {
+    return x;
+}
+
+//`t general<`t : genType>(`t x, `t y) {
+//    return x + y;
+//}
+
+//`u vt<`t : vec, `u : vec>(`t->`u m, `t v) {
+//    `u result = m * v;
+//    return result;
+//}
+
+//`t mt<`t : mat>(`t m1, `t m2) {
+//    `t first = m1 + m2;
+//    `t second = 3. * m1;
+//    return first + second;
+//}
+
+void main() {
+    print 1;
+}

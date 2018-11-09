@@ -1,0 +1,9 @@
+tag a is vec2;
+
+b f(a x) { // Unknown return type b
+    return [0., 1., 2.];
+}
+
+void main() {
+    return;
+}

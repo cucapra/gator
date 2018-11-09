@@ -1,7 +1,7 @@
-bool uninvokable<t : vec2>(t x) {
-    return x && true;
+bool uninvokable<`t : vec2>(`t x) {
+    return x && true; // Doesn't typecheck
 }
 
 void main() {
-    bool fail = uninvokable<bool>(true); // Fails the bounds
+    print 1;
 }

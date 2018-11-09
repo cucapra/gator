@@ -12,9 +12,7 @@ declare float dot<`t : vec3>(`t x, `t y);
 declare `t normalize<`t : color>(`t x);
 
 float normed_dot<`t : tinted>(`t x, `t y) {
-    `t normx = normalize<`t>(x);
-    `t normy = normalize<`t>(y);
-    return dot<`t>(normx, normy);
+    return dot<`t>(normalize<`t>(x), normalize<`t>(y));
 }
 
 void main() {

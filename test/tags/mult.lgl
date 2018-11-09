@@ -39,7 +39,7 @@ void main() {
     a s24 = (b_a * a_b) * x;
     b->b s25 = b_c + c_b * b_c; // Note that order of operations actually matters here (!)
     b s26 = (d_b + c_b) * [1., 2., 3.]; // Vector must be bottom type
-    a->vec3 s27 = b_c * a_b; // This subsumption is legal cause matrix upcasting
+    a->b s27 = b_c * a_b; // This subsumption is legal cause matrix upcasting
 
     print s21;
     print s22;
