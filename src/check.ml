@@ -295,6 +295,12 @@ let rec least_common_parent (t1: typ) (t2: typ) (d: delta) (pm: parametrization)
         (* Note that every other possible pair of legal joins would be caught by the is_subtype calls above *)
         | _ -> fail ()
 
+let least_common_parent_safe (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ option =
+    try Some (least_common_parent t1 t2 d pm) with
+    | TypeException t -> None
+    | DimensionException _ -> None
+    | t -> raise t
+
 let check_subtype_list (t: typ) (l: typ list) (d: delta) (pm: parametrization) : bool =
     List.fold_left (fun acc t' -> acc || (is_subtype t t' d pm)) false l
 
@@ -575,12 +581,53 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
     (* find definition for function in phi *)
     (* looks through overloaded all possible definitions of the function *)
     let find_fn_inv ((params, rt, pr) : fn_type) : (typ Assoc.context) option =
-        let params_typ = List.map (fun (_,a,_) -> a) params in
-        (* Check that the parameterization is valid *)
-        if Assoc.size pr != List.length pml then None else
+        (* This function asserts whether or not the function invocation matches the function given *)
+        (* In particular, this checks whether the given function matches the given parameterization and parameters *)
+        (* If it is valid, this returns (Some 'map from parameter to type'), otherwise returns 'None' *)
+
+        (* If we have the wrong number of arguments, then no match for sure *)
+        if List.length args != List.length params then None else
+        (* Work out the parameter inference if one is needed *)
+        let pml_infer = if Assoc.size pr == List.length pml then Some pml
+            else if List.length pml == 0 then 
+                let update_inference (t : typ) (s : string) (fpm : (typ Assoc.context) option) : (typ Assoc.context) option =
+                    match fpm with | None -> None | Some p ->
+                    if Assoc.mem s p then (match least_common_parent_safe t (Assoc.lookup s p) d pm with
+                        | None -> None
+                        | Some t' -> (Some (Assoc.update s t' p)))
+                    else (Some (Assoc.update s t p)) in
+                let rec unify_param (arg_typ : typ) (par_typ : typ) (fpm : (typ Assoc.context) option) : (typ Assoc.context) option =
+                    match (arg_typ, par_typ) with
+                    | (_, AbsTyp s) -> update_inference arg_typ s fpm
+                    (* Note that transtyp order doesn't matter; lots of commutivity *)
+                    | (TransTyp (al, ar), TransTyp (pl, pr)) -> unify_param ar pr (unify_param al pl fpm)
+                    | _ -> fpm
+                in
+                let gen_pml (inferred : (typ Assoc.context) option) : (typ list) option =
+                    let rec reduce_typ (t : typ) (fpm : typ Assoc.context) : typ =
+                        match t with
+                        (* Don't have to check if t is valid *)
+                        (* already handled by the typechecker when checking that the function declaration parameter dependencies were valid *)
+                        | AbsTyp s -> Assoc.lookup s fpm
+                        | TransTyp (l, r) -> TransTyp(reduce_typ l fpm, reduce_typ r fpm)
+                        | _ -> t
+                    in
+                    (* Correctly orders the resulting pml to match the parameters of the function parametrization list *)
+                    match inferred with | None -> None | Some tc -> 
+                    option_map (fun c -> List.rev (List.map snd (Assoc.bindings c))) (List.fold_left 
+                        (fun acc (s, c) -> match acc with | None -> None | Some a -> 
+                        if Assoc.mem s tc then Some (Assoc.update s (Assoc.lookup s tc) a) else
+                        (match c with | TypConstraint t' -> Some (Assoc.update s (reduce_typ t' a) a) | _ -> None) )
+                        (Some Assoc.empty) (Assoc.bindings pr))
+                in
+                gen_pml (List.fold_left2 
+                    (fun fpm arg_typ (_, par_typ, _) -> unify_param arg_typ par_typ fpm) 
+                    (Some Assoc.empty) args_typ params)
+            else None 
+        in
         
-        (* Jankily adding the new parameters introduced in the function checking against as we go *)
-        (* Note that this is safe (though super hacky) because ``t is rejected by the parser *)
+        match pml_infer with | None -> None | Some pml' ->
+        (* Helper function for using the function parameters as they are constructed *)
         let apply_fpm (c: constrain) (fpm : typ Assoc.context) =
             let rec in_function_t t = 
                 match t with
@@ -592,18 +639,18 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
             | TypConstraint t -> TypConstraint (in_function_t t)
             | _ -> c
         in
-        let param_check = List.fold_left2 (fun acc given_pm (s, c) -> let bound = apply_fpm c (snd acc) in
-            (fst acc && is_bounded_by given_pm bound d pm, Assoc.update s given_pm (snd acc))) (true, Assoc.empty) pml (Assoc.bindings pr)
+        (* Check that the parametrization conforms to the bounds provided *)
+        let param_check = List.fold_left2 (fun acc given_pm (s, c) -> 
+            (match acc with 
+            | None -> None
+            | Some fpm -> let bound = apply_fpm c fpm in 
+                if is_bounded_by given_pm bound d pm 
+                then Some (Assoc.update s given_pm fpm) else None))
+            (Some Assoc.empty) pml' (Assoc.bindings pr)
         in
-        if not (fst param_check) then None else
-        (* raise (TypeException "Mismatched number of parametrizations") *) 
-        (* ^^ put this back in if we want the invariant that every overloaded function has the same number of generic parameters *)
-
+        match param_check with | None -> None | Some pm_map ->
         (* Get the parameters types and replace them in params_typ *)
-        
-        let pm_map = 
-            List.fold_left2 (fun acc x y -> Assoc.update x y acc) Assoc.empty (List.map fst (Assoc.bindings pr)) pml 
-        in
+        let params_typ = List.map (fun (_,a,_) -> a) params in
         let rec read_pm (t : typ) : typ =
             match t with
             | AbsTyp s -> Assoc.lookup s pm_map
@@ -611,10 +658,10 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
             | _ -> t
         in
         let params_typ_corrected = List.map read_pm params_typ in
-        (* check arg and param types match *)
+        (* Finally, check that the arg and parameter types match *)
         if List.length args_typ == List.length params_typ then
             List.fold_left2 (fun acc arg param -> if (is_subtype arg param d pm) then acc else None)
-            (Some pm_map) args_typ params_typ_corrected
+            param_check args_typ params_typ_corrected
         else None
     in
     (match find_fn_inv fn_invocated with

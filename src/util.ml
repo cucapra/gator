@@ -9,6 +9,9 @@ let option_map (f: ('a -> 'b)) (o: 'a option) : 'b option =
   | None -> None
   | Some x -> Some (f x)
 
+let string_of_list (f: ('a -> string)) (l: 'a list) : string =
+  "[" ^ (String.concat ", " (List.map f l)) ^ "]"
+
 let string_of_vec (v: vec) : string = 
   "(" ^ (String.concat ", " (List.map string_of_float v)) ^ ")"
 

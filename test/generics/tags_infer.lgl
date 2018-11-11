@@ -53,15 +53,12 @@ void main() {
     vec2 s5 = to_top(id<e>(evec));
 
     b s6 = as_b(cvec);
-    b s7 = as_b0(evec);
+    b s7 = as_b(evec);
 
-    d s8 = low_cast(avec);
-    c s9 = low_cast(avec);
+    b s8 = low_cast(avec);
 
     b s10 = downcast2(bvec);
-    e s11 = downcast2(cvec);
-    d s12 = downcast2(cvec);
-    b s13 = notreallydowncast(bvec);
+    b s11 = notreallydowncast(bvec);
 
     print 1;
 }

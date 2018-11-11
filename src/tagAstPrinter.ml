@@ -49,11 +49,13 @@ let rec string_of_exp (e:exp) : string =
         | _ -> (string_of_binop op ls rs))
     | _ -> failwith "string_of_exp Unimplemented"
 
-let rec string_of_params (p: params) : string =
-    match p with
-    | [] -> ""
-    | (i1, t1, AnyTyp)::t -> (string_of_typ t1) ^ " " ^ i1 ^ ", " ^ (string_of_params t)
-    | (i1, t1, c1)::t -> (string_of_typ t1) ^ ":" ^ (string_of_constraint c1) ^  " " ^ i1 ^ ", " ^ (string_of_params t)
+let string_of_param ((s, t, c): string * typ * constrain) : string =
+    (string_of_typ t) ^ 
+    (match c with | AnyTyp -> "" | _ -> " : " ^ (string_of_constraint c))
+    ^ " " ^ s
+    
+let string_of_params (p: params) : string =
+    "(" ^ (String.concat ", " (List.map string_of_param p)) ^ ")"
 
 let string_of_parametrization (pm : parametrization) : string = 
     Assoc.to_string string_of_constraint pm
