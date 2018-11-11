@@ -1,0 +1,51 @@
+tag color is vec3;
+
+// Note that t cannot be a bool
+`t add_op<`t : genType>(`t x, `t y) {
+    `t result = x + y;
+    return result;
+}
+
+`u app_mat<`t : vec, `u : vec>(`t->`u m, `t x) {
+    return m * x;
+}
+
+`t id_vec3<`t : vec3>(`t x) {
+    `t->`t id = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]];
+    return x;
+}
+
+vec2 project_r3_r2<`t : vec3>(`t x) {
+    `t->vec2 proj = [[1., 0., 0.], [0., 1., 0.]];
+    // Multiply, but annoying as a test
+    return app_mat<`t, vec2>(proj, x);
+}
+
+`t triple<`t : genType>(`t x) {
+    return 3. * x;
+}
+
+`t scale_mat<`t : mat>(`t m1, `t m2) {
+    `t l = 3. * m1;
+    `t r = 5. * m2;
+    return l + r;
+}
+
+void main() {
+    print add_op(1, 2);
+    print add_op(1., .3);
+    print add_op([1., 2.], [2., 1.]);
+    print add_op([[1., 0.], [0., 1.]], [[0., 1.], [1., 0.]]);
+    print add_op(add_op(1, 2), add_op(2, 3));
+
+    print id_vec3([2., 1., 1.]);
+
+    print app_mat([[1., 0.], [0., 1.], [1., 1.]], [1., 2.]);
+    print project_r3_r2([1., 1., 1.]);
+
+    print triple(3.);
+    print triple([1., 2.]);
+    print triple([[1., 0.], [0., 1.]]);
+    print scale_mat([[1., 0.], [0., 1.]], [[1., 0.], [0., 1.]]);
+    print scale_mat([[1., 0.], [0., 1.]], [[1., 0.], [0., 1.]]);
+}

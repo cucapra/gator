@@ -1,0 +1,26 @@
+tag pos is vec3;
+tag color is vec3;
+tag tinted is color;
+
+declare float dot<`t : vec3>(`t x, `t y);
+
+declare `t normalize<`t : color>(`t x);
+
+float normed_dot<`t : tinted>(`t x, `t y) {
+    return dot<`t>(normalize<`t>(x), normalize<`t>(y));
+}
+
+void main() {
+    pos vert = [1., 1., 1.];
+    pos unitx = [1., 0., 0.];
+    color red = [1., 0., 0.];
+    color purple = [.5, 0., .5];
+    tinted tred = [1., 0., .2];
+
+    print dot(vert, unitx);
+    print dot(purple, tred);
+
+    color norm_color = normalize(red);
+    tinted norm_tinted = normalize(tred);
+    print normed_dot(tred, norm_tinted);
+}

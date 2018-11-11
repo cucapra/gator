@@ -2,7 +2,7 @@
     return x;
 }
 
-`t add_op<`t>(`t x, `t y) {
+`t add_op<`t : genType>(`t x, `t y) {
     t result = x + y;
     return result;
 }
