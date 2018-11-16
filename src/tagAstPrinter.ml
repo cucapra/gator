@@ -33,22 +33,6 @@ let string_of_constraint (c: constrain) : string =
     | TypConstraint t -> string_of_typ t
     | AnyTyp -> ""
 
-let rec string_of_exp (e:exp) : string =
-    let string_of_arr (a: exp list) : string = 
-        "["^(String.concat ", " (List.map string_of_exp a))^"]"
-    in
-    match e with
-    | Val v -> string_of_value v
-    | Var v -> v
-    | Arr a -> string_of_arr a
-    | Unop (op, x) -> (string_of_unop op (string_of_exp x))
-    | Binop (op, l, r) -> 
-        let ls = (string_of_exp l) in
-        let rs = (string_of_exp r) in
-        (match op with
-        | _ -> (string_of_binop op ls rs))
-    | _ -> failwith "string_of_exp Unimplemented"
-
 let string_of_param ((s, t, c): string * typ * constrain) : string =
     (string_of_typ t) ^ 
     (match c with | AnyTyp -> "" | _ -> " : " ^ (string_of_constraint c))
@@ -66,6 +50,24 @@ let string_of_fn_type ((p, r, pm): fn_type) : string =
 let string_of_fn_decl (d: fn_decl) : string = 
     match d with
     | (id, (p, r, pm)) -> (string_of_typ r) ^ " " ^ id ^ " <" ^ (string_of_parametrization pm) ^ ">" ^ " (" ^ (string_of_params p) ^ ")"
+
+let rec string_of_exp (e:exp) : string =
+    let string_of_arr (a: exp list) : string = 
+        "["^(String.concat ", " (List.map string_of_exp a))^"]"
+    in
+    match e with
+    | Val v -> string_of_value v
+    | Var v -> v
+    | Arr a -> string_of_arr a
+    | Unop (op, x) -> (string_of_unop op (string_of_exp x))
+    | Binop (op, l, r) -> 
+        let ls = (string_of_exp l) in
+        let rs = (string_of_exp r) in
+        (match op with
+        | _ -> (string_of_binop op ls rs))
+    | As (e, t) -> (string_of_exp e) ^ " as " ^ (string_of_typ t)
+    | In (e, t) -> (string_of_exp e) ^ " in " ^ (string_of_typ t)
+    | FnInv (i, args, pr) -> i ^ "<" ^ (string_of_list string_of_typ pr) ^ ">" ^ (string_of_list string_of_exp args)
 
 let rec string_of_comm (c: comm) : string =
     match c with
@@ -96,9 +98,9 @@ string_of_comm_list (cl : comm list) : string =
     string_of_lst string_of_comm cl
 
 let rec string_of_tags (t : tag_decl list) : string =
-    match t with 
-    | [] -> ""
-    | (s, a)::t -> "tag " ^ s ^ " is "^(string_of_typ a) ^ ";\n" ^ (string_of_tags t)
+    match t with | [] -> "" | (m, s, a)::t -> 
+    let ms = match m with | None -> "" | Some Coord -> " coord " in
+    "tag " ^ ms ^ s ^ " is "^(string_of_typ a) ^ ";\n" ^ (string_of_tags t)
 
 let string_of_fn (f : fn) : string = 
     match f with

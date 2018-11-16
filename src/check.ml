@@ -10,13 +10,19 @@ exception DimensionException of int * int
 exception AbstractTypeException
 
 (* Variable defs *)
-type gamma = (typ) Assoc.context
+type gamma = typ Assoc.context
 
 (* Tags defs *)
-type delta = (tag_typ) Assoc.context
+type delta = tag_typ Assoc.context
 
 (* Function defs *)
-type phi = (fn_type) Assoc.context
+type phi = fn_type Assoc.context
+
+(* Tag modifications *)
+type mu = tag_mod Assoc.context
+
+(* Transformation context *)
+type psi = string Assoc.context
 
 let trans_top (n1: int) (n2: int) : typ =
     TransTyp (TagTyp (BotTyp n1), TagTyp (TopTyp n2))
@@ -204,16 +210,16 @@ let as_matrix_pair (t: typ) (d: delta) (pm: parametrization) : typ * typ =
         | _ -> fail ())
     | _ -> fail ()
 
-let least_common_vector_parent (t1: tag_typ) (t2: tag_typ) (d: delta) (pm: parametrization): tag_typ =
+let least_common_vector_parent (t1: tag_typ) (t2: tag_typ) (d: delta) (pm: parametrization) (strict: bool): tag_typ =
     debug_print ">> least_common_vector_parent";
     let check_dim (n1: int) (n2: int) : unit =
         if n1 = n2 then () else (raise (DimensionException (n1, n2)))
     in
-    let rec lub (anc_list1: id list) (anc_list2: id list) : id =
+    let rec lub (anc_list1: id list) (anc_list2: id list) : id option =
         match anc_list1 with
-        | [] -> raise (TypeException ("Cannot implicitly cast " ^ (string_of_tag_typ t1) ^ " and " ^ (string_of_tag_typ t2) ^ " to the top vector type"  ))
+        | [] -> None
         | h::t -> 
-            (try (List.find (fun x -> x=h) anc_list2) with Not_found -> lub t anc_list2)
+            (try Some (List.find (fun x -> x=h) anc_list2) with Not_found -> lub t anc_list2)
     in
     match (t1, t2) with
     | BotTyp n1, BotTyp n2 ->
@@ -225,14 +231,20 @@ let least_common_vector_parent (t1: tag_typ) (t2: tag_typ) (d: delta) (pm: param
     | VarTyp s, TopTyp n1
     | TopTyp n1, VarTyp s ->
         check_dim (vec_dim (VarTyp s) d pm) n1;
+        if strict then
         raise (TypeException ("Cannot implicitly cast " ^ (string_of_tag_typ t1) ^ " and " ^ (string_of_tag_typ t2) ^ " to the top vector type"  ))
+        else TopTyp n1
     | VarTyp s, BotTyp n1
     | BotTyp n1, VarTyp s ->
         check_dim (vec_dim (VarTyp s) d pm) n1; VarTyp s
     | VarTyp s1, VarTyp s2 ->
         check_dim (vec_dim (VarTyp s1) d pm) (vec_dim (VarTyp s2) d pm);
         (if s1 = s2 then VarTyp s1
-        else VarTyp (lub (get_ancestor_list t1 d) (get_ancestor_list t2 d)))
+        else (match lub (get_ancestor_list t1 d) (get_ancestor_list t2 d) with
+        | None -> if strict 
+            then raise (TypeException ("Cannot implicitly cast " ^ (string_of_tag_typ t1) ^ " and " ^ (string_of_tag_typ t2) ^ " to the top vector type"))
+            else TopTyp (vec_dim (VarTyp s1) d pm)
+        | Some t -> VarTyp t))
 
 let greatest_common_vector_child (t1: tag_typ) (t2: tag_typ) (d: delta) (pm: parametrization) : tag_typ =
     debug_print "greatest_common_child";
@@ -273,27 +285,30 @@ let rec greatest_common_child (t1: typ) (t2: typ) (d: delta) (pm: parametrizatio
     | (TagTyp t1', TagTyp t2') -> (TagTyp (greatest_common_vector_child t1' t2' d pm))
     | _ -> raise (TypeException ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2)))
 
-let rec least_common_parent (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ =
+let rec least_common_parent_with_strictness (t1: typ) (t2: typ) (d: delta) (pm: parametrization) (strict: bool): typ =
     debug_print ">> least_common_parent";
     let fail _ = raise (TypeException ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2))) in
     let rec step_abstyp s1 s2 =
         begin
             match (Assoc.lookup s2 pm) with
             | TypConstraint (AbsTyp s') -> if (is_subtype t1 (AbsTyp s') d pm) then (AbsTyp s') else step_abstyp s1 s'
-            | TypConstraint (t) -> least_common_parent t t2 d pm
+            | TypConstraint (t) -> least_common_parent_with_strictness t t2 d pm strict
             | c -> fail ()
         end
     in
     if (is_subtype t1 t2 d pm) then t2 else if (is_subtype t2 t1 d pm ) then t1 
     else match (t1, t2) with
-        | (TagTyp t1', TagTyp t2') -> (TagTyp (least_common_vector_parent t1' t2' d pm))
+        | (TagTyp t1', TagTyp t2') -> (TagTyp (least_common_vector_parent t1' t2' d pm strict))
         | (AbsTyp s1, AbsTyp s2) -> (step_abstyp s1 s2)
         | (AbsTyp s, TagTyp t) 
-        | (TagTyp t, AbsTyp s) -> (TagTyp(least_common_vector_parent (abstype_as_vec s pm) t d pm))
+        | (TagTyp t, AbsTyp s) -> (TagTyp(least_common_vector_parent (abstype_as_vec s pm) t d pm strict))
         | (TransTyp (t1, t2), TransTyp(t3, t4)) -> 
-            (TransTyp (greatest_common_child t1 t3 d pm, least_common_parent t2 t4 d pm))
+            (TransTyp (greatest_common_child t1 t3 d pm, least_common_parent_with_strictness t2 t4 d pm strict))
         (* Note that every other possible pair of legal joins would be caught by the is_subtype calls above *)
         | _ -> fail ()
+
+let least_common_parent (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ =
+    least_common_parent_with_strictness t1 t2 d pm true
 
 let least_common_parent_safe (t1: typ) (t2: typ) (d: delta) (pm: parametrization): typ option =
     try Some (least_common_parent t1 t2 d pm) with
@@ -356,6 +371,7 @@ let check_typ_exp (t: typ) (d: delta) : unit =
 (* "scalar linear exp", (i.e. ctimes) returns generalized MatTyp *)
 let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) (pm : parametrization): typ = 
     debug_print ">> check_scalar_linear_exp";
+    (* TODO correctness, doesn't match rn *)
     match (t1, t2) with 
     | TransTyp (TagTyp m1, TagTyp m2), TransTyp (TagTyp m3, TagTyp m4) ->
         let left = (vec_dim m1 d pm) in
@@ -417,6 +433,9 @@ let check_comp_binop (t1: typ) (t2: typ) (d: delta) (pm: parametrization) : typ 
     if check_subtype_list t1 subtype_list d pm
     then (least_common_parent t1 t2 d pm |> ignore; BoolTyp)
     else raise (TypeException "Comparison checks must be between integers or floats")
+
+let check_as_exp (t1: typ) (t2: typ) (d: delta) (pm: parametrization) : typ =
+    least_common_parent_with_strictness t1 t2 d pm false |> ignore; t2
 
 (* Type checking addition operations on scalar (int, float) expressions *)
 (* Types are closed under addition and scalar multiplication *)
@@ -527,6 +546,9 @@ let rec check_exp (e : exp) (d : delta) (g : gamma) (pm : parametrization) (p : 
     | Var v -> "\tVar "^v |> debug_print;
         (TypedAst.Var v, Assoc.lookup v g)
     | Arr a -> check_arr d g p a pm
+    | As (e, t) -> 
+        let (er, tr) = check_exp e d g pm p in (er, check_as_exp tr t d pm)
+    | In (e, t) -> failwith "unimplemented"
     | Unop (op, e') -> (match op with
         | Neg -> build_unop op e' (req_parametrizations2 check_num_unop) pm
         | Not -> build_unop op e' (req_parametrizations2 check_bool_unop) pm
@@ -803,7 +825,8 @@ let rec check_tags (t: tag_decl list) (d: delta): delta =
     debug_print ">> check_tags";
     match t with 
     | [] -> d
-    | (s, a)::t ->
+    (* TODO: add a context or update delta to lookup tag modifications *)
+    | (m, s, a)::t ->
         check_typ_exp a |> ignore;
         match a with 
         | (TagTyp l) -> (

@@ -18,7 +18,7 @@ type typ =
     | TagTyp of tag_typ
     | TransTyp of typ * typ
     | SamplerTyp of int (* i.e. sampler2D *)
-    | AbsTyp of id
+    | AbsTyp of id (* i.e. `t *)
 
 type constrain =
     (* Special constraint types *)
@@ -35,6 +35,8 @@ type exp =
     | Arr of exp list
     | Unop of unop * exp
     | Binop of binop * exp * exp
+    | As of exp * typ
+    | In of exp * typ
     | FnInv of string * args * typ list (* function invocation *)
 
 and args = exp list
@@ -70,10 +72,13 @@ type comm =
     | FnCall of string * args * typ list
 and if_block = exp * comm list
 
+type tag_mod =
+    | Coord
+
 type fn = fn_decl * comm list
 
 (* tag declaration statements *)
-type tag_decl = string * typ
+type tag_decl = tag_mod option * string * typ
 
 (* program *)
 (* Consists of list of (external) declare functions,

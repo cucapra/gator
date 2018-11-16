@@ -29,6 +29,7 @@ rule read = parse
   | "mat"           { MAT }
   | "tag"           { TAG }
   | "is"            { IS }
+  | "coord"         { COORD }
   | "true"          { TRUE }
   | "false"         { FALSE }
   | "if"            { IF }
@@ -47,6 +48,8 @@ rule read = parse
   | "*"             { TIMES }
   | "/"             { DIV }
   | ".*"            { CTIMES }
+  | "as"            { AS }
+  | "in"            { IN }
   | "+="            { PLUSEQ }
   | "-="            { MINUSEQ }
   | "*="            { TIMESEQ }
