@@ -371,12 +371,25 @@ let check_typ_exp (t: typ) (d: delta) : unit =
 (* "scalar linear exp", (i.e. ctimes) returns generalized MatTyp *)
 let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) (pm : parametrization): typ = 
     debug_print ">> check_scalar_linear_exp";
+<<<<<<< HEAD
     (* TODO correctness, doesn't match rn *)
     match (t1, t2) with 
     | TransTyp (TagTyp m1, TagTyp m2), TransTyp (TagTyp m3, TagTyp m4) ->
         let left = (vec_dim m1 d pm) in
         let right = (vec_dim m2 d pm) in
         if left = (vec_dim m3 d pm) && right = (vec_dim m4 d pm)
+=======
+    match (t1, t2) with
+    | TagTyp a1, TagTyp a2 -> 
+        let left = vec_dim a1 d in
+        let right = vec_dim a2 d in
+        if left = right then TagTyp (BotTyp left)
+        else raise (DimensionException (left, right))
+    | TransTyp (m1, m2), TransTyp (m3, m4) ->
+        let left = (vec_dim m1 d) in
+        let right = (vec_dim m2 d) in
+        if left = (vec_dim m3 d) && right = (vec_dim m4 d)
+>>>>>>> 6039c09f56315ee73949dc6338a09f7f7638e675
         then trans_top left right
         else (raise (TypeException "Dimension mismatch in ctimes operator"))
     | TagTyp l, TagTyp r -> (
@@ -554,6 +567,7 @@ let rec check_exp (e : exp) (d : delta) (g : gamma) (pm : parametrization) (p : 
         | Not -> build_unop op e' (req_parametrizations2 check_bool_unop) pm
         | Swizzle s -> build_unop op e' (check_swizzle s) pm)
     | Binop (op, e1, e2) -> (match op with
+<<<<<<< HEAD
         | Eq -> build_binop op e1 e2 (req_parametrizations check_equality_exp) pm
         | Leq -> build_binop op e1 e2 (req_parametrizations check_comp_binop) pm
         | Lt -> build_binop op e1 e2 (req_parametrizations check_comp_binop) pm
@@ -565,6 +579,37 @@ let rec check_exp (e : exp) (d : delta) (g : gamma) (pm : parametrization) (p : 
         | Div  -> build_binop op e1 e2 (req_parametrizations check_division_exp) pm
         | CTimes -> build_binop op e1 e2 check_ctimes_exp pm
         | Index -> build_binop op e1 e2 check_index_exp pm
+=======
+        | Eq -> build_binop op e1 e2 check_equality_exp
+        | Leq -> build_binop op e1 e2 check_comp_binop
+        | Or | And -> build_binop op e1 e2 check_bool_binop
+        | Dot -> build_binop op e1 e2 check_dot_exp
+        | Plus | Minus -> build_binop op e1 e2 check_addition_exp
+        | Times -> build_binop op e1 e2 check_times_exp
+        | Div  -> build_binop op e1 e2 check_division_exp
+        | CTimes -> build_binop op e1 e2 check_ctimes_exp
+    )
+    | VecTrans (i, tag) -> failwith "Unimplemented"
+
+
+let rec check_decl (t: typ) (s: string) (etyp : typ) (d: delta) (g: gamma) : gamma =
+    debug_print (">> check_decl <<"^s^">>");
+    print_endline ((string_of_typ t) ^ " " ^ (string_of_typ etyp));
+    if Assoc.mem s d then 
+        raise (TypeException "variable declared as tag")
+    else (
+        match (t, etyp) with
+        | (BoolTyp, BoolTyp)
+        | (IntTyp, IntTyp)
+        | (FloatTyp, FloatTyp) -> Assoc.update s t g
+        | (TagTyp t1, TagTyp t2) ->
+        if is_tag_subtype t2 t1 d then Assoc.update s t g
+        else raise (TypeException ("mismatched linear type for var decl: " ^ s))
+        | (TransTyp (t1, t2), TransTyp (t3, t4)) ->
+        if is_tag_subtype t4 t2 d && is_tag_subtype t1 t3 d then Assoc.update s t g
+        else raise (TypeException ("no possible upcast for var decl: " ^ s))
+        | _ -> raise (TypeException "mismatched types for var decl")
+>>>>>>> 6039c09f56315ee73949dc6338a09f7f7638e675
     )
     | FnInv (i, args, pr) -> let ((i, args_exp), rt) = check_fn_inv d g p args i pr pm in 
         (FnInv (i, args_exp), rt)
