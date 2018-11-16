@@ -1,0 +1,24 @@
+tag a is vec3;
+tag b is vec3;
+tag c is b;
+
+void main() {
+    a avec = [1., 1., 1.];
+    b bvec = [1., 1., 1.];
+    c cvec = [1., 2., 1.];
+
+    int s11 = 2 as int;
+    float s12 = 3. + 3. as float;
+    a s13 = avec as a;
+    vec3 s14 = avec * 2. as vec3;
+    b s15 = (avec as c) as b;
+    c s16 = bvec + bvec as c;
+    b s17 = avec as c;
+
+    a->b m = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
+    c->a s21 = m as c->a;
+    vec3->vec3 s22 = m as vec3->vec3;
+    c->b s23 = m as b->c;
+
+    print 1;
+}
