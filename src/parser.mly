@@ -282,7 +282,6 @@ constrain:
       { TypConstraint t }
 
 typ:
-<<<<<<< HEAD
   | AUTOTYP 
       { AutoTyp }    
   | BACKTICK; e = ID
@@ -320,18 +319,6 @@ typ:
         SamplerTyp (int_of_string(List.nth dim_lst 0)) }
   | VOID
       { UnitTyp }
-=======
-  | BOOLTYP { BoolTyp }
-  | FLOATTYP  { FloatTyp }
-  | INTTYP    { IntTyp }
-  | m = MATTYP {let len = String.length m in 
-              let dim = String.sub m 3 (len-3) in
-              let dim_lst = Str.split_delim (regexp "x") dim in ()
-              (*Printf.printf "%s" (List.nth dim_lst 0)*) ;
-              TransTyp (TopTyp (int_of_string(List.nth dim_lst 1)),TopTyp (int_of_string(List.nth dim_lst 0)))}
-  | x1 = tagtyp; TRANS; x2 = tagtyp { TransTyp(x1,x2) }
-  | e = tagtyp { TagTyp(e) }
->>>>>>> 6039c09f56315ee73949dc6338a09f7f7638e675
 ;
 
 tagtyp:
