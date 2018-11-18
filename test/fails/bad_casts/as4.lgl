@@ -1,0 +1,8 @@
+tag a is vec2;
+tag b is vec3;
+
+void main() {
+    a avec = [1., 1.];
+
+    b fail = avec as b; // Bad dimensions
+}

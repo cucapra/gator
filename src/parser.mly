@@ -31,6 +31,8 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token RPAREN
 %token TRANS
 %token GETS
+%token IN
+%token AS
 %token INC
 %token DEC
 %token PLUSEQ
@@ -47,6 +49,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token COMMA
 %token DOT
 %token TAG
+%token COORD
 %token IS
 %token TRUE
 %token FALSE
@@ -76,6 +79,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 
 (* Precedences *)
 
+%left AS IN
 %left TRANS
 %left DOT
 %left AND OR
@@ -136,7 +140,9 @@ taglst:
 
 tag:
   | TAG; x = ID; IS; e1 = tagtyp; SEMI; 
-      { (x, TagTyp(e1)) }
+      { (None, x, TagTyp(e1)) }
+  | TAG; COORD; x = ID; IS; e1 = tagtyp; SEMI; 
+      { (Some Coord, x, TagTyp(e1)) }
 ;
 
 fnlst: 
@@ -389,6 +395,10 @@ exp:
       { Binop(Div,e1,e2) }
   | e1 = exp; CTIMES; e2 = exp 
       { Binop(CTimes,e1,e2) }
+  | e = exp; AS; t = typ
+      { As(e, t) }
+  | e = exp; IN; t = typ
+      { In(e, t) }
   | MINUS; e1 = exp;
       { Unop(Neg,e1) }
   | NOT; e1 = exp;             
