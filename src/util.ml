@@ -9,6 +9,10 @@ let option_map (f: ('a -> 'b)) (o: 'a option) : 'b option =
   | None -> None
   | Some x -> Some (f x)
 
+let tr_fst ((x, _, _): 'a * 'b * 'c) : 'a = x
+let tr_snd ((_, x, _): 'a * 'b * 'c) : 'b = x
+let tr_thd ((_, _, x): 'a * 'b * 'c) : 'c = x
+
 let string_of_list (f: ('a -> string)) (l: 'a list) : string =
   "[" ^ (String.concat ", " (List.map f l)) ^ "]"
 
