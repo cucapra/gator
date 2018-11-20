@@ -322,6 +322,7 @@ let check_subtype_list (t: typ) (l: typ list) (d: delta) (pm: parametrization) :
 
 let check_bounds_list (t: typ) (l: constrain list) (d: delta) (pm: parametrization) : bool =
     List.fold_left (fun acc t' -> acc || (is_bounded_by t t' d pm)) false l
+    
 
 let rec check_typ_valid (t: typ) (d: delta) (pm: parametrization) : unit =
     match t with
@@ -503,13 +504,37 @@ let check_parametrization (d: delta) (pm: parametrization) : unit =
     in
     check_para_list (Assoc.bindings pm) Assoc.empty
 
+let psi_update (v: string) (t: typ) (m: mu) (ps: psi) : psi =
+    (* Update psi, raising errors in case of a duplicate *)
+    (* If the given type is not valid in psi, psi is returned unmodified *)
+    let update_psi (s1: string) (s2: string) : psi =
+        if Assoc.mem s1 ps then 
+        (let s1_cont = Assoc.lookup s1 ps in
+            if Assoc.mem s2 s1_cont 
+            then raise (TypeException ("Duplicate transformation for " ^ (string_of_typ t) ^ " in the declaration of " ^ v))
+            else Assoc.update s1 (Assoc.update s2 v s1_cont) ps
+        )
+        else Assoc.update s1 (Assoc.update s2 v Assoc.empty) ps
+    in
+    let are_coord (s1: string) (s2: string) : bool =
+        if Assoc.mem s1 m && Assoc.mem s2 m
+        then (match (Assoc.lookup s1 m, Assoc.lookup s2 m) with
+        | (Some Coord, Some Coord) -> true
+        | _ -> false)
+        else false
+    in
+    match t with
+    | TransTyp(TagTyp (VarTyp s1), TagTyp (VarTyp s2)) -> 
+        if are_coord s1 s2 then update_psi s1 s2 else ps
+    | _ -> ps
+
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
 (* TODO : parametrized types *)
 let check_param ((id, t, t'): (string * typ * constrain)) (g: gamma) (d: delta) (m: mu) (pm : parametrization) (ps: psi) : gamma * psi = 
     debug_print ">> check_param";
     if Assoc.mem id g 
     then raise (TypeException ("Duplicate parameter name in function declaration: " ^ id))
-    else check_typ_valid t d pm; Assoc.update id t g
+    else check_typ_valid t d pm; (Assoc.update id t g, psi_update id t m ps)
     
 (* Get list of parameters from param list *)
 let check_params (pl : (string * typ * constrain) list) (g: gamma) (d : delta) (m: mu) (pm : parametrization) (ps: psi)
@@ -518,11 +543,39 @@ let check_params (pl : (string * typ * constrain) list) (g: gamma) (d : delta) (
     let (g', ps') = List.fold_left (fun (g', ps') p -> check_param p g d m pm ps) (g, ps) pl in 
     let p = (List.map (fun (i, t, t') -> (i, tag_erase t d pm)) pl) in 
     (p, g', ps')
-
+    
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parametrization) : TypedAst.texp = 
     debug_print ">> exp_to_texp";
     ((fst checked_exp), (tag_erase (snd checked_exp) d pm))
-    
+
+(* Super expensive.  We're essentially relying on small contexts *)
+let rec psi_path_rec (target: string) (g: gamma) (d: delta) (pm: parametrization) (ps: psi) 
+(to_search: string Queue.t) (found: string list) : TypedAst.texp =
+    let rec update_search_and_found (vals: (string * string) list) : string list =
+        match vals with
+        | [] -> found
+        | (s,_)::t -> if List.mem s found then update_search_and_found t
+            else (Queue.push s to_search; s :: update_search_and_found t)
+    in
+    let get_val (v: string) : TypedAst.texp = 
+        exp_to_texp (TypedAst.Var v, Assoc.lookup v g) d pm
+    in
+    (*   *)
+    let next = if Queue.is_empty to_search 
+    then (raise (TypeException ("Cannot find a path from " ^ (List.hd (List.rev found)) ^ " to " ^ target)))
+    else Queue.pop to_search 
+    in 
+    if Assoc.mem next ps then (let next_cont = Assoc.lookup next ps in
+        if Assoc.mem target next_cont then get_val (Assoc.lookup target next_cont)
+        else psi_path_rec target g d pm ps to_search (update_search_and_found (Assoc.bindings next_cont)))
+    else psi_path_rec target g d pm ps to_search found
+
+let check_in_exp (start: typ) (target: typ) (g: gamma) (d: delta) (pm: parametrization) (ps: psi) : TypedAst.exp = 
+    match (start, target) with
+    | (TagTyp (VarTyp s1), TagTyp (VarTyp s2)) -> 
+        let q = Queue.create () in Queue.push s1 q; TypedAst.Binop(Times psi_path_rec s2 g d pm ps q [s1]
+    | _ -> raise (TypeException ("Invalid in expression between " ^ (string_of_typ start) ^ " and " ^ (string_of_typ target)))
+
 let rec check_exp (e : exp) (d : delta) (g : gamma) (pm : parametrization) (p : phi) (ps: psi) : TypedAst.exp * typ = 
     debug_print ">> check_exp";
     let build_unop (op : unop) (e': exp) (check_fun: typ->delta->parametrization->typ) (pm: parametrization)
@@ -547,9 +600,8 @@ let rec check_exp (e : exp) (d : delta) (g : gamma) (pm : parametrization) (p : 
     | Var v -> "\tVar "^v |> debug_print;
         (TypedAst.Var v, Assoc.lookup v g)
     | Arr a -> check_arr d g p a pm ps
-    | As (e, t) -> 
-        let (er, tr) = check_exp e d g pm p ps in (er, check_as_exp tr t d pm)
-    | In (e, t) -> failwith "unimplemented"
+    | As (e, t) -> let (er, tr) = check_exp e d g pm p ps in (er, check_as_exp tr t d pm)
+    | In (e, t) -> let (er, tr) = check_exp e d g pm p ps in (check_in_exp tr t g d pm ps, tr)
     | Unop (op, e') -> (match op with
         | Neg -> build_unop op e' (req_parametrizations2 check_num_unop) pm
         | Not -> build_unop op e' (req_parametrizations2 check_bool_unop) pm
