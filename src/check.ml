@@ -7,7 +7,6 @@ open Str
 
 exception TypeException of string
 exception DimensionException of int * int
-exception AbstractTypeException
 
 (* Variable defs *)
 type gamma = typ Assoc.context
@@ -530,17 +529,18 @@ let psi_update (v: string) (t: typ) (m: mu) (ps: psi) : psi =
 
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
 (* TODO : parametrized types *)
-let check_param ((id, t, t'): (string * typ * constrain)) (g: gamma) (d: delta) (m: mu) (pm : parametrization) (ps: psi) : gamma * psi = 
+let check_param ((id, t, t'): (string * typ * constrain)) (g: gamma) (d: delta) (m: mu) 
+    (pm : parametrization) (ps: psi) : gamma * psi = 
     debug_print ">> check_param";
     if Assoc.mem id g 
     then raise (TypeException ("Duplicate parameter name in function declaration: " ^ id))
     else check_typ_valid t d pm; (Assoc.update id t g, psi_update id t m ps)
     
 (* Get list of parameters from param list *)
-let check_params (pl : (string * typ * constrain) list) (g: gamma) (d : delta) (m: mu) (pm : parametrization) (ps: psi)
-: TypedAst.params * gamma * psi = 
+let check_params (pl : (string * typ * constrain) list) (g: gamma) (d : delta) (m: mu) 
+(pm : parametrization) (ps: psi) : TypedAst.params * gamma * psi = 
     debug_print ">> check_params";
-    let (g', ps') = List.fold_left (fun (g', ps') p -> check_param p g d m pm ps) (g, ps) pl in 
+    let (g', ps') = List.fold_left (fun (g', ps') p -> check_param p g' d m pm ps') (g, ps) pl in 
     let p = (List.map (fun (i, t, t') -> (i, tag_erase t d pm)) pl) in 
     (p, g', ps')
     
@@ -549,32 +549,34 @@ let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parametriza
     ((fst checked_exp), (tag_erase (snd checked_exp) d pm))
 
 (* Super expensive.  We're essentially relying on small contexts *)
-let rec psi_path_rec (target: string) (g: gamma) (d: delta) (pm: parametrization) (ps: psi) 
-(to_search: string Queue.t) (found: string list) : TypedAst.texp =
-    let rec update_search_and_found (vals: (string * string) list) : string list =
-        match vals with
-        | [] -> found
-        | (s,_)::t -> if List.mem s found then update_search_and_found t
-            else (Queue.push s to_search; s :: update_search_and_found t)
+let check_in_exp (start_exp: exp) (start_typ: typ) (target: typ) (g: gamma) (d: delta) 
+(pm: parametrization) (p: phi) (ps: psi) : exp = 
+    let rec psi_path_rec (target: string) (to_search: (string * exp) Queue.t) (found: string list) : exp =
+        let rec update_search_and_found (vals: (string * string) list) (e: exp) : string list =
+            match vals with
+            | [] -> found
+            | (s,v)::t -> if List.mem s found then update_search_and_found t e
+                else
+                let e' = Binop (Times, Var v, e) in
+                (* Note the update to the stateful queue *)
+                (Queue.push (s, e') to_search;  s :: update_search_and_found t e')
+        in
+        let (next, e) = if Queue.is_empty to_search 
+            then (raise (TypeException ("Cannot find a path from " ^ (List.hd (List.rev found)) ^ " to " ^ target)))
+            else Queue.pop to_search 
+        in 
+        if next = target then e
+        else if Assoc.mem next ps then (let next_cont = Assoc.lookup next ps in
+            psi_path_rec target to_search (update_search_and_found (Assoc.bindings next_cont) e))
+        else psi_path_rec target to_search found
     in
-    let get_val (v: string) : TypedAst.texp = 
-        exp_to_texp (TypedAst.Var v, Assoc.lookup v g) d pm
-    in
-    (*   *)
-    let next = if Queue.is_empty to_search 
-    then (raise (TypeException ("Cannot find a path from " ^ (List.hd (List.rev found)) ^ " to " ^ target)))
-    else Queue.pop to_search 
-    in 
-    if Assoc.mem next ps then (let next_cont = Assoc.lookup next ps in
-        if Assoc.mem target next_cont then get_val (Assoc.lookup target next_cont)
-        else psi_path_rec target g d pm ps to_search (update_search_and_found (Assoc.bindings next_cont)))
-    else psi_path_rec target g d pm ps to_search found
-
-let check_in_exp (start: typ) (target: typ) (g: gamma) (d: delta) (pm: parametrization) (ps: psi) : TypedAst.exp = 
-    match (start, target) with
+    match (start_typ, target) with
     | (TagTyp (VarTyp s1), TagTyp (VarTyp s2)) -> 
-        let q = Queue.create () in Queue.push s1 q; TypedAst.Binop(Times psi_path_rec s2 g d pm ps q [s1]
-    | _ -> raise (TypeException ("Invalid in expression between " ^ (string_of_typ start) ^ " and " ^ (string_of_typ target)))
+        if s1 = s2 then start_exp else
+        let q = Queue.create () in Queue.push (s1, start_exp) q;
+        psi_path_rec s2 q [s1]
+    | _ -> raise (TypeException 
+    ("Invalid in expression between " ^ (string_of_typ start_typ) ^ " and " ^ (string_of_typ target)))
 
 let rec check_exp (e : exp) (d : delta) (g : gamma) (pm : parametrization) (p : phi) (ps: psi) : TypedAst.exp * typ = 
     debug_print ">> check_exp";
@@ -601,7 +603,8 @@ let rec check_exp (e : exp) (d : delta) (g : gamma) (pm : parametrization) (p : 
         (TypedAst.Var v, Assoc.lookup v g)
     | Arr a -> check_arr d g p a pm ps
     | As (e, t) -> let (er, tr) = check_exp e d g pm p ps in (er, check_as_exp tr t d pm)
-    | In (e, t) -> let (er, tr) = check_exp e d g pm p ps in (check_in_exp tr t g d pm ps, tr)
+    | In (e, t) -> let (er, tr) = check_exp e d g pm p ps in 
+        (check_exp (check_in_exp e tr t g d pm p ps) d g pm p ps)
     | Unop (op, e') -> (match op with
         | Neg -> build_unop op e' (req_parametrizations2 check_num_unop) pm
         | Not -> build_unop op e' (req_parametrizations2 check_bool_unop) pm
@@ -641,7 +644,7 @@ and check_arr (d : delta) (g : gamma) (p : phi) (a : exp list) (pm : parametriza
     (match is_mat checked_a with
     | Some n -> (TypedAst.Arr checked_a, trans_bot n length_a)
     | None ->  raise (TypeException ("Invalid array definition for " ^ (string_of_exp (Arr a)) ^ ", must be a matrix or vector")))
-    
+
 
 and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (pml: typ list) (pm : parametrization) (ps: psi)
  : (string * TypedAst.args) * typ =    
@@ -776,13 +779,8 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parametrization) (p:
                 | TransTyp (TagTyp TopTyp _, TagTyp BotTyp _) -> raise (TypeException "Cannot infer the type of a matrix literal")
                 | t' -> t')
             | _ -> t) in
-        begin
-            try
-            (TypedAst.Decl (tag_erase t' d pm, s, (exp_to_texp result d pm)), (check_assign t' s (snd result) d g p pm))
-            with 
-            | AbstractTypeException -> (TypedAst.Decl (tag_erase (snd result) d pm, s, (exp_to_texp result d pm)), (check_assign t' s (snd result) d g p pm))
-            | e -> raise e
-        end)
+            (TypedAst.Decl (tag_erase t' d pm, s, (exp_to_texp result d pm)), 
+            (check_assign t' s (snd result) d g p pm), psi_update s t m ps))
     | Assign (s, e) ->
         if Assoc.mem s g then
             let t = Assoc.lookup s g in
