@@ -18,6 +18,7 @@ type typ =
     | TagTyp of tag_typ
     | TransTyp of typ * typ
     | SamplerTyp of int (* i.e. sampler2D *)
+    | SamplerCubeTyp
     | AbsTyp of id (* i.e. `t *)
 
 type constrain =

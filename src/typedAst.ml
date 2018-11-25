@@ -11,6 +11,7 @@ type etyp =
     | MatTyp of int * int
     | TransTyp of etyp * etyp
     | SamplerTyp of int
+    | SamplerCubeTyp
     | AbsTyp of string * constrain
 
 and constrain =

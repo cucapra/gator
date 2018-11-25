@@ -19,6 +19,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token <float> FLOAT
 %token <string> MATTYP
 %token <string> ID
+%token SAMPLERCUBE
 %token <string> SAMPLER
 %token PLUS
 %token MINUS
@@ -312,6 +313,8 @@ typ:
         TransTyp (TagTyp (TopTyp dim), TagTyp (TopTyp dim))
         ) 
         else (TagTyp (VarTyp x)) }
+  | SAMPLERCUBE
+      { SamplerCubeTyp }
   | s = SAMPLER                     
       { let len = String.length s in
         let dim = String.sub s 7 (len-7) in 

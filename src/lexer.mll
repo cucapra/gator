@@ -41,6 +41,7 @@ rule read = parse
   | "int"           { INTTYP }
   | "float"         { FLOATTYP }
   | "auto"          { AUTOTYP }
+  | "samplerCube"   { SAMPLERCUBE }
   | mat as mat      { MATTYP mat }
   | "bool"          { BOOLTYP }
   | "+"             { PLUS }
@@ -107,7 +108,6 @@ rule read = parse
   | "bvec2"
   | "bvec3"
   | "bvec4"
-  | "samplerCube"
   | "asm"
   | "class" 
   | "union" 

@@ -48,6 +48,7 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     | TypedAst.MatTyp (n1, n2) -> TransTyp(TagTyp(BotTyp n1), TagTyp(BotTyp n2))
     | TypedAst.TransTyp (s1, s2) -> TransTyp(etyp_to_typ s1, etyp_to_typ s2)
     | TypedAst.SamplerTyp n -> SamplerTyp n
+    | TypedAst.SamplerCubeTyp -> SamplerCubeTyp
     | TypedAst.AbsTyp (s, c) -> AbsTyp s
 
 and constrain_to_constrain (c : TypedAst.constrain) : constrain =
@@ -109,6 +110,7 @@ and tag_erase (t : typ) (d : delta) (pm: parametrization) : TypedAst.etyp =
             | _ -> raise (TypeException "Function type must be from vec to vec")
         end
     | SamplerTyp i -> TypedAst.SamplerTyp i
+    | SamplerCubeTyp -> TypedAst.SamplerCubeTyp
     | AbsTyp s -> tag_erase_param t d pm 
     | AutoTyp -> raise (TypeException "Illegal use of auto (cannot use auto as part of a function call)")
 
@@ -159,7 +161,8 @@ let rec is_subtype_with_strictness (to_check : typ) (target : typ) (d : delta) (
     | (SamplerTyp i1, SamplerTyp i2) -> i1 = i2 
     | (BoolTyp, BoolTyp)
     | (IntTyp, IntTyp)
-    | (FloatTyp, FloatTyp) -> true
+    | (FloatTyp, FloatTyp)
+    | (SamplerCubeTyp, SamplerCubeTyp) -> true
     | (TransTyp (t1, t2), TransTyp (t3, t4)) -> 
         (is_subtype_with_strictness t3 t1 d pm false && is_subtype_with_strictness t2 t4 d pm strict)
     | (AbsTyp s1, AbsTyp s2) -> s1 = s2 || abstyp_step s1
@@ -362,7 +365,8 @@ let check_typ_exp (t: typ) (d: delta) : unit =
     | UnitTyp
     | BoolTyp
     | IntTyp
-    | FloatTyp 
+    | FloatTyp
+    | SamplerCubeTyp
     | SamplerTyp _ -> ()
     | TagTyp s -> check_tag_typ s d; ()
     | TransTyp (TagTyp s1, TagTyp s2) -> check_tag_typ s1 d; check_tag_typ s2 d; ()
