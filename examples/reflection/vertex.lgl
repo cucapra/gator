@@ -1,0 +1,18 @@
+tag model is vec3;
+tag modelHom is vec4;
+tag worldHom is vec4;
+tag cameraHom is vec4;
+tag projectiveHom is vec4;
+
+void main(model aPosition, model aNormal, cameraHom->projectiveHom uProjection, worldHom->cameraHom uView, modelHom->worldHom uModel, model vPosition, model vNormal) {
+    model->modelHom model_modelHom = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.],
+        [0., 0., 0.]
+    ];
+
+    vPosition = aPosition;
+    vNormal = aNormal;
+    projectiveHom gl_Position = uProjection * uView * uModel * (model_modelHom * aPosition + [0., 0., 0., 1.]);
+}

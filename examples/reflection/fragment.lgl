@@ -1,0 +1,31 @@
+tag model is vec3;
+tag camera is vec3;
+tag modelHom is vec4;
+tag worldHom is vec4;
+tag cameraHom is vec4;
+tag alphaColor is vec4;
+
+declare `t normalize<`t: vec>(`t v);
+declare `t reflect<`t: vec>(`t c1, `t c2);
+declare alphaColor textureCube(samplerCube sc, model m);
+
+void main(model vPosition, model vNormal, samplerCube uSkybox, worldHom->cameraHom uView, modelHom->worldHom uModel, model->camera uNormalMatrix, camera->model uInverseViewTransform) {
+    model->modelHom model_modelHom = [
+        [1., 0., 0.],
+        [0., 1., 0.],
+        [0., 0., 1.],
+        [0., 0., 0.]
+    ];
+
+    cameraHom->camera cameraHom_camera = [
+        [1., 0., 0., 0.],
+        [0., 1., 0., 0.],
+        [0., 0., 1., 0.]
+    ];
+
+    camera N = normalize(uNormalMatrix * vNormal);
+    camera V = -(cameraHom_camera * uView * uModel * (model_modelHom * vPosition + [0., 0., 0., 1.]));
+    camera R = -reflect<camera>(V,N);
+    model T = uInverseViewTransform * R;
+    alphaColor gl_FragColor = textureCube(uSkybox, T);
+}
