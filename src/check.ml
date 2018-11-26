@@ -647,7 +647,7 @@ and check_arr (d : delta) (g : gamma) (p : phi) (a : exp list) (pm : parametriza
 
 
 and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (pml: typ list) (pm : parametrization) (ps: psi)
- : (string * TypedAst.args) * typ =    
+ : (string * TypedAst.args) * typ = 
     debug_print ">> check_fn_inv";
     let fn_invocated = if Assoc.mem i p
         then Assoc.lookup i p

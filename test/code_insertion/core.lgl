@@ -1,0 +1,17 @@
+tag a is vec2;
+tag coord ac is a;
+tag coord b is vec2;
+tag bnc is b;
+tag coord bncc is bnc;
+tag bncnc is bnc;
+tag coord c is b;
+tag coord cl is c;
+
+void main() {
+    // Test interactions between coord and non-coord things
+    // Also test upcasting allowance with 'in' notation
+
+    a avec = [1., 0.];
+    b bvec = [0., 1.];
+    c cvec = [1., 0.];
+}
