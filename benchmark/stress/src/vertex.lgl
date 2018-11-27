@@ -1,0 +1,10 @@
+void main (vec3 aPosition, vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel) {
+    vec3->vec4 v3_v4 = [
+      [1., 0., 0.],
+      [0., 1., 0.],
+      [0., 0., 1.],
+      [0., 0., 0.]
+    ];
+
+    vec4 gl_Position = uProjection * uView * uModel * (v3_v4 * aPosition + [0., 0., 0., 1.]);
+}

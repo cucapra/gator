@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Linguine</title>
+</head>
+
+<body>
+    
+    <div>fps: <span id="fps"></span></div>
+
+    <canvas width="700px" height="500px" id="c"></canvas>
+    
+    <script src="main.ts"></script>
+    <script>
+        const fpsElem = document.querySelector("#fps");
+        let then = 0;
+        function render(now) {
+        now *= 0.001;                          // convert to seconds
+        const deltaTime = now - then;          // compute time since last frame
+        then = now;                            // remember time for next frame
+        const fps = 1 / deltaTime;             // compute frames per second
+        fpsElem.textContent = fps.toFixed(1);  // update fps display
+        
+        requestAnimationFrame(render);
+        }
+        requestAnimationFrame(render);
+    </script>
+</body>
+
+
+</html>

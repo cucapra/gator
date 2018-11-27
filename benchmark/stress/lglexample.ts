@@ -266,7 +266,7 @@ export function load_obj (gl: WebGLRenderingContext, obj_src: string): Mesh {
   // let normal = normals.vertexNormals(cell, position);
   var derivU : Vec3Array = [];
   var derivV : Vec3Array = [];
-  computeTangents(position, texture, normal, derivU, derivV);
+  // computeTangents(position, texture, normal, derivU, derivV);
   let out: Mesh = {
     cells: make_buffer(gl, cell, 'uint16', gl.ELEMENT_ARRAY_BUFFER),
     cell_count: cell.length * cell[0].length, 
@@ -437,7 +437,7 @@ export function setup(render: (view: mat4, projection: mat4) => void): WebGLRend
 
   // Set up the interactive pan/rotate/zoom camera.
   let camera = canvasOrbitCamera(canvas);
-  // camera.zoom(-31);
+  camera.zoom(71);
   // Initialize the transformation matrices that are dictated by the camera
   // and the canvas dimensions.
   let projection = mat4.create();
@@ -468,7 +468,7 @@ export function setup(render: (view: mat4, projection: mat4) => void): WebGLRend
     // Rendering flags.
     gl.enable(gl.DEPTH_TEST);  // Prevent triangle overlap.
     gl.enable(gl.CULL_FACE);  // Triangles not visible from behind.
-
+    
     render(view, projection);
   });
 
@@ -495,197 +495,4 @@ export function uniformLoc(gl: WebGLRenderingContext, program: WebGLProgram, nam
 export function attribLoc(gl: WebGLRenderingContext, program: WebGLProgram, name: string) {
   return check_null(gl.getAttribLocation(program, name), name);
 }
-
-
-/**
- *  Modified from: 
- * @author mrdoob / http://mrdoob.com/
- * @author srm / http://cs.cornell.edu/~srm
- *   modified to produce unnormalized tangents
- *   added unifyVertices
- */
-function computeTangents( positions : Vec3Array, uvs: Vec2Array, normals: Vec3Array, derivU: Vec3Array, derivV: Vec3Array ) { 
-		var nVertices = positions.length;
-
-    var tan1 : vec3[] = [], 
-      tan2 : vec3[] = [], 
-      tcounts : number[] = [];
-
-		for ( var k = 0; k < nVertices; k ++ ) {
-			tan1[ k ] = vec3.create();
-			tan2[ k ] = vec3.create();
-			tcounts[ k ] = 0;
-		}
-
-		var vA = vec3.create(),
-			vB = vec3.create(),
-      vC = vec3.create(),
-      
-			uvA = vec2.create(),
-			uvB = vec2.create(),
-			uvC = vec2.create(),
-
-			sdir = vec3.create(),
-      tdir = vec3.create();
-    
-    // TODO: How to actually pattern match in TS?
-
-    // Sets this vector's x value to be array[ offset + 0 ], 
-    // y value to be array[ offset + 1 ] 
-    // and z value to be array[ offset + 2 ].
-    var fromArray = 
-      function(typ : string) {
-        return (out : any, array: any[], offset: number) => {
-          switch(typ) {
-            case("vec2"):
-              vec2.set(out, array[offset][0], array[offset][1]);
-              break;
-            case("vec3"):
-              vec3.set(out, array[offset][0], array[offset][1], array[offset][2]);
-              break;
-            default: // throw error?
-              break;
-          }
-        }
-    }
-
-    // Default indices
-    var indices = [];
-    indices = [];
-    for (var i = 0; i < positions.length; i++) {
-        indices.push(i);
-    }
-
-		function handleTriangle(a: number, b: number, c: number) {
-      
-      fromArray("vec3")(vA, positions, a);
-      fromArray("vec3")(vB, positions, b);
-      fromArray("vec3")(vC, positions, c);
-
-      fromArray("vec2")(uvA, uvs, a);
-      fromArray("vec2")(uvB, uvs, b);
-      fromArray("vec2")(uvC, uvs, c);
-
-      var x1 = vB[0] - vA[0];
-      var x2 = vC[0] - vA[0];
-
-      var y1 = vB[1] - vA[1];
-      var y2 = vC[1] - vA[1];
-
-      var z1 = vB[2] - vA[2];
-      var z2 = vC[2] - vA[2];
-
-      var s1 = uvB[0] - uvA[0];
-      var s2 = uvC[0] - uvA[0];
-
-      var t1 = uvB[1] - uvA[1];
-      var t2 = uvC[1] - uvA[1];
-
-			var r = 1.0 / ( s1 * t2 - s2 * t1 );
-
-			vec3.set(
-        sdir,
-				( t2 * x1 - t1 * x2 ) * r,
-				( t2 * y1 - t1 * y2 ) * r,
-				( t2 * z1 - t1 * z2 ) * r
-			);
-
-			vec3.set(
-        tdir,
-				( s1 * x2 - s2 * x1 ) * r,
-				( s1 * y2 - s2 * y1 ) * r,
-				( s1 * z2 - s2 * z1 ) * r
-			);
-
-      vec3.add( tan1[ a ], tan1[ a ], sdir );
-      vec3.add( tan1[ b ], tan1[ b ], sdir );
-      vec3.add( tan1[ c ], tan1[ c ], sdir );
-      
-      vec3.add( tan2[ a ], tan2[ a ], tdir );
-      vec3.add( tan2[ b ], tan2[ b ], tdir );
-      vec3.add( tan2[ c ], tan2[ c ], tdir );
-
-		}
-
-		var	groups = [ {
-      start: 0,
-      count: indices.length
-    } ];
-
-
-		for ( var j = 0, jl = groups.length; j < jl; ++ j ) {
-
-			var group = groups[ j ];
-
-			var start = group.start;
-			var count = group.count;
-
-			for ( var i = start, il = start + count; i < il; i += 3 ) {
-        try {
-          handleTriangle(
-            indices[ i + 0 ],
-            indices[ i + 1 ],
-            indices[ i + 2 ]
-          );
-        } catch (err) {
-          console.log("Out of bounds on handleTriangle");
-        }
-			}
-		}
-
-		var t, t2, k : number;
-		var n = vec3.create();
-		var tPar = vec3.create(), tPar2 = vec3.create();
-		var tPerp = vec3.create(), tPerp2 = vec3.create();
-
-		function handleVertex( v : any ) {
-
-			fromArray("vec3")( n, normals, v * 3 );
-
-			t = tan1[ v ];
-			t2 = tan2[ v ];
-			k = tcounts[ v ];
-
-			// Project tangents to be perpendicular to normal
-
-      vec3.copy(n, tPar);
-      vec3.scale(n, n, vec3.dot(n, t));
-      vec3.copy(t, tPerp);
-      vec3.sub(t, t, tPar);
-
-      var u2 = vec3.create();
-      vec3.set(u2, tPerp[0] / k, tPerp[1] / k, tPerp[2] / k);
-      derivU[v] = [u2[0], u2[1], u2[2]];
-
-      vec3.copy(n, tPar2);
-      vec3.scale(n, n, vec3.dot(n, t2));
-      vec3.copy(t2, tPerp2);
-      vec3.sub(t2, t2, tPar2);
-
-      var v2 = vec3.create();
-      vec3.set(v2, tPerp2[0] / k, tPerp2[1] / k, tPerp2[2] / k);
-      derivV[v] = [v2[0], v2[1], v2[2]];
-		}
-
-		for ( var j = 0, jl = groups.length; j < jl; ++ j ) {
-
-			var group = groups[ j ];
-
-			var start = group.start;
-			var count = group.count;
-
-			for ( var i = start, il = start + count; i < il; i += 3 ) {
-        try {
-          handleVertex( indices[ i + 0 ] );
-          handleVertex( indices[ i + 1 ] );
-          handleVertex( indices[ i + 2 ] );
-        } catch (err) {
-          // console.log("Out of bounds on handleTriangle");
-        }
-
-			}
-
-		}
-
-	}
 
