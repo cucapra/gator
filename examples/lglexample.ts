@@ -261,8 +261,9 @@ export function load_obj (gl: WebGLRenderingContext, obj_src: string): Mesh {
   let cell = group_array(mesh.indices, 3) as Vec3Array;
   let position = group_array(mesh.vertices, 3) as Vec3Array;
   let texture = group_array(mesh.textures, 2) as Vec2Array;
-  
-  let normal = normals.vertexNormals(cell, position);
+  let normal = group_array(mesh.vertexNormals, 3) as Vec3Array;
+  console.log(normal);
+  // let normal = normals.vertexNormals(cell, position);
   var derivU : Vec3Array = [];
   var derivV : Vec3Array = [];
   computeTangents(position, texture, normal, derivU, derivV);
@@ -503,7 +504,6 @@ export function attribLoc(gl: WebGLRenderingContext, program: WebGLProgram, name
  *   modified to produce unnormalized tangents
  *   added unifyVertices
  */
-
 function computeTangents( positions : Vec3Array, uvs: Vec2Array, normals: Vec3Array, derivU: Vec3Array, derivV: Vec3Array ) { 
 		var nVertices = positions.length;
 
