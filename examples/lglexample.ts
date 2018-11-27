@@ -262,8 +262,7 @@ export function load_obj (gl: WebGLRenderingContext, obj_src: string): Mesh {
   let position = group_array(mesh.vertices, 3) as Vec3Array;
   let texture = group_array(mesh.textures, 2) as Vec2Array;
   let normal = group_array(mesh.vertexNormals, 3) as Vec3Array;
-  console.log(normal);
-  // let normal = normals.vertexNormals(cell, position);
+  // let normal = normals.vertexNormals(cell, position); // should have same result as line above
   var derivU : Vec3Array = [];
   var derivV : Vec3Array = [];
   computeTangents(position, texture, normal, derivU, derivV);
@@ -628,7 +627,7 @@ function computeTangents( positions : Vec3Array, uvs: Vec2Array, normals: Vec3Ar
             indices[ i + 2 ]
           );
         } catch (err) {
-          console.log("Out of bounds on handleTriangle");
+          console.log("Out of bounds on handleTriangle"); // TODO: this is not great
         }
 			}
 		}
