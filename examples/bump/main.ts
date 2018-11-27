@@ -23,22 +23,16 @@ function main() {
   // Uniform and attribute locations.
   let loc_uProjection = lgl.uniformLoc(gl, program, 'uProjection');
   let loc_uView = lgl.uniformLoc(gl, program, 'uView');
-  let loc_uModel = lgl.uniformLoc(gl, program, 'uModel');
+  let loc_uNormal = lgl.uniformLoc(gl, program, 'uNormal');
+  let loc_uDisplacementMap = lgl.uniformLoc(gl, program, 'uDisplacementMap');
+
   let loc_aPosition = lgl.attribLoc(gl, program, 'aPosition');
-  let loc_uNormal = lgl.attribLoc(gl, location, 'uNormal');
-
-  
-  // Texture things
   let loc_aTexCoord = lgl.attribLoc(gl, program, 'aTexCoord');
-  let loc_uTexture = lgl.uniformLoc(gl, program, 'uTexture');
-  let loc_aDerivU = lgl.uniformLoc(gl, program, 'aDerivU');
-  let loc_aDerivV = lgl.uniformLoc(gl, program, 'aDerivV');
-  let loc_aNormal = lgl.uniformLoc(gl, program, 'aNormal');
-  let loc_aUv = lgl.uniformLoc(gl, program, 'aUv');
+  let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
+  let loc_aDerivU = lgl.attribLoc(gl, program, 'aDerivU');
+  let loc_aDerivV = lgl.attribLoc(gl, program, 'aDerivV');
+  let loc_aUv = lgl.attribLoc(gl, program, 'aUv');
 
-
-
-  // Read in lpshead obj
   // URL must be statically analyzable other than (__dirname) and (__filename)
   let src = fs.readFileSync(__dirname + './../resources/OBJ/sphere_highres.obj', 'utf8');
 
@@ -54,21 +48,28 @@ function main() {
     // Rotate the model a little bit on each frame.
     mat4.rotateY(model, model, .01);
 
+    let normal = mat4.create();
+    mat4.mul(normal, view, model);
+    mat4.invert(normal, normal);
+    mat4.transpose(normal, normal);  
+
     // Use our shader pair.
     gl.useProgram(program);
 
     // Set the shader "uniform" parameters.
     gl.uniformMatrix4fv(loc_uProjection, false, projection);
     gl.uniformMatrix4fv(loc_uView, false, view);
-    gl.uniformMatrix4fv(loc_uModel, false, model);
+    gl.uniformMatrix4fv(loc_uNormal, false, normal);
     
     // Use texture unit 0 for uTexture
-    gl.uniform1i(loc_uTexture, 0);
+    gl.uniform1i(loc_uDisplacementMap, 0);
   
     // Set the attribute arrays.
+    lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
     lgl.bind_attrib_buffer(gl, loc_aTexCoord, mesh.texcoords, 2);
-    // lgl.bind_attrib_buffer(gl, loc_aDerivU, mesh.derivU, 2); // TODO 
+    
+    lgl.bind_attrib_buffer(gl, loc_aDerivU, mesh.derivU, 2); // TODO 
    
     // Draw the object.
     lgl.drawMesh(gl, mesh);

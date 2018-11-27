@@ -24,7 +24,7 @@ declare vec4 texture2D<`t : vec3>(sampler2D<`t> txt, vec2 texCoord);
 vec3 to_sRGB(vec3 c) { return pow<vec3>(c, [1.0/2.2, 1.0/2.2, 1.0/2.2]); }
 vec3 from_sRGB(vec3 c) { return pow<vec3>(c, [2.2, 2.2, 2.2]); }
 
-void main(sampler2D<vec3> uDiffuseTexture, sampler2D<vec3> uDisplacementMap, vec2 vTexCoord, vec2 vUv, vec3 vNormal, vec4 vPosition, vec3->vec3 vNormalMatrix, vec3 vDerivU, vec3 vDerivV) {
+void main(sampler2D<vec3> uDiffuseTexture, sampler2D<vec3> uDisplacementMap, float uDisplacementScale, vec2 vTexCoord, vec2 vUv, vec3 vNormal, vec4 vPosition, vec3 vNormalMatrix, vec3 vDerivU, vec3 vDerivV) {
     float displacementScale = -4.;
     // Compute displaced normals as in the
     // displacement vertex shader, and use them for shading.
@@ -42,7 +42,7 @@ void main(sampler2D<vec3> uDiffuseTexture, sampler2D<vec3> uDisplacementMap, vec
     
     // Calculate displaced normal
     vec3 dispNorm = cross<vec3>(t_u.xyz, t_v.xyz);
-    dispNorm = normalize<vec3>((vNormalMatrix * dispNorm).xyz);
+    dispNorm = normalize<vec3>((vNormalMatrix .* dispNorm).xyz);
     // interpolating normals will change the length of the normal, so renormalize the normal.
     vec3 N = normalize<vec3>(dispNorm);
     vec3 V = normalize<vec3>(-vPosition.xyz);
