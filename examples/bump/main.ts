@@ -31,7 +31,6 @@ function main() {
   let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
   let loc_aDerivU = lgl.attribLoc(gl, program, 'aDerivU');
   let loc_aDerivV = lgl.attribLoc(gl, program, 'aDerivV');
-  let loc_aUv = lgl.attribLoc(gl, program, 'aUv');
 
   // URL must be statically analyzable other than (__dirname) and (__filename)
   let src = fs.readFileSync(__dirname + './../resources/OBJ/sphere_highres.obj', 'utf8');
@@ -65,11 +64,13 @@ function main() {
     gl.uniform1i(loc_uDisplacementMap, 0);
   
     // Set the attribute arrays.
-    lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
+    console.log(mesh.normals);
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
     lgl.bind_attrib_buffer(gl, loc_aTexCoord, mesh.texcoords, 2);
-    
-    lgl.bind_attrib_buffer(gl, loc_aDerivU, mesh.derivU, 2); // TODO 
+    lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
+
+    lgl.bind_attrib_buffer(gl, loc_aDerivU, mesh.derivU, 3);
+    lgl.bind_attrib_buffer(gl, loc_aDerivV, mesh.derivV, 3);
    
     // Draw the object.
     lgl.drawMesh(gl, mesh);

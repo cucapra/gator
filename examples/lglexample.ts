@@ -256,21 +256,21 @@ export function load_obj (gl: WebGLRenderingContext, obj_src: string): Mesh {
 
   // // Create a WebGL buffer.
   let mesh = new obj_loader.Mesh(obj_src);
-  console.log(mesh.vertices);
   // Match the interface we're using for Mesh objects that come from
   // StackGL.
   let cell = group_array(mesh.indices, 3) as Vec3Array;
   let position = group_array(mesh.vertices, 3) as Vec3Array;
   let texture = group_array(mesh.textures, 2) as Vec2Array;
+  
   let normal = normals.vertexNormals(cell, position);
   var derivU : Vec3Array = [];
   var derivV : Vec3Array = [];
   computeTangents(position, texture, normal, derivU, derivV);
   let out: Mesh = {
-    positions: make_buffer(gl, position, 'float32', gl.ARRAY_BUFFER),
     cells: make_buffer(gl, cell, 'uint16', gl.ELEMENT_ARRAY_BUFFER),
-    normals: make_buffer(gl, normal, 'float32', gl.ARRAY_BUFFER),
     cell_count: cell.length * cell[0].length, 
+    positions: make_buffer(gl, position, 'float32', gl.ARRAY_BUFFER),
+    normals: make_buffer(gl, normal, 'float32', gl.ARRAY_BUFFER),
     // This name I invented -- it's not in the StackGL models.
     texcoords: gl_buffer(gl, gl.ARRAY_BUFFER, new Float32Array(mesh.textures)),
     derivU: make_buffer(gl, derivU, 'float32', gl.ARRAY_BUFFER), /* dummy value */
@@ -505,7 +505,7 @@ export function attribLoc(gl: WebGLRenderingContext, program: WebGLProgram, name
  */
 
 function computeTangents( positions : Vec3Array, uvs: Vec2Array, normals: Vec3Array, derivU: Vec3Array, derivV: Vec3Array ) { 
-		var nVertices = positions.length / 3;
+		var nVertices = positions.length;
 
     var tan1 : vec3[] = [], 
       tan2 : vec3[] = [], 
@@ -597,13 +597,13 @@ function computeTangents( positions : Vec3Array, uvs: Vec2Array, normals: Vec3Ar
 				( s1 * z2 - s2 * z1 ) * r
 			);
 
-      vec3.add(tan1[ a ], tan1[ a ], sdir );
-      vec3.add(tan1[ b ], tan1[ b ], sdir );
-      vec3.add(tan1[ c ], tan1[ c ], sdir );
+      vec3.add( tan1[ a ], tan1[ a ], sdir );
+      vec3.add( tan1[ b ], tan1[ b ], sdir );
+      vec3.add( tan1[ c ], tan1[ c ], sdir );
       
-      vec3.add(tan2[ a ], tan2 [ a ], tdir);
-      vec3.add(tan2[ b ], tan2 [ b ], tdir);
-      vec3.add(tan2[ c ], tan2 [ c ], tdir);
+      vec3.add( tan2[ a ], tan2[ a ], tdir );
+      vec3.add( tan2[ b ], tan2[ b ], tdir );
+      vec3.add( tan2[ c ], tan2[ c ], tdir );
 
 		}
 
@@ -621,14 +621,16 @@ function computeTangents( positions : Vec3Array, uvs: Vec2Array, normals: Vec3Ar
 			var count = group.count;
 
 			for ( var i = start, il = start + count; i < il; i += 3 ) {
-				handleTriangle(
-					indices[ i + 0 ],
-					indices[ i + 1 ],
-					indices[ i + 2 ]
-				);
-
+        try {
+          handleTriangle(
+            indices[ i + 0 ],
+            indices[ i + 1 ],
+            indices[ i + 2 ]
+          );
+        } catch (err) {
+          console.log("Out of bounds on handleTriangle");
+        }
 			}
-
 		}
 
 		var t, t2, k : number;
@@ -673,9 +675,13 @@ function computeTangents( positions : Vec3Array, uvs: Vec2Array, normals: Vec3Ar
 			var count = group.count;
 
 			for ( var i = start, il = start + count; i < il; i += 3 ) {
-				handleVertex( indices[ i + 0 ] );
-				handleVertex( indices[ i + 1 ] );
-				handleVertex( indices[ i + 2 ] );
+        try {
+          handleVertex( indices[ i + 0 ] );
+          handleVertex( indices[ i + 1 ] );
+          handleVertex( indices[ i + 2 ] );
+        } catch (err) {
+          // console.log("Out of bounds on handleTriangle");
+        }
 
 			}
 
