@@ -1,8 +1,0 @@
-tag coord a is vec2;
-tag coord b is vec2;
-
-void main() {
-    a->b a_b = [[1., 2.], [1., 2.]];
-    auto fail = a_b; // Duplicate definition of a->b matrix
-    print fail;
-}
