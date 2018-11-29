@@ -1,0 +1,9 @@
+tag coord a is vec2;
+tag ac is a;
+tag coord b is vec2;
+
+void main() {
+    ac->b __acb = [[1., 2.], [2., 1.]];
+    ac acvec = [1., 2.];
+    b fail = acvec in b; // should fail cause 'ac' isn't a coord (even though 'a' is')
+}
