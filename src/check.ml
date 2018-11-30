@@ -552,6 +552,12 @@ let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parametriza
 let check_in_exp (start_exp: exp) (start_typ: typ) (target: typ) (g: gamma) (d: delta) 
 (pm: parametrization) (p: phi) (ps: psi) : exp = 
     let rec psi_path_rec (target: string) (to_search: (string * exp) Queue.t) (found: string list) : exp =
+        let rec psi_lookup_rec (next: string) : (string Assoc.context) option =
+            if Assoc.mem next ps then Some (Assoc.lookup next ps)
+            else match Assoc.lookup next d with
+            | VarTyp s -> psi_lookup_rec s
+            | _ -> None
+        in
         let rec update_search_and_found (vals: (string * string) list) (e: exp) : string list =
             match vals with
             | [] -> found
@@ -565,14 +571,19 @@ let check_in_exp (start_exp: exp) (start_typ: typ) (target: typ) (g: gamma) (d: 
             then (raise (TypeException ("Cannot find a path from " ^ (List.hd (List.rev found)) ^ " to " ^ target)))
             else Queue.pop to_search 
         in 
-        if next = target then e
-        else if Assoc.mem next ps then (let next_cont = Assoc.lookup next ps in
-            psi_path_rec target to_search (update_search_and_found (Assoc.bindings next_cont) e))
-        else psi_path_rec target to_search found
+        (* We use the 'with_strictness' version to avoid throwing an exception *)
+        if is_subtype_with_strictness (TagTyp (VarTyp next)) (TagTyp (VarTyp target)) d pm false then e
+        else (match psi_lookup_rec next with 
+            | None -> psi_path_rec target to_search found
+            | Some next_cont -> psi_path_rec target to_search (update_search_and_found (Assoc.bindings next_cont) e))
     in
     match (start_typ, target) with
     | (TagTyp (VarTyp s1), TagTyp (VarTyp s2)) -> 
-        if s1 = s2 then start_exp else
+        if not (Assoc.mem s1 d) then
+        raise (TypeException ("Unknown tag " ^ (string_of_typ start_typ)))
+        else if not (Assoc.mem s2 d) then
+        raise (TypeException ("Unknown tag " ^ (string_of_typ target)))
+        else if s1 = s2 then start_exp else
         let q = Queue.create () in Queue.push (s1, start_exp) q;
         psi_path_rec s2 q [s1]
     | _ -> raise (TypeException 
@@ -869,8 +880,16 @@ and check_assign (t: typ) (s: string) (etyp : typ)  (d: delta) (g: gamma) (p: ph
 
 let check_tag (s: string) (tm : tag_mod option) (l: tag_typ) (d: delta) (m: mu) : delta * mu = 
     debug_print ">> check_tag";
+    let rec check_coord (t : tag_typ) : unit =
+        match t with
+        | VarTyp t' -> (match Assoc.lookup t' m with 
+            | None -> check_coord (Assoc.lookup t' d)
+            | Some Coord -> raise (TypeException "Cannot declare a coord as a subtype of another coord"))
+        | _ -> ()
+    in
     if Assoc.mem s d then raise (TypeException "Cannot redeclare tag")
-    else (Assoc.update s l d, Assoc.update s tm m)
+    else (match tm with | Some Coord -> check_coord l | _ -> ());
+    (Assoc.update s l d, Assoc.update s tm m)
 
 let rec check_tags (t: tag_decl list) (d: delta) (m: mu): delta * mu =
     debug_print ">> check_tags";

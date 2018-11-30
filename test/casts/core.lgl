@@ -18,7 +18,7 @@ void main() {
     b->ac __bac = [[1., 1.], [1., 2.]];
     ac->b __acb = [[2., -1.], [-1., 1.]];
 
-    b s2 = bvec in b; // = bvec
+    b s1 = bvec in b; // = bvec
     a s2 = bncvec in b;
     a s3 = bncvec in ac;
     b s4 = bncvec in ac in b; // Also check that associativity works correctly
@@ -26,10 +26,11 @@ void main() {
     print s1;
     print s2;
     print s3;
+    print s4;
 
     cnc cncvec = [1., 2.];
     cncnc cncncvec = [.3, .6];
-    c->b __cb = [[1., 2.], [-2. -1.]];
+    c->b __cb = [[1., 2.], [-2., -1.]];
 
     a s5 = cncncvec in b;
     ac s6 = cncvec in ac;
