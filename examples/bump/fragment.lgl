@@ -19,7 +19,7 @@ declare `t pow<`t : genType>(`t v1, `t v2);
 declare vec4 vec4<`t : genType>(`t v, float x);
 declare `t cross<`t : genType>(`t x1, `t x2);
 
-declare vec4 texture2D<`t : vec3>(sampler2D<`t> txt, vec2 texCoord);
+declare vec4 texture2D<`t : vec4>(sampler2D<`t> txt, vec2 texCoord);
 
 vec3 to_sRGB(vec3 c) { return pow<vec3>(c, [1.0/2.2, 1.0/2.2, 1.0/2.2]); }
 vec3 from_sRGB(vec3 c) { return pow<vec3>(c, [2.2, 2.2, 2.2]); }
@@ -52,8 +52,10 @@ void main(sampler2D<vec3> uDiffuseTexture, sampler2D<vec3> uDisplacementMap, flo
     vec3 lightPosition = [10., 20., 30.];
     vec3 lightColor = [0., 0.3, 0.5];
     for (int i = 0; i <= 1; i++) {
-        float r = length<vec3>(lightPosition - vPosition.xyz);
-        vec3 L = normalize<vec3>(lightPosition - vPosition.xyz);
+        // skip;
+        // vec3 diff = [0., 0., 0.] - vPosition.xyz;
+        float r = length<vec3>(vec4<vec3>(lightPosition, 1.) - vPosition.xyz);
+        vec3 L = normalize<vec3>(vec4<vec3>(lightPosition, 1.) - vPosition.xyz);
         vec3 H = normalize<vec3>(L + V);
         // calculate diffuse term
        // vec3 Idiff = from_sRGB(texture2D<vec3>(uDiffuseTexture, vUv).xyz) * max(dot(N, L), 0.0);
@@ -64,10 +66,10 @@ void main(sampler2D<vec3> uDiffuseTexture, sampler2D<vec3> uDisplacementMap, flo
     }
 
     float exposure = 0.2;
-    // Only shade if facing the light
-    // Color the back faces an identifiable color
-    //if (gl_FrontFacing) {
-        vec4 gl_FragColor = vec4<vec3>(to_sRGB(finalColor * exposure), 1.0);
+    // // Only shade if facing the light
+    // // Color the back faces an identifiable color
+    // //if (gl_FrontFacing) {
+       vec4 gl_FragColor = vec4<vec3>(to_sRGB(finalColor * exposure), 1.0);
     //} else {
     //    gl_FragColor = vec4(170.0/255.0, 160.0/255.0, 0.0, 1.0);
     //}
