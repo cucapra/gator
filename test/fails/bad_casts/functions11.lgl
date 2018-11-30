@@ -1,0 +1,24 @@
+tag coord a is vec2;
+tag coord b is vec2;
+tag coord c is vec2;
+
+canon b _ab(a v) {
+    a->b _ab = [[1., 2.], [1., 2.]]; // not a duplicate cause no recursion
+    return _ab * v;
+}
+
+c ac(a v, b->c m) {
+    return v in c; // = m * _ab(v)
+}
+
+canon c _ac<`t : a>(`t v) {
+    return ac(v, [[1., 1.], [1., 2.]]); // cause v <: a
+}
+
+void main() {
+    a avec = [1., 1.];
+    c->b __cb = [[2., -1.], [-1., 1.]];
+
+    a fail = avec in c in a;  // no path should be findable
+    print fail;
+}

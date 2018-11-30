@@ -1,0 +1,10 @@
+tag coord a is vec2;
+tag coord b is vec2;
+
+canon b f(a x, a y) { // Can't canonize things with more than 1 argument
+    return [1., 2.];
+}
+
+void main() {
+    print 1;
+}

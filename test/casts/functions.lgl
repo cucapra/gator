@@ -1,44 +1,38 @@
-tag a is vec2;
-tag coord ac is a;
-tag coord b is a;
-tag bnc is b;
+tag coord a is vec2;
+tag coord b is vec2;
 tag coord c is vec2;
-tag cnc is c;
-tag cncnc is cnc;
+tag coord d is vec3;
+tag coord e is vec2;
 
+canon b _ab(a v) {
+    a->b _ab = [[1., 2.], [1., 2.]]; // not a duplicate cause no recursion
+    return _ab * v;
+}
+
+c ac(a v, b->c m) {
+    return v in c; // = m * _ab(v)
+}
+
+canon c _ac<`t : a>(`t v) {
+    return ac(v, [[1., 1.], [1., 2.]]); // cause v <: a
+}
+
+canon d _asd<`t : vec2>(`t v) {
+    vec2->d m = [[1., 0.], [0., 1.], [0., 0.]];
+    return m * v + [0., 0., 1.];
+}
+
+canon `t _collapse<`t : vec2>(d v) {
+    d->`t m [[1., 0., 0.], [0., 1., 0.]];
+    return m * v; // we can't use 'in' cause we don't allow it for the abstract `t atm
+}
 
 void main() {
-    // Test interactions between coord and non-coord things
-    // Also test upcasting allowance with 'in' notation
-
-    bnc bncvec = [0., 1.];
+    a avec = [1., 1.];
     
-    b->ac __bac = [[1., 1.], [1., 2.]];
-    ac->b __acb = [[2., -1.], [-1., 1.]];
-
-    a s1 = bncvec in b; 
-    a s2 = bncvec in ac;
-    b s3 = bncvec in ac in b; // Also check that associativity works correctly
-
-    print s1;
-    print s2;
-    print s3;
-
-    cnc cncvec = [1., 2.];
-    cncnc cncncvec = [.3, .6];
-    c->b __cb = [[1., 2.], [-2. -1.]];
-
-    a s4 = cncncvec in b;
-    ac s5 = cncvec in ac;
-    a s6 = cncvec in a; // Note that this must be through the path c->b since that's the shortest path
-
-    print s4;
-    print s5;
-    print s6;
-
-    auto __cac = __bac * __cb; // Should add c->ac to psi
-    ac s7 = cncvec in ac;
-    a s8 = cncvec in a; // We can only test not the type since the result is completely arbritrary (c->ac and c->b are equally long paths)
-
-    print s7;
+    b s1 = avec in b;  // = _ab(avec)
+    c s2 = avec in c;  // = _ac<a>(avec) -- has to use generic inference to figure out <a>
+    d s4 = avec in d; // = _asd<a>(avec)
+    e s5 = avec in e;  // = _collapse<e>(_asd<a>(avec))
+    a s5 = avec in c in d in a; // = _collapse<a>(_asd<c>(_ac<a>(avec))) -- not the identity of avec, a.k.a. why _asd is written wrong
 }

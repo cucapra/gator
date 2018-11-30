@@ -1,0 +1,13 @@
+tag coord a is vec2;
+tag coord b is vec2;
+tag coord c is vec2;
+tag coord d is vec3;
+
+canon `t _collapse<`t : vec2>(d v) {
+    d->`t m [[1., 0., 0.], [0., 0., 1.]];
+    return m * v;
+}
+
+void main() {
+    d->a fail = [[1., 1., 1.], [1., 1., 1.]]; // duplicate definition of _collapse
+}

@@ -1,0 +1,10 @@
+tag coord a is vec2;
+tag coord b is vec2;
+
+canon b f<`t : vec2>(`t x) { // this is illegal cause it places b->b in psi
+    return [1., 2.];
+}
+
+void main() {
+    print 1;
+}
