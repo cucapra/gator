@@ -1,7 +1,7 @@
 tag coord a is vec2;
 tag coord b is vec2;
 
-b canon f(a x) { 
+canon b f(a x) { 
     return [1., 2.];
 }
 

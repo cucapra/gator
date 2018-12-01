@@ -1,10 +1,10 @@
 tag coord a is vec2;
-tag coord b is vec2;
 
-canon b f<`t : vec2>(`t x) { // this is illegal cause it places b->b in psi
+canon a f<`t : vec2>(`t x) { // this fails because a->a is the only maybe 'valid' thing, but isn't counted as the type identity
     return [1., 2.];
 }
 
 void main() {
-    print 1;
+    a avec = [1., 1.];
+    print avec in a;
 }

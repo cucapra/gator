@@ -50,6 +50,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token DOT
 %token TAG
 %token COORD
+%token CANON
 %token IS
 %token TRUE
 %token FALSE
@@ -127,9 +128,11 @@ declarelst:
 
 decl_extern:
   | t = typ; x = ID; p = fn_params; 
-      { ExternFn((x, (fst p, t, snd p))) }
+      { ExternFn((x, (None, fst p, t, snd p))) }
   | t = typ; x = ID;
       { ExternVar(t, Var x) }
+  | CANON; t = typ; x = ID; p = fn_params; 
+      { ExternFn((x, (Some Canon, fst p, t, snd p))) }
 
 taglst: 
   | t = tag               
@@ -164,13 +167,9 @@ commlst:
 
 params: 
   | t = typ; x = ID
-      { (x, t, AnyTyp)::[] }
-  | t = typ; LWICK; c = constrain; RWICK; x = ID
-      { (x, t, c)::[] }
+      { (x, t)::[] }
   | t = typ; x = ID; COMMA; p = params
-      { (x, t, AnyTyp)::p }
-  | t = typ; LWICK; c = constrain; RWICK; x = ID; COMMA; p = params
-      { (x, t, c)::p }
+      { (x, t)::p }
 ;
 
 parametrization:
@@ -187,7 +186,9 @@ parametrizations:
 
 fn_decl:
   | t = typ; x = ID; p = fn_params;
-      { (x, (fst p, t, snd p)) }
+      { (x, (None, fst p, t, snd p)) }
+  | CANON; t = typ; x = ID; p = fn_params;
+      { (x, (Some Canon, fst p, t, snd p)) }
 ;
 
 fn_params:

@@ -9,7 +9,7 @@ canon d _asd<`t : vec2>(`t v) {
 }
 
 canon `t _collapse<`t : vec2>(d v) {
-    d->`t m [[1., 0., 0.], [0., 0., 1.]];
+    d->`t m = [[1., 0., 0.], [0., 0., 1.]];
     return m * v; // we can't use 'in' cause we don't allow it for the abstract `t atm
 }
 
