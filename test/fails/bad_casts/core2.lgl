@@ -1,0 +1,9 @@
+tag a is vec2;
+tag coord ac is a;
+tag coord b is a;
+
+void main() {
+    a->b a_b = [[1., 2.], [2., 1.]];
+    a avec = [1., 2.];
+    b fail = avec in b; // should fail cause 'a' isn't a coord
+}

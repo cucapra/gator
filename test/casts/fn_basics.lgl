@@ -1,0 +1,29 @@
+tag coord a is vec2;
+tag coord b is vec2;
+tag coord c is vec2;
+
+canon b _ab(a v) {
+    return (v + [1., 1.]) as b;
+}
+
+canon a _ba(b v) {
+    return (v - [1., 1.]) as a;
+}
+
+void main() {
+    a avec = [1., 2.];
+    b bvec = [2., 3.];
+
+    b->c _bc = [[1., 1.], [2., 1.]];
+    c->b _cb = [[-1., 1.], [2., -1.]];
+
+    b s1 = avec in b; // = _ab(avec)
+    a s2 = bvec in a; // = _ba(_ab(avec))
+    c s3 = avec in c; // = _bc * _ab(avec)
+    a s4 = avec in c in a; // = _ba(_cb * _bc * _ab(avec))
+
+    print s1;
+    print s2;
+    print s3;
+    print s4;
+}

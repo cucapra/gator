@@ -1,0 +1,48 @@
+tag a is vec2;
+tag coord ac is a;
+tag coord b is a;
+tag bnc is b;
+tag coord c is vec2;
+tag cnc is c;
+tag cncnc is cnc;
+
+
+void main() {
+    // Test interactions between coord and non-coord things
+    // Also test upcasting allowance with 'in' notation
+
+    b bvec = [1., 1.];
+    bnc bncvec = [0., 1.];
+
+    b->b __noncanon = [[1., 1.], [1., 1.]]; // This does NOT actually get loaded in psi -- identities shouldn't be redefinable
+    b->ac __bac = [[1., 1.], [1., 2.]];
+    ac->b __acb = [[2., -1.], [-1., 1.]];
+
+    b s1 = bvec in b; // = bvec
+    a s2 = bncvec in b;
+    a s3 = bncvec in ac;
+    b s4 = bncvec in ac in b; // Also check that associativity works correctly
+
+    print s1;
+    print s2;
+    print s3;
+    print s4;
+
+    cnc cncvec = [1., 2.];
+    cncnc cncncvec = [.3, .6];
+    c->b __cb = [[1., 2.], [-2., -1.]];
+
+    a s5 = cncncvec in b;
+    ac s6 = cncvec in ac;
+    a s7 = cncvec in a; // Note that this must be through the path c->b since that's the shortest path
+
+    print s5;
+    print s6;
+    print s7;
+
+    auto __cac = __bac * __cb; // Should add c->ac to psi
+    ac s8 = cncvec in ac;
+    a s9 = cncvec in a; // We can only test not the type since the result is completely arbritrary (c->ac and c->b are equally long paths)
+
+    print s8;
+}

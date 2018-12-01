@@ -77,7 +77,7 @@ def main():
             basename = filename[:-4]  # Remove the extension
             outname = basename + ".out"
             expectname = basename + ".expect"
-            ling_args = [] if path == "test/compiler_core" else ["-i"]
+            ling_args = [] if path == "test/compiler" else ["-i"]
             with open(outname, "w") as f:
                 subprocess.call(
                     ["lingc"] + ling_args + [filename],

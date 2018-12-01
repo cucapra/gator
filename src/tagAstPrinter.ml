@@ -33,10 +33,8 @@ let string_of_constraint (c: constrain) : string =
     | TypConstraint t -> string_of_typ t
     | AnyTyp -> ""
 
-let string_of_param ((s, t, c): string * typ * constrain) : string =
-    (string_of_typ t) ^ 
-    (match c with | AnyTyp -> "" | _ -> " : " ^ (string_of_constraint c))
-    ^ " " ^ s
+let string_of_param ((s, t): string * typ) : string =
+    (string_of_typ t) ^ " " ^ s
     
 let string_of_params (p: params) : string =
     "(" ^ (String.concat ", " (List.map string_of_param p)) ^ ")"
@@ -44,12 +42,13 @@ let string_of_params (p: params) : string =
 let string_of_parametrization (pm : parametrization) : string = 
     Assoc.to_string string_of_constraint pm
 
-let string_of_fn_type ((p, r, pm): fn_type) : string = 
+let string_of_fn_type ((fm, p, r, pm): fn_type) : string = (match fm with | Some Canon -> "canon " | None -> "") ^ 
     (string_of_typ r) ^ " <" ^ (string_of_parametrization pm) ^ ">" ^ "(" ^ (string_of_params p) ^ ")"
 
 let string_of_fn_decl (d: fn_decl) : string = 
     match d with
-    | (id, (p, r, pm)) -> (string_of_typ r) ^ " " ^ id ^ " <" ^ (string_of_parametrization pm) ^ ">" ^ " (" ^ (string_of_params p) ^ ")"
+    | (id, (fm, p, r, pm)) -> (match fm with | Some Canon -> "canon " | None -> "") ^
+        (string_of_typ r) ^ " " ^ id ^ " <" ^ (string_of_parametrization pm) ^ ">" ^ " (" ^ (string_of_params p) ^ ")"
 
 let rec string_of_exp (e:exp) : string =
     let string_of_arr (a: exp list) : string = 
@@ -67,7 +66,7 @@ let rec string_of_exp (e:exp) : string =
         | _ -> (string_of_binop op ls rs))
     | As (e, t) -> (string_of_exp e) ^ " as " ^ (string_of_typ t)
     | In (e, t) -> (string_of_exp e) ^ " in " ^ (string_of_typ t)
-    | FnInv (i, args, pr) -> i ^ "<" ^ (string_of_list string_of_typ pr) ^ ">" ^ (string_of_list string_of_exp args)
+    | FnInv (i, args, pr) -> i ^ "<" ^ (string_of_list string_of_typ pr) ^ ">" ^ "(" ^ (string_of_list string_of_exp args) ^ ")"
 
 let rec string_of_comm (c: comm) : string =
     match c with

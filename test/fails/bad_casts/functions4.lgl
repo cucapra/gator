@@ -1,0 +1,10 @@
+tag coord a is vec2;
+tag coord b is vec2;
+
+canon b f(a x) { 
+    return [1., 2.];
+}
+
+void main() {
+    a->b fail = [[1., 1.], [1., 1.]]; // Duplicate anon matrix declares
+}

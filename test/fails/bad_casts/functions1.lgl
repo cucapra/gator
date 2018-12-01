@@ -1,0 +1,10 @@
+tag a is vec2;
+tag b is vec2;
+
+canon b f(a x) { // Can't canonize non-coord things
+    return [1., 2.];
+}
+
+void main() {
+    print 1;
+}

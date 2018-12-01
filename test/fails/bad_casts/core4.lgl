@@ -1,0 +1,10 @@
+tag a is vec2;
+tag coord b is a;
+tag coord c is vec2;
+tag cnc is c;
+
+void main() {
+    b->c __bc = [[1., 2.], [2., 1.]];
+    b bvec = [1., 0.];
+    cnc fail = bvec in cnc; // can't go 'down' with in expressions
+}

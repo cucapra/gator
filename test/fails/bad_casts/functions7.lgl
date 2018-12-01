@@ -1,0 +1,10 @@
+tag coord a is vec2;
+
+canon a f<`t : vec2>(`t x) { // this fails because a->a is the only maybe 'valid' thing, but isn't counted as the type identity
+    return [1., 2.];
+}
+
+void main() {
+    a avec = [1., 1.];
+    print avec in a;
+}

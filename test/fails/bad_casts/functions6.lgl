@@ -1,0 +1,14 @@
+tag coord a is vec2;
+tag coord b is vec3;
+
+canon b f<`t : vec2>(`t x) { // this is legal :/
+    return [1., 2., 3.];
+}
+
+canon b g(a x) { // this is not (duplicate definition of a->b)
+    return [2., 2., 2.];
+}
+
+void main() {
+    print 1;
+}

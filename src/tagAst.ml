@@ -41,16 +41,22 @@ type exp =
 
 and args = exp list
 
+type tag_mod =
+    | Coord
+
+type fn_mod = 
+    | Canon
+
 (* function parameterization,
  * which may extend another type. *)
 type parametrization = constrain Assoc.context
 
 (* function parameters *)
 (* arguments may have an optional parametrization type *)
-type params = (string * typ * constrain) list
+type params = (string * typ) list
 type ret_type = typ
 (* our functions are not first-order! *)
-type fn_type = params * ret_type * parametrization
+type fn_type = fn_mod option * params * ret_type * parametrization
 (* function declaration *)
 type fn_decl = string * fn_type
 type extern_decl =
@@ -71,9 +77,6 @@ type comm =
     | Return of exp option
     | FnCall of string * args * typ list
 and if_block = exp * comm list
-
-type tag_mod =
-    | Coord
 
 type fn = fn_decl * comm list
 

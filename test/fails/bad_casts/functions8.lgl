@@ -1,0 +1,14 @@
+tag coord a is vec2;
+tag coord b is vec3;
+
+canon b g(a x) { 
+    return [2., 2., 2.];
+}
+
+canon b f<`t : vec2>(`t x) { // same as functions6, but reverse order
+    return [1., 2., 3.];
+}
+
+void main() {
+    print 1;
+}

@@ -30,6 +30,7 @@ rule read = parse
   | "tag"           { TAG }
   | "is"            { IS }
   | "coord"         { COORD }
+  | "canon"         { CANON }
   | "true"          { TRUE }
   | "false"         { FALSE }
   | "if"            { IF }

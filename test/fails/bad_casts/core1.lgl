@@ -1,0 +1,6 @@
+tag coord a is vec2;
+tag coord b is a; // Can't have a coord be a subtype of another coord
+
+void main() {
+    print 1;
+}
