@@ -43,12 +43,11 @@ void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView,
     color diffuse = [0.4, 0.3, 0.9];
     color spec = [1.0, 1.0, 1.0];
 
-    world worldPosition = vPosition in world;
     world normal = normalize(extendNormModel(vNormal) in world);
-    world lightDir = normalize(uLight - worldPosition);
+    world lightDir = normalize(uLight - (vPosition in world));
     float lambertian = max(dot(normal, lightDir), 0.);
     
-    camera viewDir = -normalize(worldPosition in camera);
+    camera viewDir = -normalize(vPosition in camera);
     camera reflectDir = normalize(extendNormWorld(reflect(-lightDir, normal)) in camera);
     float specular = pow(max(dot(viewDir, reflectDir), 0.0), 32.);
 
