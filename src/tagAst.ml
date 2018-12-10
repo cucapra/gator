@@ -20,6 +20,7 @@ type typ =
     | SamplerTyp of int (* i.e. sampler2D *)
     | SamplerCubeTyp
     | AbsTyp of id (* i.e. `t *)
+    | ParTyp of string * typ (* i.e. hom<model> *)
 
 type constrain =
     (* Special constraint types *)
