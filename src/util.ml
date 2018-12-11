@@ -13,7 +13,10 @@ let tr_fst ((x, _, _): 'a * 'b * 'c) : 'a = x
 let tr_snd ((_, x, _): 'a * 'b * 'c) : 'b = x
 let tr_thd ((_, _, x): 'a * 'b * 'c) : 'c = x
 
-let string_of_list (f: ('a -> string)) (l: 'a list) : string =
+let string_of_lst (f: ('a -> string)) (l: 'a list) : string =
+  "[" ^ (String.concat ", " (List.map f l)) ^ "]"
+
+let string_of_arr (f: ('a -> string)) (l: 'a list) : string =
   "[" ^ (String.concat ", " (List.map f l)) ^ "]"
 
 let string_of_vec (v: vec) : string = 

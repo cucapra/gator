@@ -4,15 +4,6 @@ open CoreAst
 open Util
 open TagAst
 
-let string_of_lst (f : 'a -> string) (l: 'a list) : string =
-    List.fold_left (fun a b -> f b) "\n" l
-
-let string_of_tag_typ (t: tag_typ) : string =
-    match t with
-    | TopTyp n -> "vec"^(string_of_int n)
-    | BotTyp n -> "vec"^(string_of_int n)^"lit"
-    | VarTyp s -> s
-
 let rec string_of_typ (t: typ) : string = 
     match t with
     | AutoTyp -> "auto"
@@ -20,7 +11,9 @@ let rec string_of_typ (t: typ) : string =
     | BoolTyp -> "bool"
     | IntTyp -> "int"
     | FloatTyp -> "float"
-    | TagTyp s -> string_of_tag_typ s
+    | TopVecTyp n -> "vec"^(string_of_int n)
+    | BotVecTyp n -> "vec"^(string_of_int n)^"lit"
+    | VarTyp (s, t) -> s ^ (if List.length t > 0 then "<" ^ (string_of_lst string_of_typ t) ^ ">" else "")
     | TransTyp (s1, s2) -> (string_of_typ s1) ^ "->" ^ (string_of_typ s2)
     | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D"
     | SamplerCubeTyp -> "samplerCube"
@@ -40,16 +33,16 @@ let string_of_param ((s, t): string * typ) : string =
 let string_of_params (p: params) : string =
     "(" ^ (String.concat ", " (List.map string_of_param p)) ^ ")"
 
-let string_of_parametrization (pm : parametrization) : string = 
+let string_of_parameterization (pm : parameterization) : string = 
     Assoc.to_string string_of_constraint pm
 
 let string_of_fn_type ((fm, p, r, pm): fn_type) : string = (match fm with | Some Canon -> "canon " | None -> "") ^ 
-    (string_of_typ r) ^ " <" ^ (string_of_parametrization pm) ^ ">" ^ "(" ^ (string_of_params p) ^ ")"
+    (string_of_typ r) ^ " <" ^ (string_of_parameterization pm) ^ ">" ^ "(" ^ (string_of_params p) ^ ")"
 
 let string_of_fn_decl (d: fn_decl) : string = 
     match d with
     | (id, (fm, p, r, pm)) -> (match fm with | Some Canon -> "canon " | None -> "") ^
-        (string_of_typ r) ^ " " ^ id ^ " <" ^ (string_of_parametrization pm) ^ ">" ^ " (" ^ (string_of_params p) ^ ")"
+        (string_of_typ r) ^ " " ^ id ^ " <" ^ (string_of_parameterization pm) ^ ">" ^ " (" ^ (string_of_params p) ^ ")"
 
 let rec string_of_exp (e:exp) : string =
     let string_of_arr (a: exp list) : string = 
@@ -67,7 +60,7 @@ let rec string_of_exp (e:exp) : string =
         | _ -> (string_of_binop op ls rs))
     | As (e, t) -> (string_of_exp e) ^ " as " ^ (string_of_typ t)
     | In (e, t) -> (string_of_exp e) ^ " in " ^ (string_of_typ t)
-    | FnInv (i, args, pr) -> i ^ "<" ^ (string_of_list string_of_typ pr) ^ ">" ^ "(" ^ (string_of_list string_of_exp args) ^ ")"
+    | FnInv (i, args, pr) -> i ^ "<" ^ (string_of_lst string_of_typ pr) ^ ">" ^ "(" ^ (string_of_lst string_of_exp args) ^ ")"
 
 let rec string_of_comm (c: comm) : string =
     match c with

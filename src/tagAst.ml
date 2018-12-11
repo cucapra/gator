@@ -2,12 +2,6 @@
 
 open CoreAst
 
-(* tag types *)
-type tag_typ =
-    | TopTyp of int
-    | BotTyp of int
-    | VarTyp of id
-
 (* types *)
 type typ =
     | AutoTyp
@@ -15,12 +9,13 @@ type typ =
     | BoolTyp
     | IntTyp
     | FloatTyp
-    | TagTyp of tag_typ
+    | TopVecTyp of int
+    | BotVecTyp of int
+    | VarTyp of id * typ list (* i.e. model or hom<model> *)
     | TransTyp of typ * typ
     | SamplerTyp of int (* i.e. sampler2D *)
     | SamplerCubeTyp
     | AbsTyp of id (* i.e. `t *)
-    | ParTyp of string * typ (* i.e. hom<model> *)
 
 type constrain =
     (* Special constraint types *)
@@ -51,14 +46,14 @@ type fn_mod =
 
 (* function parameterization,
  * which may extend another type. *)
-type parametrization = constrain Assoc.context
+type parameterization = constrain Assoc.context
 
 (* function parameters *)
-(* arguments may have an optional parametrization type *)
+(* arguments may have an optional parameterization type *)
 type params = (string * typ) list
 type ret_type = typ
 (* our functions are not first-order! *)
-type fn_type = fn_mod option * params * ret_type * parametrization
+type fn_type = fn_mod option * params * ret_type * parameterization
 (* function declaration *)
 type fn_decl = string * fn_type
 type extern_decl =

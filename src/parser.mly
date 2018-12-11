@@ -81,15 +81,15 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 
 (* Precedences *)
 
-%left AS IN
+%left ID LBRACK 
 %left TRANS
+%left AS IN
 %left DOT
 %left AND OR
 %left NOT EQ LEQ LWICK GEQ RWICK 
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
-(*%left TRANS*)
 
 (* After declaring associativity and precedence, we need to declare what
    the starting point is for parsing the language.  The following
@@ -143,10 +143,10 @@ taglst:
 ; 
 
 tag:
-  | TAG; x = ID; IS; e1 = tagtyp; SEMI; 
-      { (None, x, TagTyp(e1)) }
-  | TAG; COORD; x = ID; IS; e1 = tagtyp; SEMI; 
-      { (Some Coord, x, TagTyp(e1)) }
+  | TAG; x = ID; IS; e1 = typ; SEMI; 
+      { (None, x, e1) }
+  | TAG; COORD; x = ID; IS; e1 = typ; SEMI; 
+      { (Some Coord, x, e1) }
 ;
 
 fnlst: 
@@ -298,22 +298,24 @@ typ:
       { let len = String.length m in
         let dim = String.sub m 3 (len-3) in
         let dim_lst = Str.split_delim (regexp "x") dim in
-        TransTyp (TagTyp (TopTyp (int_of_string(List.nth dim_lst 1))),
-        (TagTyp (TopTyp (int_of_string(List.nth dim_lst 0)))))}
+        TransTyp (TopVecTyp (int_of_string(List.nth dim_lst 1)),
+        (TopVecTyp (int_of_string(List.nth dim_lst 0))))}
   | x1 = typ; TRANS; x2 = typ 
       { TransTyp(x1,x2) }
+  | x = ID; LWICK; tl = typlst; RWICK; 
+      { VarTyp (x, tl) }
   | x = ID 
       { if (Str.string_match vec x 0) then (
         let len = String.length x in 
         let dim = int_of_string (String.sub x 3 (len-3)) in
-        TagTyp (TopTyp dim)
+        TopVecTyp dim
         ) else
         if (Str.string_match mat x 0) then (
         let len = String.length x in 
         let dim = int_of_string (String.sub x 3 (len-3)) in
-        TransTyp (TagTyp (TopTyp dim), TagTyp (TopTyp dim))
+        TransTyp (TopVecTyp dim, TopVecTyp dim)
         ) 
-        else (TagTyp (VarTyp x)) }
+        else (VarTyp (x, [])) }
   | SAMPLERCUBE
       { SamplerCubeTyp }
   | s = SAMPLER                     
@@ -323,15 +325,6 @@ typ:
         SamplerTyp (int_of_string(List.nth dim_lst 0)) }
   | VOID
       { UnitTyp }
-;
-
-tagtyp:
-  | x = ID 
-      { if (Str.string_match vec x 0) then (
-        let len = String.length x in 
-        let dim = String.sub x 3 (len-3)in
-        TopTyp (int_of_string(dim))
-        ) else (VarTyp x) }
 ;
 
 arr:
@@ -363,7 +356,6 @@ arglst:
   | e = exp; COMMA; a = arglst;
      { e::a@[] }
 ;
-
   
 typlst: 
   | t = typ 
@@ -377,10 +369,6 @@ exp:
       { Val v }
   | x = ID                     
       { Var x }
-  | LBRACK; RBRACK;
-    { Arr [] }
-  | LBRACK; e = arr; RBRACK;
-    { Arr e }
   | x = ID; LPAREN; RPAREN;
       { FnInv(x, [], []) }
   | x = ID; LPAREN; a = arglst; RPAREN;
@@ -389,6 +377,10 @@ exp:
       { FnInv(x, a, t) }
   | x = ID; LWICK; t = typlst; RWICK; LPAREN; RPAREN;
       { FnInv(x, [], t) }
+  | LBRACK; RBRACK;
+    { Arr [] }
+  | LBRACK; e = arr; RBRACK;
+    { Arr e }
   | e1 = exp; PLUS; e2 = exp   
       { Binop(Plus,e1,e2) }
   | e1 = exp; TIMES; e2 = exp  
