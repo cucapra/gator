@@ -17,7 +17,7 @@ void main() {
     print s1;
     print s2;
 
-    par<a>->par<b> parAtoB = [[0., 0., 1.], [0., 1., 0.], [1., 0., 0.]]
+    par<a>->par<b> parAtoB = [[0., 0., 1.], [0., 1., 0.], [1., 0., 0.]];
     par<b> s3 = parAtoB * asParA * avec;
 
     print s3;

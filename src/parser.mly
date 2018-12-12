@@ -143,14 +143,14 @@ taglst:
 ; 
 
 tag:
-  | TAG; x = ID; IS; e1 = typ; SEMI; 
-      { (None, x, Assoc.empty, e1) }
-  | TAG; x = ID; LWICK; pt = parametrizations; RWICK; IS; e1 = typ; SEMI; 
-      { (Some Coord, x, pt, e1) }
-  | TAG; COORD; x = ID; IS; e1 = typ; SEMI; 
-      { (Some Coord, x, Assoc.empty, e1) }
-  | TAG; COORD; x = ID; LWICK; pt = parametrizations; RWICK; IS; e1 = typ; SEMI; 
-      { (Some Coord, x, pt, e1) }
+  | TAG; x = ID; IS; t = typ; SEMI; 
+      { (None, x, Assoc.empty, t) }
+  | TAG; x = ID; LWICK; pt = parameterizations; RWICK; IS; t = typ; SEMI; 
+      { (None, x, pt, t) }
+  | TAG; COORD; x = ID; IS; t = typ; SEMI; 
+      { (Some Coord, x, Assoc.empty, t) }
+  | TAG; COORD; x = ID; LWICK; pt = parameterizations; RWICK; IS; t = typ; SEMI; 
+      { (Some Coord, x, pt, t) }
 ;
 
 fnlst: 
@@ -177,16 +177,16 @@ params:
       { (x, t)::p }
 ;
 
-parametrization:
+parameterization:
   | BACKTICK; t = ID;
       { (t, AnyTyp) }
   | BACKTICK; t = ID; COLON; c = constrain;
       { (t, c) }
 
-parametrizations:
-  | p = parametrization;
+parameterizations:
+  | p = parameterization;
       { Assoc.update (fst p) (snd p) Assoc.empty }
-  | p = parametrization; COMMA; pl = parametrizations;
+  | p = parameterization; COMMA; pl = parameterizations;
       { Assoc.update (fst p) (snd p) pl }
 
 fn_decl:
@@ -201,9 +201,9 @@ fn_params:
       { ([], Assoc.empty) }
   | LPAREN; p = params ; RPAREN;
       { (p, Assoc.empty) }
-  | LWICK; pt = parametrizations; RWICK; LPAREN; RPAREN;
+  | LWICK; pt = parameterizations; RWICK; LPAREN; RPAREN;
       { ([], pt) }
-  | LWICK; pt = parametrizations; RWICK; LPAREN; p = params ; RPAREN;
+  | LWICK; pt = parameterizations; RWICK; LPAREN; p = params ; RPAREN;
       { (p, pt) }
 
 elif:

@@ -15,7 +15,7 @@ void main() {
     bl<bl<bl<b>>> s4 = [1., 1., 1.];
     bl<b> s5 = s4;
     pl<pl<p<pl<a2>>>> s6 = [1., 1.];
-    p<pl<a2>>> s7 = s6;
+    p<pl<a2>> s7 = s6;
     pany<pany<b>> s8 = [0., 0.];
     p3<r<a2>> s9 = [1., 1.];
     pany<r<a2>> s10 = s9;

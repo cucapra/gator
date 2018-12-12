@@ -97,17 +97,24 @@ and constrain_to_constrain (c : TypedAst.constrain) : constrain =
     | TypedAst.GenVecTyp -> GenVecTyp
     | TypedAst.ETypConstraint t -> TypConstraint (etyp_to_typ t)
 
-let rec vec_dim (t: typ) (d: delta) (pm: parameterization) : int =
+type dim_constrain_typ = | UnconInt of int | ConString of string
+let rec vec_dim_constrain (t: typ) (d: delta) (pm: parameterization) : dim_constrain_typ =
     debug_print ">> vec_dim";
     let fail _ = failwith ("Expected a vector for computing the dimension, got " ^ (string_of_typ t)) in
     match t with
     | TopVecTyp n
-    | BotVecTyp n -> n
-    | VarTyp (s, pml) -> vec_dim (delta_lookup_unsafe s pml d) d pm
+    | BotVecTyp n -> UnconInt n
+    | VarTyp (s, pml) -> vec_dim_constrain (delta_lookup_unsafe s pml d) d pm
     | AbsTyp s -> (match unwrap_abstyp s pm with
-        | TypConstraint t' -> vec_dim t' d pm
+        | TypConstraint t' -> vec_dim_constrain t' d pm
+        | GenVecTyp -> ConString s
         | _ -> fail ())
     | _ -> fail ()
+
+let vec_dim (t: typ) (d: delta) (pm: parameterization) : int =
+    let fail _ = failwith ("Expected a vector for computing the dimension, got " ^ (string_of_typ t)) in
+    match vec_dim_constrain t d pm with
+    | UnconInt i -> i | _ -> fail ()
 
 let rec tag_erase_param (t: typ) (d: delta) (pm: parameterization) : TypedAst.etyp = 
     debug_print ">> tag_erase_param";
@@ -127,15 +134,15 @@ and tag_erase (t : typ) (d : delta) (pm: parameterization) : TypedAst.etyp =
     | FloatTyp -> TypedAst.FloatTyp
     | TopVecTyp _
     | BotVecTyp _
-    | VarTyp _ -> TypedAst.VecTyp (vec_dim t d pm)
+    | VarTyp _ -> (match vec_dim_constrain t d pm with
+        | UnconInt i -> TypedAst.VecTyp i | ConString s -> TypedAst.AbsTyp (s, TypedAst.GenVecTyp))
     (* Convert to the strange glsl style of doing things *)
     (* TODO: standardize this and handle switching in the emitter *)
     | TransTyp (t1, t2) -> 
     begin
-        match (t1, t2) with
-        | (AbsTyp _, _)
-        | (_, AbsTyp _) -> TypedAst.TransTyp (tag_erase t1 d pm, tag_erase t2 d pm)
-        | _ -> TypedAst.MatTyp (vec_dim t2 d pm, vec_dim t1 d pm)
+        match (vec_dim_constrain t1 d pm, vec_dim_constrain t2 d pm) with
+        | (UnconInt n1, UnconInt n2) -> TypedAst.MatTyp (n2, n1)
+        | _ -> TypedAst.TransTyp (tag_erase t1 d pm, tag_erase t2 d pm)
     end
     | SamplerTyp i -> TypedAst.SamplerTyp i
     | SamplerCubeTyp -> TypedAst.SamplerCubeTyp
@@ -153,6 +160,8 @@ and constrain_erase (c: constrain) (d : delta) (pm : parameterization) : TypedAs
 
 let rec is_subtype_with_strictness (to_check : typ) (target : typ) (d : delta) (pm: parameterization) (strict : bool) : bool =
     debug_print (">> is_subtype" ^ (string_of_typ to_check) ^ ", " ^(string_of_typ target));
+    print_endline (string_of_parameterization pm);
+    print_endline (string_of_typ to_check);
     let rec tag_typ_equality (t1: typ) (t2: typ) : bool =
         match (t1, t2) with
         | BotVecTyp n1, BotVecTyp n2 
@@ -161,6 +170,7 @@ let rec is_subtype_with_strictness (to_check : typ) (target : typ) (d : delta) (
                 if List.length pml1 = List.length pml2
                 then List.fold_left2 (fun acc t1 t2 -> tag_typ_equality t1 t2 && acc) true pml1 pml2
                 else false
+        | AbsTyp s1, AbsTyp s2 -> s1 = s2
         | _ -> false
     in
     let abstyp_step (s: string) : bool =
@@ -187,8 +197,12 @@ let rec is_subtype_with_strictness (to_check : typ) (target : typ) (d : delta) (
     | (SamplerCubeTyp, SamplerCubeTyp) -> true
     | (TransTyp (t1, t2), TransTyp (t3, t4)) -> 
         (is_subtype_with_strictness t3 t1 d pm false && is_subtype_with_strictness t2 t4 d pm strict)
-    | (AbsTyp s1, AbsTyp s2) -> s1 = s2 || abstyp_step s1
-    | (AbsTyp s, _) -> abstyp_step s
+    | (AbsTyp s1, AbsTyp s2) -> 
+        print_endline (string_of_typ to_check); print_endline (string_of_typ target);
+        s1 = s2 || abstyp_step s1
+    | (AbsTyp s, _) -> 
+        print_endline (string_of_typ to_check); print_endline (string_of_typ target);
+        abstyp_step s
     (* Necessary because we have a lattice and the bottype is less than EVERYTHING in that lattice *)
     | (BotVecTyp n, AbsTyp _) -> (is_subtype_with_strictness target (TopVecTyp n) d pm false)
     | _ -> false
@@ -885,6 +899,12 @@ let check_tag (s: string) (pm: parameterization) (tm : tag_mod option) (t: typ) 
         | AbsTyp s -> if Assoc.mem s pm then Assoc.lookup s pm else raise (TypeException ("Unknown type " ^ (string_of_typ t)))
         | _ -> raise (TypeException ("Invalid type for tag declaration " ^ (string_of_typ t) ^ ", expected vector"))
     in
+    let rec check_param_vec_bounds (cl : constrain list) : unit =
+        match cl with
+        | [] -> ()
+        | h::t -> if is_sub_constraint h GenVecTyp d pm then check_param_vec_bounds t
+            else raise (TypeException ("Invalid declaration of " ^ s ^ " -- must parameterize on vectors only"))
+    in
     let rec check_coord (t : typ) : unit =
         match t with
         | VarTyp (s, pml) -> (match Assoc.lookup s m with 
@@ -893,6 +913,7 @@ let check_tag (s: string) (pm: parameterization) (tm : tag_mod option) (t: typ) 
         | _ -> ()
     in
     check_valid_supertype t |> ignore;
+    check_param_vec_bounds (List.map snd (Assoc.bindings pm));
     if Assoc.mem s d then raise (TypeException "Cannot redeclare tag")
     else (match tm with | Some Coord -> check_coord t | _ -> ());
     (Assoc.update s (pm, t) d, Assoc.update s tm m)
