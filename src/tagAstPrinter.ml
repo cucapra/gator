@@ -91,9 +91,9 @@ string_of_comm_list (cl : comm list) : string =
     string_of_lst string_of_comm cl
 
 let rec string_of_tags (t : tag_decl list) : string =
-    match t with | [] -> "" | (m, s, a)::t -> 
+    match t with | [] -> "" | (m, s, pm, a)::t -> 
     let ms = match m with | None -> "" | Some Coord -> " coord " in
-    "tag " ^ ms ^ s ^ " is "^(string_of_typ a) ^ ";\n" ^ (string_of_tags t)
+    "tag " ^ ms ^ s ^ (string_of_parameterization pm) ^ " is " ^ (string_of_typ a) ^ ";\n" ^ (string_of_tags t)
 
 let string_of_fn (f : fn) : string = 
     match f with

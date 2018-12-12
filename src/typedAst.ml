@@ -48,10 +48,10 @@ type comm =
     | FnCall of id * args
 and if_block = texp * comm list
 
-type parametrization = constrain Assoc.context
+type parameterization = constrain Assoc.context
 type params = (string * etyp) list
 type ret_type = etyp
-type fn_type = params * ret_type * parametrization
+type fn_type = params * ret_type * parameterization
 type fn_decl = string * fn_type
 type fn = fn_decl * comm list
 

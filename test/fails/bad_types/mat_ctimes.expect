@@ -1,1 +1,1 @@
-Fatal error: exception Lingl__Check.TypeException("dimension mismatch in ctimes operator")
+Fatal error: exception Lingl__Check.DimensionException(2, 3)

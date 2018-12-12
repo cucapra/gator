@@ -78,7 +78,7 @@ and if_block = exp * comm list
 type fn = fn_decl * comm list
 
 (* tag declaration statements *)
-type tag_decl = tag_mod option * string * typ
+type tag_decl = tag_mod option * string * parameterization * typ
 
 (* program *)
 (* Consists of list of (external) declare functions,

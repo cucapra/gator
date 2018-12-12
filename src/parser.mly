@@ -144,9 +144,13 @@ taglst:
 
 tag:
   | TAG; x = ID; IS; e1 = typ; SEMI; 
-      { (None, x, e1) }
+      { (None, x, Assoc.empty, e1) }
+  | TAG; x = ID; LWICK; pt = parametrizations; RWICK; IS; e1 = typ; SEMI; 
+      { (Some Coord, x, pt, e1) }
   | TAG; COORD; x = ID; IS; e1 = typ; SEMI; 
-      { (Some Coord, x, e1) }
+      { (Some Coord, x, Assoc.empty, e1) }
+  | TAG; COORD; x = ID; LWICK; pt = parametrizations; RWICK; IS; e1 = typ; SEMI; 
+      { (Some Coord, x, pt, e1) }
 ;
 
 fnlst: 
