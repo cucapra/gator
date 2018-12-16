@@ -8,6 +8,9 @@ open Str
 exception TypeException of string
 exception DimensionException of int * int
 
+(* For readability, especially with psi *)
+type param_inv = id * typ list 
+
 (* Variable defs *)
 type gamma = typ Assoc.context
 
@@ -21,12 +24,13 @@ type phi = fn_type Assoc.context
 type mu = (tag_mod option) Assoc.context
 
 (* Transformation context *)
-(* Effectively has the type 't1->t2->v' for tags t1,t2 and variable name v *)
-(* Note that the resulting thing can be a function with a concrete parameterization, hence the typ list *)
-type psi = ((string * (typ list)) Assoc.context) Assoc.context
+(* Effectively has the type 'start->(target, f<pml>) list' for types start and target (both restricted implicitely to var types), function/matrix name f, and function parameter list pml *)
+(* Note that the resulting thing could be a function with a concrete parameterization, hence the typ list (which is empty for matrices) *)
+type psi = ((param_inv * param_inv) list) Assoc.context
 
 let string_of_delta (d : delta) = Assoc.to_string (fun (pm, t) -> "(" ^ string_of_parameterization pm ^ ", " ^ string_of_typ t ^ ")") d
-let string_of_psi ps = Assoc.to_string (fun x -> Assoc.to_string (fun (s, t) -> s ^ (string_of_lst string_of_typ t)) x) ps
+let string_of_param_inv ((s, tl) : param_inv) = string_of_typ (VarTyp (s, tl))
+let string_of_psi (ps : psi) = Assoc.to_string (fun x -> string_of_arr (fun (p1, p2) -> "(" ^ string_of_param_inv p1 ^ ", " ^ string_of_param_inv p2 ^ ")") x) ps
 
 let trans_top (n1: int) (n2: int) : typ =
     TransTyp (BotVecTyp n1, TopVecTyp n2)
@@ -35,6 +39,7 @@ let trans_bot (n1: int) (n2: int) : typ =
     TransTyp (TopVecTyp n1, BotVecTyp n2)
 
 let rec unwrap_abstyp (s: string) (pm : parameterization) : constrain =
+    debug_print ">> unwrap_abstyp";
     if Assoc.mem s pm 
     then match (Assoc.lookup s pm) with 
         | TypConstraint(AbsTyp s) ->  unwrap_abstyp s pm
@@ -42,6 +47,7 @@ let rec unwrap_abstyp (s: string) (pm : parameterization) : constrain =
     else raise (TypeException ("AbsTyp " ^ s ^ " not found in parameterization"))
 
 let as_matrix_pair (t: typ) (d: delta) (pm: parameterization) : typ * typ =
+    debug_print ">> as_matrix_pair";
     (* Checks whether the given abstract type is a vector *)
     let fail _ = failwith ("Cannot treat " ^ (string_of_typ t) ^ " as a matrix") in
     match t with
@@ -55,6 +61,7 @@ let as_matrix_pair (t: typ) (d: delta) (pm: parameterization) : typ * typ =
 (* Returns the appropriate concretized context if one exists *)
 (* Should only be used on previously verified parameterized type invokations *)
 let match_parameterization_unsafe (pm: parameterization) (pml : typ list) : typ Assoc.context =
+    debug_print ">> match_parameterization_unsafe";
     let pmb = Assoc.bindings pm in
     if List.length pmb == List.length pml
     then List.fold_left2 (fun acc (s, _) t -> Assoc.update s t acc)
@@ -62,6 +69,7 @@ let match_parameterization_unsafe (pm: parameterization) (pml : typ list) : typ 
     else raise (TypeException ("Invalid parameterization provided in " ^ (string_of_arr string_of_typ pml)))
 
 let rec replace_abstype (t: typ) (c: typ Assoc.context) : typ =
+    debug_print ">> replace_abstype";
     match t with
     | VarTyp (s, tl) -> VarTyp (s, List.map (fun x -> replace_abstype x c) tl)
     | AbsTyp s -> Assoc.lookup s c
@@ -70,6 +78,7 @@ let rec replace_abstype (t: typ) (c: typ Assoc.context) : typ =
 
 (* Looks up delta without checking the bounds on the pml *)
 let delta_lookup_unsafe (s: id) (pml: typ list) (d: delta) : typ =
+    debug_print ">> delta_lookup_unsafe";
     if Assoc.mem s d then
     let (pm, t) = Assoc.lookup s d in
     replace_abstype t (match_parameterization_unsafe pm pml)
@@ -90,6 +99,7 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     | TypedAst.AbsTyp (s, c) -> AbsTyp s
 
 and constrain_to_constrain (c : TypedAst.constrain) : constrain =
+    debug_print ">> constrain_to_constrain";
     match c with
     | TypedAst.AnyTyp -> AnyTyp
     | TypedAst.GenTyp -> GenTyp
@@ -112,9 +122,8 @@ let rec vec_dim_constrain (t: typ) (d: delta) (pm: parameterization) : dim_const
     | _ -> fail ()
 
 let vec_dim (t: typ) (d: delta) (pm: parameterization) : int =
-    let fail _ = failwith ("Expected a vector for computing the dimension, got " ^ (string_of_typ t)) in
     match vec_dim_constrain t d pm with
-    | UnconInt i -> i | _ -> fail ()
+    | UnconInt i -> i | _ -> raise (TypeException ("Vector " ^ string_of_typ t ^ " does not have a concrete dimension"))
 
 let rec tag_erase_param (t: typ) (d: delta) (pm: parameterization) : TypedAst.etyp = 
     debug_print ">> tag_erase_param";
@@ -159,9 +168,7 @@ and constrain_erase (c: constrain) (d : delta) (pm : parameterization) : TypedAs
     | TypConstraint t -> TypedAst.ETypConstraint (tag_erase t d pm)
 
 let rec is_subtype_with_strictness (to_check : typ) (target : typ) (d : delta) (pm: parameterization) (strict : bool) : bool =
-    debug_print (">> is_subtype" ^ (string_of_typ to_check) ^ ", " ^(string_of_typ target));
-    print_endline (string_of_parameterization pm);
-    print_endline (string_of_typ to_check);
+    debug_print (">> is_subtype " ^ (string_of_typ to_check) ^ ", " ^(string_of_typ target));
     let rec tag_typ_equality (t1: typ) (t2: typ) : bool =
         match (t1, t2) with
         | BotVecTyp n1, BotVecTyp n2 
@@ -198,19 +205,19 @@ let rec is_subtype_with_strictness (to_check : typ) (target : typ) (d : delta) (
     | (TransTyp (t1, t2), TransTyp (t3, t4)) -> 
         (is_subtype_with_strictness t3 t1 d pm false && is_subtype_with_strictness t2 t4 d pm strict)
     | (AbsTyp s1, AbsTyp s2) -> 
-        print_endline (string_of_typ to_check); print_endline (string_of_typ target);
         s1 = s2 || abstyp_step s1
     | (AbsTyp s, _) -> 
-        print_endline (string_of_typ to_check); print_endline (string_of_typ target);
         abstyp_step s
     (* Necessary because we have a lattice and the bottype is less than EVERYTHING in that lattice *)
     | (BotVecTyp n, AbsTyp _) -> (is_subtype_with_strictness target (TopVecTyp n) d pm false)
     | _ -> false
 
 and is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameterization) : bool =
+    debug_print ">> is_subtype";
     is_subtype_with_strictness to_check target d pm true
 
 let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta) (pm: parameterization): bool =
+    debug_print ">> is_sub_constraint";
     match (to_check, target) with
     | _, AnyTyp -> true
     | AnyTyp, _ -> false
@@ -229,35 +236,28 @@ let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta
     | (_, GenMatTyp) -> false
 
 let rec is_bounded_by (t: typ) (c: constrain) (d: delta) (pm: parameterization): bool =
+    debug_print ">> is_bounded_by";
     is_sub_constraint (TypConstraint t) c d pm
 
-let match_parameterization (d: delta) (pm: parameterization) (pml : typ list) : (typ Assoc.context) option =
-    let pmb = Assoc.bindings pm in
+let match_parameterization (d: delta) (pmb: (string * constrain) list) (pml : typ list) (pm: parameterization) : (typ Assoc.context) option =
+    debug_print ">> match_parametrization";
     if List.length pmb == List.length pml
     then List.fold_left2 (fun acc (s, c) t -> match acc with | None -> None 
         | Some tl -> if is_bounded_by t c d pm then Some (Assoc.update s t tl) else None)
-        (Some (Assoc.empty)) (Assoc.bindings pm) pml
+        (Some (Assoc.empty)) pmb pml
     else None
 
-let delta_lookup (s: id) (pml: typ list) (d: delta) : typ =
+let delta_lookup (s: id) (pml: typ list) (d: delta) (pm: parameterization) : typ =
+    debug_print ">> delta_lookup";
     if Assoc.mem s d then
-    let (pm, t) = Assoc.lookup s d in
-    match (match_parameterization d pm pml) with
+    let (pm_to_match, t) = Assoc.lookup s d in
+    match (match_parameterization d (Assoc.bindings pm_to_match) pml pm) with
     | Some cont -> replace_abstype t cont
     | None -> raise (TypeException ("Invalid parameters <" ^ (string_of_lst string_of_typ pml) ^ "> to " ^ s))
     else raise (TypeException ("Unknown tag " ^ s))
 
-(* let as_vector (t: typ) (d: delta) (pm: parameterization) : typ =
-    (* Checks whether the given abstract type is a vector *)
-    let fail _ = failwith ("Cannot treat " ^ (string_of_typ t) ^ " as a vector") in
-    match t with
-    | TagTyp t' -> t' 
-    | AbsTyp s -> (match unwrap_abstyp s pm with
-        | TypConstraint (TagTyp t') -> t'
-        | _ -> fail ())
-    | _ -> fail () *)
-
 let rec greatest_common_child (t1: typ) (t2: typ) (d: delta) (pm: parameterization): typ =
+    debug_print ">> greatest_common_child";
     let check_dim (n1: int) (n2: int) : unit =
         if n1 = n2 then () else (raise (DimensionException (n1, n2)))
     in
@@ -299,24 +299,16 @@ let rec least_common_parent_with_strictness (t1: typ) (t2: typ) (d: delta) (pm: 
     in
     if (is_subtype_with_strictness t1 t2 d pm strict) then t2 else if (is_subtype_with_strictness t2 t1 d pm strict) then t1 
     else match (t1, t2) with
-        | BotVecTyp n1, BotVecTyp n2 ->
-            check_dim n1 n2; BotVecTyp n1
-        | BotVecTyp n1, TopVecTyp n2
-        | TopVecTyp n1, BotVecTyp n2
-        | TopVecTyp n1, TopVecTyp n2 ->
-            check_dim n1 n2; TopVecTyp n1
         | VarTyp (s, pml), TopVecTyp n1
         | TopVecTyp n1, VarTyp (s, pml) ->
             check_dim (vec_dim (VarTyp (s, pml)) d pm) n1;
             if strict then
             raise (TypeException ("Cannot implicitly cast " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2) ^ " to the top vector type"  ))
             else TopVecTyp n1
-        | VarTyp (s, pml), BotVecTyp n1
-        | BotVecTyp n1, VarTyp (s, pml) ->
-            check_dim (vec_dim (VarTyp (s, pml)) d pm) n1; VarTyp (s, pml)
-        | VarTyp (s, pml), VarTyp _ ->
+        | VarTyp (s, pml), _
+        | _, VarTyp (s, pml) ->
             (* Just go up a step -- the end condition is the is_subtype check earlier *)
-            least_common_parent_with_strictness (delta_lookup s pml d) t2 d pm strict
+            least_common_parent_with_strictness (delta_lookup s pml d pm) t2 d pm strict
         | (AbsTyp s1, AbsTyp s2) -> (step_abstyp s1 s2)
         | (TransTyp (t1, t2), TransTyp(t3, t4)) -> 
             (TransTyp (greatest_common_child t1 t3 d pm, least_common_parent_with_strictness t2 t4 d pm strict))
@@ -333,13 +325,16 @@ let least_common_parent_safe (t1: typ) (t2: typ) (d: delta) (pm: parameterizatio
     | t -> raise t
 
 let check_subtype_list (t: typ) (l: typ list) (d: delta) (pm: parameterization) : bool =
+    debug_print ">> check_subtype_list";
     List.fold_left (fun acc t' -> acc || (is_subtype t t' d pm)) false l
 
 let check_bounds_list (t: typ) (l: constrain list) (d: delta) (pm: parameterization) : bool =
+    debug_print ">> check_bounds_list";
     List.fold_left (fun acc t' -> acc || (is_bounded_by t t' d pm)) false l
     
 
 let rec check_typ_valid (t: typ) (d: delta) (pm: parameterization) : unit =
+    debug_print ">> check_typ_valid";
     match t with
     | VarTyp (s, _) -> if Assoc.mem s d then () else raise (TypeException ("Unknown tag " ^ s))
     | AbsTyp s -> if Assoc.mem s pm then () else raise (TypeException ("Unknown abstract type `" ^ s))
@@ -504,31 +499,47 @@ let check_parameterization (d: delta) (pm: parameterization) : unit =
     in
     check_para_list (Assoc.bindings pm) Assoc.empty
 
-let update_psi (v: string * (typ list)) (start: string) (target: string) (m: mu) (ps: psi) : psi =
+let update_psi ((start_string, stl): param_inv) ((target_string, ttl): param_inv) ((f, pml): param_inv) (m: mu) (ps: psi) : psi =
     (* Update psi, raising errors in case of a duplicate *)
     (* If the given type is not valid in psi, psi is returned unmodified *)
-    let psi_update (s1: string) (s2: string) : psi =
-        if Assoc.mem s1 ps then 
-        (let s1_cont = Assoc.lookup s1 ps in
-            if Assoc.mem s2 s1_cont 
-            then raise (TypeException ("Duplicate transformation for " ^ start ^ "->" ^ target ^ " in the declaration of " ^ (fst v)))
-            else Assoc.update s1 (Assoc.update s2 v s1_cont) ps
-        )
-        else Assoc.update s1 (Assoc.update s2 v Assoc.empty) ps
+    (* Will raise a failure if a non-concrete vartyp is used *)
+    debug_print ">> update_psi";
+    let rec check_var_typ_eq (t1: typ) (t2: typ) : bool =
+        match (t1, t2) with
+        | TopVecTyp n1, TopVecTyp n2 -> n1 = n2
+        | VarTyp (s1, tl1), VarTyp (s2, tl2) -> s1 = s2 && 
+            (if List.length tl1 = List.length tl2
+            then List.fold_left2 (fun acc t1' t2' -> acc && check_var_typ_eq t1' t2') true tl1 tl2
+            else false)
+        | _ -> false
     in
     let are_coord (s1: string) (s2: string) : bool =
-        if Assoc.mem s1 m && Assoc.mem s2 m
+        (if Assoc.mem s1 m && Assoc.mem s2 m
         then (match (Assoc.lookup s1 m, Assoc.lookup s2 m) with
         | (Some Coord, Some Coord) -> true
         | _ -> false)
-        else false
+        else false)
     in
-    if are_coord start target then psi_update start target else ps
+    let start = string_of_param_inv (start_string, stl) in
+    let to_add = ((target_string, ttl), (f, pml)) in
+    if are_coord start_string target_string then
+        if Assoc.mem start ps then 
+        (let start_lst = Assoc.lookup start ps in
+            if (List.fold_left (fun acc ((s2, tl2), (_, _)) -> acc ||
+                    (if (List.length ttl = List.length tl2) 
+                    then List.fold_left2 (fun acc' t1 t2 -> acc' || (check_var_typ_eq t1 t2)) false ttl tl2
+                    else false))
+                false start_lst)
+            then raise (TypeException ("Duplicate transformation for " ^ start ^ "->" ^ string_of_param_inv (target_string, ttl) ^ " in the declaration of " ^ f))
+            else Assoc.update start (to_add :: start_lst) ps
+        )
+        else Assoc.update start [to_add] ps 
+    else ps
 
-let update_psi_matrix (v: string) (t: typ) (m: mu) (ps: psi) : psi =
+let update_psi_matrix (f: string) (t: typ) (m: mu) (ps: psi) : psi =
     match t with
     | TransTyp ((VarTyp (s1, pml1)), (VarTyp (s2, pml2))) ->
-        update_psi (v, []) s1 s2 m ps
+        update_psi (s1, pml1) (s2, pml2) (f, [])  m ps
     | _ -> ps
 
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
@@ -555,46 +566,58 @@ let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parameteriz
 (* Super expensive.  We're essentially relying on small contexts *)
 let check_in_exp (start_exp: exp) (start_typ: typ) (target: typ) (g: gamma) (d: delta) 
 (pm: parameterization) (p: phi) (ps: psi) : exp = 
-    let rec psi_path_rec (target: string) (to_search: (string * exp) Queue.t) (found: string list) : exp =
-        let rec psi_lookup_rec (next: string) : ((string * (typ list)) Assoc.context) option =
-            if Assoc.mem next ps then Some (Assoc.lookup next ps)
-            else match Assoc.lookup next d with
-            | (_, VarTyp (s, _)) -> 
-                (* psi_lookup_rec s *)
-                failwith "unimplemented3"
+    debug_print ">> check_in_exp";
+    let rec psi_path_rec ((ts, ttl): param_inv) (to_search: (param_inv * exp) Queue.t) (found: param_inv list) : exp =
+        let rec check_var_typ_eq (t1: typ) (t2: typ) : bool =
+            match (t1, t2) with
+            | TopVecTyp n1, TopVecTyp n2 -> n1 = n2
+            | VarTyp (s1, tl1), VarTyp (s2, tl2) -> s1 = s2 && 
+                (if (List.length tl1 = List.length tl2) 
+                then List.fold_left2 (fun acc t1' t2' -> acc && check_var_typ_eq t1' t2') true tl1 tl2
+                else false)
+            | _ -> false
+        in
+        let rec psi_lookup_rec ((s, tl): param_inv) : ((param_inv * param_inv) list) option =
+            let s_lookup = string_of_typ (VarTyp (s, tl)) in
+            if Assoc.mem s_lookup ps then Some (Assoc.lookup s_lookup ps)
+            else match delta_lookup_unsafe s tl d with
+            | VarTyp (s', tl') -> 
+                psi_lookup_rec (s', tl')
             | _ -> None
         in
-        let rec update_search_and_found (vals: (string * (string * (typ list))) list) (e: exp) : string list =
+        let rec update_search_and_found (vals: (param_inv * param_inv) list) (e: exp) : param_inv list =
             match vals with
             | [] -> found
-            | (s, (v, pml))::t -> if List.mem s found then update_search_and_found t e 
+            | ((s, tl), (v, pml))::t -> 
+                if List.fold_left (fun acc (s2, tl2) -> acc || check_var_typ_eq (VarTyp (s, tl)) (VarTyp (s2, tl2))) false found 
+                then update_search_and_found t e 
                 else 
                 let e' = 
                     if Assoc.mem v g then (Binop (Times, Var v, e))
                     else if Assoc.mem v p then (FnInv (v, [e], pml))
                     else failwith ("Typechecker error: unknown value " ^ v ^ " loaded into psi") in
                 (* Note the update to the stateful queue *)
-                (Queue.push (s, e') to_search;  s :: update_search_and_found t e)
+                (Queue.push ((s, tl), e') to_search;  (s, tl) :: update_search_and_found t e)
         in
-        let (next, e) = if Queue.is_empty to_search 
-            then (raise (TypeException ("Cannot find a path from " ^ (List.hd (List.rev found)) ^ " to " ^ target)))
+        let ((ns, ntl), e) = if Queue.is_empty to_search 
+            then (raise (TypeException ("Cannot find a path from " ^ (string_of_param_inv (List.hd (List.rev found))) ^ " to " ^ string_of_param_inv (ts, ttl))))
             else Queue.pop to_search 
         in 
         (* We use the 'with_strictness' version to avoid throwing an exception *)
-        if is_subtype_with_strictness (VarTyp (next, [])) (VarTyp (target, [])) d pm false then e
-        else (match psi_lookup_rec next with 
-            | None -> psi_path_rec target to_search found
-            | Some next_cont -> psi_path_rec target to_search (update_search_and_found (Assoc.bindings next_cont) e))
+        if is_subtype_with_strictness (VarTyp (ns, ntl)) (VarTyp (ts, ttl)) d pm false then e
+        else (match psi_lookup_rec (ns, ntl) with 
+            | None -> psi_path_rec (ts, ttl) to_search found
+            | Some next_cont -> psi_path_rec (ts, ttl) to_search (update_search_and_found next_cont e))
     in
     match (start_typ, target) with
-    | (VarTyp (s1, _), VarTyp (s2, _)) -> failwith "unimplemented4"
-        (* if not (Assoc.mem s1 d) then
+    | (VarTyp (s1, tl1), VarTyp (s2, tl2)) -> 
+        if not (Assoc.mem s1 d) then
         raise (TypeException ("Unknown tag " ^ (string_of_typ start_typ)))
         else if not (Assoc.mem s2 d) then
         raise (TypeException ("Unknown tag " ^ (string_of_typ target)))
         else if s1 = s2 then start_exp else
-        let q = Queue.create () in Queue.push (s1, start_exp) q;
-        psi_path_rec s2 q [s1] *)
+        let q = Queue.create () in Queue.push ((s1, tl1), start_exp) q;
+        psi_path_rec (s2, tl2) q [(s1, tl1)]
     | _ -> raise (TypeException 
     ("Invalid in expression between " ^ (string_of_typ start_typ) ^ " and " ^ (string_of_typ target)))
 
@@ -678,6 +701,7 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
     (* find definition for function in phi *)
     (* looks through overloaded all possible definitions of the function *)
     let find_fn_inv ((_, params, rt, pr) : fn_type) : (typ Assoc.context) option =
+        debug_print ">> find_fn_inv";
         (* This function asserts whether or not the function invocation matches the function given *)
         (* In particular, this checks whether the given function matches the given parameterization and parameters *)
         (* If it is valid, this returns (Some 'map from parameter to type'), otherwise returns 'None' *)
@@ -698,6 +722,8 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
                     | (_, AbsTyp s) -> update_inference arg_typ s fpm
                     (* Note that transtyp order doesn't matter; lots of commutivity *)
                     | (TransTyp (al, ar), TransTyp (pl, pr)) -> unify_param ar pr (unify_param al pl fpm)
+                    | (VarTyp (s1, tl1), VarTyp (s2, tl2)) -> if List.length tl1 = List.length tl2 then
+                        List.fold_left2 (fun acc l r -> unify_param l r acc) fpm tl1 tl2 else fpm
                     | _ -> fpm
                 in
                 let gen_pml (inferred : (typ Assoc.context) option) : (typ list) option =
@@ -707,6 +733,7 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
                         (* already handled by the typechecker when checking that the function declaration parameter dependencies were valid *)
                         | AbsTyp s -> Assoc.lookup s fpm
                         | TransTyp (l, r) -> TransTyp(reduce_typ l fpm, reduce_typ r fpm)
+                        | VarTyp (s, tl) -> VarTyp(s, List.map (fun x -> reduce_typ x fpm) tl)
                         | _ -> t
                     in
                     (* Correctly orders the resulting pml to match the parameters of the function parameterization list *)
@@ -730,6 +757,7 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
                 match t with
                 | AbsTyp s -> Assoc.lookup s fpm
                 | TransTyp (t1, t2) -> TransTyp (in_function_t t1, in_function_t t2)
+                | VarTyp (s, tl) -> VarTyp (s, List.map in_function_t tl)
                 | _ -> t
             in
             match c with
@@ -738,6 +766,7 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
         in
         (* Check that the parameterization conforms to the bounds provided *)
         let param_check = 
+            debug_print ">> param_check";
             List.fold_left2 (fun acc given_pm (s, c) -> 
             (match acc with 
             | None -> None
@@ -753,6 +782,7 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
             match t with
             | AbsTyp s -> Assoc.lookup s pm_map
             | TransTyp (s1, s2) -> TransTyp (read_pm s1, read_pm s2)
+            | VarTyp (s, tl) -> VarTyp (s, List.map read_pm tl)
             | _ -> t
         in
         let params_typ_corrected = List.map read_pm params_typ in
@@ -763,9 +793,7 @@ and check_fn_inv (d : delta) (g : gamma) (p : phi) (args : args) (i : string) (p
         else None
     in
     (match find_fn_inv fn_invocated with
-    | Some l -> ((i, args_exp), match rt with
-        | AbsTyp rt' -> Assoc.lookup rt' l
-        | _ -> rt)
+    | Some l -> ((i, args_exp), replace_abstype rt l)
     | None -> raise (TypeException ("No overloaded function declaration of " ^ i
     ^ (if List.length pml > 0 then "<" ^ (String.concat "," (List.map string_of_typ pml)) ^ ">" else "")
     ^ " matching types (" ^ (String.concat "," (List.map string_of_typ args_typ)) ^ ") found"))) 
@@ -863,7 +891,7 @@ and check_assign (t: typ) (s: string) (etyp : typ)  (d: delta) (g: gamma) (p: ph
     (* Check that t, if not a core type, is a registered tag *)
     let rec check_tag (t: typ) : unit =
         match t with
-        | VarTyp (s, pml) -> delta_lookup s pml d |> ignore; ()
+        | VarTyp (s, pml) -> delta_lookup s pml d pm |> ignore; ()
         | TransTyp (t1, t2) -> check_tag t1; check_tag t2; ()
         | _ -> ()
     in
@@ -908,7 +936,7 @@ let check_tag (s: string) (pm: parameterization) (tm : tag_mod option) (t: typ) 
     let rec check_coord (t : typ) : unit =
         match t with
         | VarTyp (s, pml) -> (match Assoc.lookup s m with 
-            | None -> check_coord (delta_lookup s pml d)
+            | None -> check_coord (delta_lookup s pml d pm)
             | Some Coord -> raise (TypeException "Cannot declare a coord as a subtype of another coord"))
         | _ -> ()
     in

@@ -1,1 +1,1 @@
-Fatal error: exception Lingl__Check.DimensionException(2, 3)
+Fatal error: exception Lingl__Check.TypeException("mismatched types for var decl: expected int x, found bool")

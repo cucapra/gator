@@ -1,5 +1,0 @@
-tag a is vec2;
-tag p<`t : vec2> is vec2;
-tag pl<`t : vec2> is `t;
-tag r<`t : vec2> is vec3;
-tag l<`t : vec> is vec2;

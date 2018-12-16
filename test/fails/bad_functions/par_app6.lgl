@@ -10,26 +10,9 @@ declare vec4 vec4(vec3 v, float f);
 declare vec3 vec3(vec4 v);
 declare float dot<`t : vec>(norm<`t> v1, norm<`t> v2);
 
-hom<`t> homify<`t : vec3>(`t v) {
-    return vec4(v as vec3, 1.) as hom<`t>;
-}
-
-hom<`t> homNorm<`t : vec3>(norm<`t> v) {
-    return vec4(v as vec3, 0.) as hom<`t>;
-}
-
-`t hom_reduce<`t : vec3>(hom<`t> v) {
-    return vec3(v as vec4) as `t;
-}
-
 rot<`t> rotate<`t : vec3>(`t v) {
     `t->rot<`t> rotation_matrix = [[0., -1., 0.], [1., 0., 0.], [0., 0., 1.]];
     return rotation_matrix * v;
-}
-
-`t->rot<`u> rotate_matrix<`t : vec3, `u : vec3>(`t->`u m) {
-    `u->rot<`u> rotation_matrix = [[0., -1., 0.], [1., 0., 0.], [0., 0., 1.]];
-    return rotation_matrix * m;
 }
 
 `t rot_reduce<`t : vec3>(rot<rot<rot<rot<`t>>>> v) {

@@ -1,1 +1,1 @@
-Fatal error: exception Lingl__Check.DimensionException(2, 3)
+Fatal error: exception Lingl__Check.TypeException("Cannot unify vec2 and vec3")

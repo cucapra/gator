@@ -83,4 +83,4 @@ let string_of_binop (op: binop) (left: string) (right: string) : string =
 
  let debug = false
 
- let debug_print (s: string) : unit = if debug then Printf.printf "\n%s" s
+ let debug_print (s: string) : unit = if debug then Printf.printf "%s\n" s
