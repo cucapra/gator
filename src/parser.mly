@@ -85,7 +85,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %left TRANS
 %left DOT
 %left AND OR
-%left NOT EQ LEQ LWICK GEQ RWICK 
+%left NOT EQ LEQ GEQ LWICK RWICK
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
@@ -268,9 +268,9 @@ comm_element:
   | x = ID; LPAREN; a = arglst; RPAREN; 
       { FnCall(x, a, []) }
   | x = ID; LWICK; p = typlst; RWICK; LPAREN; RPAREN; 
-      { FnCall(x, [], p)}
+      { FnCall(x, [], p) }
   | x = ID; LWICK; p = typlst; RWICK; LPAREN; a = arglst; RPAREN; 
-      { FnCall(x, a, p)}
+      { FnCall(x, a, p) }
 ; 
 
 constrain:
@@ -385,6 +385,10 @@ exp:
       { FnInv(x, [], []) }
   | x = ID; LPAREN; a = arglst; RPAREN;
       { FnInv(x, a, []) }
+  | e1 = exp; LWICK; e2 = exp 
+      { Binop(Lt,e1,e2) }
+  | e1 = exp; RWICK; e2 = exp 
+      { Binop(Gt,e1,e2) }
   | x = ID; LWICK; t = typlst; RWICK; LPAREN; a = arglst; RPAREN;
       { FnInv(x, a, t) }
   | x = ID; LWICK; t = typlst; RWICK; LPAREN; RPAREN;
@@ -411,20 +415,16 @@ exp:
       { Binop(Eq,e1,e2) }
   | e1 = exp; LEQ; e2 = exp 
       { Binop(Leq,e1,e2) }
-  | e1 = exp; LWICK; e2 = exp 
-      { Binop(Lt,e1,e2) }
   | e1 = exp; GEQ; e2 = exp 
       { Binop(Geq,e1,e2) }
-  | e1 = exp; RWICK; e2 = exp 
-      { Binop(Gt,e1,e2) }
   | e1 = exp; OR; e2 = exp 
       { Binop(Or,e1,e2) }
   | e1 = exp; AND; e2 = exp 
       { Binop(And,e1,e2) }
   | e1 = exp; DOT; s = ID;
       { Unop(Swizzle s,e1) }
-  | e1 = exp; LBRACK; e2 = exp; RBRACK;
-      { Binop(Index,e1,e2) }
+  | x = ID; LBRACK; e2 = exp; RBRACK;
+      { Binop(Index,Var(x),e2) }
 ;
 
 %%
