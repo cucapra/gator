@@ -38,24 +38,23 @@ type exp =
 
 and args = exp list
 
-type tag_mod =
+type modification =
     | Coord
-
-type fn_mod = 
     | Canon
 
 (* function parameterization,
  * which may extend another type. *)
 type parameterization = constrain Assoc.context
+type parameterization_decl = (string * modification option * constrain) list
 
 (* function parameters *)
 (* arguments may have an optional parameterization type *)
 type params = (string * typ) list
 type ret_type = typ
 (* our functions are not first-order! *)
-type fn_type = fn_mod option * params * ret_type * parameterization
+type fn_type = params * ret_type * parameterization_decl
 (* function declaration *)
-type fn_decl = string * fn_type
+type fn_decl = modification option * string * fn_type
 type extern_decl =
     | ExternFn of fn_decl
     | ExternVar of (typ * exp)
@@ -78,12 +77,11 @@ and if_block = exp * comm list
 type fn = fn_decl * comm list
 
 (* tag declaration statements *)
-type tag_decl = tag_mod option * string * parameterization * typ
+type tag_decl = modification option * string * parameterization_decl * typ
 
 (* program *)
 (* Consists of list of (external) declare functions,
  * list of vector space tags,
  * and list of functions with at least one void main() function. *)
-type prog =
-    | Prog of extern_decl list * tag_decl list * fn list
+type prog = extern_decl list * tag_decl list * fn list
 

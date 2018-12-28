@@ -13,6 +13,11 @@ let tr_fst ((x, _, _): 'a * 'b * 'c) : 'a = x
 let tr_snd ((_, x, _): 'a * 'b * 'c) : 'b = x
 let tr_thd ((_, _, x): 'a * 'b * 'c) : 'c = x
 
+let string_of_option_removed (o : 'a option) (f : 'a -> string) : string =
+  match o with
+  | Some v -> f v
+  | None -> ""
+
 let string_of_lst (f: ('a -> string)) (l: 'a list) : string =
   "[" ^ (String.concat ", " (List.map f l)) ^ "]"
 

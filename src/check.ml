@@ -21,16 +21,16 @@ type delta = (parameterization * typ) Assoc.context
 type phi = fn_type Assoc.context
 
 (* Tag modifications *)
-type mu = (tag_mod option) Assoc.context
+type mu = (modification option) Assoc.context
 
 (* Transformation context *)
 (* Effectively has the type 'start->(target, f<pml>) list' for types start and target (both restricted implicitely to var types), function/matrix name f, and function parameter list pml *)
 (* Note that the resulting thing could be a function with a concrete parameterization, hence the typ list (which is empty for matrices) *)
-type psi = ((param_inv * param_inv) list) Assoc.context
+type psi = ((typ * param_inv) list) Assoc.context
 
 let string_of_delta (d : delta) = Assoc.to_string (fun (pm, t) -> "(" ^ string_of_parameterization pm ^ ", " ^ string_of_typ t ^ ")") d
 let string_of_param_inv ((s, tl) : param_inv) = string_of_typ (VarTyp (s, tl))
-let string_of_psi (ps : psi) = Assoc.to_string (fun x -> string_of_arr (fun (p1, p2) -> "(" ^ string_of_param_inv p1 ^ ", " ^ string_of_param_inv p2 ^ ")") x) ps
+let string_of_psi (ps : psi) = Assoc.to_string (fun x -> string_of_arr (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_param_inv p ^ ")") x) ps
 
 let trans_top (n1: int) (n2: int) : typ =
     TransTyp (BotVecTyp n1, TopVecTyp n2)
@@ -499,7 +499,7 @@ let check_parameterization (d: delta) (pm: parameterization) : unit =
     in
     check_para_list (Assoc.bindings pm) Assoc.empty
 
-let update_psi ((start_string, stl): param_inv) ((target_string, ttl): param_inv) ((f, pml): param_inv) (m: mu) (ps: psi) : psi =
+let update_psi ((start_string, stl): param_inv) (target: typ) ((f, pml): param_inv) (m: mu) (ps: psi) : psi =
     (* Update psi, raising errors in case of a duplicate *)
     (* If the given type is not valid in psi, psi is returned unmodified *)
     (* Will raise a failure if a non-concrete vartyp is used *)
@@ -518,10 +518,11 @@ let update_psi ((start_string, stl): param_inv) ((target_string, ttl): param_inv
         then (match (Assoc.lookup s1 m, Assoc.lookup s2 m) with
         | (Some Coord, Some Coord) -> true
         | _ -> false)
-        else false)
+        else failwith ("Expected to find " ^ s1 ^ " and " ^ s2 ^ " in mu"))
     in
     let start = string_of_param_inv (start_string, stl) in
-    let to_add = ((target_string, ttl), (f, pml)) in
+    let to_add = (target, (f, pml)) in
+    let target_string = string_of_typ target in
     if are_coord start_string target_string then
         if Assoc.mem start ps then 
         (let start_lst = Assoc.lookup start ps in
@@ -538,8 +539,9 @@ let update_psi ((start_string, stl): param_inv) ((target_string, ttl): param_inv
 
 let update_psi_matrix (f: string) (t: typ) (m: mu) (ps: psi) : psi =
     match t with
-    | TransTyp ((VarTyp (s1, pml1)), (VarTyp (s2, pml2))) ->
-        update_psi (s1, pml1) (s2, pml2) (f, [])  m ps
+    | TransTyp (t1, t2) ->
+    begin
+    end
     | _ -> ps
 
 (* Type check parameter; make sure there are no name-shadowed parameter names *)

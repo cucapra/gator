@@ -27,6 +27,14 @@ let string_of_constraint (c: constrain) : string =
     | TypConstraint t -> string_of_typ t
     | AnyTyp -> ""
 
+let string_of_modification (m: modification) : string =
+    match m with
+    | Coord -> "coord"
+    | Canon -> "canon"
+
+let string_of_mod_option (m: modification option) : string =
+    string_of_option_removed m string_of_modification ^ " "
+
 let string_of_param ((s, t): string * typ) : string =
     (string_of_typ t) ^ " " ^ s
     
@@ -36,13 +44,14 @@ let string_of_params (p: params) : string =
 let string_of_parameterization (pm : parameterization) : string = 
     Assoc.to_string string_of_constraint pm
 
-let string_of_fn_type ((fm, p, r, pm): fn_type) : string = (match fm with | Some Canon -> "canon " | None -> "") ^ 
-    (string_of_typ r) ^ " <" ^ (string_of_parameterization pm) ^ ">" ^ "(" ^ (string_of_params p) ^ ")"
+let string_of_fn_type ((p, r, pml): fn_type) : string = 
+    (string_of_typ r) ^ " <" ^ (string_of_lst (fun (s, m, c) -> 
+        s ^ " : " ^ string_of_mod_option m
+        ^ string_of_constraint c) pml) ^ ">" 
+    ^ "(" ^ (string_of_params p) ^ ")"
 
-let string_of_fn_decl (d: fn_decl) : string = 
-    match d with
-    | (id, (fm, p, r, pm)) -> (match fm with | Some Canon -> "canon " | None -> "") ^
-        (string_of_typ r) ^ " " ^ id ^ " <" ^ (string_of_parameterization pm) ^ ">" ^ " (" ^ (string_of_params p) ^ ")"
+let string_of_fn_decl ((fm, id, ft): fn_decl) : string = 
+    string_of_mod_option fm ^ id ^ " " ^ string_of_fn_type ft
 
 let rec string_of_exp (e:exp) : string =
     let string_of_arr (a: exp list) : string = 
@@ -92,12 +101,11 @@ string_of_comm_list (cl : comm list) : string =
 
 let rec string_of_tags (t : tag_decl list) : string =
     match t with | [] -> "" | (m, s, pm, a)::t -> 
-    let ms = match m with | None -> "" | Some Coord -> " coord " in
-    "tag " ^ ms ^ s ^ (string_of_parameterization pm) ^ " is " ^ (string_of_typ a) ^ ";\n" ^ (string_of_tags t)
+    "tag " ^ string_of_mod_option m ^ s ^ (string_of_parameterization pm) 
+    ^ " is " ^ (string_of_typ a) ^ ";\n" ^ (string_of_tags t)
 
-let string_of_fn (f : fn) : string = 
-    match f with
-    | (d, c1) -> string_of_fn_decl d ^ "{" ^ (string_of_comm_list c1) ^"}"
+let string_of_fn ((d, c1) : fn) : string = 
+    string_of_fn_decl d ^ "{" ^ (string_of_comm_list c1) ^"}"
 
 let rec string_of_fn_lst (fl : fn list) : string = 
     string_of_lst string_of_fn fl
@@ -108,6 +116,5 @@ let string_of_declare (f: fn) : string =
 let string_of_declare_lst (fl : fn list) : string = 
     string_of_lst string_of_declare fl
 
-let string_of_prog (e : prog) : string =
-    match e with
-    | Prog (d, t, f) -> (string_of_tags t) ^ (string_of_fn_lst f) 
+let string_of_prog ((d, t, f) : prog) : string =
+    (string_of_tags t) ^ (string_of_fn_lst f) 

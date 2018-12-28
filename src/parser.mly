@@ -106,20 +106,26 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 
 main:
   | t = taglst; d = declarelst; e = fnlst; EOL 
-      { Prog(d, t, e) }
+      { (d, t, e) }
   | t = taglst; d = declarelst; EOL              
-      { Prog(d, t, []) }
+      { (d, t, []) }
   | d = declarelst; e = fnlst; EOL
-      { Prog(d, [], e)}
+      { (d, [], e)}
   | d = declarelst; EOL
-      { Prog(d, [], [])}
+      { (d, [], [])}
   | t = taglst; e = fnlst; EOL 
-      { Prog([], t, e) }
+      { ([], t, e) }
   | e = fnlst; EOL             
-      { Prog([], [], e) }
+      { ([], [], e) }
   | t = taglst; EOL              
-      { Prog([], t, []) }
+      { ([], t, []) }
 ;
+
+modification:
+  | CANON 
+      { Canon }
+  | COORD 
+      { Coord }
 
 declarelst: 
   | DECLARE; d = decl_extern; SEMI;
@@ -129,11 +135,11 @@ declarelst:
 
 decl_extern:
   | t = typ; x = ID; p = fn_params; 
-      { ExternFn((x, (None, fst p, t, snd p))) }
+      { ExternFn((None, x, (fst p, t, snd p))) }
   | t = typ; x = ID;
       { ExternVar(t, Var x) }
-  | CANON; t = typ; x = ID; p = fn_params; 
-      { ExternFn((x, (Some Canon, fst p, t, snd p))) }
+  | m = modification; t = typ; x = ID; p = fn_params; 
+      { ExternFn((Some m, x, (fst p, t, snd p))) }
 
 taglst: 
   | t = tag               
@@ -147,10 +153,10 @@ tag:
       { (None, x, Assoc.empty, t) }
   | TAG; x = ID; LWICK; pt = parameterizations; RWICK; IS; t = typ; SEMI; 
       { (None, x, pt, t) }
-  | TAG; COORD; x = ID; IS; t = typ; SEMI; 
-      { (Some Coord, x, Assoc.empty, t) }
-  | TAG; COORD; x = ID; LWICK; pt = parameterizations; RWICK; IS; t = typ; SEMI; 
-      { (Some Coord, x, pt, t) }
+  | TAG; m = modification; x = ID; IS; t = typ; SEMI; 
+      { (Some m, x, Assoc.empty, t) }
+  | TAG; m = modification; x = ID; LWICK; pt = parameterizations; RWICK; IS; t = typ; SEMI; 
+      { (Some m, x, pt, t) }
 ;
 
 fnlst: 
@@ -179,28 +185,30 @@ params:
 
 parameterization:
   | BACKTICK; t = ID;
-      { (t, AnyTyp) }
+      { (t, None, AnyTyp) }
   | BACKTICK; t = ID; COLON; c = constrain;
-      { (t, c) }
+      { (t, None, c) }
+  | BACKTICK; t = ID; COLON; m = modification; c = constrain;
+      { (t, Some m, c) }
 
 parameterizations:
   | p = parameterization;
-      { Assoc.update (fst p) (snd p) Assoc.empty }
+      { [p] }
   | p = parameterization; COMMA; pl = parameterizations;
-      { Assoc.update (fst p) (snd p) pl }
+      { p::pl }
 
 fn_decl:
   | t = typ; x = ID; p = fn_params;
-      { (x, (None, fst p, t, snd p)) }
-  | CANON; t = typ; x = ID; p = fn_params;
-      { (x, (Some Canon, fst p, t, snd p)) }
+      { (None, x, (fst p, t, snd p)) }
+  | m = modification; t = typ; x = ID; p = fn_params;
+      { (Some m, x, (fst p, t, snd p)) }
 ;
 
 fn_params:
   | LPAREN; RPAREN;
-      { ([], Assoc.empty) }
+      { ([], []) }
   | LPAREN; p = params ; RPAREN;
-      { (p, Assoc.empty) }
+      { (p, []) }
   | LWICK; pt = parameterizations; RWICK; LPAREN; RPAREN;
       { ([], pt) }
   | LWICK; pt = parameterizations; RWICK; LPAREN; p = params ; RPAREN;
