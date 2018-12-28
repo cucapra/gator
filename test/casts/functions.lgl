@@ -22,10 +22,10 @@ canon d _asd<`t : vec2>(`t v) {
     return m * v + [0., 0., 1.];
 }
 
-canon `t _collapse<`t : vec2>(d v) {
+canon `t _collapse<`t : coord vec2>(d v) {
     d->`t m = [[1., 0., 0.], [0., 1., 0.]];
-    return m * v; // we can't use 'in' cause we don't allow it for the abstract `t atm
-}
+    return v in `t; // we can use 'in' since `t must be a coord (see abstract.lgl)
+} 
 
 void main() {
     a avec = [1., 1.];

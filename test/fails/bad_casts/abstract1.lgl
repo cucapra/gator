@@ -1,0 +1,10 @@
+tag coord a is vec2;
+tag coord b is vec2;
+
+`u app<`t : coord vec2, `u : vec2>(`t v, `t->`u m) {
+    return v in `u; // `u is not a coord, so a bad cast
+}
+
+void main() {
+    print 1;
+}
