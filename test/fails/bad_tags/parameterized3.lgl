@@ -1,0 +1,14 @@
+tag a is vec2;
+tag a2 is a;
+tag b is vec3;
+tag p<`t : vec2> is vec2;
+tag pl<`t : vec2> is `t;
+tag bl<`t : b> is `t;
+tag pany<`t : vec> is vec2;
+tag p3<`t : vec3> is pany<`t>;
+tag r<`t : a> is vec3;
+
+void main() {
+    r<a> s = [1., 1., 1.];
+    a fail = r; // Not a subtype
+}

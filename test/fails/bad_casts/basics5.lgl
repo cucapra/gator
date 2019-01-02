@@ -1,0 +1,5 @@
+tag coord a is vec2;
+
+void main() {
+    a fail = [1., 2.] in a; // Cannot apply 'in' expressions to the bottom type
+}
