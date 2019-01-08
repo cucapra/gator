@@ -22,7 +22,12 @@ canon d _asd<`t : vec2>(`t v) {
     return m * v + [0., 0., 1.];
 }
 
-canon `t _collapse<`t : coord vec2>(d v) {
+canon `t _collapse_e<`t : coord e>(d v) {
+    d->`t m = [[1., 0., 0.], [0., 1., 0.]];
+    return v in `t; // we can use 'in' since `t must be a coord (see abstract.lgl)
+}
+
+canon `t _collapse_a<`t : coord a>(d v) {
     d->`t m = [[1., 0., 0.], [0., 1., 0.]];
     return v in `t; // we can use 'in' since `t must be a coord (see abstract.lgl)
 } 
@@ -33,8 +38,8 @@ void main() {
     b s1 = avec in b;  // = _ab(avec)
     c s2 = avec in c;  // = _ac<a>(avec) -- has to use generic inference to figure out <a>
     d s3 = avec in d; // = _asd<a>(avec)
-    e s4 = avec in e;  // = _collapse<e>(_asd<a>(avec))
-    a s5 = avec in c in d in a; // = _collapse<a>(_asd<c>(_ac<a>(avec))) -- not the identity of avec, a.k.a. why _asd is written wrong
+    e s4 = avec in e;  // = _collapse_e<e>(_asd<a>(avec))
+    a s5 = avec in c in d in a; // = _collapse_a<a>(_asd<c>(_ac<a>(avec))) -- not the identity of avec, a.k.a. why _asd is written wrong
 
     print s1;
     print s2;

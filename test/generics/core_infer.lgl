@@ -10,6 +10,10 @@ tag color is vec3;
     return m * x;
 }
 
+`u app_mat2<`t : vec, `u : vec, `v : `t->`u>(`v m, `t x) {
+    return m * x;
+}
+
 `t id_vec3<`t : vec3>(`t x) {
     `t->`t id = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]];
     return x;
@@ -41,6 +45,7 @@ void main() {
     print id_vec3([2., 1., 1.]);
 
     print app_mat([[1., 0.], [0., 1.], [1., 1.]], [1., 2.]);
+    // print app_mat2([[1., 0.], [0., 1.], [1., 1.]], [1., 2.]);
     print project_r3_r2([1., 1., 1.]);
 
     print triple(3.);

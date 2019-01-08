@@ -1,24 +1,24 @@
-tag model is vec3;
-tag world is vec3;
-tag camera is vec3;
-tag rot<`t : vec3> is vec3; // Rotated by 90 degrees counterclockwise around the z-axis as an example
+tag coord model is vec3;
+tag coord world is vec3;
+tag coord camera is vec3;
+tag coord rot<`t : vec3> is vec3; // Rotated by 90 degrees counterclockwise around the z-axis as an example
 tag norm<`t : vec> is `t;
-tag hom<`t : vec3> is vec4;
+tag coord hom<`t : vec3> is vec4;
 
-declare norm<`t> normalize<`t : vec>(`t v);
+declare canon norm<`t> normalize<`t : vec>(`t v);
 declare vec4 vec4(vec3 v, float f);
 declare vec3 vec3(vec4 v);
 declare float dot<`t : vec>(norm<`t> v1, norm<`t> v2);
 
-hom<`t> homify<`t : vec3>(`t v) {
+canon hom<`t> homify<`t : vec3>(`t v) {
     return vec4(v as vec3, 1.) as hom<`t>;
 }
 
-hom<`t> homNorm<`t : vec3>(norm<`t> v) {
+canon hom<`t> homNorm<`t : vec3>(norm<`t> v) {
     return vec4(v as vec3, 0.) as hom<`t>;
 }
 
-`t hom_reduce<`t : vec3>(hom<`t> v) {
+canon `t hom_reduce<`t : vec3>(hom<`t> v) {
     return vec3(v as vec4) as `t;
 }
 
@@ -28,7 +28,7 @@ hom<`t> homNorm<`t : vec3>(norm<`t> v) {
     return homReduce * m * asHomFlat;
 }
 
-rot<`t> rotate<`t : vec3>(`t v) {
+canon rot<`t> rotate<`t : vec3>(`t v) {
     `t->rot<`t> rotation_matrix = [[0., -1., 0.], [1., 0., 0.], [0., 0., 1.]];
     return rotation_matrix * v;
 }
@@ -38,7 +38,7 @@ rot<`t> rotate<`t : vec3>(`t v) {
     return rotation_matrix * m;
 }
 
-`t rot_reduce<`t : vec3>(rot<rot<rot<rot<`t>>>> v) {
+canon `t rot_reduce<`t : vec3>(rot<rot<rot<rot<`t>>>> v) {
     return v as `t;
 }
 
@@ -64,6 +64,5 @@ void main() {
     model->rot<world> mtwr = rotate_matrix<model, world>(hom_matrix_reduce<model, world>(uModel)); // Can't synthesize this (yet?)
 
     print rm;
-    print pos;
     print mtwr;
 }

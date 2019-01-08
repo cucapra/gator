@@ -1,14 +1,24 @@
 tag coord a is vec2;
-tag coord b is vec3;
+tag coord b is vec2;
+tag coord c is vec2;
 
-canon b f<`t : vec2>(`t x) { // this is legal :/
-    return [1., 2., 3.];
+canon b _ab(a v) {
+    a->b _ab = [[1., 2.], [1., 2.]]; // not a duplicate cause no recursion
+    return _ab * v;
 }
 
-canon b g(a x) { // this is not (duplicate definition of a->b)
-    return [2., 2., 2.];
+c ac(a v, b->c m) {
+    return v in c; // = m * _ab(v)
+}
+
+canon c _ac<`t : a>(`t v) {
+    return ac(v, [[1., 1.], [1., 2.]]); // cause v <: a
 }
 
 void main() {
-    print 1;
+    a avec = [1., 1.];
+    c->b __cb = [[2., -1.], [-1., 1.]];
+
+    a fail = avec in c in a;  // no path should be findable
+    print fail;
 }

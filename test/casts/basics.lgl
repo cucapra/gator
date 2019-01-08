@@ -3,7 +3,7 @@ tag coord b is vec3;
 tag coord c is vec3;
 
 void main() {
-    a avec = [1., 2.];
+    a avec = [1., 2.] in a; // This is fine, since upcasting is part of 'in' expressions (and is just the identity)
     b bvec = [1., 1., 1.];
     c cvec = [1., 2., 1.];
 
