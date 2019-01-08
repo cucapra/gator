@@ -1,0 +1,5 @@
+tag par<`t : vec2> is `t->vec3;  // Must result in a vec
+
+void main() {
+    print 1;
+}

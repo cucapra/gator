@@ -1,0 +1,7 @@
+tag a is vec2;
+tag p3<`t : vec3> is vec2;
+tag p32<`t : vec3> is p3<a>; // must provide a vec2 argument to p3
+
+void main() {
+    print 1;
+}

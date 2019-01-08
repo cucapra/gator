@@ -1,0 +1,24 @@
+tag a is vec2;
+tag a2 is a;
+tag b is vec3;
+tag p<`t : vec2> is vec2;
+tag pl<`t : vec2> is `t;
+tag bl<`t : b> is `t;
+tag pany<`t : vec> is vec2;
+tag p3<`t : vec3> is pany<`t>;
+tag r<`t : a> is vec3;
+
+void main() {
+    p<a> s1 = [1., 1.];
+    pl<a> s2 = [1., 1.];
+    a s3 = s2; // Upcasting cause pl<`t> is `t
+    bl<bl<bl<b>>> s4 = [1., 1., 1.];
+    bl<b> s5 = s4;
+    pl<pl<p<pl<a2>>>> s6 = [1., 1.];
+    p<pl<a2>> s7 = s6;
+    pany<pany<b>> s8 = [0., 0.];
+    p3<r<a2>> s9 = [1., 1.];
+    pany<r<a2>> s10 = s9;
+
+    print 1;
+}

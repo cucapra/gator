@@ -13,7 +13,15 @@ let tr_fst ((x, _, _): 'a * 'b * 'c) : 'a = x
 let tr_snd ((_, x, _): 'a * 'b * 'c) : 'b = x
 let tr_thd ((_, _, x): 'a * 'b * 'c) : 'c = x
 
-let string_of_list (f: ('a -> string)) (l: 'a list) : string =
+let string_of_option_removed (f : 'a -> string) (o : 'a option) : string =
+  match o with
+  | Some v -> f v
+  | None -> ""
+
+let string_of_lst (f: ('a -> string)) (l: 'a list) : string =
+  "[" ^ (String.concat ", " (List.map f l)) ^ "]"
+
+let string_of_arr (f: ('a -> string)) (l: 'a list) : string =
   "[" ^ (String.concat ", " (List.map f l)) ^ "]"
 
 let string_of_vec (v: vec) : string = 
@@ -80,4 +88,4 @@ let string_of_binop (op: binop) (left: string) (right: string) : string =
 
  let debug = false
 
- let debug_print (s: string) : unit = if debug then Printf.printf "\n%s" s
+ let debug_print (s: string) : unit = if debug then Printf.printf "%s\n" s

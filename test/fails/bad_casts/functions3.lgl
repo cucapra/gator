@@ -5,10 +5,11 @@ canon b f(a x) {
     return [1., 2.];
 }
 
-canon b g(a x) { // duplicate canon functions
+canon b g(a x) { 
     return [2., 2.];
 }
 
 void main() {
-    print 1;
+    a avec = [1., 2.];
+    b fail = avec in b; // ambiguous path
 }

@@ -1,0 +1,6 @@
+tag coord a is vec2;
+
+void main() {
+    a avec = [1., 1.];
+	vec2 fail = avec in vec2; // Cannot use 'in' expressions to cast to the top type
+}

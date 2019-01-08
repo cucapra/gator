@@ -1,0 +1,6 @@
+tag p1<`t : vec2> is vec2;
+tag par<`t : vec3> is p1<`t>;  // violates dimension of p1
+
+void main() {
+    print 1;
+}

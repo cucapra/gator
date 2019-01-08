@@ -1,0 +1,18 @@
+tag model is vec3;
+tag world is vec3;
+tag camera is vec3;
+tag rot<`t : vec3> is vec3; // Rotated by 90 degrees counterclockwise around the z-axis as an example
+tag norm<`t : vec> is `t;
+tag hom<`t : vec3> is vec4;
+
+declare norm<`t> normalize<`t : vec>(`t v);
+declare vec4 vec4(vec3 v, float f);
+declare float dot<`t : vec>(norm<`t> v1, norm<`t> v2);
+
+hom<`t> homNorm<`t : vec>(norm<`t> v) {
+    return vec4(v as vec3, 0.) as hom<`t>; // fails cause we can't write v as vec3.
+}
+
+void main() {
+    print 1;
+}

@@ -6,5 +6,7 @@ canon b f(a x) {
 }
 
 void main() {
-    a->b fail = [[1., 1.], [1., 1.]]; // Duplicate anon matrix declares
+    a->b a_b = [[1., 1.], [1., 1.]];
+    a avec = [1., 2.];
+    b fail = avec in b; // Duplicate anon matrix declares
 }

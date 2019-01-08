@@ -1,0 +1,10 @@
+tag a is vec2;
+tag b is vec2;
+tag par<`t : vec2> is vec3;
+
+void main() {
+    par<b> p = [1., 1., 1.];
+    par<a>->a asA = [[1., 0., 0.], [0., 1., 0.]];
+    
+    print (asA * p);
+}

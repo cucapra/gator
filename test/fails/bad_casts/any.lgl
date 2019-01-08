@@ -1,0 +1,13 @@
+tag a is vec3;
+tag b is vec3;
+
+// Cannot use a canonical function with a generic return type not dependent on the input type
+// This is enforced to avoid reasoning about the universal quantifier -- necessary due to potentially infinite generic parameterization recursion
+canon `u any<`t : vec3, `u : vec3>(`t v) {
+    return v as `u;
+}
+
+void main() {
+    a avec = [1., 2., 3.];
+    b fail = avec in b;
+}

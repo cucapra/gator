@@ -58,7 +58,7 @@ let string_of_param (i, e) : string =
 let rec string_of_params (p: params) : string =
   String.concat ", " (List.map (fun (i, t) -> (string_of_typ t) ^ " " ^ i) p)
 
-let string_of_parametrization (pm : parametrization) : string = 
+let string_of_parameterization (pm : parameterization) : string = 
   Assoc.to_string string_of_constraint pm
 
 let rec string_of_comm (c: comm) : string =
@@ -89,7 +89,7 @@ and string_of_comm_list (cl : comm list) : string =
 let string_of_fn ((((id, (p, rt, pm)), cl)) : fn) : string = 
     match id with 
     | "main" -> "void main() {" ^ (string_of_comm_list cl) ^ "}"
-    | _ -> (string_of_typ rt) ^ " " ^ id ^ "<" ^ (string_of_parametrization pm) ^ ">(" ^ (string_of_params p) ^ "){" ^ (string_of_comm_list cl) ^ "}"
+    | _ -> (string_of_typ rt) ^ " " ^ id ^ "<" ^ (string_of_parameterization pm) ^ ">(" ^ (string_of_params p) ^ "){" ^ (string_of_comm_list cl) ^ "}"
 
 let string_of_prog (e : prog) : string =
     (String.concat "" (List.map string_of_fn e))

@@ -1,1 +1,1 @@
-Fatal error: exception Failure("Parsing error at character ->, character 15")
+Fatal error: exception Lingl__Check.TypeException("Cannot implicitly cast to the top vector type")

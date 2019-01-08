@@ -1,0 +1,75 @@
+tag model is vec3;
+tag world is vec3;
+tag camera is vec3;
+tag rot<`t : vec3> is vec3; // Rotated by 90 degrees counterclockwise around the z-axis as an example
+tag norm<`t : vec> is `t;
+tag hom<`t : vec3> is vec4;
+
+declare norm<`t> normalize<`t : vec>(`t v);
+declare vec4 vec4(vec3 v, float f);
+declare vec3 vec3(vec4 v);
+declare float dot<`t : vec>(norm<`t> v1, norm<`t> v2);
+
+hom<`q> homify<`q : vec3>(`q v) {
+    return vec4(v as vec3, 1.) as hom<`q>;
+}
+
+hom<`t> homNorm<`t : vec3>(norm<`t> v) {
+    return vec4(v as vec3, 0.) as hom<`t>;
+}
+
+`t hom_reduce<`t : vec3>(hom<`t> v) {
+    return vec3(v as vec4) as `t;
+}
+
+`t->`u hom_matrix_reduce<`t : vec3, `u : vec3>(hom<`t>->hom<`u> m) {
+    `t->hom<`t> asHomFlat = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [0., 0., 0.]];
+    hom<`u>->`u homReduce = [[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.]];
+    return homReduce * m * asHomFlat;
+}
+
+rot<`t> rotate<`t : vec3>(`t v) {
+    `t->rot<`t> rotation_matrix = [[0., -1., 0.], [1., 0., 0.], [0., 0., 1.]];
+    return rotation_matrix * v;
+}
+
+`t->rot<`u> rotate_matrix<`t : vec3, `u : vec3>(`t->`u m) {
+    `u->rot<`u> rotation_matrix = [[0., -1., 0.], [1., 0., 0.], [0., 0., 1.]];
+    return rotation_matrix * m;
+}
+
+`t rot_reduce<`t : vec3>(rot<rot<rot<rot<`t>>>> v) {
+    return v as `t;
+}
+
+norm<`u> normify<`t : vec, `u : vec>(`t v, `t->`u m) {
+    return normalize<`u>(m * v);
+}
+
+void main() {
+    model uPosition = [1., 1., 1.];
+    norm<model> uNorm = [0., 0., 1.];
+    hom<model>->hom<world> uModel = [[1., .5, 0., 0.], [0., 1., 0., 0.], [1., 0., 1., 0.], [0., 0., .5, 1.]];
+    hom<world>->hom<camera> uWorld = [[1., .5, 0., 0.], [0., 1., 0., 0.], [1., 0., 1., 0.], [0., 0., .5, 1.]];
+    world lightPos = [0., 1., 0.];
+    
+    float angle = dot<model>(normalize<model>(uPosition), uNorm);
+    hom<world> worldHomPosition = uModel * homify<model>(uPosition);
+    world worldPosition = hom_reduce<world>(worldHomPosition);
+    norm<camera> cameraNorm = normalize<camera>(hom_reduce<camera>(uWorld * uModel * homNorm<model>(uNorm)));
+    float camAngle = dot<camera>(cameraNorm, normalize<camera>(hom_reduce<camera>(uWorld * homify<world>(lightPos))));
+
+    print angle;
+    print worldHomPosition;
+    print worldPosition;
+    print cameraNorm;
+    print camAngle;
+
+    rot<rot<model>> rrm = rotate<rot<model>>(rotate<model>(uPosition));
+    rot<model> rm = rot_reduce<rot<model>>(rotate(rotate(rotate(rrm))));
+    model->rot<world> mtwr = rotate_matrix<model, world>(hom_matrix_reduce<model, world>(uModel));
+
+    print rrm;
+    print rm;
+    print mtwr;
+}

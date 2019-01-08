@@ -1,0 +1,38 @@
+// This entire test is kind of stupid
+// Mostly just making sure ridiculous generic requirements can actually be reasoned about
+
+tag a is vec2;
+tag b is a;
+tag c is a;
+tag pv<`t : vec2, `u : vec2> is vec2;
+tag pva<`t : a> is pv<`t, b>;
+tag r<`t : vec2> is vec3;
+tag l<`t : vec3> is vec2;
+
+l<r<`t>> lift_id<`t : vec2>(`t v) {
+    return v as l<r<`t>>;
+}
+
+pv<`t, c> into<`t : a, `u : pva<`t>>(`u v, b->c m) {
+    b bvec = ([[0., 0.], [1., 1.]] as `u->b) * v;
+    c result = m * bvec;
+    return (v + result) as pv<`t, c>; // Turns out, there's actually no way to safely go to pv<`t, c>, so we just force a cast
+}
+
+pv<`t, `t> lift_c<`t : vec2>(pv<`t, c> v) {
+    pv<`t, c>->pv<`t, `t> m = [[2., 0.], [1., 1.]];
+    return m * v;
+}
+
+pv<`q, `r> nested<`t : a, `u : a, `q : pv<`t, `t>, `r : pv<pv<`u, `u>, pva<`u>>>(`t v, `u w) {
+    `t->pv<`t, `t> m1 = [[.5, .5], [0., 1.]];
+    `u->pva<`t> m2 = [[0., 1.], [-1., 0.]];
+    pv<`t, `t> vn = m1 * v;
+    // pv<`t, c> wn = into(m2 * w, ([[1., 1.], [0., 0.]] as b->c));
+    pv<`t, c> wn = into<`t, pva<`t>>(m2 * w, ([[1., 1.], [0., 0.]] as b->c));
+    return (vn + lift_c(wn)) as pv<`q, `r>;
+}
+
+void main() {
+    print 1;
+}

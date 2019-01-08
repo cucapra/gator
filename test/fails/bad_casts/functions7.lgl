@@ -1,10 +1,19 @@
 tag coord a is vec2;
+tag coord b is vec2;
+tag coord c is vec3;
+tag coord d is vec3;
 
-canon a f<`t : vec2>(`t x) { // this fails because a->a is the only maybe 'valid' thing, but isn't counted as the type identity
-    return [1., 2.];
+canon d _asd<`t : vec2>(`t v) {
+    vec2->d m = [[1., 0.], [0., 1.], [0., 0.]];
+    return m * v + [0., 0., 1.];
+}
+
+canon `t _collapse<`t : vec2>(d v) {
+    d->`t m = [[1., 0., 0.], [0., 0., 1.]];
+    return m * v; // we can't use 'in' cause we don't allow it for the abstract `t atm
 }
 
 void main() {
     a avec = [1., 1.];
-    print avec in a;
+    c fail = avec in c;  // no path cause c is vec3
 }

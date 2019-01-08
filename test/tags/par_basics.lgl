@@ -1,0 +1,24 @@
+tag a is vec2;
+tag b is vec2;
+tag par<`t : vec2> is vec3;
+
+void main() {
+    par<vec2> p = [1., 1., 1.];
+
+    print p;
+
+    a avec = [1., 2.];
+    par<a> pa = [1., 2., 3.];
+    a->par<a> asParA = [[1., 0.], [0., 1.], [0., 0.]];
+    par<a>->a asA = [[1., 0., 0.], [0., 1., 0.]];
+    par<a> s1 = asParA * avec;
+    a s2 = asA * pa;
+
+    print s1;
+    print s2;
+
+    par<a>->par<b> parAtoB = [[0., 0., 1.], [0., 1., 0.], [1., 0., 0.]];
+    par<b> s3 = parAtoB * asParA * avec;
+
+    print s3;
+}

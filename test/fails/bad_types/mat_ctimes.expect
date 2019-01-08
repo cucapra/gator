@@ -1,1 +1,1 @@
-Fatal error: exception Lingl__Check.TypeException("dimension mismatch in ctimes operator")
+Fatal error: exception Lingl__Check.TypeException("mismatched types for var decl: expected int x, found bool")
