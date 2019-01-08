@@ -377,15 +377,20 @@ let check_bounds_list (t: typ) (l: constrain list) (d: delta) (pm: parameterizat
     List.fold_left (fun acc t' -> acc || (is_bounded_by t t' d pm)) false l
     
 
-let rec check_typ_valid (t: typ) (d: delta) (pm: parameterization) : unit =
-    debug_print ">> check_typ_valid";
-    match t with
-    | VarTyp (s, _) -> if Assoc.mem s d then () else raise (TypeException ("Unknown tag " ^ s))
-    | AbsTyp s -> if Assoc.mem s pm then () else raise (TypeException ("Unknown abstract type `" ^ s))
-    | TransTyp (t1, t2) -> check_typ_valid t1 d pm; check_typ_valid t2 d pm;
-        if is_bounded_by t1 GenVecTyp d pm && is_bounded_by t2 GenVecTyp d pm then ()
-        else raise (TypeException ("Invalid matrix type " ^ (string_of_typ t) ^ " (must be a map from vectors to vectors)"))
-    | _ -> ()
+let check_typ_valid (ogt: typ) (d: delta) (pm: parameterization) : unit =
+    let rec check_typ_valid_rec (t: typ) =
+        debug_print ">> check_typ_valid";
+        match t with
+        | VarTyp (s, tl) -> if Assoc.mem s d then (List.fold_left (fun acc t -> 
+                if is_bounded_by t GenVecTyp d pm then () else 
+                raise (TypeException ("Invalid parameterized type " ^ (string_of_typ ogt) ^ " (all generic parameters must be vectors)")))
+            () tl) else raise (TypeException ("Unknown tag " ^ s))
+        | AbsTyp s -> if Assoc.mem s pm then () else raise (TypeException ("Unknown abstract type `" ^ s))
+        | TransTyp (t1, t2) -> check_typ_valid_rec t1; check_typ_valid_rec t2;
+            if is_bounded_by t1 GenVecTyp d pm && is_bounded_by t2 GenVecTyp d pm then ()
+            else raise (TypeException ("Invalid matrix type " ^ (string_of_typ ogt) ^ " (must be a map from vectors to vectors)"))
+        | _ -> ()
+    in check_typ_valid_rec ogt
 
 let check_val (v: value) (d: delta) : typ = 
     debug_print ">> check_aval";
@@ -638,10 +643,6 @@ let rec check_typ_eq (t1: typ) (t2: typ) : bool =
 let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) (d: delta) 
 (pm: parameterization) (p: phi) (ps: psi) : exp = 
     debug_print ">> check_in_exp";
-    (* print_endline (string_of_psi ps);
-    print_endline (Assoc.to_string string_of_fn_type p);
-    print_endline (Assoc.to_string string_of_mod_option m);
-    print_endline "-------------"; *)
     let rec psi_path_rec (to_search: (typ * exp) Queue.t) (found: typ list) : exp =
         let search_phi (tl: typ) (ps_lst : (typ * par_typ_inv) list) : (typ * par_typ_inv) list =
             (* This function searches phi for anonical abstract functions that map from the given type *)

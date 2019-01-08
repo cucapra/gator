@@ -6,18 +6,17 @@
 // https://capra.cs.cornell.edu/braid/dingus/#example=phong
 
 tag coord model is vec3;
-tag coord modelHom is vec4;
 tag coord world is vec3;
-tag coord worldHom is vec4;
 tag coord camera is vec3;
-tag coord cameraHom is vec4;
+tag coord hom<`t : vec3> is vec4;
+tag norm<`t : vec> is `t;
 tag color is vec3;
-tag alphaColor is vec4;
+tag alpha<`t : color> is vec4;
 
-declare float dot<`t: genType>(`t v1, `t v2);
+declare canon norm<`t> normalize<`t : vec>(`t x);
+declare float dot<`t: vec>(norm<`t> v1, norm<`t> v2);
 declare vec4 vec4(vec3 v, float f);
 declare vec3 vec3(vec4 v);
-declare `t normalize<`t : vec>(`t x);
 declare float min(float f1, float f2);
 declare float max(float f1, float f2);
 declare `t reflect<`t : vec>(`t v1, `t v2);
@@ -25,31 +24,22 @@ declare float pow(float f1, float f2);
 
 // Annoying setup -- will be cleaned up a bunch by parametrized types
 // Note that this doesn't work with normalize properly -- we need to figure that out I suppose
-canon modelHom _mh(model v) { return vec4(v as vec3, 1.) as modelHom; }
-canon worldHom _wh(world v) { return vec4(v as vec3, 1.) as worldHom; }
-canon cameraHom _ch(camera v) { return vec4(v as vec3, 1.) as cameraHom; }
-canon model _m(modelHom v) { return vec3(v as vec4) as model; }
-canon world _w(worldHom v) { return vec3(v as vec4) as world; }
-canon camera _c(cameraHom v) { return vec3(v as vec4) as camera; }
-
-// Not canonical -- this is a weird usage
-modelHom extendNormModel(model v) { return vec4(v as vec3, 0.) as modelHom; }
-worldHom extendNormWorld(world v) { return vec4(v as vec3, 0.) as worldHom; }
-alphaColor extendColor(color v) { return vec4(v as vec3, 1.) as alphaColor; }
+canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
+canon `t hom_reduce<`t : vec3>(hom<`t> v) { return vec3(v as vec4) as `t; }
+canon hom<`t> homify_normal<`t : vec3>(norm<`t> v) { return vec4(v as vec3, 0.) as hom<`t>; }
+canon alpha<color> extendColor(color v) { return vec4(v as vec3, 1.) as alpha<color>; }
 
 // parsing error : allow empty mains
-void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView, model vNormal, world uLight) {
+void main(model vPosition, hom<model>->hom<world> uModel, hom<world>->hom<camera> uView, norm<model> vNormal, world uLight) {
     color ambient = [.1, 0., 0.];
     color diffuse = [0.4, 0.3, 0.9];
     color spec = [1.0, 1.0, 1.0];
 
-    world normal = normalize(extendNormModel(vNormal) in world);
-    world lightDir = normalize(uLight - (vPosition in world));
-    float lambertian = max(dot(normal, lightDir), 0.);
+    auto lightDir = (uLight - (vPosition in world)) in norm<world>;
+    float lambertian = max(dot(vNormal in norm<world>, lightDir), 0.);
     
-    camera viewDir = -normalize(vPosition in camera);
-    camera reflectDir = normalize(extendNormWorld(reflect(-lightDir, normal)) in camera);
-    float specular = pow(max(dot(viewDir, reflectDir), 0.0), 32.);
+    auto reflectDir = normalize(reflect(-lightDir, vNormal in norm<world>) in camera);
+    float specular = pow(max(dot(-(vPosition in norm<camera>), reflectDir), 0.0), 32.);
 
-    alphaColor gl_FragColor = extendColor(ambient + lambertian * diffuse + specular * spec);
+    alpha<color> gl_FragColor = extendColor(ambient + lambertian * diffuse + specular * spec);
 }
