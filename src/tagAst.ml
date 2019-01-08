@@ -52,9 +52,11 @@ type parameterization_decl = (string * modification option * constrain) list
 type params = (string * typ) list
 type ret_type = typ
 (* our functions are not first-order! *)
-type fn_type = params * ret_type * parameterization_decl
+type fn_type = params * ret_type * parameterization
+(* Note that the parameterization declaration is only useful when checking the function, not calling it *)
+type fn_type_decl = params * ret_type * parameterization_decl
 (* function declaration *)
-type fn_decl = modification option * string * fn_type
+type fn_decl = modification option * string * fn_type_decl
 type extern_decl =
     | ExternFn of fn_decl
     | ExternVar of (typ * exp)
@@ -84,4 +86,3 @@ type tag_decl = modification option * string * parameterization_decl * typ
  * list of vector space tags,
  * and list of functions with at least one void main() function. *)
 type prog = extern_decl list * tag_decl list * fn list
-

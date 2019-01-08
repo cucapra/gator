@@ -33,7 +33,7 @@ let string_of_modification (m: modification) : string =
     | Canon -> "canon"
 
 let string_of_mod_option (m: modification option) : string =
-    string_of_option_removed m string_of_modification ^ " "
+    string_of_option_removed string_of_modification m ^ " "
 
 let string_of_param ((s, t): string * typ) : string =
     (string_of_typ t) ^ " " ^ s
@@ -43,15 +43,21 @@ let string_of_params (p: params) : string =
 
 let string_of_parameterization (pm : parameterization) : string = 
     Assoc.to_string string_of_constraint pm
+	
+let string_of_parameterization_decl (pm : parameterization_decl) : string = 
+    String.concat "," 
+	(List.map (fun (s, m, c) -> s ^ " : " ^ string_of_mod_option m ^ string_of_constraint c) pm)
 
-let string_of_fn_type ((p, r, pml): fn_type) : string = 
-    (string_of_typ r) ^ " <" ^ (string_of_lst (fun (s, m, c) -> 
-        s ^ " : " ^ string_of_mod_option m
-        ^ string_of_constraint c) pml) ^ ">" 
+let string_of_fn_type ((p, r, pm): fn_type) : string = 
+    (string_of_typ r) ^ " <" ^ (string_of_parameterization pm) ^ ">" 
+    ^ "(" ^ (string_of_params p) ^ ")"
+
+let string_of_fn_type_decl ((p, r, pmd): fn_type_decl) : string = 
+    (string_of_typ r) ^ " <" ^ (string_of_parameterization_decl pmd) ^ ">" 
     ^ "(" ^ (string_of_params p) ^ ")"
 
 let string_of_fn_decl ((fm, id, ft): fn_decl) : string = 
-    string_of_mod_option fm ^ id ^ " " ^ string_of_fn_type ft
+    string_of_mod_option fm ^ id ^ " " ^ string_of_fn_type_decl ft
 
 let rec string_of_exp (e:exp) : string =
     let string_of_arr (a: exp list) : string = 
@@ -101,7 +107,7 @@ string_of_comm_list (cl : comm list) : string =
 
 let rec string_of_tags (t : tag_decl list) : string =
     match t with | [] -> "" | (m, s, pm, a)::t -> 
-    "tag " ^ string_of_mod_option m ^ s ^ (string_of_parameterization pm) 
+    "tag " ^ string_of_mod_option m ^ s ^ "<" ^ (string_of_parameterization_decl pm) ^ ">"
     ^ " is " ^ (string_of_typ a) ^ ";\n" ^ (string_of_tags t)
 
 let string_of_fn ((d, c1) : fn) : string = 

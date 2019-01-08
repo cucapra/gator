@@ -13,7 +13,7 @@ let tr_fst ((x, _, _): 'a * 'b * 'c) : 'a = x
 let tr_snd ((_, x, _): 'a * 'b * 'c) : 'b = x
 let tr_thd ((_, _, x): 'a * 'b * 'c) : 'c = x
 
-let string_of_option_removed (o : 'a option) (f : 'a -> string) : string =
+let string_of_option_removed (f : 'a -> string) (o : 'a option) : string =
   match o with
   | Some v -> f v
   | None -> ""

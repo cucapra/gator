@@ -150,12 +150,12 @@ taglst:
 
 tag:
   | TAG; x = ID; IS; t = typ; SEMI; 
-      { (None, x, Assoc.empty, t) }
-  | TAG; x = ID; LWICK; pt = parameterizations; RWICK; IS; t = typ; SEMI; 
+      { (None, x, [], t) }
+  | TAG; x = ID; LWICK; pt = paramet_decl; RWICK; IS; t = typ; SEMI; 
       { (None, x, pt, t) }
   | TAG; m = modification; x = ID; IS; t = typ; SEMI; 
-      { (Some m, x, Assoc.empty, t) }
-  | TAG; m = modification; x = ID; LWICK; pt = parameterizations; RWICK; IS; t = typ; SEMI; 
+      { (Some m, x, [], t) }
+  | TAG; m = modification; x = ID; LWICK; pt = paramet_decl; RWICK; IS; t = typ; SEMI; 
       { (Some m, x, pt, t) }
 ;
 
@@ -191,10 +191,10 @@ parameterization:
   | BACKTICK; t = ID; COLON; m = modification; c = constrain;
       { (t, Some m, c) }
 
-parameterizations:
+paramet_decl:
   | p = parameterization;
       { [p] }
-  | p = parameterization; COMMA; pl = parameterizations;
+  | p = parameterization; COMMA; pl = paramet_decl;
       { p::pl }
 
 fn_decl:
@@ -209,9 +209,9 @@ fn_params:
       { ([], []) }
   | LPAREN; p = params ; RPAREN;
       { (p, []) }
-  | LWICK; pt = parameterizations; RWICK; LPAREN; RPAREN;
+  | LWICK; pt = paramet_decl; RWICK; LPAREN; RPAREN;
       { ([], pt) }
-  | LWICK; pt = parameterizations; RWICK; LPAREN; p = params ; RPAREN;
+  | LWICK; pt = paramet_decl; RWICK; LPAREN; p = params ; RPAREN;
       { (p, pt) }
 
 elif:
