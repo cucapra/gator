@@ -1,0 +1,17 @@
+tag coord model is vec3;
+tag coord modelHom is vec4;
+tag coord worldHom is vec4;
+tag coord cameraHom is vec4;
+tag coord projectiveHom is vec4;
+
+declare vec4 vec4(vec3 v, float f);
+
+canon modelHom homify(model v) {
+  return vec4(v as vec3, 1.) as modelHom;
+}
+
+void main(model aPosition, model aNormal, model vPosition, model vNormal, cameraHom->projectiveHom uProjection, worldHom->cameraHom uView, modelHom->worldHom uModel) {
+  vNormal = aNormal;
+  vPosition = aPosition;
+  projectiveHom gl_Position = aPosition in projectiveHom;
+}
