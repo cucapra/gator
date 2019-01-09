@@ -16,8 +16,8 @@ void main() {
     print s15;
 
     vec3 s21 = v.xyz; // = vec3(1.1, 2.2, 3.3) 
-    vec3 s22 = v.bgr; // = vec3(3.3, 2.2, 1.1)
-    vec2 s23 = v.tt; // = vec2(2.2, 2.2)
+    vec3 s22 = v.bgr * 2; // = vec3(6.6, 4.4, 2.2)
+    vec2 s23 = v.tt + v.tt; // = vec2(4.4, 4.4)
     vec4 s24 = v.qpts; // = vec4(4.4, 3.3, 2.2, 1.1)
     vec3 s25 = v.xrs; // = vec3(1.1, 1.1, 1.1)?
 

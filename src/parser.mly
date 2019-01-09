@@ -81,15 +81,15 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 
 (* Precedences *)
 
-%left ID LBRACK 
+%left ID 
 %left TRANS
 %left AS IN
-%left DOT
 %left AND OR
 %left NOT EQ LEQ GEQ LWICK RWICK
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
+%left DOT
 
 (* After declaring associativity and precedence, we need to declare what
    the starting point is for parsing the language.  The following
