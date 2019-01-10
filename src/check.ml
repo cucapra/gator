@@ -675,6 +675,7 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
                         if not (is_subtype tl ptr d pm) then search_phi_rec t else
                         match rtr with
                         | TopVecTyp _ -> search_phi_rec t
+                        | AbsTyp _
                         | VarTyp _ -> let rec_result = search_phi_rec t in
                             if List.fold_left (fun acc (rt, _) -> check_typ_eq rt rtr || acc) false rec_result then
                             List.map (fun (rt, (id2, pml2, pr2)) -> 
@@ -690,7 +691,7 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
                             (* No duplicate type result found, just add this function to the list *)
                             else (rtr, (id, pml, pr1)) :: rec_result
                         | _ -> raise (TypeException ("Canonical function " ^ id ^ " resulted in type "
-                            ^ (string_of_typ rtr) ^ ", while canonical functions should always result in a vartyp"))
+                            ^ (string_of_typ rtr) ^ ", while canonical functions should always result in an abs or vartyp"))
                     end
                     | _ -> search_phi_rec t
                 end

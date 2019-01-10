@@ -210,6 +210,6 @@ let decl_attribs (p : params) : string =
 
 let rec compile_program (prog : prog) (params : params) : string =
     debug_print ">> compile_program";
-    "precision highp float;" ^ (decl_attribs params) ^ 
+    "precision mediump float;" ^ (decl_attribs params) ^ 
      (comp_fn_lst prog)
  
