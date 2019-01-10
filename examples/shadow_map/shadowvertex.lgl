@@ -1,13 +1,20 @@
+tag coord model is vec3;
+tag coord world is vec3;
+tag viewport is vec3;
+tag camera is viewport;
+tag light is viewport;
+tag coord view<`t : viewport> is `t;
+tag coord proj<`t : viewport> is `t;
+tag coord hom<`t : vec3> is vec4;
+
 declare vec4 vec4(vec3 v, float f);
 declare vec3 vec3(vec4 v);
 
-void main(vec3 aPosition, vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel, vec3 vPosition) {
-    vec4->vec4 removeZ = [
-        [1., 0., 0., 0.],
-        [0., 1., 0., 0.],
-        [0., 0., 0., 0.],
-        [0., 0., 0., 1.]
-    ];
-    vPosition = vec3(uProjection * uView * uModel * vec4(aPosition, 1.));
-    vec4 gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
+canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
+canon `t hom_reduce<`t : vec3>(hom<`t> v) { return vec3(v as vec4) as `t; }
+
+void main(model aPosition, proj<light> vPosition, hom<model>->hom<world> uModel, 
+hom<world>->hom<view<light>> uLightView, hom<view<light>>->hom<proj<light>> uLightProjection) {
+    vPosition = aPosition in proj<light>;
+    hom<proj<light>> gl_Position = aPosition in hom<proj<light>>;
 }

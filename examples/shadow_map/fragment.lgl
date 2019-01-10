@@ -1,9 +1,69 @@
-tag world is vec3;
-tag flatWorld is vec2;
+tag coord model is vec3;
+tag coord world is vec3;
+tag viewport is vec3;
+tag camera is viewport;
+tag light is viewport;
+tag coord view<`t : viewport> is `t;
+tag coord hom<`t : vec3> is vec4;
+tag norm<`t : vec> is `t;
+tag color is vec3;
+tag alpha<`t : color> is vec4;
 
-declare vec4 texture2D(sampler2D texture, vec2 coord);
+declare alpha<color> texture2D(sampler2D texture, vec2 cor);
+declare canon norm<`t> normalize<`t : vec>(`t x);
+declare float dot<`t: vec>(`t v1, `t v2);
+declare vec4 vec4(vec3 v, float f);
+declare vec3 vec3(vec4 v);
+declare float min(float f1, float f2);
+declare float max(float f1, float f2);
+declare `t reflect<`t : vec>(`t v1, `t v2);
+declare float pow(float f1, float f2);
+declare float length<`t : vec>(`t v);
 
-void main(sampler2D uTexture, vec3 vPosition) {
-  vec4 v = texture2D(uTexture, [(vPosition.x + 512.) / 1024., (vPosition.y + 512.) / 1024.]);
-  vec4 gl_FragColor = v;
+canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
+canon `t hom_reduce<`t : vec3>(hom<`t> v) { return vec3(v as vec4) as `t; }
+canon hom<`t> homify_normal<`t : vec3>(norm<`t> v) { return vec4(v as vec3, 0.) as hom<`t>; }
+canon alpha<color> extendColor(color v) { return vec4(v as vec3, 1.) as alpha<color>; }
+
+float decodeFloat (alpha<color> c) {
+  alpha<color> bitShift = [1.0 / (16777216.), 1.0 / (65536.), 1.0 / (256.0), 1.];
+  return dot(c, bitShift);
+}
+
+color phong_light<`t: vec3>(`t lightPos, `t fragPos, norm<`t> normalDir, color baseColor,
+float specStrength, float linear, float quad) {
+    float lambertian = max(0., dot(normalDir, normalize<`t>(lightPos)));
+    norm<`t> reflectDir = reflect(-lightPos in norm<`t>, normalDir);
+    float specular = 0.;
+    if (0. <= lambertian) {
+        specular = pow(max(0., dot(-fragPos in norm<`t>, reflectDir)), 32.);
+    }
+
+    float distance = length(lightPos - fragPos);
+    float attenuation = 1.0 / (linear * distance + quad * distance * distance); 
+    return (lambertian * baseColor + specStrength * specular * [1., 1., 1.]) * attenuation;
+}
+
+void main(sampler2D uTexture, vec3 vShadowPos,
+model vPosition, hom<model>->hom<world> uModel, hom<world>->hom<view<camera>> uCamera, 
+norm<model> vNormal, world uLight, color uBaseColor, float uSpecStrength) {
+  // vec4 color = [.6, .5, .2, 1.];
+  color ambient = [.1, 0., 0.];
+  float texelSize = 1. / 1024.;
+  alpha<color> v = texture2D(uTexture, vShadowPos.xy);
+  float amountInLight = 0.;
+  for (int x = -1; x <= 1; x++) {
+    for (int y = -1; y <= 1; y++) {
+      float texelDepth = decodeFloat(texture2D(uTexture, vShadowPos.xy + [x, y] * texelSize));
+      // float texelDepth = texture2D(uTexture, vShadowPos.xy + [x, y] * texelSize).z;
+      if (vShadowPos.z - 0.007 <= texelDepth) {
+        amountInLight += 1.0;
+      }
+    }
+  }
+  amountInLight /= 9.;
+  color phong_color = phong_light(uLight, vPosition in world, vNormal in norm<world>, 
+    uBaseColor, uSpecStrength, .08, .0001);
+
+  alpha<color> gl_FragColor = extendColor(ambient + phong_color * amountInLight);
 }

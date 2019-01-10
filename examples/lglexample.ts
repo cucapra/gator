@@ -52,7 +52,7 @@ export function createProgram(gl: WebGLRenderingContext, shaders: WebGLShader[])
   }
 
   // attach the shaders.
-  shaders.forEach(function(shader: WebGLBuffer) {
+  shaders.forEach(function (shader: WebGLBuffer) {
     gl.attachShader(program!, shader);
   });
 
@@ -67,7 +67,7 @@ export function createProgram(gl: WebGLRenderingContext, shaders: WebGLShader[])
   }
 
   // Delete shader objects after linked to program.
-  shaders.forEach(function(shader: WebGLBuffer) {
+  shaders.forEach(function (shader: WebGLBuffer) {
     gl.deleteShader(shader);
   });
 
@@ -86,7 +86,7 @@ export function compileProgram(gl: WebGLRenderingContext, vtx: string, frag: str
 /**
  * Compile and link a list of shaders
  */
-export function compileMultipassProgram(gl: WebGLRenderingContext, shaders: {shader: string, context: number}[]): WebGLProgram {
+export function compileMultipassProgram(gl: WebGLRenderingContext, shaders: { shader: string, context: number }[]): WebGLProgram {
   let toReturn: WebGLShader[] = [];
   shaders.forEach(function (shader) {
     toReturn.push(compileShader(gl, shader.context, shader.shader));
@@ -235,7 +235,7 @@ export function getMesh(gl: WebGLRenderingContext, obj: { cells: [number, number
  * @param gl      rendering context
  * @param obj_src string literal content of OBJ source file
  */
-export function load_obj (gl: WebGLRenderingContext, obj_src: string): Mesh {
+export function load_obj(gl: WebGLRenderingContext, obj_src: string): Mesh {
 
   if (typeof obj_src !== "string") {
     throw "obj source must be a string";
@@ -253,7 +253,7 @@ export function load_obj (gl: WebGLRenderingContext, obj_src: string): Mesh {
     positions: make_buffer(gl, position, 'float32', gl.ARRAY_BUFFER),
     cells: make_buffer(gl, cell, 'uint16', gl.ELEMENT_ARRAY_BUFFER),
     normals: make_buffer(gl, normal, 'float32', gl.ARRAY_BUFFER),
-    cell_count: cell.length * cell[0].length, 
+    cell_count: cell.length * cell[0].length,
     // This name I invented -- it's not in the StackGL models.
     texcoords: gl_buffer(gl, gl.ARRAY_BUFFER, new Float32Array(mesh.textures))
   };
@@ -272,24 +272,24 @@ export function load_obj (gl: WebGLRenderingContext, obj_src: string): Mesh {
  * Load image texture.
  * @param gl rendering context
  */
-export function load_texture(gl: WebGLRenderingContext, img_src: string)  {
+export function load_texture(gl: WebGLRenderingContext, img_src: string) {
   // Create a texture.
   // Asynchronously load an image
   var image = new Image();
   image.src = img_src;
   var texture = gl.createTexture();
-  
-  image.addEventListener('load', function() {
+
+  image.addEventListener('load', function () {
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
-    
+
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     // clamp to edge gives us non-power-of-2 support
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image);       
-    });
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+  });
 }
 
 
