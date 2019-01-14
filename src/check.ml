@@ -226,6 +226,7 @@ let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta
     | (TypConstraint (AbsTyp s), _) -> is_sub_constraint (unwrap_abstyp s pm) target d pm
     | (_, TypConstraint _) -> false
     | (TypConstraint (BoolTyp), GenTyp) -> false
+    | (TypConstraint (TransTyp _), GenTyp) -> false
     | (_, GenTyp) -> true
     | (GenVecTyp, GenVecTyp)
     | (TypConstraint (BotVecTyp _), GenVecTyp)
