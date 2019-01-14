@@ -14,5 +14,5 @@ void main(model aPosition, model aNormal, model vPosition, model vNormal,
 hom<camera>->hom<projective> uProjection, hom<world>->hom<camera> uView, hom<model>->hom<world> uModel) {
   vNormal = aNormal;
   vPosition = aPosition;
-  projectiveHom gl_Position = aPosition in projectiveHom;
+  hom<projective> gl_Position = aPosition in hom<projective>;
 }
