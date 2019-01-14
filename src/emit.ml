@@ -73,7 +73,7 @@ and op_wrap (op : exp) : string =
     match op with
     | Val _
     | Var _ -> comp_exp op
-    | _ -> "(" ^ (comp_exp op) ^ ")"
+    | _ -> "(" ^ comp_exp op ^ ")"
 
 (* Handles the string shenanigans for padding during multiplication *)
 and padded_mult (left : texp) (right : texp) : string =
@@ -113,7 +113,7 @@ and comp_exp (e : exp) : string =
                 string_of_glsl_mat (List.map as_vec_list a)
             | _ -> failwith "Typechecker error, every array must be a list of ints, floats, or vectors"))
     | Binop (op, l, r) -> (match op with
-        | Times -> padded_mult l r
+        | Times -> "(" ^ padded_mult l r ^ ")"
         | CTimes -> "(" ^ ((comp_exp (fst l)) ^ " * " ^(comp_exp (fst r))) ^ ")"
         | _ -> "(" ^ (string_of_binop op (comp_exp (fst l)) (comp_exp (fst r))) ^ ")")
     | Unop (op, (x, _)) -> (string_of_unop op ("(" ^ (comp_exp x) ^ ")"))

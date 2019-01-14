@@ -26,7 +26,7 @@ canon hom<`t> homify_normal<`t : vec3>(norm<`t> v) { return vec4(v as vec3, 0.) 
 canon alpha<color> extendColor(color v) { return vec4(v as vec3, 1.) as alpha<color>; }
 
 float decodeFloat (alpha<color> c) {
-  alpha<color> bitShift = [1.0 / (16777216.), 1.0 / (65536.), 1.0 / (256.0), 1.];
+  alpha<color> bitShift = [1.0 / (256. * 256. * 256.), 1.0 / (256. * 256.), 1.0 / (256.0), 1.];
   return dot(c, bitShift);
 }
 
