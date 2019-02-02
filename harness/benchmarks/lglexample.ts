@@ -481,7 +481,7 @@ export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRen
 
   let params = (() => {
     const vars = {};
-    const parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, (_, key, value) => {
+    window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, (_, key, value) => {
       vars[key] = value;
       return "";
     });
