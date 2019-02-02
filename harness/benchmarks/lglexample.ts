@@ -479,7 +479,7 @@ export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRen
     cancel();
   }
 
-  let vars = (() => {
+  let params = (() => {
     const vars = {};
     const parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, (_, key, value) => {
       vars[key] = value;
@@ -487,7 +487,10 @@ export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRen
     });
     return vars;
   })();
-  return [gl, wrapCancel, vars]
+
+  const TEST_LENGTH = parseInt(params['time'] || "10");
+  setTimeout(() => { cancel(); }, TEST_LENGTH * 1000);
+  return [gl, wrapCancel, params]
 }
 
 

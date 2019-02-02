@@ -4,6 +4,7 @@ import { mat4, vec3 } from 'gl-matrix';
 function main() {
   let [gl, cancel, params] = lgl.setup(render);
   const NUM_PROGRAM = parseInt(params['num_programs'] || "100");
+  const TEST_LENGTH = parseInt(params['time'] || "10");
   const vertices: string[] = new Array(NUM_PROGRAM).fill(require('./vertex.lgl'));
   const frags: string[] = new Array(NUM_PROGRAM).fill(require('./fragment.lgl'));
   const programs: WebGLProgram[] = [];
@@ -40,7 +41,6 @@ function main() {
 
   // Position the light source for the lighting effect.
   let light = vec3.fromValues(20., 0., 20.);
-  setTimeout(() => { cancel(); }, 10000);
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
 
