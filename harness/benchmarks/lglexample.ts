@@ -26,7 +26,6 @@ export function compileShader(gl: WebGLRenderingContext, shaderType: number, sha
 
   // Set the shader source code.
   gl.shaderSource(shader, shaderSource);
-  console.log(shaderSource);
   // Compile the shader
   gl.compileShader(shader);
 
@@ -407,8 +406,7 @@ export function check_null<T>(v: T | null, s: string): T {
  * The canvas gets an interactive "orbit camera" that lets the user
  * interactively manipulate the view.
  */
-export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRenderingContext, () => void] {
-  console.log(new Date().getTime());
+export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRenderingContext, () => void, { [key: string]: string; }] {
   // Get the first canvas on the document.
   let canvases = document.getElementsByTagName('canvas');
   if (canvases.length === 0) {
@@ -432,7 +430,18 @@ export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRen
   gl.clear(gl.COLOR_BUFFER_BIT);
 
   // Set up the render loop.
+
+  let start = new Date().getTime();
+  let numFrames = 0;
+  let fpsVals = [];
+  setInterval(() => {
+    const fps = numFrames / ((new Date().getTime() - start) / 1000);
+    fpsVals.push(fps);
+    numFrames = 0, start = new Date().getTime();
+  }, 1000);
   let cancel = registerAnimator(() => {
+    numFrames++;
+
     // Update the camera view.
     camera.view(view);
     camera.tick();
@@ -460,8 +469,27 @@ export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRen
   }
   w._linguineCancel = cancel;
 
-  return [gl, cancel];
+  let wrapCancel = () => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", '/senddata');
+    xhr.setRequestHeader("Content-Type", "application/json")
+    xhr.send(JSON.stringify({
+      fpsData: fpsVals,
+    }));
+    cancel();
+  }
+
+  let vars = (() => {
+    const vars = {};
+    const parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, (_, key, value) => {
+      vars[key] = value;
+      return "";
+    });
+    return vars;
+  })();
+  return [gl, wrapCancel, vars]
 }
+
 
 /**
  * Look up a uniform location (and assert that it is non-null).

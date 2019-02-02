@@ -9,8 +9,10 @@
     "typescript": "^3.3.1"
   },
   "dependencies": {
+    "@types/express": "^4.16.1",
     "@types/gl-matrix": "^2.4.0",
     "array-pack-2d": "^1.0.0",
+    "body-parser": "^1.18.3",
     "bunny": "^1.0.1",
     "canvas-orbit-camera": "^1.0.0",
     "gl-matrix": "^2.6.1",

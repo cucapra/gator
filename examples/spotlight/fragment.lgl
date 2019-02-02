@@ -33,16 +33,16 @@ color phong_light<`t: vec3>(color baseColor, `t lightPos, `t fragPos, `t normalD
     if (0. <= lambertian) {
         specular = pow(max(0., dot(viewDir, reflectDir)), 8.);
     }
-    else { 
-        skip; 
+    else {
+        skip;
     }
 
     float distance = length(lightPos - fragPos);
-    float attenuation = 1.0 / (linear * distance + quad * (distance * distance)); 
+    float attenuation = 1.0 / (linear * distance + quad * (distance * distance));
     return (lambertian * baseColor + specStrength * specular * [1., 1., 1.]) * attenuation;
 }
 
-void main(model vPosition, model vNormal, world uLight, camera uFlashLight, modelHom->worldHom uModel, worldHom->cameraHom uView) {   
+void main(model vPosition, model vNormal, world uLight, camera uFlashLight, modelHom->worldHom uModel, worldHom->cameraHom uView) {
     model->modelHom extendModel = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [0., 0., 0.]];
     modelHom modelScale = [0., 0., 0., 1.];
     world->worldHom extendWorld = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [0., 0., 0.]];
@@ -54,7 +54,7 @@ void main(model vPosition, model vNormal, world uLight, camera uFlashLight, mode
     world worldNormalDir = normalize(collapseWorld * uModel * (extendModel * normalize<model>(vNormal)));
     camera camPosition = collapseCamera * uView * (extendWorld * worldPosition + worldScale);
     camera camNormalDir = normalize(collapseCamera * uView * (extendWorld * worldNormalDir));
-    
+
     color lightColor = [0.6, 1.0, 0.3];
     color light = phong_light<world>(lightColor, uLight, worldPosition, worldNormalDir, .5, .01, .00008);
 
