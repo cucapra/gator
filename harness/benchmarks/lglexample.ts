@@ -431,7 +431,7 @@ export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRen
 
   // Set up the render loop.
 
-  let start = new Date().getTime();
+  let start: number | null = null;
   let numFrames = 0;
   let fpsVals = [];
   setInterval(() => {
@@ -440,6 +440,9 @@ export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRen
     numFrames = 0, start = new Date().getTime();
   }, 1000);
   let cancel = registerAnimator(() => {
+    if (start === null)
+      start = new Date().getTime();
+
     numFrames++;
 
     // Update the camera view.
