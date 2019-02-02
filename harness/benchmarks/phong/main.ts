@@ -2,9 +2,8 @@ import * as lgl from '../lglexample';
 import { mat4, vec3 } from 'gl-matrix';
 
 function main() {
-  let [gl, cancel, params] = lgl.setup(render);
+  let [gl, params] = lgl.setup(render);
   const NUM_PROGRAM = parseInt(params['num_programs'] || "100");
-  const TEST_LENGTH = parseInt(params['time'] || "10");
   const vertices: string[] = new Array(NUM_PROGRAM).fill(require('./vertex.lgl'));
   const frags: string[] = new Array(NUM_PROGRAM).fill(require('./fragment.lgl'));
   const programs: WebGLProgram[] = [];
