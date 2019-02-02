@@ -407,7 +407,8 @@ export function check_null<T>(v: T | null, s: string): T {
  * The canvas gets an interactive "orbit camera" that lets the user
  * interactively manipulate the view.
  */
-export function setup(render: (view: mat4, projection: mat4) => void): WebGLRenderingContext {
+export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRenderingContext, () => void] {
+  console.log(new Date().getTime());
   // Get the first canvas on the document.
   let canvases = document.getElementsByTagName('canvas');
   if (canvases.length === 0) {
@@ -459,7 +460,7 @@ export function setup(render: (view: mat4, projection: mat4) => void): WebGLRend
   }
   w._linguineCancel = cancel;
 
-  return gl;
+  return [gl, cancel];
 }
 
 /**
