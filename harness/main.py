@@ -22,7 +22,7 @@ default_args = {'time': 20}
 phong = {'name': 'phong',
          'shaders': ['default', 'auto'],
          'args': {
-             'num_objects': 1000
+             'num_objects': 500
          }
          }
 
