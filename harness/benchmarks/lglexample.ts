@@ -479,6 +479,9 @@ export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRen
     xhr.send(JSON.stringify({
       fpsData: fpsVals,
     }));
+    const finishDiv = document.createElement("div");
+    finishDiv.id = "finish";
+    document.body.appendChild(finishDiv);
     cancel();
   }
 
@@ -491,7 +494,7 @@ export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRen
     return vars;
   })();
 
-  const TEST_LENGTH = parseInt(params['time'] || "10");
+  const TEST_LENGTH = parseInt(params['time'] || "10000");
   setTimeout(() => { wrapCancel(); }, TEST_LENGTH * 1000);
   return [gl, params]
 }

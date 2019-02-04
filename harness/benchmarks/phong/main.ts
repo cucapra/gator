@@ -3,11 +3,16 @@ import { mat4, vec3 } from 'gl-matrix';
 
 function main() {
   let [gl, params] = lgl.setup(render);
-  const NUM_PROGRAM = parseInt(params['num_programs'] || "100");
-  const vertices: string[] = new Array(NUM_PROGRAM).fill(require('./vertex.lgl'));
-  const frags: string[] = new Array(NUM_PROGRAM).fill(require('./fragment.lgl'));
+  const NUM_OBJECTS = parseInt(params['num_objects'] || "100");
+  const SHADER = params['shader'] || 'default';
+  const shaders = {
+    'auto': [require('./auto/vertex.lgl'), require('./auto/fragment.lgl')],
+    'default': [require('./default/vertex.lgl'), require('./default/fragment.lgl')]
+  };
+  const vertices: string[] = new Array(NUM_OBJECTS).fill(shaders['auto'][0]);
+  const frags: string[] = new Array(NUM_OBJECTS).fill(shaders['auto'][1]);
   const programs: WebGLProgram[] = [];
-  for (let i = 0; i < NUM_PROGRAM; i++) {
+  for (let i = 0; i < NUM_OBJECTS; i++) {
     programs.push(lgl.compileProgram(gl, vertices[i], frags[i]));
   }
 
@@ -25,13 +30,13 @@ function main() {
   });
 
   // We'll draw a teapot.
-  let meshes = new Array(NUM_PROGRAM).fill(lgl.getBunny(gl));
+  let meshes = new Array(NUM_OBJECTS).fill(lgl.getBunny(gl));
 
   // Initialize the model position.
   let models: mat4[] = [];
-  for (let i = 0; i < NUM_PROGRAM; i++)
+  for (let i = 0; i < NUM_OBJECTS; i++)
     models.push(mat4.create());
-  const block = Math.floor(Math.sqrt(NUM_PROGRAM));
+  const block = Math.floor(Math.sqrt(NUM_OBJECTS));
   const OFFSET = 1;
   for (let i = 0; i < block; i++) {
     for (let j = 0; j < block; j++) {
@@ -44,7 +49,7 @@ function main() {
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
 
-    for (let i = 0; i < NUM_PROGRAM; i++) {
+    for (let i = 0; i < NUM_OBJECTS; i++) {
       mat4.rotateY(models[i], models[i], .01);
 
       // Use our shader pair.
