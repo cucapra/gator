@@ -11,7 +11,7 @@ app.use(bodyParser.json());
 app.use('/', express.static(path.join(__dirname, '..', '/dist')));
 app.post("/senddata", (req, res) => {
     const data = req.body;
-    const fpsData = data.fpsData;
+    const fpsData = data.fpsData.slice(1);
     const avgFps = fpsData.reduce((a, b) => a + b, 0) / fpsData.length;
     const minFps = Math.min(...fpsData), maxFps = Math.max(...fpsData);
     const stdFps = fpsData.reduce((a, b) => a + (b - avgFps) * (b + avgFps), 0) / fpsData.length;
@@ -19,6 +19,7 @@ app.post("/senddata", (req, res) => {
     console.log("Min FPS: ", minFps);
     console.log("Max FPS: ", maxFps);
     console.log("Std. FPS: ", stdFps);
+    console.log("First 10 frames: ", fpsData.slice(0, 10));
     res.send("response");
 });
 
