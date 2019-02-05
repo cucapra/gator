@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "outDir": "build"
+  },
+  "include": [
+    "lglexample.ts",
+    "types.d.ts",
+    "webgl-obj-loader.d.ts",
+  ],
+}
