@@ -9,8 +9,8 @@ function main() {
     'auto': [require('./auto/vertex.lgl'), require('./auto/fragment.lgl')],
     'default': [require('./default/vertex.lgl'), require('./default/fragment.lgl')]
   };
-  const vertices: string[] = new Array(NUM_OBJECTS).fill(shaders['auto'][0]);
-  const frags: string[] = new Array(NUM_OBJECTS).fill(shaders['auto'][1]);
+  const vertices: string[] = new Array(NUM_OBJECTS).fill(shaders[SHADER][0]);
+  const frags: string[] = new Array(NUM_OBJECTS).fill(shaders[SHADER][1]);
   const programs: WebGLProgram[] = [];
   for (let i = 0; i < NUM_OBJECTS; i++) {
     programs.push(lgl.compileProgram(gl, vertices[i], frags[i]));

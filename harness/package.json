@@ -5,7 +5,7 @@
   "license": "MIT",
   "devDependencies": {
     "parcel-bundler": "^1.9.7",
-    "parcel-plugin-lgl": "../parcel-plugin-lgl",
+    "parcel-plugin-lgl": "file:../parcel-plugin-lgl",
     "typescript": "^3.3.1"
   },
   "dependencies": {
@@ -15,6 +15,7 @@
     "body-parser": "^1.18.3",
     "bunny": "^1.0.1",
     "canvas-orbit-camera": "^1.0.0",
+    "express": "^4.16.4",
     "gl-matrix": "^2.6.1",
     "icosphere": "^1.0.0",
     "normals": "^0.1.0",
@@ -22,4 +23,5 @@
     "teapot": "^1.0.0",
     "webgl-obj-loader": "^1.1.3"
   }
+
 }
