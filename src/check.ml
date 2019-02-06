@@ -1152,7 +1152,7 @@ let check_decls (g: gamma) (d: delta) (m: mu) (dl : extern_decl) (p: phi) (ps: p
 
 (* Returns the list of fn's which represent the program 
  * and params of the void main() fn *)
-let check_prog ((dl, t, f): prog) : TypedAst.prog * TypedAst.params =
+let check_prog ((dl, t, g, f): prog) : TypedAst.prog * TypedAst.params =
     debug_print ">> check_prog";
     (*(d: delta) ((id, t): fn_decl) (p: phi) *)
     (* delta from tag declarations *)
