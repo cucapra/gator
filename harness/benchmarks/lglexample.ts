@@ -431,17 +431,17 @@ export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRen
 
   // Set up the render loop.
 
-  let start: number | null = null;
   let numFrames = 0;
   let fpsVals = [];
+  let frameTimes = [];
   setInterval(() => {
-    const fps = numFrames / ((new Date().getTime() - start) / 1000);
+    const avgTime = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+    const fps = 1 / (avgTime / 1000);
+    frameTimes = [];
     fpsVals.push(fps);
-    numFrames = 0, start = new Date().getTime();
   }, 1000);
   let cancel = registerAnimator(() => {
-    if (start === null)
-      start = new Date().getTime();
+    const curStart = new Date().getTime();
 
     numFrames++;
 
@@ -463,6 +463,8 @@ export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRen
     gl.enable(gl.CULL_FACE);  // Triangles not visible from behind.
 
     render(view, projection);
+    const diff = new Date().getTime() - curStart;
+    frameTimes.push(diff);
   });
 
   // A **total hack** to cancel previously-registered animation loops.

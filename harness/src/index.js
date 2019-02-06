@@ -14,7 +14,8 @@ app.post("/senddata", (req, res) => {
     const fpsData = data.fpsData.slice(1);
     const avgFps = fpsData.reduce((a, b) => a + b, 0) / fpsData.length;
     const minFps = Math.min(...fpsData), maxFps = Math.max(...fpsData);
-    const stdFps = fpsData.reduce((a, b) => a + (b - avgFps) * (b + avgFps), 0) / fpsData.length;
+    const varFps = fpsData.reduce((a, b) => a + (b - avgFps) * (b + avgFps), 0) / fpsData.length;
+    const stdFps = Math.sqrt(varFps);
     console.log("Average FPS: ", avgFps);
     console.log("Min FPS: ", minFps);
     console.log("Max FPS: ", maxFps);
