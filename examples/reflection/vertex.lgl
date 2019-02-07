@@ -4,7 +4,15 @@ tag worldHom is vec4;
 tag cameraHom is vec4;
 tag projectiveHom is vec4;
 
-void main(model aPosition, model aNormal, cameraHom->projectiveHom uProjection, worldHom->cameraHom uView, modelHom->worldHom uModel, model vPosition, model vNormal) {
+attribute model aPosition;
+attribute model aNormal;
+uniform cameraHom->projectiveHom uProjection;
+uniform worldHom->cameraHom uView;
+uniform modelHom->worldHom uModel;
+varying model vPosition;
+varying model vNormal;
+
+void main() {
     model->modelHom model_modelHom = [
         [1., 0., 0.],
         [0., 1., 0.],
