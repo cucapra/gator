@@ -11,16 +11,21 @@ exception DimensionException of int * int
 (* For readability, especially with psi *)
 type par_typ_inv = id * typ list 
 
-(* Variable defs *)
+(* Variable definitions *)
+(* Maps from variable names to the type of that variable *)
 type gamma = typ Assoc.context
 
-(* Tags defs *)
+(* Tag definitions *)
+(* Stores supertype and possible parameterization information for the tag *)
 type delta = (parameterization * typ) Assoc.context
 
-(* Function defs *)
+(* Function definitions *)
+(* Stores the full type and parameterization of each function *)
 type phi = fn_type Assoc.context
 
-(* Tag modifications *)
+(* Tag and function modifiers *)
+(* Specifically the coord and canonical keywords *)
+(* Is currently only modified during tag and function declaration steps *)
 type mu = (modification option) Assoc.context
 
 (* Transformation context *)
