@@ -237,9 +237,13 @@ let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta
     | (TypConstraint (TransTyp _), GenMatTyp) -> true
     | (_, GenMatTyp) -> false
 
-let rec is_bounded_by (t: typ) (c: constrain) (d: delta) (pm: parameterization): bool =
+let is_bounded_by (t: typ) (c: constrain) (d: delta) (pm: parameterization): bool =
     debug_print ">> is_bounded_by";
     is_sub_constraint (TypConstraint t) c d pm
+
+(* Special case that comes up a bunch -- previously covered incorrectly by 'genType' *)
+let is_non_bool (t: typ) (d: delta) (pm: parameterization) : bool =
+    is_bounded_by t GenTyp d pm || is_bounded_by t GenMatTyp d pm
 
 let match_parameterization (d: delta) (pmb: (string * constrain) list) (pml : typ list) (pm: parameterization) : (typ Assoc.context) option =
     debug_print ">> match_parametrization";
@@ -445,7 +449,7 @@ let check_bool_binop (t1: typ) (t2: typ) (d: delta) (pm: parameterization): typ 
 (* Type check unary number operators (i.e. -) *)
 let check_num_unop (t: typ) (d: delta) (pm: parameterization) : typ =
     debug_print ">> check_num_unop";
-    if is_bounded_by t GenTyp d pm then t
+    if is_non_bool t d pm then t
     else raise (TypeException "Expected integer, float, vector, or matrix expression")
 
 (* Type check unary bool operators (i.e. !) *)
@@ -488,7 +492,7 @@ let check_as_exp (t1: typ) (t2: typ) (d: delta) (pm: parameterization) : typ =
 (* Types are closed under addition and scalar multiplication *)
 let check_addition_exp (t1: typ) (t2: typ) (d: delta) (pm: parameterization): typ =
     debug_print ">> check_addition";
-    if is_bounded_by t1 GenTyp d pm then least_common_parent t1 t2 d pm
+    if is_non_bool t1 d pm then least_common_parent t1 t2 d pm
     else raise (TypeException ("Invalid expressions for addition: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2)))
 
@@ -501,8 +505,8 @@ let check_times_exp (t1: typ) (t2: typ) (d: delta) (pm: parameterization): typ =
     if is_subtype t1 IntTyp d pm && is_subtype t2 IntTyp d pm then 
         least_common_parent t1 t2 d pm
     (* Scalar multiplication *)
-    else if check_subtype_list t1 intfloat_list d pm && is_bounded_by t2 GenTyp d pm then t2
-    else if check_subtype_list t2 intfloat_list d pm && is_bounded_by t1 GenTyp d pm then t1
+    else if check_subtype_list t1 intfloat_list d pm && is_non_bool t2 d pm then t2
+    else if check_subtype_list t2 intfloat_list d pm && is_non_bool t1 d pm then t1
     (* Matrix-vector multiplication *)
     else if is_bounded_by t1 GenMatTyp d pm then
         (let (t1l, t1r) = as_matrix_pair t1 d pm in

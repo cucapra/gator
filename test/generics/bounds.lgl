@@ -21,9 +21,8 @@ void main() {
     print id<vec2>([1., 2.]);
     print id<vec3>([1., 2., 3.]);
 
-    print id<mat2x2>([[1., 0.], [0., 1.]]);
-    print id<vec2->vec2>([[1., 0.], [0., 1.]]);
-    print id<vec2->vec3>([[1., 0.], [0., 1.], [1., 1.]]);
+    print id<float>(1.);
+    print id<int>(2);
 
     print as_t<vec3>();
 }
