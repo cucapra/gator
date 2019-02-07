@@ -1147,16 +1147,16 @@ let rec check_fn (((fm, id, (pr, r, pmd)), cl): fn) (g: gamma) (d: delta) (m: mu
     (* TODO: might want to check that there is exactly one return statement at the end *)
     | t -> List.iter (check_return t d m g'' pm p ps'') cl; (ps, m_ret, (((id, (pl', tag_erase t d pm, pm')), cl')), p')
 
-and check_fn_lst (fl: fn list) (g: gamma) (d: delta) (m: mu) (p: phi) (ps: psi) : TypedAst.prog =
+and check_fn_lst (fl: fn list) (g: gamma) (d: delta) (m: mu) (p: phi) (ps: psi) : TypedAst.prog * phi =
     debug_print ">> check_fn_lst";
     match fl with
-    | [] -> []
+    | [] -> ([], p)
     | h::t -> let (ps', m', fn', p') = check_fn h g d m p ps in
-        let fn'' = check_fn_lst t g d m' p' ps' in 
-        (fn' :: fn'')
+        let (fn'', p'') = check_fn_lst t g d m' p' ps' in 
+        (fn' :: fn'', p'')
 
 (* Check that there is a void main() defined *)
-let check_main_fn (g: gamma) (d: delta) (m: mu) (p: phi) : unit =
+let check_main_fn (p: phi) : unit =
     debug_print ">> check_main_fn";
     let (params, ret_type, pm) = Assoc.lookup "main" p in 
     debug_print (">> check_main_fn_2" ^ (string_of_params params) ^ (string_of_parameterization pm));
@@ -1185,7 +1185,8 @@ let check_prog ((dl, t, gv, f): prog) : TypedAst.prog * TypedAst.global_vars =
         (fun (g', m', p') (dl': extern_decl) -> check_decls g' d m' dl' p' Assoc.empty) 
         (Assoc.empty, m, Assoc.empty) dl in
     let (gvr, g', ps) = check_global_variables gv g d m' Assoc.empty in
-    let e' = check_fn_lst f g' d m' p ps in 
+    let (e', p') = check_fn_lst f g' d m' p ps in
+    check_main_fn p';
     debug_print "===================";
     debug_print "Type Check Complete";
     debug_print "===================\n";
