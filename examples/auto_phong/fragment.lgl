@@ -22,12 +22,18 @@ declare float max(float f1, float f2);
 declare `t reflect<`t : vec>(`t v1, `t v2);
 declare float pow(float f1, float f2);
 
+varying model vPosition;
+uniform hom<model>->hom<world> uModel;
+uniform hom<world>->hom<camera> uView;
+varying norm<model> vNormal;
+uniform world uLight;
+
 canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
 canon `t hom_reduce<`t : vec3>(hom<`t> v) { return vec3(v as vec4) as `t; }
 canon hom<`t> homify_normal<`t : vec3>(norm<`t> v) { return vec4(v as vec3, 0.) as hom<`t>; }
 canon alpha<color> extendColor(color v) { return vec4(v as vec3, 1.) as alpha<color>; }
 
-void main(model vPosition, hom<model>->hom<world> uModel, hom<world>->hom<camera> uView, norm<model> vNormal, world uLight) {
+void main() {
     color ambient = [.1, 0., 0.];
     color diffuse = [0.4, 0.3, 0.9];
     color spec = [1.0, 1.0, 1.0];

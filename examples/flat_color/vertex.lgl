@@ -4,8 +4,14 @@ tag coord worldHom is vec4;
 tag coord cameraHom is vec4;
 tag coord projectiveHom is vec4;
 
-void main (model aPosition, model aNormal, cameraHom->projectiveHom uProjection, 
-  worldHom->cameraHom uView, modelHom->worldHom uModel, model vNormal) {
+attribute model aPosition;
+attribute model aNormal;
+uniform cameraHom->projectiveHom uProjection;
+uniform worldHom->cameraHom uView;
+uniform modelHom->worldHom uModel;
+varying model vNormal;
+
+void main () {
     model->modelHom expand = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [0., 0., 0.]];
     modelHom expandScalar = [0., 0., 0., 1.];
 

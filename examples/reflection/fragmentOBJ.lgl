@@ -22,6 +22,12 @@ declare float max(float f1, float f2);
 declare `t reflect<`t : vec>(`t v1, `t v2);
 declare float pow(float f1, float f2);
 
+varying model vPosition;
+uniform hom<model>->hom<world> uModel;
+uniform hom<world>->hom<camera> uView;
+varying norm<model> vNormal;
+uniform hom<world> uLight;
+
 // Annoying setup -- will be cleaned up a bunch by parametrized types
 // Note that this doesn't work with normalize properly -- we need to figure that out I suppose
 canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
@@ -30,7 +36,7 @@ canon hom<`t> homify_normal<`t : vec3>(norm<`t> v) { return vec4(v as vec3, 0.) 
 canon alpha<color> extendColor(color v) { return vec4(v as vec3, 1.) as alpha<color>; }
 
 // parsing error : allow empty mains
-void main(model vPosition, hom<model>->hom<world> uModel, hom<world>->hom<camera> uView, norm<model> vNormal, hom<world> uLight) {
+void main() {
     color ambient = [.1, 0., 0.];
     color diffuse = [0.4, 0.3, 0.9];
     color spec = [1.0, 1.0, 1.0];

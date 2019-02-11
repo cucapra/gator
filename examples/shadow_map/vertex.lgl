@@ -11,13 +11,21 @@ tag norm<`t : vec> is `t;
 declare vec4 vec4(vec3 v, float f);
 declare vec3 vec3(vec4 v);
 
+attribute model aPosition;
+varying model vPosition;
+attribute norm<model> aNormal;
+varying norm<model> vNormal;
+varying proj<light> vShadowPos;
+uniform hom<model>->hom<world> uModel;
+uniform hom<world>->hom<view<camera>> uCamera;
+uniform hom<view<camera>>->hom<proj<camera>> uProjection;
+uniform hom<world>->hom<view<light>> uLightView;
+uniform hom<view<light>>->hom<proj<light>> uLightProjection;
+
 canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
 canon `t hom_reduce<`t : vec3>(hom<`t> v) { return vec3(v as vec4) as `t; }
 
-void main(model aPosition, model vPosition, norm<model> aNormal, norm<model> vNormal,
-proj<light> vShadowPos, hom<model>->hom<world> uModel, 
-hom<world>->hom<view<camera>> uCamera, hom<view<camera>>->hom<proj<camera>> uProjection, 
-hom<world>->hom<view<light>> uLightView, hom<view<light>>->hom<proj<light>> uLightProjection) {
+void main() {
   hom<proj<light>>->hom<proj<light>> texUnitConverter = [[0.5, 0.0, 0.0, 0.5], 
                                                          [0.0, 0.5, 0.0, 0.5], 
                                                          [0.0, 0.0, 0.5, 0.5], 
