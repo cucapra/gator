@@ -5,9 +5,14 @@ function main() {
   let [gl, params] = lgl.setup(render);
   const NUM_OBJECTS = parseInt(params['num_objects'] || "100");
   const SHADER = params['shader'] || 'default';
+  var fs = require("fs");
+  var vert_glsl = fs.readFileSync('./benchmarks/phong/glsl/vertex.shader', 'utf8');
+  var frag_glsl = fs.readFileSync('./benchmarks/phong/glsl/fragment.shader', 'utf8');
+  
   const shaders = {
     'auto': [require('./auto/vertex.lgl'), require('./auto/fragment.lgl')],
-    'default': [require('./default/vertex.lgl'), require('./default/fragment.lgl')]
+    'default': [require('./default/vertex.lgl'), require('./default/fragment.lgl')],
+    'glsl': [vert_glsl, frag_glsl]
   };
   const vertices: string[] = new Array(NUM_OBJECTS).fill(shaders[SHADER][0]);
   const frags: string[] = new Array(NUM_OBJECTS).fill(shaders[SHADER][1]);

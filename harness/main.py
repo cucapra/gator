@@ -20,7 +20,7 @@ node_thread.start()
 
 default_args = {'time': 10}
 phong = {'name': 'phong',
-         'shaders': ['default', 'auto'],
+         'shaders': ['default', 'auto', 'glsl'],
          'args': {
              'num_objects': 10
          }
