@@ -474,19 +474,6 @@ export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRen
   }
   w._linguineCancel = cancel;
 
-  let wrapCancel = () => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", '/senddata');
-    xhr.setRequestHeader("Content-Type", "application/json")
-    xhr.send(JSON.stringify({
-      fpsData: fpsVals,
-    }));
-    const finishDiv = document.createElement("div");
-    finishDiv.id = "finish";
-    document.body.appendChild(finishDiv);
-    cancel();
-  }
-
   let params = (() => {
     const vars = {};
     window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, (_, key, value) => {
@@ -495,6 +482,21 @@ export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRen
     });
     return vars;
   })();
+
+  let wrapCancel = () => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", '/senddata');
+    xhr.setRequestHeader("Content-Type", "application/json")
+    xhr.send(JSON.stringify({
+      fpsData: fpsVals,
+      params: params
+    }));
+    const finishDiv = document.createElement("div");
+    finishDiv.id = "finish";
+    document.body.appendChild(finishDiv);
+    cancel();
+  }
+
 
   const TEST_LENGTH = parseInt(params['time'] || "10000");
   setTimeout(() => { wrapCancel(); }, TEST_LENGTH * 1000);

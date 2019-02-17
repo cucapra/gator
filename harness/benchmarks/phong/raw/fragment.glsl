@@ -8,11 +8,11 @@ void main() {
     vec3 ambient = vec3(.1, 0., 0.);
     vec3 lightColor = vec3(0.4, 0.3, 0.9);
 
-    vec3 worldPos = vec3(uModel*vec4(vPosition, 1.0));
+    vec4 homWorldPos = uModel*vec4(vPosition, 1.0);
+    vec3 camPos = normalize(vec3(uView*homWorldPos));
     vec3 worldNorm = normalize(vec3(uModel*vec4(vNormal, 0.0)));
-    vec3 camPos = normalize(vec3(uView*uModel*vec4(vPosition, 1.0)));
 
-    vec3 lightDir = normalize(uLight - worldPos);
+    vec3 lightDir = normalize(uLight - vec3(homWorldPos));
     vec3 reflectDir = reflect(-lightDir, worldNorm);
 
     vec3 diffuse = max(dot(worldNorm, lightDir), 0.0) * lightColor;
