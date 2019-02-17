@@ -14,6 +14,7 @@ void main() {
 
     vec3 lightDir = normalize(uLight - vec3(homWorldPos));
     float lightWorldDot = dot(lightDir, worldNorm);
+    // We might want to go back to using built in functions here.
     vec3 reflectDir =  2.0*lightWorldDot*worldNorm - lightDir;
 
     vec3 diffuse = max(lightWorldDot, 0.0) * lightColor;
@@ -21,6 +22,5 @@ void main() {
     float spec = pow(max(-dot(camPos, reflectDir), 0.), 32.);
     vec3 specular = spec * vec3(1., 1., 1.);
 
-    vec3 result = ambient + diffuse + specular;
-    gl_FragColor = vec4(result, 1.0);
+    gl_FragColor = vec4(ambient+diffuse+specular, 1.0);
 }

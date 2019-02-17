@@ -7,6 +7,7 @@ uniform mat4 uLightProjection;
 vec4 homify(vec3 v){return vec4(v, 1.); }
 vec3 hom_reduce(vec4 v){return vec3(v); }
 void main() {
-    vPosition = hom_reduce(uLightProjection * uLightView * uModel * homify(aPosition));
-    gl_Position = uLightProjection * uLightView * uModel * homify(aPosition);
+    // Don't think this is necessary?
+    // vPosition = hom_reduce(uLightProjection * uLightView * uModel * vec4(aPosition, 1.));
+    gl_Position = uLightProjection * uLightView * uModel * vec4(aPosition, 1);
 }

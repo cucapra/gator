@@ -20,18 +20,20 @@ float decodeFloat(vec4 c){
 
 vec3 phong_light(vec3 lightPos, vec3 fragPos, vec3 normalDir, vec3 baseColor,
  float specStrength, float linear, float quad){
-    float lambertian = max(0., dot(normalDir, normalize(lightPos)));
-    vec3 reflectDir = reflect(normalize(-lightPos), normalDir);
+    vec3 normLightPos = normalize(lightPos);
+    float lambertian = max(0., dot(normalDir, normLightPos));
+    vec3 reflectDir = reflect(-normLightPos, normalDir);
     float specular = 0.;
     if (0. <= lambertian){
         specular = pow(max(0., -dot(normalize(fragPos), reflectDir)), 32.);
     }
     float distance = length(lightPos - fragPos);
     float attenuation = 1. / (linear * distance + quad * distance * distance);
-    return (lambertian * baseColor + specStrength * specular * vec3(1., 1., 1.)) * attenuation;
+    return (lambertian*baseColor + specStrength * specular * vec3(1., 1., 1.)) * attenuation;
 }
+
 void main() {
-    vec3 ambient = vec3(0.1, 0., 0.);
+    vec3 ambient = vec3(.1, 0., 0.);
     float texelSize = (1. / 1024.);
     vec4 v = texture2D(uTexture, vShadowPos.xy);
     float amountInLight = 0.;

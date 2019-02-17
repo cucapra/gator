@@ -9,13 +9,12 @@ uniform mat4 uCamera;
 uniform mat4 uProjection;
 uniform mat4 uLightView;
 uniform mat4 uLightProjection;
-vec4 homify(vec3 v){return vec4(v, 1.); }
-vec3 hom_reduce(vec4 v){return vec3(v); }
 
 void main() {
     mat4 texUnitConverter = mat4(0.5, 0., 0., 0., 0., 0.5, 0., 0., 0., 0., 0.5, 0., 0.5, 0.5, 0.5, 1.);
-    vShadowPos = hom_reduce(texUnitConverter * uLightProjection * uLightView * uModel * homify(aPosition));
+    vec4 worldPos = uModel*vec4(aPosition, 1.);
+    vShadowPos = vec3(texUnitConverter * uLightProjection * uLightView * worldPos);
     vPosition = aPosition;
     vNormal = aNormal;
-    gl_Position = uProjection * uCamera * uModel * homify(aPosition);
+    gl_Position = uProjection * uCamera * worldPos;
 }
