@@ -18,13 +18,17 @@ def openNode():
 node_thread = Thread(target=openNode)
 node_thread.start()
 
-default_args = {'time': 300}
+default_args = {'time': 10}
 phong = {'name': 'phong',
          'shaders': ['raw', 'auto', 'auto', 'raw'],
          'args': {
-             'num_objects': 40
+             'num_objects': 40,
+             'time': 300
          }
          }
+shadow_map = {'name': 'shadow_map',
+              'shaders': ['default'],
+              'args': {}}
 
 benchmarks = [phong]
 browser = webdriver.Chrome()
@@ -35,7 +39,7 @@ for bench in benchmarks:
 
     for shader in bench['shaders']:
         print(f"Running with {shader} shader")
-        bench_args = {**bench['args'], **default_args}
+        bench_args = {**default_args, **bench['args']}
         bench_args['shader'] = shader
         bench_args['bench_name'] = bench['name']
         browser.get(f"localhost:{PORT}?{urlencode(bench_args)}")
