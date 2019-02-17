@@ -21,8 +21,10 @@ float decodeFloat(vec4 c){
 vec3 phong_light(vec3 lightPos, vec3 fragPos, vec3 normalDir, vec3 baseColor,
  float specStrength, float linear, float quad){
     vec3 normLightPos = normalize(lightPos);
-    float lambertian = max(0., dot(normalDir, normLightPos));
-    vec3 reflectDir = reflect(-normLightPos, normalDir);
+
+    float lightWorldDot = dot(normLightPos, normalDir);
+    float lambertian = max(0., lightWorldDot);
+    vec3 reflectDir = 2.0*lightWorldDot*normalDir - normLightPos;
     float specular = 0.;
     if (0. <= lambertian){
         specular = pow(max(0., -dot(normalize(fragPos), reflectDir)), 32.);

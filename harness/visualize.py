@@ -1,3 +1,4 @@
+import matplotlib.patches as mpatches
 import scipy.stats
 import json
 import numpy as np
@@ -24,7 +25,15 @@ dataA = [j for i in dataA for j in i]
 dataB = [j for i in dataB for j in i]
 print(np.mean(dataA), np.mean(dataB))
 print(scipy.stats.ttest_ind(dataA, dataB))
+print(scipy.stats.wilcoxon(dataB, dataA))
+print(scipy.stats.wilcoxon(dataA, dataB))
+
 fig, ax = plt.subplots()
-seaborn.violinplot(dataA, ax=ax, color='red')
 seaborn.violinplot(dataB, ax=ax, color='blue')
+seaborn.violinplot(dataA, ax=ax, color='red')
+plt.setp(ax.collections, alpha=.3)
+red_patch = mpatches.Patch(color='red', label=shaders[0])
+blue_patch = mpatches.Patch(color='blue', label=shaders[1])
+
+plt.legend(handles=[red_patch, blue_patch])
 plt.show()
