@@ -13,11 +13,12 @@ void main() {
     vec3 worldNorm = normalize(vec3(uModel*vec4(vNormal, 0.0)));
 
     vec3 lightDir = normalize(uLight - vec3(homWorldPos));
-    vec3 reflectDir = reflect(-lightDir, worldNorm);
+    float lightWorldDot = dot(lightDir, worldNorm);
+    vec3 reflectDir =  2.0*lightWorldDot*worldNorm - lightDir;
 
-    vec3 diffuse = max(dot(worldNorm, lightDir), 0.0) * lightColor;
+    vec3 diffuse = max(lightWorldDot, 0.0) * lightColor;
 
-    float spec = pow(max(dot(-camPos, reflectDir), 0.), 32.);
+    float spec = pow(max(-dot(camPos, reflectDir), 0.), 32.);
     vec3 specular = spec * vec3(1., 1., 1.);
 
     vec3 result = ambient + diffuse + specular;
