@@ -1,0 +1,30 @@
+tag coord model is vec3;
+tag coord world is vec3;
+tag viewport is vec3;
+tag camera is viewport;
+tag light is viewport;
+tag coord view<`t : viewport> is `t;
+tag coord proj<`t : viewport> is `t;
+tag coord hom<`t : vec3> is vec4;
+tag norm<`t : vec> is `t;
+
+declare vec4 vec4(vec3 v, float f);
+declare vec3 vec3(vec4 v);
+
+canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
+canon `t hom_reduce<`t : vec3>(hom<`t> v) { return vec3(v as vec4) as `t; }
+
+void main(model aPosition, model vPosition, norm<model> aNormal, norm<model> vNormal,
+proj<light> vShadowPos, hom<model>->hom<world> uModel, 
+hom<world>->hom<view<camera>> uCamera, hom<view<camera>>->hom<proj<camera>> uProjection, 
+hom<world>->hom<view<light>> uLightView, hom<view<light>>->hom<proj<light>> uLightProjection) {
+  hom<proj<light>>->hom<proj<light>> texUnitConverter = [[0.5, 0.0, 0.0, 0.5], 
+                                                         [0.0, 0.5, 0.0, 0.5], 
+                                                         [0.0, 0.0, 0.5, 0.5], 
+                                                         [0.0, 0.0, 0.0, 1.0]];
+
+  vShadowPos = hom_reduce(texUnitConverter * (aPosition in hom<proj<light>>));
+  vPosition = aPosition;
+  vNormal = aNormal;
+  hom<proj<camera>> gl_Position = aPosition in hom<proj<camera>>;
+}
