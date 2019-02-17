@@ -18,7 +18,7 @@ def openNode():
 node_thread = Thread(target=openNode)
 node_thread.start()
 
-default_args = {'time': 300}
+default_args = {'time': 20}
 phong = {'name': 'phong',
          'shaders': ['raw', 'auto', 'auto', 'raw'],
          'args': {
