@@ -2,6 +2,8 @@ declare vec4 vec4(vec3 v, float f);
 declare vec4 gl_FragCoord;
 declare `t fract<`t : genType>(`t v);
 
+varying vec3 vPosition;
+
 vec4 encodeFloat (float depth) {
   vec4 bitShift = [
     256. * 256. * 256.,
@@ -20,7 +22,7 @@ vec4 encodeFloat (float depth) {
   return comp;
 }
 
-void main(vec3 vPosition) {
+void main() {
     vec4 gl_FragColor = encodeFloat(gl_FragCoord.z);
     // vec4 gl_FragColor = vec4(vPosition, 1.);
     // vec4 gl_FragColor = [gl_FragCoord.z, gl_FragCoord.z, gl_FragCoord.z, gl_FragCoord.z];

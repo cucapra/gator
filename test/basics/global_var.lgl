@@ -1,0 +1,7 @@
+uniform vec3 x;
+varying mat3 y;
+attribute int z;
+
+void main() {
+    print 1;
+}

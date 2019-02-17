@@ -3,6 +3,9 @@ tag alphaColor is vec4;
 
 declare alphaColor textureCube(samplerCube sc, model m);
 
-void main(model vPosition, samplerCube uSkybox) {
+varying model vPosition;
+uniform samplerCube uSkybox;
+
+void main() {
     alphaColor gl_FragColor = textureCube(uSkybox, vPosition);
 }

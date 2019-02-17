@@ -12,14 +12,20 @@ declare alpha<color> textureCube(samplerCube sc, model m);
 declare vec4 vec4(vec3 v, float f);
 declare vec3 vec3(vec4 v);
 
+varying model vPosition;
+varying norm<model> vNormal;
+uniform samplerCube uSkybox;
+uniform hom<world>->hom<camera> uView;
+uniform hom<model>->hom<world> uModel;
+uniform norm<model>->camera uNormalMatrix;
+uniform camera->model uInverseViewTransform;
+
 canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
 canon `t hom_reduce<`t : vec3>(hom<`t> v) { return vec3(v as vec4) as `t; }
 canon hom<`t> homify_normal<`t : vec3>(norm<`t> v) { return vec4(v as vec3, 0.) as hom<`t>; }
 canon alpha<color> extendColor(color v) { return vec4(v as vec3, 1.) as alpha<color>; }
 
-void main(model vPosition, norm<model> vNormal, samplerCube uSkybox, hom<world>->hom<camera> uView, 
-hom<model>->hom<world> uModel, norm<model>->camera uNormalMatrix, 
-camera->model uInverseViewTransform) {
+void main() {
     norm<camera> N = normalize(uNormalMatrix * vNormal);
     camera V = -(vPosition in camera);
     camera R = -reflect(V,N);

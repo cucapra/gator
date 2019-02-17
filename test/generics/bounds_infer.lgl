@@ -21,9 +21,8 @@ void main() {
     print id([1., 2.]);
     print id([1., 2., 3.]);
 
-    print id([[1., 0.], [0., 1.]]);
-    print id([[1., 0.], [0., 1.]]);
-    print id([[1., 0.], [0., 1.], [1., 1.]]);
+    print id(1.);
+    print id(2);
 
     print as_t();
 }

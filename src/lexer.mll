@@ -85,10 +85,10 @@ rule read = parse
   | "return"        { RETURN }
   | "declare"       { DECLARE }
   | "genType"       { GENTYPE }
-  | "attribute"
+  | "attribute"     { ATTRIBUTE }
+  | "uniform"       { UNIFORM }
+  | "varying"       { VARYING }
   | "const"
-  | "uniform"
-  | "varying"
   | "break"
   | "continue"
   | "do"

@@ -20,6 +20,16 @@ declare `t reflect<`t : vec>(`t v1, `t v2);
 declare float pow(float f1, float f2);
 declare float length<`t : vec>(`t v);
 
+uniform sampler2D uTexture;
+varying vec3 vShadowPos;
+varying model vPosition;
+uniform hom<model>->hom<world> uModel;
+uniform hom<world>->hom<view<camera>> uCamera;
+varying norm<model> vNormal;
+uniform world uLight;
+uniform color uBaseColor;
+uniform float uSpecStrength;
+
 canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
 canon `t hom_reduce<`t : vec3>(hom<`t> v) { return vec3(v as vec4) as `t; }
 canon hom<`t> homify_normal<`t : vec3>(norm<`t> v) { return vec4(v as vec3, 0.) as hom<`t>; }
@@ -44,9 +54,7 @@ float specStrength, float linear, float quad) {
     return (lambertian * baseColor + specStrength * specular * [1., 1., 1.]) * attenuation;
 }
 
-void main(sampler2D uTexture, vec3 vShadowPos,
-model vPosition, hom<model>->hom<world> uModel, hom<world>->hom<view<camera>> uCamera, 
-norm<model> vNormal, world uLight, color uBaseColor, float uSpecStrength) {
+void main() {
   // vec4 color = [.6, .5, .2, 1.];
   color ambient = [.1, 0., 0.];
   float texelSize = 1. / 1024.;

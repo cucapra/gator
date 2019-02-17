@@ -1,10 +1,21 @@
-void main (vec3 aPosition, vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel) {
-    vec3->vec4 v3_v4 = [
-      [1., 0., 0.],
-      [0., 1., 0.],
-      [0., 0., 1.],
-      [0., 0., 0.]
-    ];
+tag model is vec3;
+tag coord modelHom is vec4;
+tag coord worldHom is vec4;
+tag coord cameraHom is vec4;
+tag coord projectiveHom is vec4;
 
-    vec4 gl_Position = uProjection * uView * uModel * (v3_v4 * aPosition + [0., 0., 0., 1.]);
+attribute model aPosition;
+attribute model aNormal;
+uniform cameraHom->projectiveHom uProjection;
+uniform worldHom->cameraHom uView;
+uniform modelHom->worldHom uModel;
+varying model vNormal;
+
+void main () {
+    model->modelHom expand = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [0., 0., 0.]];
+    modelHom expandScalar = [0., 0., 0., 1.];
+
+    vNormal = aNormal;
+    modelHom expanded = expand * aPosition + expandScalar;
+    projectiveHom gl_Position = expanded in projectiveHom;
 }

@@ -78,6 +78,9 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token RWICK
 %token VEC
 %token MAT
+%token ATTRIBUTE
+%token UNIFORM
+%token VARYING
 
 (* Precedences *)
 
@@ -105,20 +108,36 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %%
 
 main:
+  | t = taglst; d = declarelst; g = globalvarlst; e = fnlst; EOL 
+      { (d, t, g, e) }
+  | t = taglst; d = declarelst; g = globalvarlst; EOL 
+      { (d, t, g, []) }
   | t = taglst; d = declarelst; e = fnlst; EOL 
-      { (d, t, e) }
+      { (d, t, [], e) }
+  | d = declarelst; g = globalvarlst; e = fnlst; EOL 
+      { (d, [], g, e) }
+  | t = taglst; g = globalvarlst; e = fnlst; EOL 
+      { ([], t, g, e) }
   | t = taglst; d = declarelst; EOL              
-      { (d, t, []) }
+      { (d, t, [], []) }
   | d = declarelst; e = fnlst; EOL
-      { (d, [], e)}
-  | d = declarelst; EOL
-      { (d, [], [])}
+      { (d, [], [], e)}
+  | g = globalvarlst; e = fnlst; EOL
+      { ([], [], g, e)}
+  | d = declarelst; g = globalvarlst; EOL
+      { (d, [], g, [])}
   | t = taglst; e = fnlst; EOL 
-      { ([], t, e) }
-  | e = fnlst; EOL             
-      { ([], [], e) }
+      { ([], t, [], e) }
+  | t = taglst; g = globalvarlst; EOL 
+      { ([], t, g, []) }
+  | d = declarelst; EOL
+      { (d, [], [], [])}
   | t = taglst; EOL              
-      { ([], t, []) }
+      { ([], t, [], []) }
+  | g = globalvarlst; EOL              
+      { ([], [], g, []) }
+  | e = fnlst; EOL             
+      { ([], [], [], e) }
 ;
 
 modification:
@@ -175,6 +194,19 @@ commlst:
   | c1 = comm; c2 = commlst 
       { c1::c2 }
 ;
+
+globalvar:
+  | sq = storagequal; t = typ; x = ID; SEMI
+      { (x, sq, t) }
+;
+
+globalvarlst:
+  | gv = globalvar
+      { gv::[] }
+  | gv1 = globalvar; gv2 = globalvarlst
+      { gv1::gv2 }
+;
+
 
 params: 
   | t = typ; x = ID
@@ -337,6 +369,15 @@ typ:
         SamplerTyp (int_of_string(List.nth dim_lst 0)) }
   | VOID
       { UnitTyp }
+;
+
+storagequal:
+  | ATTRIBUTE
+      { Attribute }
+  | UNIFORM
+      { Uniform }
+  | VARYING
+      { Varying }
 ;
 
 arr:

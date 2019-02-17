@@ -25,6 +25,15 @@ type constrain =
     | GenVecTyp
     | TypConstraint of typ
 
+(* Storage qualifiers *)
+type storage_qual =
+    | Attribute
+    | Uniform
+    | Varying
+
+(* Global variables *)
+type global_var = string * storage_qual * typ
+
 (* expressions *)
 type exp =
     | Val of value
@@ -85,4 +94,4 @@ type tag_decl = modification option * string * parameterization_decl * typ
 (* Consists of list of (external) declare functions,
  * list of vector space tags,
  * and list of functions with at least one void main() function. *)
-type prog = extern_decl list * tag_decl list * fn list
+type prog = extern_decl list * tag_decl list * global_var list * fn list

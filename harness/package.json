@@ -18,6 +18,7 @@
     "bunny": "^1.0.1",
     "canvas-orbit-camera": "^1.0.0",
     "express": "^4.16.4",
+    "fs": "^0.0.1-security",
     "gl-matrix": "^2.6.1",
     "icosphere": "^1.0.0",
     "normals": "^0.1.0",

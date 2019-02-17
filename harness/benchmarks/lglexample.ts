@@ -23,8 +23,9 @@ export function compileShader(gl: WebGLRenderingContext, shaderType: number, sha
   if (!shader) {
     throw "could not create shader";
   }
-
   // Set the shader source code.
+  shaderSource.replace(/[^\x00-\x7F]/g, "");
+  console.log(shaderSource);
   gl.shaderSource(shader, shaderSource);
   // Compile the shader
   gl.compileShader(shader);
@@ -242,7 +243,7 @@ export function load_obj(gl: WebGLRenderingContext, obj_src: string): Mesh {
 
   // // Create a WebGL buffer.
   let mesh = new obj_loader.Mesh(obj_src);
-  console.log(mesh.vertices);
+  // console.log(mesh.vertices);
   // Match the interface we're using for Mesh objects that come from
   // StackGL.
   let cell = group_array(mesh.indices, 3) as Vec3Array;

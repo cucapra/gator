@@ -11,16 +11,21 @@ exception DimensionException of int * int
 (* For readability, especially with psi *)
 type par_typ_inv = id * typ list 
 
-(* Variable defs *)
+(* Variable definitions *)
+(* Maps from variable names to the type of that variable *)
 type gamma = typ Assoc.context
 
-(* Tags defs *)
+(* Tag definitions *)
+(* Stores supertype and possible parameterization information for the tag *)
 type delta = (parameterization * typ) Assoc.context
 
-(* Function defs *)
+(* Function definitions *)
+(* Stores the full type and parameterization of each function *)
 type phi = fn_type Assoc.context
 
-(* Tag modifications *)
+(* Tag and function modifiers *)
+(* Specifically the coord and canonical keywords *)
+(* Is currently only modified during tag and function declaration steps *)
 type mu = (modification option) Assoc.context
 
 (* Transformation context *)
@@ -168,6 +173,13 @@ and constrain_erase (c: constrain) (d : delta) (pm : parameterization) : TypedAs
     | GenVecTyp -> TypedAst.GenVecTyp
     | TypConstraint t -> TypedAst.ETypConstraint (tag_erase t d pm)
 
+let storage_qual_erase (sq: storage_qual) : TypedAst.storage_qual =
+    debug_print ">> storage_qual_erase";
+    match sq with
+    | Attribute -> TypedAst.Attribute
+    | Uniform -> TypedAst.Uniform
+    | Varying -> TypedAst.Varying
+
 let rec is_subtype_with_strictness (to_check : typ) (target : typ) (d : delta) (pm: parameterization) (strict : bool) : bool =
     debug_print (">> is_subtype " ^ (string_of_typ to_check) ^ ", " ^(string_of_typ target));
     let rec tag_typ_equality (t1: typ) (t2: typ) : bool =
@@ -237,9 +249,13 @@ let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta
     | (TypConstraint (TransTyp _), GenMatTyp) -> true
     | (_, GenMatTyp) -> false
 
-let rec is_bounded_by (t: typ) (c: constrain) (d: delta) (pm: parameterization): bool =
+let is_bounded_by (t: typ) (c: constrain) (d: delta) (pm: parameterization): bool =
     debug_print ">> is_bounded_by";
     is_sub_constraint (TypConstraint t) c d pm
+
+(* Special case that comes up a bunch -- previously covered incorrectly by 'genType' *)
+let is_non_bool (t: typ) (d: delta) (pm: parameterization) : bool =
+    is_bounded_by t GenTyp d pm || is_bounded_by t GenMatTyp d pm
 
 let match_parameterization (d: delta) (pmb: (string * constrain) list) (pml : typ list) (pm: parameterization) : (typ Assoc.context) option =
     debug_print ">> match_parametrization";
@@ -445,7 +461,7 @@ let check_bool_binop (t1: typ) (t2: typ) (d: delta) (pm: parameterization): typ 
 (* Type check unary number operators (i.e. -) *)
 let check_num_unop (t: typ) (d: delta) (pm: parameterization) : typ =
     debug_print ">> check_num_unop";
-    if is_bounded_by t GenTyp d pm then t
+    if is_non_bool t d pm then t
     else raise (TypeException "Expected integer, float, vector, or matrix expression")
 
 (* Type check unary bool operators (i.e. !) *)
@@ -488,7 +504,7 @@ let check_as_exp (t1: typ) (t2: typ) (d: delta) (pm: parameterization) : typ =
 (* Types are closed under addition and scalar multiplication *)
 let check_addition_exp (t1: typ) (t2: typ) (d: delta) (pm: parameterization): typ =
     debug_print ">> check_addition";
-    if is_bounded_by t1 GenTyp d pm then least_common_parent t1 t2 d pm
+    if is_non_bool t1 d pm then least_common_parent t1 t2 d pm
     else raise (TypeException ("Invalid expressions for addition: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2)))
 
@@ -501,8 +517,8 @@ let check_times_exp (t1: typ) (t2: typ) (d: delta) (pm: parameterization): typ =
     if is_subtype t1 IntTyp d pm && is_subtype t2 IntTyp d pm then 
         least_common_parent t1 t2 d pm
     (* Scalar multiplication *)
-    else if check_subtype_list t1 intfloat_list d pm && is_bounded_by t2 GenTyp d pm then t2
-    else if check_subtype_list t2 intfloat_list d pm && is_bounded_by t1 GenTyp d pm then t1
+    else if check_subtype_list t1 intfloat_list d pm && is_non_bool t2 d pm then t2
+    else if check_subtype_list t2 intfloat_list d pm && is_non_bool t1 d pm then t1
     (* Matrix-vector multiplication *)
     else if is_bounded_by t1 GenMatTyp d pm then
         (let (t1l, t1r) = as_matrix_pair t1 d pm in
@@ -625,6 +641,22 @@ let check_params (pl : (string * typ) list) (g: gamma) (d : delta) (m: mu)
     let (g', ps') = List.fold_left (fun (g', ps') p -> check_param p g' d m pm ps') (g, ps) pl in 
     let p = (List.map (fun (i, t) -> (i, tag_erase t d pm)) pl) in 
     (p, g', ps')
+
+(* Type check global variable *)
+let check_global_variable ((id, sq, t): (string * storage_qual * typ)) (g: gamma)
+    (d: delta) (m:mu) (ps: psi) : gamma * psi =
+    debug_print ">> check_global_variable";
+    if Assoc.mem id g
+    then raise (TypeException ("Duplicate global variable: " ^ id))
+    else check_typ_valid t d Assoc.empty; (Assoc.update id t g, update_psi_matrix id t m ps)
+
+(* Get list of variables from global variable list *)
+let check_global_variables (gvl: (string * storage_qual * typ) list)
+    (g: gamma) (d: delta) (m: mu) (ps: psi) : TypedAst.global_vars * gamma * psi =
+    debug_print ">> check_global_variables";
+    let (g', ps') = List.fold_left (fun (g', ps') gv -> check_global_variable gv g' d m ps') (g, ps) gvl in
+    let gv = (List.map (fun (i, sq, t) -> (i, storage_qual_erase sq, tag_erase t d Assoc.empty)) gvl) in
+    (gv, g', ps')
     
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parameterization) : TypedAst.texp = 
     debug_print ">> exp_to_texp";
@@ -1121,16 +1153,16 @@ and check_fn_lst (fl: fn list) (g: gamma) (d: delta) (m: mu) (p: phi) (ps: psi) 
     | [] -> ([], p)
     | h::t -> let (ps', m', fn', p') = check_fn h g d m p ps in
         let (fn'', p'') = check_fn_lst t g d m' p' ps' in 
-        ((fn' :: fn''), p'')
+        (fn' :: fn'', p'')
 
 (* Check that there is a void main() defined *)
-let check_main_fn (g: gamma) (d: delta) (m: mu) (p: phi) : TypedAst.params =
+let check_main_fn (p: phi) : unit =
     debug_print ">> check_main_fn";
     let (params, ret_type, pm) = Assoc.lookup "main" p in 
     debug_print (">> check_main_fn_2" ^ (string_of_params params) ^ (string_of_parameterization pm));
-    if (Assoc.size pm) > 0 then raise (TypeException "Cannot provide generic parameters to main") else
+    if (List.length params) > 0 || (Assoc.size pm) > 0 then raise (TypeException "Cannot provide parameters to main") else
     match ret_type with
-        | UnitTyp -> check_params params g d m pm Assoc.empty |> tr_fst
+        | UnitTyp -> ()
         | _ -> raise (TypeException ("Expected main function to return void"))
 
 let check_decls (g: gamma) (d: delta) (m: mu) (dl : extern_decl) (p: phi) (ps: psi) : (gamma * mu * phi)=
@@ -1143,7 +1175,7 @@ let check_decls (g: gamma) (d: delta) (m: mu) (dl : extern_decl) (p: phi) (ps: p
 
 (* Returns the list of fn's which represent the program 
  * and params of the void main() fn *)
-let check_prog ((dl, t, f): prog) : TypedAst.prog * TypedAst.params =
+let check_prog ((dl, t, gv, f): prog) : TypedAst.prog * TypedAst.global_vars =
     debug_print ">> check_prog";
     (*(d: delta) ((id, t): fn_decl) (p: phi) *)
     (* delta from tag declarations *)
@@ -1152,9 +1184,10 @@ let check_prog ((dl, t, f): prog) : TypedAst.prog * TypedAst.params =
     let (g, m', p) = List.fold_left 
         (fun (g', m', p') (dl': extern_decl) -> check_decls g' d m' dl' p' Assoc.empty) 
         (Assoc.empty, m, Assoc.empty) dl in
-    let (e', p') = check_fn_lst f g d m' p Assoc.empty in 
-    let pr = check_main_fn g d m' p' in 
+    let (gvr, g', ps) = check_global_variables gv g d m' Assoc.empty in
+    let (e', p') = check_fn_lst f g' d m' p ps in
+    check_main_fn p';
     debug_print "===================";
     debug_print "Type Check Complete";
     debug_print "===================\n";
-    (e', pr)
+    (e', gvr)

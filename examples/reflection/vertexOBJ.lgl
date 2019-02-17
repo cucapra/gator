@@ -6,11 +6,19 @@ tag coord projectiveHom is vec4;
 
 declare vec4 vec4(vec3 v, float f);
 
+attribute model aPosition;
+attribute model aNormal;
+varying model vPosition;
+varying model vNormal;
+uniform cameraHom->projectiveHom uProjection;
+uniform worldHom->cameraHom uView;
+uniform modelHom->worldHom uModel;
+
 canon modelHom homify(model v) {
   return vec4(v as vec3, 1.) as modelHom;
 }
 
-void main(model aPosition, model aNormal, model vPosition, model vNormal, cameraHom->projectiveHom uProjection, worldHom->cameraHom uView, modelHom->worldHom uModel) {
+void main() {
   vNormal = aNormal;
   vPosition = aPosition;
   projectiveHom gl_Position = aPosition in projectiveHom;

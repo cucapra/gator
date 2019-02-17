@@ -12,12 +12,6 @@ type ltyp_top =
     | VecDim of int
     | MatDim of int * int
 
-let attrib_type (var_name : string) : string =
-    if (String.get var_name 0) = 'a' then "attribute" else
-    (if (String.get var_name 0) = 'v' then "varying" else
-    (if (String.get var_name 0) = 'u' then "uniform" else
-    failwith "Not a supported glsl attribute"))
-
 (* Ignore original declarations of attributes and the like *)
 let check_name (var_name : string) : bool = 
     let decl_reg = Str.regexp "[auv][A-Z]" in
@@ -196,20 +190,20 @@ let rec comp_fn_lst (f : fn list) : string =
     | h::t -> (comp_fn h) ^ (comp_fn_lst t)
 
 
-let decl_attribs (p : params) : string = 
+let decl_attribs (gv : global_vars) : string = 
     debug_print ">> decl_attribs";
-    let rec decl_attribs_list (pl : (string * etyp) list) : string =
-        match pl with
+    let rec decl_attribs_list (gv : (string * storage_qual * etyp) list) : string =
+        match gv with
         | [] -> ""
-        | (x, et)::t -> 
+        | (x, sq, et)::t -> 
             if check_name x then
-                (attrib_type x) ^ " " ^ (string_of_glsl_typ et) ^ " " ^ x ^ ";" ^ (decl_attribs_list t)
+                (string_of_storage_qual sq) ^ " " ^ (string_of_glsl_typ et) ^ " " ^ x ^ ";" ^ (decl_attribs_list t)
             else decl_attribs_list t
     in
-    decl_attribs_list p
+    decl_attribs_list gv
 
-let rec compile_program (prog : prog) (params : params) : string =
+let rec compile_program (prog : prog) (global_vars : global_vars) : string =
     debug_print ">> compile_program";
-    "precision mediump float;" ^ (decl_attribs params) ^ 
+    "precision mediump float;" ^ (decl_attribs global_vars) ^ 
      (comp_fn_lst prog)
  
