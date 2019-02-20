@@ -7,7 +7,6 @@ tag coord hom<`t : vec3> is vec4;
 declare vec4 vec4(vec3 v, float f);
 declare vec3 vec3(vec4 v);
 
-
 attribute model aPosition;
 uniform hom<camera>->hom<projective> uProjection;
 uniform hom<world>->hom<camera> uView;
