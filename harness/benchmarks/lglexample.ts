@@ -417,7 +417,7 @@ export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRen
 
   // Set up the interactive pan/rotate/zoom camera.
   let camera = canvasOrbitCamera(canvas);
-  camera.zoom(-29);
+  // camera.zoom(-29);
   // Initialize the transformation matrices that are dictated by the camera
   // and the canvas dimensions.
   let projection = mat4.create();

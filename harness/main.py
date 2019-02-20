@@ -33,7 +33,7 @@ shadow_map = {'name': 'shadow_map',
               'shaders': ['raw', 'default', 'default', 'raw'],
               'args': {}}
 reflection = {'name': 'reflection',
-              'shaders': ['default', 'raw'],
+              'shaders': ['raw'],
               'args': {}}
 
 benchmarks = [reflection]

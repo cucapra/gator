@@ -8,10 +8,8 @@ uniform mat4 uProjection;
 uniform mat4 uView;
 uniform mat4 uModel;
 
-vec4 homify(vec3 v){return vec4(v, 1.);}
-
 void main() {
     vNormal = aNormal;
     vPosition = aPosition;
-    gl_Position = (uProjection * ((uView * ((uModel * (homify(aPosition)))))));
+    gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
 }

@@ -27,6 +27,13 @@ function main() {
   const SHADER = params['shader'] || 'default';
   var fs = require("fs");
 
+  var vertSB_glsl = fs.readFileSync('./benchmarks/reflection/raw/vertexSB.shader', 'utf8');
+  var fragSB_glsl = fs.readFileSync('./benchmarks/reflection/raw/fragmentSB.shader', 'utf8');
+  var vertOBJ_glsl = fs.readFileSync('./benchmarks/reflection/raw/vertexOBJ.shader', 'utf8');
+  var fragOBJ_glsl = fs.readFileSync('./benchmarks/reflection/raw/fragmentOBJ.shader', 'utf8');
+  var vert_glsl = fs.readFileSync('./benchmarks/reflection/raw/vertex.shader', 'utf8');
+  var frag_glsl = fs.readFileSync('./benchmarks/reflection/raw/fragment.shader', 'utf8');
+
   const shaders = {
     'default': [require('./default/vertexSB.lgl'),
                 require('./default/fragmentSB.lgl'),
@@ -35,12 +42,12 @@ function main() {
                 require('./default/vertex.lgl'),
                 require('./default/fragment.lgl')
               ],
-    'raw': [require('./raw/vertexSB.shader'),
-            require('./raw/fragmentSB.shader'),
-            require('./raw/vertexOBJ.shader'),
-            require('./raw/fragmentOBJ.shader'),
-            require('./raw/vertex.shader'),
-            require('./raw/fragment.shader')
+    'raw': [vertSB_glsl,
+            fragSB_glsl,
+            vertOBJ_glsl,
+            fragOBJ_glsl,
+            vert_glsl,
+            frag_glsl
           ]
   };
 
