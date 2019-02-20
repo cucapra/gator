@@ -8,8 +8,6 @@ uniform vec3 uLight;
 varying vec3 vPosition;
 
 void main() {
-    mat4 v4_v3 = mat4(1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.);
-    mat4 v3_v4 = mat4(1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.);
     vec3 color = vec3(0.9, 0.8, 0.9);
     vec3 lightColor = vec3(0.4, 0.3, 0.9);
     float ambientStrength = 0.5;
