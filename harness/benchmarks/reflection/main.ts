@@ -35,6 +35,13 @@ function main() {
                 require('./default/vertex.lgl'),
                 require('./default/fragment.lgl')
               ],
+    'raw': [require('./raw/vertexSB.shader'),
+            require('./raw/fragmentSB.shader'),
+            require('./raw/vertexOBJ.shader'),
+            require('./raw/fragmentOBJ.shader'),
+            require('./raw/vertex.shader'),
+            require('./raw/fragment.shader')
+          ]
   };
 
   let vertSB = shaders[SHADER][0];
