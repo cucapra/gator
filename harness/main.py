@@ -33,7 +33,7 @@ shadow_map = {'name': 'shadow_map',
               'shaders': ['raw', 'default', 'default', 'raw'],
               'args': {}}
 reflection = {'name': 'reflection',
-              'shaders': ['default'],
+              'shaders': ['default', 'raw'],
               'args': {}}
 
 benchmarks = [reflection]
@@ -59,6 +59,6 @@ for bench in benchmarks:
 
         WebDriverWait(browser, bench_args['time']*10).until(
             lambda session: found_finish_div())
-# browser.quit()
+browser.quit()
 
 node_process.kill()
