@@ -1,0 +1,33 @@
+tag coord model is vec3;
+tag coord world is vec3;
+tag coord camera is vec3;
+tag coord hom<`t : vec3> is vec4;
+tag norm<`t : vec> is `t;
+tag color is vec3;
+tag alpha<`t : color> is vec4;
+
+declare canon norm<`t> normalize<`t: vec>(`t v);
+declare `t reflect<`t: vec>(`t c1, `t c2);
+declare alpha<color> textureCube(samplerCube sc, model m);
+declare vec4 vec4(vec3 v, float f);
+declare vec3 vec3(vec4 v);
+
+varying model vPosition;
+varying norm<model> vNormal;
+uniform samplerCube uSkybox;
+uniform hom<world>->hom<camera> uView;
+uniform hom<model>->hom<world> uModel;
+uniform norm<model>->camera uNormalMatrix;
+uniform camera->model uInverseViewTransform;
+
+canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
+canon `t hom_reduce<`t : vec3>(hom<`t> v) { return vec3(v as vec4) as `t; }
+canon hom<`t> homify_normal<`t : vec3>(norm<`t> v) { return vec4(v as vec3, 0.) as hom<`t>; }
+canon alpha<color> extendColor(color v) { return vec4(v as vec3, 1.) as alpha<color>; }
+
+void main() {
+    norm<camera> N = normalize(uNormalMatrix * vNormal);
+    camera V = -(vPosition in camera);
+    camera R = -reflect(V,N);
+    alpha<color> gl_FragColor = textureCube(uSkybox, R in model);
+}
