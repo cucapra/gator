@@ -1,19 +1,29 @@
 import * as lgl from '../lglexample';
 import { mat4, vec3 } from 'gl-matrix';
 
+// Texture for LPSHead
+const head_lambert : string = require('../resources/lpshead/lambertian.jpg');
+
+// Loads file system implementation in parcel
+// * can only call synchronous functions *
+const fs : any = require('fs');
+
+var __dirname : string;
+
 function main() {
   let [gl, params] = lgl.setup(render);
   const NUM_OBJECTS = parseInt(params['num_objects'] || "100");
   const SHADER = params['shader'] || 'default';
-  var fs = require("fs");
+
   var vert_glsl = fs.readFileSync('./benchmarks/texture/glsl/vertex.shader', 'utf8');
   var frag_glsl = fs.readFileSync('./benchmarks/texture/glsl/fragment.shader', 'utf8');
   
   const shaders = {
-    'auto': [require('./auto/vertex.lgl'), require('./auto/fragment.lgl')],
+//    'auto': [require('./auto/vertex.lgl'), require('./auto/fragment.lgl')],
     'default': [require('./default/vertex.lgl'), require('./default/fragment.lgl')],
     'glsl': [vert_glsl, frag_glsl]
   };
+
   const vertices: string[] = new Array(NUM_OBJECTS).fill(shaders[SHADER][0]);
   const frags: string[] = new Array(NUM_OBJECTS).fill(shaders[SHADER][1]);
   const programs: WebGLProgram[] = [];
@@ -21,6 +31,12 @@ function main() {
     programs.push(lgl.compileProgram(gl, vertices[i], frags[i]));
   }
 
+  // Compile our shaders.
+  let program = lgl.compileProgram(gl,
+    require('./default/vertex.lgl'),
+    require(('./default/fragment.lgl'))
+  );
+  
   let locations: { [locname: string]: WebGLUniformLocation | number; }[] = [];
   programs.forEach((program) => {
     // Uniform and attribute locations.
@@ -28,14 +44,19 @@ function main() {
     location['uProjection'] = lgl.uniformLoc(gl, program, 'uProjection');
     location['uView'] = lgl.uniformLoc(gl, program, 'uView');
     location['uModel'] = lgl.uniformLoc(gl, program, 'uModel');
-    location['uLight'] = lgl.uniformLoc(gl, program, 'uLight');
+    location['uTexture'] = lgl.uniformLoc(gl, program, 'uTexture');
     location['aPosition'] = lgl.attribLoc(gl, program, 'aPosition');
-    location['aNormal'] = lgl.attribLoc(gl, program, 'aNormal');
+    location['aTexCoord'] = lgl.attribLoc(gl, program, 'aTexCoord');
     locations.push(location);
   });
 
+  // Read in lpshead obj
+  // URL must be statically analyzable other than (__dirname) and (__filename)
+  let src = fs.readFileSync(__dirname + './../resources/lpshead/head.OBJ', 'utf8');
+
+  let mesh = lgl.load_obj (gl, src);
   // We'll draw a teapot.
-  let meshes = new Array(NUM_OBJECTS).fill(lgl.getBunny(gl));
+  let meshes = new Array(NUM_OBJECTS).fill(mesh);
 
   // Initialize the model position.
   let models: mat4[] = [];
@@ -49,12 +70,13 @@ function main() {
     }
   }
 
-  // Position the light source for the lighting effect.
-  let light = vec3.fromValues(20., 0., 20.);
-  function render(view: mat4, projection: mat4) {
-    // Rotate the model a little bit on each frame.
+  // Load image texture
+  lgl.load_texture(gl, head_lambert);
 
+  function render(view: mat4, projection: mat4) {
     for (let i = 0; i < NUM_OBJECTS; i++) {
+
+      // Rotate the model a little bit on each frame.
       mat4.rotateY(models[i], models[i], .01);
 
       // Use our shader pair.
@@ -64,12 +86,14 @@ function main() {
       gl.uniformMatrix4fv(locations[i]["uProjection"], false, projection);
       gl.uniformMatrix4fv(locations[i]["uView"], false, view);
       gl.uniformMatrix4fv(locations[i]["uModel"], false, models[i]);
-      gl.uniform3fv(locations[i]["uLight"], light);
-
+      
+      // Use texture unit 0 for uTexture
+      gl.uniform1i(locations[i]["uTexture"], 0);
+    
       // Set the attribute arrays.
-      lgl.bind_attrib_buffer(gl, locations[i]["aNormal"] as number, meshes[i].normals, 3);
       lgl.bind_attrib_buffer(gl, locations[i]["aPosition"] as number, meshes[i].positions, 3);
-
+      lgl.bind_attrib_buffer(gl, locations[i]["aTexCoord"] as number, meshes[i].texcoords, 2);
+    
       // Draw the object.
       lgl.drawMesh(gl, meshes[i]);
     }
