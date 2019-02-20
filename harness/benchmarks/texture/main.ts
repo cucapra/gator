@@ -15,13 +15,13 @@ function main() {
   const NUM_OBJECTS = parseInt(params['num_objects'] || "100");
   const SHADER = params['shader'] || 'default';
 
-  var vert_glsl = fs.readFileSync('./benchmarks/texture/glsl/vertex.shader', 'utf8');
-  var frag_glsl = fs.readFileSync('./benchmarks/texture/glsl/fragment.shader', 'utf8');
+  var vert_glsl = fs.readFileSync('./benchmarks/texture/raw/vertex.shader', 'utf8');
+  var frag_glsl = fs.readFileSync('./benchmarks/texture/raw/fragment.shader', 'utf8');
   
   const shaders = {
 //    'auto': [require('./auto/vertex.lgl'), require('./auto/fragment.lgl')],
     'default': [require('./default/vertex.lgl'), require('./default/fragment.lgl')],
-    'glsl': [vert_glsl, frag_glsl]
+    'raw': [vert_glsl, frag_glsl]
   };
 
   const vertices: string[] = new Array(NUM_OBJECTS).fill(shaders[SHADER][0]);
