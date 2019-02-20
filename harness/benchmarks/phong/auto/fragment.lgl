@@ -34,7 +34,7 @@ void main(model vPosition, hom<model>->hom<world> uModel, hom<world>->hom<camera
 
     auto lightDir = (uLight - (vPosition in world)) in norm<world>;
     float lambertian = max(dot(vNormal in norm<world>, lightDir), 0.);
-    
+
     auto reflectDir = normalize(reflect(-lightDir, vNormal in norm<world>) in camera);
     float specular = pow(max(dot(-(vPosition in norm<camera>), reflectDir), 0.0), 32.);
 

@@ -3,7 +3,7 @@
 
 
 declare float dot(vec3 v1, vec3 v2);
-declare vec3 normalize(vec3 v1); 
+declare vec3 normalize(vec3 v1);
 
 void main(vec3 uPosition, vec4->vec4 uModel, vec4->vec4 uView, vec3 vNormal, vec3 uLight, vec3 vPosition) {
     vec4->vec3 v4_v3 = [
@@ -23,7 +23,7 @@ void main(vec3 uPosition, vec4->vec4 uModel, vec4->vec4 uView, vec3 vNormal, vec
     vec3 lightColor = [0.4, 0.3, 0.9];
 
     // ****************
-    // Ambient lighting 
+    // Ambient lighting
     // ****************
     float ambientStrength = 0.5;
     vec3 ambient = ambientStrength * lightColor;
@@ -64,17 +64,17 @@ void main(vec3 uPosition, vec4->vec4 uModel, vec4->vec4 uView, vec3 vNormal, vec
 
     vec3 reflectDir = (neg * lightDir) - 2. * (dot ((neg * lightDir), worldNorm)) * worldNorm;
     vec3 cameraReflect = v4_v3 * (uView * (v3_v4 * reflectDir));
-    float spec = dot(viewDir, cameraReflect); 
+    float spec = dot(viewDir, cameraReflect);
     bool spec_is_neg = (spec <= 0.);
     if (spec_is_neg) {
         spec = 0.;
     } else { skip; }
 
     spec = spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec; // We don't have a pow function yet..
-    vec3 specular = specularStrength * spec * [1., 1., 1.];  
+    vec3 specular = specularStrength * spec * [1., 1., 1.];
 
     // Combining ambient, diffuse, and spectral lighting
-    vec3 result = (color .* (ambient + diffuse + specular)); 
+    vec3 result = (color .* (ambient + diffuse + specular));
     vec4 gl_FragColor = (v3_v4 * result) + [0., 0., 0., 1.];
 
     //vec4 gl_FragColor = [0., 0., 0., 1.];

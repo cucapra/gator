@@ -18,24 +18,33 @@ def openNode():
 node_thread = Thread(target=openNode)
 node_thread.start()
 
-default_args = {'time': 10}
-phong = {'name': 'texture',
-         'shaders': ['default', 'glsl'],
+default_args = {'time': 300}
+phong = {'name': 'phong',
+         'shaders': ['raw', 'auto', 'auto', 'raw'],
          'args': {
-             'num_objects': 10
+             'num_objects': 40,
+             'time': 300
          }
          }
+texture = {'name': 'texture',
+         'shaders': ['glsl', 'default', 'default', 'glsl'],
+         'args':{}}
+shadow_map = {'name': 'shadow_map',
+              'shaders': ['raw', 'default', 'default', 'raw'],
+              'args': {}}
 
-benchmarks = [phong]
+benchmarks = [shadow_map]
 browser = webdriver.Chrome()
 for bench in benchmarks:
     print(f"Running {bench['name']}")
     subprocess.run(
         ["parcel", "build", f"benchmarks/{bench['name']}/index.html"])
+
     for shader in bench['shaders']:
         print(f"Running with {shader} shader")
-        bench_args = {**bench['args'], **default_args}
+        bench_args = {**default_args, **bench['args']}
         bench_args['shader'] = shader
+        bench_args['bench_name'] = bench['name']
         browser.get(f"localhost:{PORT}?{urlencode(bench_args)}")
 
         def found_finish_div():
