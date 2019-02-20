@@ -6,8 +6,6 @@ function main() {
   const NUM_OBJECTS = parseInt(params['num_objects'] || "100");
   const SHADER = params['shader'] || 'default';
   var fs = require("fs");
-  var vert_glsl = fs.readFileSync('./benchmarks/phong/glsl/vertex.shader', 'utf8');
-  var frag_glsl = fs.readFileSync('./benchmarks/phong/glsl/fragment.shader', 'utf8');
 
   const shaders = {
     'auto': [require('./auto/vertex.lgl'), require('./auto/fragment.lgl')],
