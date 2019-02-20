@@ -27,7 +27,7 @@ phong = {'name': 'phong',
          }
          }
 texture = {'name': 'texture',
-         'shaders': ['glsl', 'default', 'default', 'glsl'],
+         'shaders': ['raw', 'default', 'default', 'raw'],
          'args':{}}
 shadow_map = {'name': 'shadow_map',
               'shaders': ['raw', 'default', 'default', 'raw'],
