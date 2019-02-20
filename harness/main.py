@@ -19,8 +19,8 @@ node_thread = Thread(target=openNode)
 node_thread.start()
 
 default_args = {'time': 10}
-phong = {'name': 'phong',
-         'shaders': ['default', 'auto', 'glsl'],
+phong = {'name': 'texture',
+         'shaders': ['default', 'glsl'],
          'args': {
              'num_objects': 10
          }
@@ -47,6 +47,6 @@ for bench in benchmarks:
 
         WebDriverWait(browser, bench_args['time']*10).until(
             lambda session: found_finish_div())
-browser.quit()
+# browser.quit()
 
 node_process.kill()
