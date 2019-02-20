@@ -1,19 +1,24 @@
-attribute vec3 aPosition;
-uniform vec4->vec4 uProjection;
-uniform vec4->vec4 uView;
-uniform vec4->vec4 uModel;
+tag coord model is vec3;
+tag coord world is vec3;
+tag coord camera is vec3;
+tag coord projective is vec3;
+tag coord hom<`t : vec3> is vec4;
+
+declare vec4 vec4(vec3 v, float f);
+declare vec3 vec3(vec4 v);
+
+
+attribute model aPosition;
+uniform hom<camera>->hom<projective> uProjection;
+uniform hom<world>->hom<camera> uView;
+uniform hom<model>->hom<world> uModel;
 attribute vec2 aTexCoord;
 varying vec2 vTexCoord;
 
-void main() {
-  vec3->vec4 v3_v4 = [
-    [1., 0., 0.],
-    [0., 1., 0.],
-    [0., 0., 1.],
-    [0., 0., 0.]
-  ];
-  
-  vTexCoord = aTexCoord;
+canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
+canon `t hom_reduce<`t : vec3>(hom<`t> v) { return vec3(v as vec4) as `t; }
 
-  vec4 gl_Position = uProjection * uView * uModel * (v3_v4 * aPosition + [0., 0., 0., 1.]);
+void main() {
+  vTexCoord = aTexCoord;
+  hom<projective> gl_Position = aPosition in hom<projective>;
 }
