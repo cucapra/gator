@@ -22,12 +22,31 @@ function main() {
 
   let frameNumber = 0;
 
-  let gl = lgl.setup(render);
+  let [gl, params] = lgl.setup(render);
+  const NUM_OBJECTS = parseInt(params['num_objects'] || "100");
+  const SHADER = params['shader'] || 'default';
+  var fs = require("fs");
+
+  const shaders = {
+    'default': [require('./default/vertexSB.lgl'),
+                require('./default/fragmentSB.lgl'),
+                require('./default/vertexOBJ.lgl'),
+                require('./default/fragmentOBJ.lgl'),
+                require('./default/vertex.lgl'),
+                require('./default/fragment.lgl')
+              ],
+  };
+
+  let vertSB = shaders[SHADER][0];
+  let fragSB = shaders[SHADER][1];
+  let vertOBJ = shaders[SHADER][2];
+  let fragOBJ = shaders[SHADER][3];
+  let vert = shaders[SHADER][4];
+  let frag = shaders[SHADER][5];
 
   // Compile our shaders.
   let programSB = lgl.compileProgram(gl,
-    require('./vertexSB.lgl'),
-    require('./fragmentSB.lgl')
+    vertSB, fragSB
   );
 
   // Uniform and attribute locations.
@@ -44,8 +63,7 @@ function main() {
 
   // Compile our shaders.
   let programOBJ = lgl.compileProgram(gl,
-    require('./vertexOBJ.lgl'),
-    require('./fragmentOBJ.lgl')
+    vertOBJ, fragOBJ
   );
 
   gl.useProgram(programOBJ);
@@ -75,8 +93,7 @@ function main() {
 
   // Compile our shaders.
   let program = lgl.compileProgram(gl,
-    require('./vertex.lgl'),
-    require('./fragment.lgl')
+    vert, frag
   );
 
   // Uniform and attribute locations.

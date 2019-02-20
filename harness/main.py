@@ -32,8 +32,11 @@ texture = {'name': 'texture',
 shadow_map = {'name': 'shadow_map',
               'shaders': ['raw', 'default', 'default', 'raw'],
               'args': {}}
+reflection = {'name': 'reflection',
+              'shaders': ['default'],
+              'args': {}}
 
-benchmarks = [shadow_map]
+benchmarks = [reflection]
 browser = webdriver.Chrome()
 for bench in benchmarks:
     print(f"Running {bench['name']}")
