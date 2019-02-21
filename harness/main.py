@@ -29,7 +29,7 @@ texture = {'name': 'texture',
            'shaders': ['raw', 'default', 'default', 'raw'],
            'args': {}}
 shadow_map = {'name': 'shadow_map',
-              'shaders': ['raw', 'default'],
+              'shaders': ['raw', 'default', 'default', 'raw'],
               'args': {}}
 reflection = {'name': 'reflection',
               'shaders': ['default', 'raw', 'default', 'raw'],
