@@ -9,14 +9,14 @@ function main() {
     globalRotationAxis: vec3;
     globalAngularVelocity: number;
     color: vec3;
-  
-    constructor(i: number){
-      this.translation = vec3.fromValues(Math.random()-.5,Math.random()-.5,Math.random()-.5);
-      this.localRotationAxis = vec3.fromValues(Math.random(),Math.random(),Math.random());
-      this.localAngularVelocity = 0.005 + 0.1*Math.random();
-      this.globalRotationAxis = vec3.fromValues(Math.random(),Math.random(),Math.random());
-      this.globalAngularVelocity = 0.005 + 0.02*Math.random();
-      this.color = vec3.fromValues(Math.random(),Math.random(),Math.random());
+
+    constructor(i: number) {
+      this.translation = vec3.fromValues(Math.random() - .5, Math.random() - .5, Math.random() - .5);
+      this.localRotationAxis = vec3.fromValues(Math.random(), Math.random(), Math.random());
+      this.localAngularVelocity = 0.005 + 0.1 * Math.random();
+      this.globalRotationAxis = vec3.fromValues(Math.random(), Math.random(), Math.random());
+      this.globalAngularVelocity = 0.005 + 0.02 * Math.random();
+      this.color = vec3.fromValues(Math.random(), Math.random(), Math.random());
     }
   }
 
@@ -27,28 +27,30 @@ function main() {
   const SHADER = params['shader'] || 'default';
   var fs = require("fs");
 
-  var vertSB_glsl = fs.readFileSync('./benchmarks/reflection/raw/vertexSB.shader', 'utf8');
-  var fragSB_glsl = fs.readFileSync('./benchmarks/reflection/raw/fragmentSB.shader', 'utf8');
-  var vertOBJ_glsl = fs.readFileSync('./benchmarks/reflection/raw/vertexOBJ.shader', 'utf8');
-  var fragOBJ_glsl = fs.readFileSync('./benchmarks/reflection/raw/fragmentOBJ.shader', 'utf8');
-  var vert_glsl = fs.readFileSync('./benchmarks/reflection/raw/vertex.shader', 'utf8');
-  var frag_glsl = fs.readFileSync('./benchmarks/reflection/raw/fragment.shader', 'utf8');
+  // var vertSB_glsl = fs.readFileSync('./benchmarks/reflection/raw/vertexSB.shader', 'utf8');
+  // var fragSB_glsl = fs.readFileSync('./benchmarks/reflection/raw/fragmentSB.shader', 'utf8');
+  // var vertOBJ_glsl = fs.readFileSync('./benchmarks/reflection/raw/vertexOBJ.shader', 'utf8');
+  // var fragOBJ_glsl = fs.readFileSync('./benchmarks/reflection/raw/fragmentOBJ.shader', 'utf8');
+  // var vert_glsl = fs.readFileSync('./benchmarks/reflection/raw/vertex.shader', 'utf8');
+  // var frag_glsl = fs.readFileSync('./benchmarks/reflection/raw/fragment.shader', 'utf8');
 
   const shaders = {
-    'default': [require('./default/vertexSB.lgl'),
-                require('./default/fragmentSB.lgl'),
-                require('./default/vertexOBJ.lgl'),
-                require('./default/fragmentOBJ.lgl'),
-                require('./default/vertex.lgl'),
-                require('./default/fragment.lgl')
-              ],
-    'raw': [vertSB_glsl,
-            fragSB_glsl,
-            vertOBJ_glsl,
-            fragOBJ_glsl,
-            vert_glsl,
-            frag_glsl
-          ]
+    'default': [
+      require('./default/vertexSB.lgl'),
+      require('./default/fragmentSB.lgl'),
+      require('./default/vertexOBJ.lgl'),
+      require('./default/fragmentOBJ.lgl'),
+      require('./default/vertex.lgl'),
+      require('./default/fragment.lgl')
+    ],
+    'raw': [
+      require('./raw/vertexSB.glsl'),
+      require('./raw/fragmentSB.glsl'),
+      require('./raw/vertexOBJ.glsl'),
+      require('./raw/fragmentOBJ.glsl'),
+      require('./raw/vertex.glsl'),
+      require('./raw/fragment.glsl'),
+    ]
   };
 
   let vertSB = shaders[SHADER][0];
@@ -128,17 +130,17 @@ function main() {
   var ct = 0;
   var img = new Array(6);
   var urls = [
-      require('../resources/park/posx.jpg'), require('../resources/park/negx.jpg'), 
-      require('../resources/park/posy.jpg'), require('../resources/park/negy.jpg'), 
-      require('../resources/park/posz.jpg'), require('../resources/park/negz.jpg')
+    require('../resources/park/posx.jpg'), require('../resources/park/negx.jpg'),
+    require('../resources/park/posy.jpg'), require('../resources/park/negy.jpg'),
+    require('../resources/park/posz.jpg'), require('../resources/park/negz.jpg')
   ];
-  
+
   let cubemapTargets = [  // targets for use in some gl functions for working with cubemaps
-    gl.TEXTURE_CUBE_MAP_POSITIVE_X, gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 
-    gl.TEXTURE_CUBE_MAP_POSITIVE_Y, gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 
-    gl.TEXTURE_CUBE_MAP_POSITIVE_Z, gl.TEXTURE_CUBE_MAP_NEGATIVE_Z 
+    gl.TEXTURE_CUBE_MAP_POSITIVE_X, gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+    gl.TEXTURE_CUBE_MAP_POSITIVE_Y, gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+    gl.TEXTURE_CUBE_MAP_POSITIVE_Z, gl.TEXTURE_CUBE_MAP_NEGATIVE_Z
   ];
-  
+
   let dynamicCubemap = gl.createTexture(); // Create the texture object for the reflection map
 
   gl.bindTexture(gl.TEXTURE_CUBE_MAP, dynamicCubemap);  // create storage for the reflection map images
@@ -151,14 +153,14 @@ function main() {
 
   for (var i = 0; i < 6; i++) {
     img[i] = new Image();
-    img[i].onload = function() {
+    img[i].onload = function () {
       ct++;
       if (ct == 6) {
         gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxCubemap);
         var targets = [
-          gl.TEXTURE_CUBE_MAP_POSITIVE_X, gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 
-          gl.TEXTURE_CUBE_MAP_POSITIVE_Y, gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 
-          gl.TEXTURE_CUBE_MAP_POSITIVE_Z, gl.TEXTURE_CUBE_MAP_NEGATIVE_Z 
+          gl.TEXTURE_CUBE_MAP_POSITIVE_X, gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+          gl.TEXTURE_CUBE_MAP_POSITIVE_Y, gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+          gl.TEXTURE_CUBE_MAP_POSITIVE_Z, gl.TEXTURE_CUBE_MAP_NEGATIVE_Z
         ];
         for (var j = 0; j < 6; j++) {
           gl.texImage2D(targets[j], 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img[j]);
@@ -172,17 +174,17 @@ function main() {
   }
 
   let frameBuffer = gl.createFramebuffer();  // create the framebuffer that will draw to the reflection map
-  gl.bindFramebuffer(gl.FRAMEBUFFER,frameBuffer);  // select the framebuffer, so we can attach the depth buffer to it
+  gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);  // select the framebuffer, so we can attach the depth buffer to it
   let depthBuffer = gl.createRenderbuffer();   // renderbuffer for depth buffer in framebuffer
   gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer); // so we can create storage for the depthBuffer
   gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 512, 512);
   gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthBuffer);
 
   function renderSkyboxAndCubes(projection: mat4, view: mat4) {
-    
-    gl.clearColor(0,0,0,1);
+
+    gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    
+
     // Draw the skybox, with its static cubemap texture.
     gl.useProgram(programSB);
 
@@ -194,16 +196,16 @@ function main() {
     // Set the attribute arrays.
     lgl.bind_attrib_buffer(gl, loc_aPositionSB, skybox.positions, 3);
 
-    gl.clearColor(0,0,0,1);
+    gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxCubemap);   
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxCubemap);
 
     // Draw the object.
     gl.disable(gl.CULL_FACE);
     lgl.drawMesh(gl, skybox);
     gl.enable(gl.CULL_FACE);
-    
+
     // Draw the moving cubes, which are drawn with lighting.
     gl.useProgram(programOBJ);
 
@@ -219,77 +221,77 @@ function main() {
 
     let transformed = vec4.create();
     vec4.transformMat4(transformed, light, modelview);
-    
-    gl.uniform4fv( loc_uLightOBJ, transformed );
+
+    gl.uniform4fv(loc_uLightOBJ, transformed);
 
     // Set the shader "uniform" parameters.
     gl.uniformMatrix4fv(loc_uProjectionOBJ, false, projection);
     gl.uniformMatrix4fv(loc_uViewOBJ, false, view);
-    
+
     for (var i = 0; i < movingCubeData.length; i++) {  // draw the cubes
-        var cd = movingCubeData[i];
-        let cdModel = mat4.create();
-        mat4.rotate(cdModel, model, frameNumber*cd.globalAngularVelocity, cd.globalRotationAxis);
-        mat4.translate(cdModel, cdModel, cd.translation);
-        mat4.rotate(cdModel, cdModel, frameNumber*cd.localAngularVelocity, cd.localRotationAxis);
+      var cd = movingCubeData[i];
+      let cdModel = mat4.create();
+      mat4.rotate(cdModel, model, frameNumber * cd.globalAngularVelocity, cd.globalRotationAxis);
+      mat4.translate(cdModel, cdModel, cd.translation);
+      mat4.rotate(cdModel, cdModel, frameNumber * cd.localAngularVelocity, cd.localRotationAxis);
 
-        gl.uniformMatrix4fv(loc_uModelOBJ, false, cdModel);
-        // gl.uniform3fv(loc_uColorOBJ, cd.color);
+      gl.uniformMatrix4fv(loc_uModelOBJ, false, cdModel);
+      // gl.uniform3fv(loc_uColorOBJ, cd.color);
 
-        // Draw the cube.
-        lgl.drawMesh(gl, cubeMesh);
+      // Draw the cube.
+      lgl.drawMesh(gl, cubeMesh);
     }
-    
-    gl.disableVertexAttribArray(loc_aPositionOBJ); 
-    gl.disableVertexAttribArray(loc_aNormalOBJ); 
+
+    gl.disableVertexAttribArray(loc_aPositionOBJ);
+    gl.disableVertexAttribArray(loc_aNormalOBJ);
   }
 
   function createDynamicCubemap() {
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
-    gl.viewport(0,0,512,512);  //match size of the texture images
+    gl.viewport(0, 0, 512, 512);  //match size of the texture images
     let projection = mat4.create();
-    mat4.perspective(projection, Math.PI/2, 1, 1, 300);  // Set projection to give 90-degree field of view.
-    
+    mat4.perspective(projection, Math.PI / 2, 1, 1, 300);  // Set projection to give 90-degree field of view.
+
     let view = mat4.create();
-    
+
     mat4.identity(view);
-    mat4.scale(view,view,[-1,-1,1]);
+    mat4.scale(view, view, [-1, -1, 1]);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, dynamicCubemap, 0);
     renderSkyboxAndCubes(projection, view);
- 
+
     mat4.identity(view);
-    mat4.scale(view,view,[-1,-1,1]);
-    mat4.rotateY(view,view,Math.PI/2);
+    mat4.scale(view, view, [-1, -1, 1]);
+    mat4.rotateY(view, view, Math.PI / 2);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_POSITIVE_X, dynamicCubemap, 0);
     renderSkyboxAndCubes(projection, view);
 
     mat4.identity(view);
-    mat4.scale(view,view,[-1,-1,1]);
-    mat4.rotateY(view,view,Math.PI);
+    mat4.scale(view, view, [-1, -1, 1]);
+    mat4.rotateY(view, view, Math.PI);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_POSITIVE_Z, dynamicCubemap, 0);
     renderSkyboxAndCubes(projection, view);
 
     mat4.identity(view);
-    mat4.scale(view,view,[-1,-1,1]);
-    mat4.rotateY(view,view,-Math.PI/2);
+    mat4.scale(view, view, [-1, -1, 1]);
+    mat4.rotateY(view, view, -Math.PI / 2);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_NEGATIVE_X, dynamicCubemap, 0);
     renderSkyboxAndCubes(projection, view);
-    
+
     mat4.identity(view);
-    mat4.rotateX(view,view,Math.PI/2);
+    mat4.rotateX(view, view, Math.PI / 2);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, dynamicCubemap, 0);
     renderSkyboxAndCubes(projection, view);
-    
+
     mat4.identity(view);
-    mat4.rotateX(view,view,-Math.PI/2);
+    mat4.rotateX(view, view, -Math.PI / 2);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_POSITIVE_Y, dynamicCubemap, 0);
     renderSkyboxAndCubes(projection, view);
-    
+
     /* The commented out section below is an alternative way of computing the positive and negative Y images,
        including the x/y flip.  The rotations that are used in this version correspond are the correct rotations
        based on the layout of the six images in a cubemap.   The single rotation used above is equivalent to the
        flip and two rotations used below. */
-    
+
     //mat4.identity(modelview);
     //mat4.scale(modelview,modelview,[-1,-1,1]);
     //mat4.rotateX(modelview,modelview,Math.PI/2);
@@ -303,9 +305,9 @@ function main() {
     //mat4.rotateY(modelview,modelview,Math.PI);
     //gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_POSITIVE_Y, dynamicCubemap, 0);
     //renderSkyboxAndCubes();
-    
+
     gl.bindTexture(gl.TEXTURE_CUBE_MAP, dynamicCubemap);
-    gl.generateMipmap( gl.TEXTURE_CUBE_MAP );
+    gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
   }
 
   function render(view: mat4, projection: mat4) {
@@ -317,7 +319,7 @@ function main() {
       throw "no canvas found";
     }
     let canvas = canvases[0] as HTMLCanvasElement;
-    gl.viewport(0,0,canvas.width,canvas.height);
+    gl.viewport(0, 0, canvas.width, canvas.height);
 
     renderSkyboxAndCubes(projection, view);
 
@@ -343,7 +345,7 @@ function main() {
     // Set the attribute arrays.
     lgl.bind_attrib_buffer(gl, loc_aPosition, teapot.positions, 3);
     lgl.bind_attrib_buffer(gl, loc_aNormal, teapot.normals, 3);
-    
+
     gl.bindTexture(gl.TEXTURE_CUBE_MAP, dynamicCubemap);
 
     // Draw the object.
