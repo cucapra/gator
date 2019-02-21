@@ -407,7 +407,7 @@ export function check_null<T>(v: T | null, s: string): T {
  * The canvas gets an interactive "orbit camera" that lets the user
  * interactively manipulate the view.
  */
-export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRenderingContext, { [key: string]: string; }] {
+export function setup(render: (view: mat4, projection: mat4) => void, camZoom?: number, camRotate?: [[number, number], [number, number]]): [WebGLRenderingContext, { [key: string]: string; }] {
   // Get the first canvas on the document.
   let canvases = document.getElementsByTagName('canvas');
   if (canvases.length === 0) {
@@ -417,7 +417,10 @@ export function setup(render: (view: mat4, projection: mat4) => void): [WebGLRen
 
   // Set up the interactive pan/rotate/zoom camera.
   let camera = canvasOrbitCamera(canvas);
-  // camera.zoom(-29);
+  if (camZoom == null) camZoom = 0;
+  if (camRotate == null) camRotate = [[0, 0], [0, 0]];
+  camera.zoom(camZoom);
+  camera.rotate(camRotate[0], camRotate[1]);
   // Initialize the transformation matrices that are dictated by the camera
   // and the canvas dimensions.
   let projection = mat4.create();

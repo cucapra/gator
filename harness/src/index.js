@@ -12,7 +12,7 @@ app.use(bodyParser.json());
 app.use('/', express.static(path.join(__dirname, '..', '/dist')));
 
 const date = new Date();
-const curTime = date.getUTCMonth() + '_' + date.getUTCDate() + '_' + date.getHours() + '_' + date.getMinutes() + '_' + date.getSeconds();
+const curTime = date.getUTCMonth() + '_' + date.getUTCDate() + '_' + date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 if (!fs.existsSync('data'))
     fs.mkdirSync('data');
 const tempDataFile = path.normalize('data/run.json');

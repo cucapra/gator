@@ -29,13 +29,14 @@ texture = {'name': 'texture',
            'shaders': ['raw', 'default', 'default', 'raw'],
            'args': {}}
 shadow_map = {'name': 'shadow_map',
-              'shaders': ['raw', 'default', 'default', 'raw'],
+              'shaders': ['raw', 'default'],
               'args': {}}
 reflection = {'name': 'reflection',
               'shaders': ['default', 'raw', 'default', 'raw'],
               'args': {}}
 
-benchmarks = [phong, shadow_map, texture, reflection]
+# benchmarks = [phong, shadow_map, texture, reflection]
+benchmarks = [shadow_map]
 browser = webdriver.Chrome()
 for bench in benchmarks:
     print(f"Running {bench['name']}")

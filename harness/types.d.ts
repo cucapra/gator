@@ -75,14 +75,14 @@ declare module 'canvas-orbit-camera' {
   /**
    * A camera from `canvas-orbit-camera` augmented with a `tick` method.
    */
-  class CanvasOrbitCamera extends OrbitCamera {
+  export class CanvasOrbitCamera extends OrbitCamera {
     /**
      * Update the camera position based on input events.
      */
     tick(): void;
   }
 
-  export default function attachCamera(canvas: HTMLCanvasElement, opts?: Options): CanvasOrbitCamera;
+  export function attachCamera(canvas: HTMLCanvasElement, opts?: Options): CanvasOrbitCamera;
 }
 
 declare module 'primitive-cube' {
