@@ -7,8 +7,8 @@ function main() {
   const SHADER = params['shader'] || 'default';
 
   const shaders = {
-    'auto': [require('./auto/vertex.lgl'), require('./auto/fragment.lgl')],
     'default': [require('./default/vertex.lgl'), require('./default/fragment.lgl')],
+    'basic': [require('./basic/vertex.lgl'), require('./basic/fragment.lgl')],
     'raw': [require('./raw/vertex.glsl'), require('./raw/fragment.glsl')]
   };
   const vertices: string[] = new Array(NUM_OBJECTS).fill(shaders[SHADER][0]);

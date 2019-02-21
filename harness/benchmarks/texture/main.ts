@@ -2,26 +2,23 @@ import * as lgl from '../lglexample';
 import { mat4, vec3 } from 'gl-matrix';
 
 // Texture for LPSHead
-const head_lambert : string = require('../resources/lpshead/lambertian.jpg');
+const head_lambert: string = require('../resources/lpshead/lambertian.jpg');
 
 // Loads file system implementation in parcel
 // * can only call synchronous functions *
-const fs : any = require('fs');
+const fs: any = require('fs');
 
-var __dirname : string;
+var __dirname: string;
 
 function main() {
   let [gl, params] = lgl.setup(render);
   const NUM_OBJECTS = parseInt(params['num_objects'] || "100");
   const SHADER = params['shader'] || 'default';
 
-  var vert_glsl = fs.readFileSync('./benchmarks/texture/raw/vertex.shader', 'utf8');
-  var frag_glsl = fs.readFileSync('./benchmarks/texture/raw/fragment.shader', 'utf8');
-  
+
   const shaders = {
-//    'auto': [require('./auto/vertex.lgl'), require('./auto/fragment.lgl')],
     'default': [require('./default/vertex.lgl'), require('./default/fragment.lgl')],
-    'raw': [vert_glsl, frag_glsl]
+    'raw': [require('./raw/vertex.glsl'), require('./raw/fragment.glsl')],
   };
 
   const vertices: string[] = new Array(NUM_OBJECTS).fill(shaders[SHADER][0]);
@@ -31,12 +28,6 @@ function main() {
     programs.push(lgl.compileProgram(gl, vertices[i], frags[i]));
   }
 
-  // Compile our shaders.
-  let program = lgl.compileProgram(gl,
-    require('./default/vertex.lgl'),
-    require(('./default/fragment.lgl'))
-  );
-  
   let locations: { [locname: string]: WebGLUniformLocation | number; }[] = [];
   programs.forEach((program) => {
     // Uniform and attribute locations.
@@ -54,7 +45,7 @@ function main() {
   // URL must be statically analyzable other than (__dirname) and (__filename)
   let src = fs.readFileSync(__dirname + './../resources/lpshead/head.OBJ', 'utf8');
 
-  let mesh = lgl.load_obj (gl, src);
+  let mesh = lgl.load_obj(gl, src);
   // We'll draw a teapot.
   let meshes = new Array(NUM_OBJECTS).fill(mesh);
 
@@ -86,14 +77,14 @@ function main() {
       gl.uniformMatrix4fv(locations[i]["uProjection"], false, projection);
       gl.uniformMatrix4fv(locations[i]["uView"], false, view);
       gl.uniformMatrix4fv(locations[i]["uModel"], false, models[i]);
-      
+
       // Use texture unit 0 for uTexture
       gl.uniform1i(locations[i]["uTexture"], 0);
-    
+
       // Set the attribute arrays.
       lgl.bind_attrib_buffer(gl, locations[i]["aPosition"] as number, meshes[i].positions, 3);
       lgl.bind_attrib_buffer(gl, locations[i]["aTexCoord"] as number, meshes[i].texcoords, 2);
-    
+
       // Draw the object.
       lgl.drawMesh(gl, meshes[i]);
     }
