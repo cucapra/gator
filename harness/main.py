@@ -18,7 +18,7 @@ def openNode():
 node_thread = Thread(target=openNode)
 node_thread.start()
 
-default_args = {'time': 300}
+default_args = {'time': 10}
 phong = {'name': 'phong',
          'shaders': ['raw', 'auto', 'auto', 'raw'],
          'args': {
@@ -33,7 +33,7 @@ shadow_map = {'name': 'shadow_map',
               'shaders': ['raw', 'default', 'default', 'raw'],
               'args': {}}
 reflection = {'name': 'reflection',
-              'shaders': ['raw'],
+              'shaders': ['raw', 'default'],
               'args': {}}
 
 benchmarks = [reflection]
