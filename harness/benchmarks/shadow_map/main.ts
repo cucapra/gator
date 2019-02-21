@@ -3,7 +3,7 @@ import { mat4 } from 'gl-matrix';
 import { debug } from 'util';
 
 function main() {
-  let [gl, params] = lgl.setup(render);
+  let [gl, params] = lgl.setup(render, 100, [[-0.1, 0.5], [0, 0]]);
   let shadowDepthTextureSize = 1024
   const SHADER = params['shader'] || 'default';
 
