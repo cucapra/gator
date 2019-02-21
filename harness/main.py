@@ -18,25 +18,24 @@ def openNode():
 node_thread = Thread(target=openNode)
 node_thread.start()
 
-default_args = {'time': 300}
+default_args = {'time': 10}
 phong = {'name': 'phong',
-         'shaders': ['raw', 'auto', 'auto', 'raw'],
+         'shaders': ['raw', 'default', 'default', 'raw'],
          'args': {
              'num_objects': 40,
-             'time': 300
          }
          }
 texture = {'name': 'texture',
-         'shaders': ['raw', 'default', 'default', 'raw'],
-         'args':{}}
+           'shaders': ['raw', 'default', 'default', 'raw'],
+           'args': {}}
 shadow_map = {'name': 'shadow_map',
               'shaders': ['raw', 'default', 'default', 'raw'],
               'args': {}}
 reflection = {'name': 'reflection',
-              'shaders': ['default', 'raw'],
+              'shaders': ['default', 'raw', 'default', 'raw'],
               'args': {}}
 
-benchmarks = [phong]
+benchmarks = [phong, shadow_map, texture, reflection]
 browser = webdriver.Chrome()
 for bench in benchmarks:
     print(f"Running {bench['name']}")

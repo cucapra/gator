@@ -3,6 +3,7 @@ import scipy.stats
 import json
 import numpy as np
 import seaborn
+import pandas as pd
 import matplotlib.pyplot as plt
 import sys
 import os.path
@@ -12,28 +13,32 @@ if len(sys.argv) > 1:
     FILE_NAME = f'data/{sys.argv[1]}'
 FILE_NAME = os.path.normpath(FILE_NAME)
 data = json.load(open(FILE_NAME))
-
-benchmarks = list({i['bench_name'] for i in data})
-print(benchmarks)
-assert(len(benchmarks)==1) # Visualization is only set up for 1 benchmark
-shaders = list({i['shader'] for i in data})
-print(shaders)
-assert(len(shaders) == 2) # Visualization is currently only set up for comparing 2 shaders at a time
-dataA = [i['fpsData'] for i in data if i['shader'] == shaders[0]]
-dataB = [i['fpsData'] for i in data if i['shader'] == shaders[1]]
-dataA = [j for i in dataA for j in i]
-dataB = [j for i in dataB for j in i]
-print(np.mean(dataA), np.mean(dataB))
-print(scipy.stats.ttest_ind(dataA, dataB))
-print(scipy.stats.wilcoxon(dataB, dataA))
-print(scipy.stats.wilcoxon(dataA, dataB))
+df1 = pd.DataFrame(data)
+df = pd.DataFrame([(d, *(tup[1:])) for tup in df1.itertuples()
+                   for d in tup.fpsData])
+df.columns = ['frame'] + list(df1.columns)
+bench_names = list(set(list(df['bench_name'])))
+for bench in bench_names:
+    data_raw = df.loc[(df['shader'] == 'raw') & (
+        df['bench_name'] == bench)]['frame']
+    data_default = df.loc[(df['shader'] ==
+                           'default') & (df['bench_name'] == bench)]['frame']
+    data_raw, data_default = list(data_raw), list(data_default)
+    print(bench)
+    print(f"Means \n Raw: {np.mean(data_raw)} Lgl: {np.mean(data_default)}")
+    print(f" Ttest : {scipy.stats.ttest_ind(data_raw, data_default).pvalue}")
+    print(f" Wilcox: {scipy.stats.wilcoxon(data_raw, data_default).pvalue}")
+    print('---------')
 
 fig, ax = plt.subplots()
-seaborn.violinplot(dataB, ax=ax, color='blue')
-seaborn.violinplot(dataA, ax=ax, color='red')
+seaborn.violinplot(
+    ax=ax, data=df.loc[df['shader'] == 'default'], x="bench_name", y="frame", color='red')
+seaborn.violinplot(
+    ax=ax, data=df.loc[df['shader'] == 'raw'], x="bench_name", y="frame", color='blue')
 plt.setp(ax.collections, alpha=.3)
-red_patch = mpatches.Patch(color='red', label=shaders[0])
-blue_patch = mpatches.Patch(color='blue', label=shaders[1])
+red_patch = mpatches.Patch(color='red', label='default')
+blue_patch = mpatches.Patch(color='blue', label='raw')
 
 plt.legend(handles=[red_patch, blue_patch])
+plt.show()
 plt.show()

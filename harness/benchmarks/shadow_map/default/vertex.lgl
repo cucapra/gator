@@ -24,6 +24,7 @@ uniform hom<view<light>>->hom<proj<light>> uLightProjection;
 
 canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
 canon `t hom_reduce<`t : vec3>(hom<`t> v) { return vec3(v as vec4) as `t; }
+
 void main() {
   hom<proj<light>>->hom<proj<light>> texUnitConverter = [[0.5, 0.0, 0.0, 0.5],
                                                          [0.0, 0.5, 0.0, 0.5],
