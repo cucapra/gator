@@ -33,10 +33,10 @@ shadow_map = {'name': 'shadow_map',
               'shaders': ['raw', 'default', 'default', 'raw'],
               'args': {}}
 reflection = {'name': 'reflection',
-              'shaders': ['raw'],
+              'shaders': ['default', 'raw'],
               'args': {}}
 
-benchmarks = [reflection]
+benchmarks = [phong]
 browser = webdriver.Chrome()
 for bench in benchmarks:
     print(f"Running {bench['name']}")

@@ -5,7 +5,13 @@
 declare float dot(vec3 v1, vec3 v2);
 declare vec3 normalize(vec3 v1);
 
-void main(vec3 uPosition, vec4->vec4 uModel, vec4->vec4 uView, vec3 vNormal, vec3 uLight, vec3 vPosition) {
+uniform vec3 uPosition;
+uniform vec4->vec4 uModel;
+uniform vec4->vec4 uView;
+varying vec3 vNormal;
+uniform vec3 uLight;
+varying vec3 vPosition;
+void main() {
     vec4->vec3 v4_v3 = [
         [1.,0.,0.,0.],
         [0.,1.,0.,0.],
