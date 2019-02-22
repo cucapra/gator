@@ -10,7 +10,7 @@ import os.path
 
 FILE_NAME = 'data/run.json'
 if len(sys.argv) > 1:
-    FILE_NAME = f'data/{sys.argv[1]}'
+    FILE_NAME = sys.argv[1]
 FILE_NAME = os.path.normpath(FILE_NAME)
 data = json.load(open(FILE_NAME))
 df1 = pd.DataFrame(data)
@@ -32,9 +32,9 @@ for bench in bench_names:
 
 fig, ax = plt.subplots()
 seaborn.violinplot(
-    ax=ax, data=df.loc[df['shader'] == 'default'], x="bench_name", y="frame", color='red')
+    ax=ax, data=df.loc[df['shader'] == 'default'], x="frame", y="bench_name", color='red')
 seaborn.violinplot(
-    ax=ax, data=df.loc[df['shader'] == 'raw'], x="bench_name", y="frame", color='blue')
+    ax=ax, data=df.loc[df['shader'] == 'raw'], x="frame", y="bench_name", color='blue')
 plt.setp(ax.collections, alpha=.3)
 red_patch = mpatches.Patch(color='red', label='default')
 blue_patch = mpatches.Patch(color='blue', label='raw')
