@@ -11,9 +11,10 @@ type typ =
     | FloatTyp
     | TopVecTyp of int
     | BotVecTyp of int
-    | VarTyp of id * typ list (* i.e. model or hom<model> *)
+    | VarTyp of id (* i.e. model *)
     | TransTyp of typ * typ
-    | SamplerTyp of int (* i.e. sampler2D *)
+    | ParTyp of typ * typ list (* i.e. hom<model> or sampler2D<model, world> *)
+    | SamplerTyp of int
     | SamplerCubeTyp
     | AbsTyp of id (* i.e. `t *)
 

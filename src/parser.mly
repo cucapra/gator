@@ -84,7 +84,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 
 (* Precedences *)
 
-%left ID 
+%left ID
 %left TRANS
 %left AS IN
 %left AND OR
@@ -346,8 +346,8 @@ typ:
         (TopVecTyp (int_of_string(List.nth dim_lst 0))))}
   | x1 = typ; TRANS; x2 = typ 
       { TransTyp(x1,x2) }
-  | x = ID; LWICK; tl = typlst; RWICK; 
-      { VarTyp (x, tl) }
+  | x = typ; LWICK; tl = typlst; RWICK; 
+      { ParTyp(x,tl) }
   | x = ID 
       { if (Str.string_match vec x 0) then (
         let len = String.length x in 
@@ -359,15 +359,15 @@ typ:
         let dim = int_of_string (String.sub x 3 (len-3)) in
         TransTyp (TopVecTyp dim, TopVecTyp dim)
         ) 
-        else (VarTyp (x, [])) }
-  | SAMPLERCUBE
+        else (VarTyp x) }
+  | SAMPLERCUBE 
       { SamplerCubeTyp }
-  | s = SAMPLER                     
+  | s = SAMPLER 
       { let len = String.length s in
         let dim = String.sub s 7 (len-7) in 
         let dim_lst = Str.split_delim (regexp "D") dim in
         SamplerTyp (int_of_string(List.nth dim_lst 0)) }
-  | VOID
+  | VOID 
       { UnitTyp }
 ;
 

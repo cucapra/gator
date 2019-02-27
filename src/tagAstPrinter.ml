@@ -13,9 +13,10 @@ let rec string_of_typ (t: typ) : string =
     | FloatTyp -> "float"
     | TopVecTyp n -> "vec"^(string_of_int n)
     | BotVecTyp n -> "vec"^(string_of_int n)^"lit"
-    | VarTyp (s, t) -> s ^ (if List.length t > 0 then "<" ^ (string_of_lst string_of_typ t) ^ ">" else "")
+    | VarTyp s -> s
+    | ParTyp (t, tl) -> string_of_typ t ^ "<" ^ (string_of_lst string_of_typ tl) ^ ">"
     | TransTyp (s1, s2) -> (string_of_typ s1) ^ "->" ^ (string_of_typ s2)
-    | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D"
+    | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D "
     | SamplerCubeTyp -> "samplerCube"
     | AbsTyp s -> "`" ^ s
 

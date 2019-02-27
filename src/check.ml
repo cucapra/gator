@@ -9,7 +9,7 @@ exception TypeException of string
 exception DimensionException of int * int
 
 (* For readability, especially with psi *)
-type par_typ_inv = id * typ list 
+type par_typ_inv = typ * typ list 
 
 (* Variable definitions *)
 (* Maps from variable names to the type of that variable *)
@@ -34,8 +34,7 @@ type mu = (modification option) Assoc.context
 type psi = ((typ * par_typ_inv) list) Assoc.context
 
 let string_of_delta (d : delta) = Assoc.to_string (fun (pm, t) -> "(" ^ string_of_parameterization pm ^ ", " ^ string_of_typ t ^ ")") d
-let string_of_par_typ_inv ((s, tl) : par_typ_inv) = string_of_typ (VarTyp (s, tl))
-let string_of_psi (ps : psi) = Assoc.to_string (fun x -> string_of_arr (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_par_typ_inv p ^ ")") x) ps
+let string_of_psi (ps : psi) = Assoc.to_string (fun x -> string_of_arr (fun (t, (t', tl)) -> "(" ^ string_of_typ t ^ ", " ^ string_of_typ (ParTyp (t', tl)) ^ ")") x) ps
 
 let trans_top (n1: int) (n2: int) : typ =
     TransTyp (BotVecTyp n1, TopVecTyp n2)
@@ -76,13 +75,14 @@ let match_parameterization_unsafe (pm: parameterization) (pml : typ list) : typ 
 let rec replace_abstype (t: typ) (c: typ Assoc.context) : typ =
     debug_print ">> replace_abstype";
     match t with
-    | VarTyp (s, tl) -> VarTyp (s, List.map (fun x -> replace_abstype x c) tl)
+    | ParTyp (s, tl) -> ParTyp (s, List.map (fun x -> replace_abstype x c) tl)
     | AbsTyp s -> Assoc.lookup s c
     | TransTyp (t1, t2) -> TransTyp (replace_abstype t1 c, replace_abstype t2 c)
     | _ -> t
 
 (* Looks up delta without checking the bounds on the pml *)
 let delta_lookup_unsafe (s: id) (pml: typ list) (d: delta) : typ =
+    (* If the given type evaluates to a declared a tag, return it *)
     debug_print ">> delta_lookup_unsafe";
     if Assoc.mem s d then
     let (pm, t) = Assoc.lookup s d in
@@ -114,22 +114,29 @@ and constrain_to_constrain (c : TypedAst.constrain) : constrain =
     | TypedAst.ETypConstraint t -> TypConstraint (etyp_to_typ t)
 
 type dim_constrain_typ = | UnconInt of int | ConString of string
-let rec vec_dim_constrain (t: typ) (d: delta) (pm: parameterization) : dim_constrain_typ =
+let rec vec_dim_constrain (t: typ) (d: delta) (pm: parameterization) : dim_constrain_typ option =
     debug_print ">> vec_dim";
-    let fail _ = failwith ("Expected a vector for computing the dimension, got " ^ (string_of_typ t)) in
     match t with
     | TopVecTyp n
-    | BotVecTyp n -> UnconInt n
-    | VarTyp (s, pml) -> vec_dim_constrain (delta_lookup_unsafe s pml d) d pm
+    | BotVecTyp n -> Some (UnconInt n)
+    | ParTyp (VarTyp s, pml) -> vec_dim_constrain (delta_lookup_unsafe s pml d) d pm 
+    | VarTyp s -> vec_dim_constrain (delta_lookup_unsafe s [] d) d pm
     | AbsTyp s -> (match unwrap_abstyp s pm with
         | TypConstraint t' -> vec_dim_constrain t' d pm
-        | GenVecTyp -> ConString s
-        | _ -> fail ())
-    | _ -> fail ()
+        | GenVecTyp -> Some (ConString s)
+        | _ -> None)
+    | _ -> None
+
+let vec_dim_safe (t: typ) (d: delta) (pm: parameterization) : int option =
+    match vec_dim_constrain t d pm with
+    | Some (UnconInt i) -> Some i 
+    | Some (ConString _) -> raise (TypeException ("Vector " ^ string_of_typ t ^ " does not have a concrete dimension"))
+    | None -> None
 
 let vec_dim (t: typ) (d: delta) (pm: parameterization) : int =
-    match vec_dim_constrain t d pm with
-    | UnconInt i -> i | _ -> raise (TypeException ("Vector " ^ string_of_typ t ^ " does not have a concrete dimension"))
+    match vec_dim_safe t d pm with
+    | Some i -> i
+    | None -> failwith ("Expected vector for computing dimension, got " ^ string_of_typ t)
 
 let rec tag_erase_param (t: typ) (d: delta) (pm: parameterization) : TypedAst.etyp = 
     debug_print ">> tag_erase_param";
@@ -149,14 +156,18 @@ and tag_erase (t : typ) (d : delta) (pm: parameterization) : TypedAst.etyp =
     | FloatTyp -> TypedAst.FloatTyp
     | TopVecTyp _
     | BotVecTyp _
-    | VarTyp _ -> (match vec_dim_constrain t d pm with
-        | UnconInt i -> TypedAst.VecTyp i | ConString s -> TypedAst.AbsTyp (s, TypedAst.GenVecTyp))
+    | VarTyp _
+    | ParTyp (VarTyp _, _) -> (match vec_dim_constrain t d pm with
+        | Some (UnconInt i) -> TypedAst.VecTyp i 
+        | Some (ConString s) -> TypedAst.AbsTyp (s, TypedAst.GenVecTyp)
+        | None -> raise (TypeException ("No valid vector interpretation of " ^ string_of_typ t)))
     (* Convert to the strange glsl style of doing things *)
     (* TODO: standardize this and handle switching in the emitter *)
+    | ParTyp (t', _) -> tag_erase t' d pm
     | TransTyp (t1, t2) -> 
     begin
         match (vec_dim_constrain t1 d pm, vec_dim_constrain t2 d pm) with
-        | (UnconInt n1, UnconInt n2) -> TypedAst.MatTyp (n2, n1)
+        | (Some (UnconInt n1), Some (UnconInt n2)) -> TypedAst.MatTyp (n2, n1)
         | _ -> TypedAst.TransTyp (tag_erase t1 d pm, tag_erase t2 d pm)
     end
     | SamplerTyp i -> TypedAst.SamplerTyp i
@@ -182,16 +193,8 @@ let storage_qual_erase (sq: storage_qual) : TypedAst.storage_qual =
 
 let rec is_subtype_with_strictness (to_check : typ) (target : typ) (d : delta) (pm: parameterization) (strict : bool) : bool =
     debug_print (">> is_subtype " ^ (string_of_typ to_check) ^ ", " ^(string_of_typ target));
-    let rec tag_typ_equality (t1: typ) (t2: typ) : bool =
-        match (t1, t2) with
-        | BotVecTyp n1, BotVecTyp n2 
-        | TopVecTyp n1, TopVecTyp n2 -> n1 = n2
-        | VarTyp (s1, pml1), VarTyp (s2, pml2) -> s1 = s2 &&
-                if List.length pml1 = List.length pml2
-                then List.fold_left2 (fun acc t1 t2 -> tag_typ_equality t1 t2 && acc) true pml1 pml2
-                else false
-        | AbsTyp s1, AbsTyp s2 -> s1 = s2
-        | _ -> false
+    let typ_equality (t1: typ) (t2: typ) : bool =
+      is_subtype_with_strictness t1 t2 d pm strict && is_subtype_with_strictness t2 t1 d pm strict
     in
     let abstyp_step (s: string) : bool =
         if Assoc.mem s pm 
@@ -205,24 +208,23 @@ let rec is_subtype_with_strictness (to_check : typ) (target : typ) (d : delta) (
     | BotVecTyp n1, TopVecTyp n2
     | TopVecTyp n1, TopVecTyp n2 -> n1 = n2
     | TopVecTyp _, _ -> false
-    | BotVecTyp n, VarTyp _ -> n = (vec_dim target d pm)
-    | VarTyp _, BotVecTyp _ -> false
-    | VarTyp (s, pml), VarTyp _ -> if tag_typ_equality to_check target then true
-        else is_subtype_with_strictness (delta_lookup_unsafe s pml d) target d pm strict
-    | VarTyp _, TopVecTyp n -> not strict && (vec_dim to_check d pm) = n
-    | (SamplerTyp i1, SamplerTyp i2) -> i1 = i2 
-    | (BoolTyp, BoolTyp)
-    | (IntTyp, IntTyp)
-    | (FloatTyp, FloatTyp)
-    | (SamplerCubeTyp, SamplerCubeTyp) -> true
-    | (TransTyp (t1, t2), TransTyp (t3, t4)) -> 
+    | BotVecTyp n, VarTyp _ 
+    | BotVecTyp n, ParTyp (VarTyp _, _) -> n = (vec_dim target d pm)
+    | VarTyp s1, VarTyp s2 -> s1 = s2 || is_subtype_with_strictness (delta_lookup_unsafe s1 [] d) target d pm strict
+    | VarTyp _, TopVecTyp n -> not strict && (vec_dim to_check d pm) =  n
+    | SamplerTyp i1, SamplerTyp i2 -> i1 = i2 
+    | BoolTyp, BoolTyp
+    | IntTyp, IntTyp
+    | FloatTyp, FloatTyp
+    | SamplerCubeTyp, SamplerCubeTyp -> true
+    | TransTyp (t1, t2), TransTyp (t3, t4) -> 
         (is_subtype_with_strictness t3 t1 d pm false && is_subtype_with_strictness t2 t4 d pm strict)
-    | (AbsTyp s1, AbsTyp s2) -> 
+    | AbsTyp s1, AbsTyp s2 -> 
         s1 = s2 || abstyp_step s1
-    | (AbsTyp s, _) -> 
+    | AbsTyp s, _ -> 
         abstyp_step s
     (* Necessary because we have a lattice and the bottype is less than EVERYTHING in that lattice *)
-    | (BotVecTyp n, AbsTyp _) -> (is_subtype_with_strictness target (TopVecTyp n) d pm false)
+    | BotVecTyp n, AbsTyp _ -> (is_subtype_with_strictness target (TopVecTyp n) d pm false)
     | _ -> false
 
 and is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameterization) : bool =
@@ -266,6 +268,7 @@ let match_parameterization (d: delta) (pmb: (string * constrain) list) (pml : ty
     else None
 
 let delta_lookup (s: id) (pml: typ list) (d: delta) (pm: parameterization) : typ =
+    (* The safe version, where we check the validity of abstract type resolution *)
     debug_print ">> delta_lookup";
     if Assoc.mem s d then
     let (pm_to_match, t) = Assoc.lookup s d in
@@ -276,30 +279,17 @@ let delta_lookup (s: id) (pml: typ list) (d: delta) (pm: parameterization) : typ
 
 let rec greatest_common_child (t1: typ) (t2: typ) (d: delta) (pm: parameterization): typ =
     debug_print ">> greatest_common_child";
-    let check_dim (n1: int) (n2: int) : unit =
-        if n1 = n2 then () else (raise (DimensionException (n1, n2)))
-    in
-    if (is_subtype t1 t2 d pm) then t1 else if (is_subtype t2 t1 d pm ) then t2 
-    else match (t1, t2) with
-    | BotVecTyp n1, BotVecTyp n2
-    | BotVecTyp n1, TopVecTyp n2
-    | TopVecTyp n1, BotVecTyp n2 ->
-        check_dim n1 n2; BotVecTyp n1                                                                                                                                                                                                                                                                                                                                                                                                                              
-    | TopVecTyp n1, TopVecTyp n2 ->
-        check_dim n1 n2; TopVecTyp n1
-    | VarTyp (s, pml), TopVecTyp n1
-    | TopVecTyp n1, VarTyp (s, pml) ->
-        check_dim (vec_dim (VarTyp (s, pml)) d pm) n1; VarTyp (s, pml)
-    | VarTyp (s, pml), BotVecTyp n1
-    | BotVecTyp n1, VarTyp (s, pml) ->
-        check_dim (vec_dim (VarTyp (s, pml)) d pm) n1; BotVecTyp n1
-    | VarTyp _, VarTyp _ ->
-        begin
-            let bot_dim = vec_dim t1 d pm in
-            check_dim bot_dim (vec_dim t2 d pm); BotVecTyp bot_dim
-            (* This works since each tag can only have one parent and we did subtype checks earlier *)
-        end
-    | _ -> raise (TypeException ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2)))
+    let fail _ = raise (TypeException ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2))) in
+    if (is_subtype t1 t2 d pm) then t1 else 
+    if (is_subtype t2 t1 d pm ) then t2 else 
+    let n1 = match (vec_dim_safe t1 d pm) with | Some n -> n | None -> fail () in
+    let n2 = match (vec_dim_safe t2 d pm) with | Some n -> n | None -> fail () in
+    (* So this definition of n1 and n2 actually means non-vector types have already been checked *)
+    if not (n1 = n2) then fail () else
+    match (t1, t2) with                                                                                                                                                                                                                                                                                                                                                                                                                    
+    | TopVecTyp _, _ -> t2
+    | _, TopVecTyp _ -> t1
+    | _ -> BotVecTyp n1 (* This works since both t1 and t2 are vectors with the same dimension and are not subtypes of each other *)
 
 let rec least_common_parent_with_strictness (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (strict: bool): typ =
     debug_print ">> least_common_parent";
@@ -432,7 +422,7 @@ let rec check_typ_exp (t: typ) (d: delta) : unit =
     | BoolTyp
     | IntTyp
     | FloatTyp
-    | SamplerCubeTyp
+    | SamplerCubeTyp _
     | SamplerTyp _ -> ()
     | TopVecTyp n
     | BotVecTyp n -> (if (n > 0) then ()
