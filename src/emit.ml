@@ -40,7 +40,6 @@ and string_of_glsl_mat (m: exp list list) : string =
 
 and string_of_glsl_typ (t : etyp) : string =
     match t with
-    | UnitTyp -> failwith "Unit type is unwriteable in glsl"
     | MatTyp (m, n) -> "mat" ^ string_of_int (max m n)
     | _ -> string_of_typ t
 
@@ -141,7 +140,7 @@ and comp_comm (c : comm list) : string =
             ^ "{ " ^ (comp_comm cl) ^ " }" ^ (comp_comm t))
         | Return Some (e, _) -> "return " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
         | Return None -> "return;" ^ (comp_comm t)
-        | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
+        | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ");" ^ (comp_comm t)
 
 (* GenTyp - int, float, vec(2,3,4), mat(16 possibilites) *)
 let rec strings_of_constraint (c: constrain) : string list =
