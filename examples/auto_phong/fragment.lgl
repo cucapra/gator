@@ -38,7 +38,7 @@ void main() {
     color diffuse = [0.4, 0.3, 0.9];
     color spec = [1.0, 1.0, 1.0];
 
-    auto lightDir = (uLight - (vPosition in world)) in norm<world>;
+    auto lightDir = normalize(uLight - (vPosition in world));
     float lambertian = max(dot(vNormal in norm<world>, lightDir), 0.);
     
     auto reflectDir = normalize(reflect(-lightDir, vNormal in norm<world>) in camera);

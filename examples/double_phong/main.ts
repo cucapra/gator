@@ -41,7 +41,9 @@ function main() {
   mat4.translate(model2, model2, [-100, -100., 0.]);
 
   // Position the light source for the lighting effect.
-  let light = vec3.fromValues(20., 0., 20.);
+  let light1 = vec3.fromValues(0., 0., 20.);
+  let light2 = vec3.create();
+  vec3.add(light2, light1, vec3.fromValues(7., 0., 0.))
 
   document.onkeypress = function (evt) {
     evt = evt || window.event;
@@ -68,7 +70,7 @@ function main() {
     gl.uniformMatrix4fv(loc_uProjection1, false, projection);
     gl.uniformMatrix4fv(loc_uView1, false, view);
     gl.uniformMatrix4fv(loc_uModel1, false, model1);
-    gl.uniform3fv(loc_uLight1, light);
+    gl.uniform3fv(loc_uLight1, light1);
 
     // Set the attribute arrays.
     lgl.bind_attrib_buffer(gl, loc_aNormal1, mesh.normals, 3);
@@ -84,7 +86,7 @@ function main() {
     gl.uniformMatrix4fv(loc_uProjection2, false, projection);
     gl.uniformMatrix4fv(loc_uView2, false, view);
     gl.uniformMatrix4fv(loc_uModel2, false, model2);
-    gl.uniform3fv(loc_uLight2, light);
+    gl.uniform3fv(loc_uLight2, light2);
 
     // Set the attribute arrays.
     lgl.bind_attrib_buffer(gl, loc_aNormal2, mesh.normals, 3);
