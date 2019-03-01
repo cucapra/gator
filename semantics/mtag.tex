@@ -51,8 +51,7 @@ e &\defas c \alt
     x=e \alt
     e_1+e_2 \alt
     e_1*e_2 \alt
-    e_1\;\mathsf{.*}\;e_2 \alt
-    \mathsf{dot}\ e
+    e_1\;\mathsf{.*}\;e_2
 \end{leftalign}
 %
 The $.*$ operator represents elementwise multiplication (whereas $*$ is proper linear algebra multiplication).
@@ -179,7 +178,7 @@ $$\Delta|-\top_{n_1\times n_2}\leq\nu_1->\nu_2
 This typing judgement is a map from an expression to the type of that expression under some variable context $\Gamma$, from variable names to types, and some tag context $\Delta$ defined above.
 
 \subsection{Subsumption}
-Any type in a given context can be cast ``up'' at any time with one notable exception -- we impose a strictness condition on vectors which does not allow implicit subsumption of tags into the top type $\top_n$ (Note that the bottom type $\bot_n$ can still be directly subsumed into the appropriate top type).  This strictness allows the type system stronger control over regulating tag operation beyond simple dimension.  It is worth noting that strictness is unnecessary for implementing a sound type system, but does provide significant practical benefit in giving earlier compiler errors than would be otherwise observed.
+Any type in a given context can be cast ``up'' at any time.
 %
 \begin{mathpar}
 \inferrule
@@ -189,11 +188,6 @@ Any type in a given context can be cast ``up'' at any time with one notable exce
 \inferrule
 	{\Delta|-\nu_1\leq_\Delta \nu_2\qquad\Gamma,\Delta|-e:\nu_1,\Gamma}
 	{\Gamma,\Delta|-e:\nu_2,\Gamma}
-	\quad \nu_2\neq\top_n
-
-\inferrule
-	{\Gamma,\Delta|-e:\bot_n,\Gamma}
-	{\Gamma,\Delta|-e:\top_n,\Gamma}
 \end{mathpar}
 %
 \subsection{Constants and Variable Declarations}
@@ -243,10 +237,11 @@ Types are closed under addition and scalar multiplication
 \inferrule
 	{\Gamma,\Delta|-e_1:\tau,\Gamma'\qquad\Gamma',\Delta|-e_2:\tau,\Gamma''}
 	{\Gamma,\Delta|-e_1+e_2:\tau,\Gamma''}
+        \quad\tau\neq\mathsf{unit}
 
 \inferrule
-	{\Gamma,\Delta|-e_1:\tau\qquad\Gamma,\Delta|-e_2:\mathsf{scalar}}
-	{\Gamma,\Delta|-e_1*e_2:\tau}
+	{\Gamma,\Delta|-e_1:\tau,\Gamma'\qquad\Gamma',\Delta|-e_2:\mathsf{scalar},\Gamma''}
+	{\Gamma,\Delta|-e_1*e_2:\tau,\Gamma'}
 \end{mathpar}
 
 Component multiplication can be defined as a mathematical operation, but makes little formal sense.  Such operations are allowed, but don't interact with spaces and tags and result in a complete lack of information about a resulting matrix.
@@ -265,20 +260,12 @@ Matrix multiplication is both a way of transforming from one tag to another and 
 %
 \begin{mathpar}
 \inferrule
-	{\Gamma,\Delta|-e_1:\tau_1->\tau_2,\Gamma'\qquad\Gamma',\Delta|-e_2:\tau_1,\Gamma''}
-	{\Gamma,\Delta|-e_1*e_2:\tau_2,\Gamma''}
+	{\Gamma,\Delta|-e_1:\nu_1->\nu_2,\Gamma'\qquad\Gamma',\Delta|-e_2:\nu_1,\Gamma''}
+	{\Gamma,\Delta|-e_1*e_2:\nu_2,\Gamma''}
 
 \inferrule
-	{\Gamma,\Delta|-e_1:\tau_2->\tau_3,\Gamma'\qquad\Gamma',\Delta|-e_2:\tau_1->\tau_2,\Gamma''}
-	{\Gamma,\Delta|-\;e_1*e_2:\tau_1->\tau_3,\Gamma''}
-\end{mathpar}
-
-The dot product function requires that each component is of the same tag (note the implicit use of the strictness condition not allowing vectors to be implicitly cast to the top type to maintain this invariant).
-
-\begin{mathpar}
-\inferrule
-	{\Gamma,\Delta|-e_1:\tau,\Gamma'\qquad\Gamma',\Delta|-e_2:\tau,\Gamma''}
-	{\Gamma,\Delta|-\mathsf{dot}\;e_1\;e_2:\mathsf{scalar},\Gamma''}
+	{\Gamma,\Delta|-e_1:\nu_2->\nu_3,\Gamma'\qquad\Gamma',\Delta|-e_2:\nu_1->\nu_2,\Gamma''}
+	{\Gamma,\Delta|-\;e_1*e_2:\nu_1->\nu_3,\Gamma''}
 \end{mathpar}
 
 \section{Dynamic Semantics}
