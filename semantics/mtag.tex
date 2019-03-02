@@ -149,29 +149,29 @@ The function-like transformation matrix types, $\nu_1 -> \nu_2$, have the same s
 	{\Delta|-\nu_1'\leq_\Delta \nu_1\qquad\Delta|-\nu_2\leq_\Delta \nu_2'}
 	{\Delta|-\nu_1->\nu_2\leq\nu_1'->\nu_2'}
 \end{mathpar}
-As with vectors, we can define matrix functions have a $\top_{n_1\times n_2}$ and $\bot_{n_1\times n_2}$ for any pair of dimensions $n_1,n_2$.  These constructions are just maps $\nu_1->\nu_2$, namely:
+As with vectors, we can define matrix functions have a $\top_{n_1\rightarrow n_2}$ and $\bot_{n_1\rightarrow n_2}$ for any pair of dimensions $n_1,n_2$.  These constructions are just maps $\nu_1->\nu_2$, namely:
 %
 \begin{mathpar}
 \inferrule
 	{}
-	{\top_{n_1\times n_2}=\bot_{n_1}->\top_{n_2}}
+	{\top_{n_1\rightarrow n_2}=\bot_{n_1}->\top_{n_2}}
 
 \inferrule
 	{}
-	{\bot_{n_1\times n_2}=\top_{n_1}->\bot_{n_2}}
+	{\bot_{n_1\rightarrow n_2}=\top_{n_1}->\bot_{n_2}}
 \end{mathpar}
 %
-As with vectors, these rules produce the usual property of lattices, namely that every map is 'between' a given pair top and bottom values.  In particular, for any $\nu_1,\nu_2,\Delta$, there exists a $\top_{n_1\times n_2}$ and $\bot_{n_1\times n_2}$ such that:
+As with vectors, these rules produce the usual property of lattices, namely that every map is 'between' a given pair top and bottom values.  In particular, for any $\nu_1,\nu_2,\Delta$, there exists a $\top_{n_1\rightarrow n_2}$ and $\bot_{n_1\rightarrow n_2}$ such that:
 %
-$$\Delta|-\bot_{n_1\times n_2}\leq\nu_1->\nu_2
+$$\Delta|-\bot_{n_1\rightarrow n_2}\leq\nu_1->\nu_2
 \quad\textnormal{and}\quad
-\Delta|-\nu_1->\nu_2\leq\top_{n_1\times n_2}$$
+\Delta|-\nu_1->\nu_2\leq\top_{n_1\rightarrow n_2}$$
 %
-Additionally, for any $\nu_1,\nu_2,\Delta$, there is no $\top_{n_1\times n_2}$ or $\bot_{n_1\times n_2}$ such that
+Additionally, for any $\nu_1,\nu_2,\Delta$, there is no $\top_{n_1\rightarrow n_2}$ or $\bot_{n_1\rightarrow n_2}$ such that
 %
-$$\Delta|-\top_{n_1\times n_2}\leq\nu_1->\nu_2
+$$\Delta|-\top_{n_1\rightarrow n_2}\leq\nu_1->\nu_2
 \quad\textnormal{or}\quad
-\Delta|-\nu_1->\nu_2\leq\bot_{n_1\times n_2}$$
+\Delta|-\nu_1->\nu_2\leq\bot_{n_1\rightarrow n_2}$$
 %
 \section{Static Semantics}
 
@@ -252,8 +252,8 @@ Component multiplication can be defined as a mathematical operation, but makes l
 	{\Gamma,\Delta|-e_1\;\mathsf{.*}\;e_2:\top_n,\Gamma''}
 
 \inferrule
-	{\Gamma,\Delta|-e_1:\top_{n_1\times n_2},\Gamma'\qquad\Gamma',\Delta|-e_2:\top_{n_1\times n_2},\Gamma''}
-	{\Gamma,\Delta|-e_1\;\mathsf{.*}\;e_2:\top_{n_1\times n_2},\Gamma''}
+	{\Gamma,\Delta|-e_1:\top_{n_1\rightarrow n_2},\Gamma'\qquad\Gamma',\Delta|-e_2:\top_{n_1\rightarrow n_2},\Gamma''}
+	{\Gamma,\Delta|-e_1\;\mathsf{.*}\;e_2:\top_{n_1\rightarrow n_2},\Gamma''}
 \end{mathpar}
 
 Matrix multiplication is both a way of transforming from one tag to another and for composing two matrix functions together.  Note that these operations are \textit{not} commutative and vectors are treated as column vectors with regards to matching dimensions.
