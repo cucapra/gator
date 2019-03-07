@@ -22,7 +22,7 @@ void main() {
     vec3 worldNorm = normalize(vec3(uModel*vec4(vNormal, 0.0)));
 
     vec3 lightDir = normalize(uLight - worldPos);
-    float lightWorldDot = dot(lightDir, worldPos);
+    float lightWorldDot = dot(lightDir, vNormal);
     float diffuse = max(lightWorldDot, 0.0);
 
     vec3 reflectDir = vec3(uView * vec4(reflect(-lightDir, worldNorm), 0.));

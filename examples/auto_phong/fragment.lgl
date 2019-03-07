@@ -1,10 +1,3 @@
-// Blinn-Phong
-// GLSL reference:
-// https://learnopengl.com/Lighting/Basic-Lighting
-// Note that some varying values are baked in differently here (e.g. vNormal vs. normalWorld)
-// Thus we sometimes use Braid example as a reference
-// https://capra.cs.cornell.edu/braid/dingus/#example=phong
-
 tag coord model is vec3;
 tag coord world is vec3;
 tag coord camera is vec3;
