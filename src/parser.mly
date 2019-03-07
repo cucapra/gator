@@ -79,17 +79,18 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token RWICK
 %token VEC
 %token MAT
+%token CONST
 %token ATTRIBUTE
 %token UNIFORM
 %token VARYING
 
 (* Precedences *)
 
-%left ID 
+%left ID
 %left TRANS
 %left AS IN
 %left AND OR
-%left NOT EQ LEQ GEQ LWICK RWICK
+%left NOT EQ LEQ GEQ LWICK RWICK LBRACK
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
@@ -197,8 +198,10 @@ commlst:
 ;
 
 globalvar:
-  | sq = storagequal; t = typ; x = ID; SEMI
-      { (x, sq, t) }
+  | sq = storagequal; t = typ; x = ID; SEMI 
+      { (x, sq, t, None) }
+  | sq = storagequal; t = typ; x = ID; GETS; v = value; SEMI 
+      { (x, sq, t, Some v) }
 ;
 
 globalvarlst:
@@ -339,6 +342,10 @@ typ:
       { FloatTyp }
   | INTTYP                          
       { IntTyp }
+  | t = typ; LBRACK; n = NUM; RBRACK; 
+      { ArrTyp(t, ConstInt n) }
+  | t = typ; LBRACK; s = ID; RBRACK; 
+      { ArrTyp(t, ConstVar s) }
   | m = MATTYP                      
       { let len = String.length m in
         let dim = String.sub m 3 (len-3) in
@@ -373,22 +380,24 @@ typ:
 ;
 
 storagequal:
-  | IN
+  | IN 
       { In }
-  | OUT
+  | OUT 
       { Out }
-  | ATTRIBUTE
+  | CONST 
+      { Const }
+  | ATTRIBUTE 
       { Attribute }
-  | UNIFORM
+  | UNIFORM 
       { Uniform }
-  | VARYING
+  | VARYING 
       { Varying }
 ;
 
 arr:
   | e = exp 
       { e::[] }
-  | e = exp; COMMA; a = arr 
+  | e = exp; COMMA; a = arr
       { e::a@[] }
 ;
 
@@ -419,7 +428,8 @@ typlst:
   | t = typ 
       { t::[] }
   | t = typ; COMMA; tl = typlst
-      { t::tl }
+      { t::tl } 
+
 exp:
   | LPAREN; a = exp; RPAREN    
       { a }

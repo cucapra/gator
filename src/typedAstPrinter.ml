@@ -24,6 +24,7 @@ let rec string_of_typ (t: etyp) : string =
     | SamplerTyp n -> "sampler" ^ (string_of_int n) ^ "D"
     | SamplerCubeTyp -> "samplerCube"
     | AbsTyp (s, typ) -> "`" ^ s
+    | ArrTyp (t, c) -> "t" ^ "[" ^ string_of_constvar c ^ "]"
 
 let rec string_of_constraint (t: constrain) : string =
     match t with
@@ -59,7 +60,9 @@ let rec string_of_params (p: params) : string =
   String.concat ", " (List.map (fun (i, t) -> (string_of_typ t) ^ " " ^ i) p)
 
 let rec string_of_global_vars (gv: global_vars) : string =
-  String.concat "\n" (List.map (fun (i, s, t) -> (string_of_storage_qual s) ^ " " ^ (string_of_typ t) ^ " " ^ i ^ ";") gv)
+  String.concat "\n" (List.map 
+  (fun (i, s, t, v) -> (string_of_storage_qual s) ^ " " ^ (string_of_typ t) ^ " " ^ i 
+  ^ string_of_option_removed (fun x -> "= " ^ string_of_value x) v ^ ";") gv)
 
 let string_of_parameterization (pm : parameterization) : string = 
   Assoc.to_string string_of_constraint pm

@@ -103,6 +103,7 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     | TypedAst.SamplerTyp n -> SamplerTyp n
     | TypedAst.SamplerCubeTyp -> SamplerCubeTyp
     | TypedAst.AbsTyp (s, c) -> AbsTyp s
+    | TypedAst.ArrTyp (t, c) -> ArrTyp (etyp_to_typ t, c)
 
 and constrain_to_constrain (c : TypedAst.constrain) : constrain =
     debug_print ">> constrain_to_constrain";
@@ -162,6 +163,7 @@ and tag_erase (t : typ) (d : delta) (pm: parameterization) : TypedAst.etyp =
     | SamplerTyp i -> TypedAst.SamplerTyp i
     | SamplerCubeTyp -> TypedAst.SamplerCubeTyp
     | AbsTyp s -> tag_erase_param t d pm 
+    | ArrTyp (t, c) -> ArrTyp (tag_erase t d pm, c)
     | AutoTyp -> raise (TypeException "Illegal use of auto (cannot use auto as part of a function call)")
 
 and constrain_erase (c: constrain) (d : delta) (pm : parameterization) : TypedAst.constrain =
@@ -200,6 +202,8 @@ let rec is_subtype_with_strictness (to_check : typ) (target : typ) (d : delta) (
     | TopVecTyp _, _ -> false
     | BotVecTyp n, VarTyp _ -> n = (vec_dim target d pm)
     | VarTyp _, BotVecTyp _ -> false
+    | BotVecTyp _, ArrTyp (IntTyp, _) -> true
+    | BotVecTyp _, ArrTyp (FloatTyp, _) -> true
     | VarTyp (s, pml), VarTyp _ -> if tag_typ_equality to_check target then true
         else is_subtype_with_strictness (delta_lookup_unsafe s pml d) target d pm strict
     | VarTyp _, TopVecTyp n -> not strict && (vec_dim to_check d pm) = n
@@ -426,7 +430,8 @@ let rec check_typ_exp (t: typ) (d: delta) : unit =
     | IntTyp
     | FloatTyp
     | SamplerCubeTyp
-    | SamplerTyp _ -> ()
+    | SamplerTyp _ 
+    | ArrTyp _ -> ()
     | TopVecTyp n
     | BotVecTyp n -> (if (n > 0) then ()
         else raise (TypeException "Cannot declare a type with dimension less than 0"))
@@ -543,7 +548,11 @@ let check_index_exp (t1: typ) (t2: typ) (d: delta) (pm: parameterization): typ =
         if is_bounded_by t1 GenVecTyp d pm then FloatTyp
         else if is_bounded_by t1 GenMatTyp d pm then
             TopVecTyp (vec_dim (fst (as_matrix_pair t1 d pm)) d pm)
-        else fail () 
+        else begin
+        match t1 with
+        | ArrTyp (t, _) -> t
+        | _ -> fail ()
+        end
     else fail ()
 
 let check_parameterization (d: delta) (m: mu) (pmd: parameterization_decl) : mu =
@@ -636,7 +645,7 @@ let check_params (pl : (string * typ) list) (g: gamma) (d : delta) (m: mu)
     (p, g', ps')
 
 (* Type check global variable *)
-let check_global_variable ((id, sq, t): (string * storage_qual * typ)) (g: gamma)
+let check_global_variable ((id, sq, t, v): (string * storage_qual * typ * value option)) (g: gamma)
     (d: delta) (m:mu) (ps: psi) : gamma * psi =
     debug_print ">> check_global_variable";
     if Assoc.mem id g
@@ -644,11 +653,11 @@ let check_global_variable ((id, sq, t): (string * storage_qual * typ)) (g: gamma
     else check_typ_valid t d Assoc.empty; (Assoc.update id t g, update_psi_matrix id t m ps)
 
 (* Get list of variables from global variable list *)
-let check_global_variables (gvl: (string * storage_qual * typ) list)
+let check_global_variables (gvl: (string * storage_qual * typ * value option) list)
     (g: gamma) (d: delta) (m: mu) (ps: psi) : TypedAst.global_vars * gamma * psi =
     debug_print ">> check_global_variables";
     let (g', ps') = List.fold_left (fun (g', ps') gv -> check_global_variable gv g' d m ps') (g, ps) gvl in
-    let gv = (List.map (fun (i, sq, t) -> (i, sq, tag_erase t d Assoc.empty)) gvl) in
+    let gv = (List.map (fun (i, sq, t, v) -> (i, sq, tag_erase t d Assoc.empty, v)) gvl) in
     (gv, g', ps')
     
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parameterization) : TypedAst.texp = 
@@ -973,7 +982,8 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
         let (br, brt) = check_exp b d m g' pm p ps in
         let btexp = exp_to_texp (br, brt) d pm in
         let (c2r, _, _) = check_comm c2 d m g' pm p ps' in
-        (match c1r with
+        (TypedAst.For (c1r, btexp, c2r, (tr_fst (check_comm_lst cl d m g' pm p ps'))), g, ps)
+        (* (match c1r with
         | Skip
         | Decl _
         | Assign _ -> (match (br, c2r) with
@@ -988,7 +998,7 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
                 if x = y then (TypedAst.For (c1r, btexp, c2r, (tr_fst (check_comm_lst cl d m g' pm p ps'))), g, ps)
                 else raise (TypeException "Must use the same variable when checking and progressing toward termination")
             | _ -> raise (TypeException "For loop must progress toward termination with a comparative expression between an id and constant using precisely the increment or decrement operator"))
-        | _ -> raise (TypeException "First statement in for loop must be a skip, declaration, or assignment"))
+        | _ -> raise (TypeException "First statement in for loop must be a skip, declaration, or assignment")) *)
     | Return Some e ->
         let (e, t) = exp_to_texp (check_exp e d m g pm p ps) d pm in
         (TypedAst.Return (Some (e, t)), g, ps)

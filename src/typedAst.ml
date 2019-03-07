@@ -13,6 +13,7 @@ type etyp =
     | SamplerTyp of int
     | SamplerCubeTyp
     | AbsTyp of string * constrain
+    | ArrTyp of etyp * constvar (* i.e. vec3[5] *)
 
 and constrain =
     | AnyTyp
@@ -50,7 +51,7 @@ and if_block = texp * comm list
 
 type parameterization = constrain Assoc.context
 type params = (string * etyp) list
-type global_vars = (string * storage_qual * etyp) list
+type global_vars = (string * storage_qual * etyp * value option) list
 type ret_type = etyp
 type fn_type = params * ret_type * parameterization
 type fn_decl = string * fn_type

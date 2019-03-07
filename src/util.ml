@@ -46,6 +46,11 @@ let string_of_vec (v: vec) : string =
 let string_of_mat (m: mat) : string = 
   "("^(String.concat ", " (List.map string_of_vec m))^")"
 
+let string_of_constvar (c : constvar) : string =
+  match c with
+  | ConstInt i -> string_of_int i
+  | ConstVar s -> s
+
 let rec string_of_value (v: value) : string =
   match v with
   | Unit -> "()"
@@ -73,6 +78,7 @@ let binop_string (op: binop) : string =
 
 let string_of_storage_qual (s: storage_qual) : string =
   match s with
+  | Const -> "const"
   | In -> "in"
   | Out -> "out"
   | Attribute -> "attribute"

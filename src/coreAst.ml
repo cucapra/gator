@@ -3,6 +3,10 @@ type id = string
 type vec = float list
 type mat = vec list
 
+type constvar =
+  | ConstInt of int
+  | ConstVar of id
+
 (* values *)
 type value =
   | Unit
@@ -35,6 +39,7 @@ type binop =
 type storage_qual =
   | In
   | Out
+  | Const
   | Attribute
   | Uniform
   | Varying

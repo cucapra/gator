@@ -16,6 +16,7 @@ type typ =
     | SamplerTyp of int (* i.e. sampler2D *)
     | SamplerCubeTyp
     | AbsTyp of id (* i.e. `t *)
+    | ArrTyp of typ * constvar (* i.e. vec3[5] *)
 
 type constrain =
     (* Special constraint types *)
@@ -26,7 +27,7 @@ type constrain =
     | TypConstraint of typ
 
 (* Global variables *)
-type global_var = string * storage_qual * typ
+type global_var = string * storage_qual * typ * value option
 
 (* expressions *)
 type exp =
