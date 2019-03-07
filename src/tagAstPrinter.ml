@@ -18,7 +18,7 @@ let rec string_of_typ (t: typ) : string =
     | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D"
     | SamplerCubeTyp -> "samplerCube"
     | AbsTyp s -> "`" ^ s
-    | ArrTyp (t, c) -> "t" ^ "[" ^ string_of_constvar c ^ "]"
+    | ArrTyp (t, c) -> string_of_typ t ^ "[" ^ string_of_constvar c ^ "]"
 
 let string_of_constraint (c: constrain) : string =
     match c with

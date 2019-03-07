@@ -18,13 +18,13 @@ let rec string_of_typ (t: etyp) : string =
     | BoolTyp -> "bool"
     | IntTyp -> "int"
     | FloatTyp -> "float"
-    | VecTyp v -> "vec" ^ (string_of_int v)
+    | VecTyp v -> if v = 1 then "float" else "vec" ^ (string_of_int v)
     | MatTyp (m1, m2) -> "mat" ^ (string_of_int m1) ^ "x" ^ (string_of_int m2)
     | TransTyp (s1, s2) -> (string_of_typ s1) ^ "->" ^ (string_of_typ s2)
     | SamplerTyp n -> "sampler" ^ (string_of_int n) ^ "D"
     | SamplerCubeTyp -> "samplerCube"
     | AbsTyp (s, typ) -> "`" ^ s
-    | ArrTyp (t, c) -> "t" ^ "[" ^ string_of_constvar c ^ "]"
+    | ArrTyp (t, c) -> string_of_typ t ^ "[" ^ string_of_constvar c ^ "]"
 
 let rec string_of_constraint (t: constrain) : string =
     match t with
