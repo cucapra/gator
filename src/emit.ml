@@ -112,10 +112,10 @@ and comp_comm (c : comm list) : string =
         | Dec (x, _) -> x ^ "--;" ^ (comp_comm t)
         (* Super janky, but we need to have rules for weird glsl declarations and variables *)
         | Decl (ty, x, (e, _)) -> (
-            if is_core x  then x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
-            else string_of_glsl_typ ty ^ " "^ x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t))
-        | Assign (x, (e, _)) -> x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
-        | AssignOp ((x, _), op, (e, _)) -> x ^ " " ^ (binop_string op) ^ "= " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
+            if is_core x  then x ^ " = " ^ (comp_exp e) ^ ";\n" ^ (comp_comm t)
+            else string_of_glsl_typ ty ^ " "^ x ^ " = " ^ (comp_exp e) ^ ";\n" ^ (comp_comm t))
+        | Assign (x, (e, _)) -> x ^ " = " ^ (comp_exp e) ^ ";\n" ^ (comp_comm t)
+        | AssignOp ((x, _), op, (e, _)) -> x ^ " " ^ (binop_string op) ^ "= " ^ (comp_exp e) ^ ";\n" ^ (comp_comm t)
         | If (((b, _), c1), el, c2) -> 
             ("if " ^ "(" ^ (comp_exp b) ^ ")"
             ^ "{ " ^ (comp_comm c1) ^ " }"
@@ -126,9 +126,9 @@ and comp_comm (c : comm list) : string =
         | For (c1, (b, _), c2, cl) -> 
             ("for (" ^ (comp_comm [c1]) ^ " " ^ (comp_exp b) ^ "; " ^ (comp_comm [c2] |> (String.split_on_char ';') |> List.hd) ^ ")"
             ^ "{ " ^ (comp_comm cl) ^ " }" ^ (comp_comm t))
-        | Return Some (e, _) -> "return " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
+        | Return Some (e, _) -> "return " ^ (comp_exp e) ^ ";\n" ^ (comp_comm t)
         | Return None -> "return;" ^ (comp_comm t)
-        | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ");" ^ (comp_comm t)
+        | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ");\n" ^ (comp_comm t)
 
 (* GenTyp - int, float, vec(2,3,4), mat(16 possibilites) *)
 let rec strings_of_constraint (c: constrain) : string list =
@@ -185,12 +185,12 @@ let decl_attribs (gv : global_vars) : string =
         | (x, sq, et, v)::t -> 
             (string_of_storage_qual sq) ^ " " ^ (string_of_glsl_typ et)
             ^ " " ^ x ^ string_of_option_removed (fun v -> " = " ^ string_of_value v) v ^
-            ";" ^ (decl_attribs_list t) 
+            ";\n" ^ (decl_attribs_list t) 
     in
     decl_attribs_list gv
 
 let rec compile_program (prog : prog) (global_vars : global_vars) : string =
     debug_print ">> compile_program";
-    "precision mediump float;" ^ (decl_attribs global_vars) ^ 
+    "#version 140\n" ^ (decl_attribs global_vars) ^ 
      (comp_fn_lst prog)
  
