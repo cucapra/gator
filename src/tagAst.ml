@@ -25,12 +25,6 @@ type constrain =
     | GenVecTyp
     | TypConstraint of typ
 
-(* Storage qualifiers *)
-type storage_qual =
-    | Attribute
-    | Uniform
-    | Varying
-
 (* Global variables *)
 type global_var = string * storage_qual * typ
 

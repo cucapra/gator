@@ -21,12 +21,6 @@ and constrain =
     | GenVecTyp
     | ETypConstraint of etyp
 
-(* Storage qualifiers *)
-type storage_qual =
-    | Attribute
-    | Uniform
-    | Varying
-
 (* expressions *)
 type texp = exp * etyp
 and exp =

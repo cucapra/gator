@@ -52,6 +52,7 @@ rule read = parse
   | ".*"            { CTIMES }
   | "as"            { AS }
   | "in"            { IN }
+  | "out"            { OUT }
   | "+="            { PLUSEQ }
   | "-="            { MINUSEQ }
   | "*="            { TIMESEQ }

@@ -33,6 +33,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token TRANS
 %token GETS
 %token IN
+%token OUT
 %token AS
 %token INC
 %token DEC
@@ -372,6 +373,10 @@ typ:
 ;
 
 storagequal:
+  | IN
+      { In }
+  | OUT
+      { Out }
   | ATTRIBUTE
       { Attribute }
   | UNIFORM

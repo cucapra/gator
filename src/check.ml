@@ -173,13 +173,6 @@ and constrain_erase (c: constrain) (d : delta) (pm : parameterization) : TypedAs
     | GenVecTyp -> TypedAst.GenVecTyp
     | TypConstraint t -> TypedAst.ETypConstraint (tag_erase t d pm)
 
-let storage_qual_erase (sq: storage_qual) : TypedAst.storage_qual =
-    debug_print ">> storage_qual_erase";
-    match sq with
-    | Attribute -> TypedAst.Attribute
-    | Uniform -> TypedAst.Uniform
-    | Varying -> TypedAst.Varying
-
 let rec is_subtype_with_strictness (to_check : typ) (target : typ) (d : delta) (pm: parameterization) (strict : bool) : bool =
     debug_print (">> is_subtype " ^ (string_of_typ to_check) ^ ", " ^(string_of_typ target));
     let rec tag_typ_equality (t1: typ) (t2: typ) : bool =
@@ -655,7 +648,7 @@ let check_global_variables (gvl: (string * storage_qual * typ) list)
     (g: gamma) (d: delta) (m: mu) (ps: psi) : TypedAst.global_vars * gamma * psi =
     debug_print ">> check_global_variables";
     let (g', ps') = List.fold_left (fun (g', ps') gv -> check_global_variable gv g' d m ps') (g, ps) gvl in
-    let gv = (List.map (fun (i, sq, t) -> (i, storage_qual_erase sq, tag_erase t d Assoc.empty)) gvl) in
+    let gv = (List.map (fun (i, sq, t) -> (i, sq, tag_erase t d Assoc.empty)) gvl) in
     (gv, g', ps')
     
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parameterization) : TypedAst.texp = 

@@ -105,12 +105,6 @@ and
 string_of_comm_list (cl : comm list) : string = 
     string_of_lst string_of_comm cl
 
-let string_of_storage_qual (s : storage_qual) : string =
-    match s with
-    | Attribute -> "attribute"
-    | Uniform -> "uniform"
-    | Varying -> "varying"
-
 let rec string_of_tags (t : tag_decl list) : string =
     match t with | [] -> "" | (m, s, pm, a)::t -> 
     "tag " ^ string_of_mod_option m ^ s ^ "<" ^ (string_of_parameterization_decl pm) ^ ">"

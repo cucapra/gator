@@ -33,12 +33,6 @@ let rec string_of_constraint (t: constrain) : string =
     | GenVecTyp -> "vec"
     | ETypConstraint t -> string_of_typ t
 
-let string_of_storage_qual (s: storage_qual) : string =
-    match s with
-    | Attribute -> "attribute"
-    | Uniform -> "uniform"
-    | Varying -> "varying"
-
 let rec string_of_exp (e: exp) : string =
     let string_of_arr (a: texp list) : string = 
         "["^(String.concat ", " (List.map string_of_exp (List.map fst a)))^"]"

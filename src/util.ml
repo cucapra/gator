@@ -71,6 +71,14 @@ let binop_string (op: binop) : string =
   | CTimes -> ".*"
   | Index -> "[]"
 
+let string_of_storage_qual (s: storage_qual) : string =
+  match s with
+  | In -> "in"
+  | Out -> "out"
+  | Attribute -> "attribute"
+  | Uniform -> "uniform"
+  | Varying -> "varying"
+
 let string_of_unop (op: unop) (e: string) : string =
   match op with
   | Neg -> "-" ^ e

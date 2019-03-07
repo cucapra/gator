@@ -30,3 +30,11 @@ type binop =
   | Div
   | CTimes (* Component-wise multiplication *)
   | Index
+
+(* Storage qualifiers *)
+type storage_qual =
+  | In
+  | Out
+  | Attribute
+  | Uniform
+  | Varying
