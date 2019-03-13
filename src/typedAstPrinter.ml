@@ -18,12 +18,13 @@ let rec string_of_typ (t: etyp) : string =
     | BoolTyp -> "bool"
     | IntTyp -> "int"
     | FloatTyp -> "float"
-    | VecTyp v -> "vec" ^ (string_of_int v)
+    | VecTyp v -> if v = 1 then "float" else "vec" ^ (string_of_int v)
     | MatTyp (m1, m2) -> "mat" ^ (string_of_int m1) ^ "x" ^ (string_of_int m2)
     | TransTyp (s1, s2) -> (string_of_typ s1) ^ "->" ^ (string_of_typ s2)
     | SamplerTyp n -> "sampler" ^ (string_of_int n) ^ "D"
     | SamplerCubeTyp -> "samplerCube"
     | AbsTyp (s, typ) -> "`" ^ s
+    | ArrTyp (t, c) -> string_of_typ t ^ "[" ^ string_of_constvar c ^ "]"
 
 let rec string_of_constraint (t: constrain) : string =
     match t with
@@ -32,12 +33,6 @@ let rec string_of_constraint (t: constrain) : string =
     | GenMatTyp -> "mat"
     | GenVecTyp -> "vec"
     | ETypConstraint t -> string_of_typ t
-
-let string_of_storage_qual (s: storage_qual) : string =
-    match s with
-    | Attribute -> "attribute"
-    | Uniform -> "uniform"
-    | Varying -> "varying"
 
 let rec string_of_exp (e: exp) : string =
     let string_of_arr (a: texp list) : string = 
@@ -65,7 +60,9 @@ let rec string_of_params (p: params) : string =
   String.concat ", " (List.map (fun (i, t) -> (string_of_typ t) ^ " " ^ i) p)
 
 let rec string_of_global_vars (gv: global_vars) : string =
-  String.concat "\n" (List.map (fun (i, s, t) -> (string_of_storage_qual s) ^ " " ^ (string_of_typ t) ^ " " ^ i ^ ";") gv)
+  String.concat "\n" (List.map 
+  (fun (i, s, t, v) -> (string_of_storage_qual s) ^ " " ^ (string_of_typ t) ^ " " ^ i 
+  ^ string_of_option_removed (fun x -> "= " ^ string_of_value x) v ^ ";") gv)
 
 let string_of_parameterization (pm : parameterization) : string = 
   Assoc.to_string string_of_constraint pm

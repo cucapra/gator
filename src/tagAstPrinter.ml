@@ -19,6 +19,7 @@ let rec string_of_typ (t: typ) : string =
     | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D "
     | SamplerCubeTyp -> "samplerCube"
     | AbsTyp s -> "`" ^ s
+    | ArrTyp (t, c) -> string_of_typ t ^ "[" ^ string_of_constvar c ^ "]"
 
 let string_of_constraint (c: constrain) : string =
     match c with
@@ -106,12 +107,6 @@ and
 string_of_comm_list (cl : comm list) : string = 
     string_of_lst string_of_comm cl
 
-let string_of_storage_qual (s : storage_qual) : string =
-    match s with
-    | Attribute -> "attribute"
-    | Uniform -> "uniform"
-    | Varying -> "varying"
-
 let rec string_of_tags (t : tag_decl list) : string =
     match t with | [] -> "" | (m, s, pm, a)::t -> 
     "tag " ^ string_of_mod_option m ^ s ^ "<" ^ (string_of_parameterization_decl pm) ^ ">"
@@ -129,8 +124,9 @@ let string_of_declare (f: fn) : string =
 let string_of_declare_lst (fl : fn list) : string = 
     string_of_lst string_of_declare fl
 
-let string_of_global_var ((x, sq, t) : global_var) : string =
-    string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ x
+let string_of_global_var ((x, sq, t, v) : global_var) : string =
+    string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ x 
+    ^ string_of_option_removed (fun x -> "= " ^ string_of_value x) v
 
 let string_of_global_var_lst (gvl : global_var list) : string =
     string_of_lst string_of_global_var gvl

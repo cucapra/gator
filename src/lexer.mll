@@ -52,6 +52,7 @@ rule read = parse
   | ".*"            { CTIMES }
   | "as"            { AS }
   | "in"            { IN }
+  | "out"            { OUT }
   | "+="            { PLUSEQ }
   | "-="            { MINUSEQ }
   | "*="            { TIMESEQ }
@@ -85,10 +86,10 @@ rule read = parse
   | "return"        { RETURN }
   | "declare"       { DECLARE }
   | "genType"       { GENTYPE }
+  | "const"         { CONST }
   | "attribute"     { ATTRIBUTE }
   | "uniform"       { UNIFORM }
   | "varying"       { VARYING }
-  | "const"
   | "break"
   | "continue"
   | "do"

@@ -17,6 +17,7 @@ type typ =
     | SamplerTyp of int
     | SamplerCubeTyp
     | AbsTyp of id (* i.e. `t *)
+    | ArrTyp of typ * constvar (* i.e. vec3[5] *)
 
 type constrain =
     (* Special constraint types *)
@@ -26,14 +27,8 @@ type constrain =
     | GenVecTyp
     | TypConstraint of typ
 
-(* Storage qualifiers *)
-type storage_qual =
-    | Attribute
-    | Uniform
-    | Varying
-
 (* Global variables *)
-type global_var = string * storage_qual * typ
+type global_var = string * storage_qual * typ * value option
 
 (* expressions *)
 type exp =

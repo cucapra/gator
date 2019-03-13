@@ -1,12 +1,15 @@
-void main(vec3 aPosition, vec3 aNormal, vec3 vPosition, vec3 vNormal, vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel) {
-  vec3->vec4 v3_v4 = [
-    [1., 0., 0.],
-    [0., 1., 0.],
-    [0., 0., 1.],
-    [0., 0., 0.]
-  ];
+declare vec4 vec4(vec3 v, float f);
 
-  vNormal = aNormal;
-  vPosition = aPosition;
-  vec4 gl_Position = uProjection * uView * uModel * (v3_v4 * aPosition + [0., 0., 0., 1.]);
+attribute vec3 aPosition;
+attribute vec3 aNormal;
+varying vec3 vPosition;
+varying vec3 vNormal;
+uniform mat4 uProjection;
+uniform mat4 uView;
+uniform mat4 uModel;
+
+void main() {
+    vNormal = aNormal;
+    vPosition = aPosition;
+    vec4 gl_Position = (uProjection * uView * uModel * (vec4(aPosition, 1.)));
 }
