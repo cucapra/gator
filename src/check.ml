@@ -646,19 +646,11 @@ let check_params (pl : (string * typ) list) (g: gamma) (d : delta) (m: mu)
 
 (* Type check global variable *)
 let check_global_variable ((id, sq, t, v): (string * storage_qual * typ * value option)) (g: gamma)
-    (d: delta) (m:mu) (ps: psi) : gamma * psi =
+    (d: delta) (m:mu) (ps: psi) : (string * storage_qual * TypedAst.etyp * value option) * gamma * psi =
     debug_print ">> check_global_variable";
     if Assoc.mem id g
     then raise (TypeException ("Duplicate global variable: " ^ id))
-    else check_typ_valid t d Assoc.empty; (Assoc.update id t g, update_psi_matrix id t m ps)
-
-(* Get list of variables from global variable list *)
-let check_global_variables (gvl: (string * storage_qual * typ * value option) list)
-    (g: gamma) (d: delta) (m: mu) (ps: psi) : TypedAst.global_vars * gamma * psi =
-    debug_print ">> check_global_variables";
-    let (g', ps') = List.fold_left (fun (g', ps') gv -> check_global_variable gv g' d m ps') (g, ps) gvl in
-    let gv = (List.map (fun (i, sq, t, v) -> (i, sq, tag_erase t d Assoc.empty, v)) gvl) in
-    (gv, g', ps')
+    else check_typ_valid t d Assoc.empty; ((id, sq, tag_erase t d Assoc.empty, v), Assoc.update id t g, update_psi_matrix id t m ps)
     
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parameterization) : TypedAst.texp = 
     debug_print ">> exp_to_texp";
@@ -1137,7 +1129,7 @@ let update_mu_with_function (((fm, id, (pr, r, pmd))): fn_decl) (d: delta) (m: m
     | (Some Canon, _) -> raise (TypeException "Cannot have a canonical function with zero or more than one arguments")
     | _ -> m'
 
-let rec check_fn (((fm, id, (pr, r, pmd)), cl): fn) (g: gamma) (d: delta) (m: mu) (p: phi) (ps: psi) : psi * mu * TypedAst.fn * phi = 
+let check_fn (((fm, id, (pr, r, pmd)), cl): fn) (g: gamma) (d: delta) (m: mu) (p: phi) (ps: psi) : psi * mu * TypedAst.fn * phi = 
     debug_print (">> check_fn : " ^ id);
     (* update phi with function declaration *)
     let pm = collapse_parameterization_decl pmd in
@@ -1150,13 +1142,17 @@ let rec check_fn (((fm, id, (pr, r, pmd)), cl): fn) (g: gamma) (d: delta) (m: mu
     (* TODO: might want to check that there is exactly one return statement at the end *)
     | t -> List.iter (check_return t d m g'' pm p ps'') cl; (ps, m_ret, (((id, (pl', tag_erase t d pm, pm')), cl')), p')
 
-and check_fn_lst (fl: fn list) (g: gamma) (d: delta) (m: mu) (p: phi) (ps: psi) : TypedAst.prog * phi =
-    debug_print ">> check_fn_lst";
-    match fl with
-    | [] -> ([], p)
-    | h::t -> let (ps', m', fn', p') = check_fn h g d m p ps in
-        let (fn'', p'') = check_fn_lst t g d m' p' ps' in 
-        (fn' :: fn'', p'')
+let rec check_global_var_or_fn_lst (l: global_var_or_fn list) (g: gamma) (d: delta) (m: mu) (p:phi) (ps: psi) :
+TypedAst.prog * TypedAst.global_vars * gamma * phi * psi =
+    debug_print ">> check_global_var_or_fn_lst";
+    match l with
+    | [] -> [], [], g, p, ps
+    | GlobalVar gv::t -> let (gv', g', ps') = check_global_variable gv g d m ps in
+        let (pr, gvs, g'', p', ps'') = check_global_var_or_fn_lst t g' d m p ps' in
+        pr, gv'::gvs, g'', p', ps''
+    | Fn f::t -> let (ps', m', f', p') = check_fn f g d m p ps in
+        let (pr, gvs, g', p'', ps'') = check_global_var_or_fn_lst t g d m' p' ps' in
+        f'::pr, gvs, g', p'', ps''
 
 (* Check that there is a void main() defined *)
 let check_main_fn (p: phi) : unit =
@@ -1178,7 +1174,7 @@ let check_decls (g: gamma) (d: delta) (m: mu) (dl : extern_decl) (p: phi) (ps: p
 
 (* Returns the list of fn's which represent the program 
  * and params of the void main() fn *)
-let check_prog ((dl, t, gv, f): prog) : TypedAst.prog * TypedAst.global_vars =
+let check_prog ((dl, t, gf): prog) : TypedAst.prog * TypedAst.global_vars =
     debug_print ">> check_prog";
     (*(d: delta) ((id, t): fn_decl) (p: phi) *)
     (* delta from tag declarations *)
@@ -1187,10 +1183,9 @@ let check_prog ((dl, t, gv, f): prog) : TypedAst.prog * TypedAst.global_vars =
     let (g, m', p) = List.fold_left 
         (fun (g', m', p') (dl': extern_decl) -> check_decls g' d m' dl' p' Assoc.empty) 
         (Assoc.empty, m, Assoc.empty) dl in
-    let (gvr, g', ps) = check_global_variables gv g d m' Assoc.empty in
-    let (e', p') = check_fn_lst f g' d m' p ps in
+    let (e, gvr, g', p', ps) = check_global_var_or_fn_lst gf g d m' p Assoc.empty in
     check_main_fn p';
     debug_print "===================";
     debug_print "Type Check Complete";
     debug_print "===================\n";
-    (e', gvr)
+    (e, gvr)

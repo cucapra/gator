@@ -110,36 +110,20 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %%
 
 main:
-  | t = taglst; d = declarelst; g = globalvarlst; e = fnlst; EOL 
-      { (d, t, g, e) }
-  | t = taglst; d = declarelst; g = globalvarlst; EOL 
-      { (d, t, g, []) }
-  | t = taglst; d = declarelst; e = fnlst; EOL 
-      { (d, t, [], e) }
-  | d = declarelst; g = globalvarlst; e = fnlst; EOL 
-      { (d, [], g, e) }
-  | t = taglst; g = globalvarlst; e = fnlst; EOL 
-      { ([], t, g, e) }
-  | t = taglst; d = declarelst; EOL              
-      { (d, t, [], []) }
-  | d = declarelst; e = fnlst; EOL
-      { (d, [], [], e)}
-  | g = globalvarlst; e = fnlst; EOL
-      { ([], [], g, e)}
-  | d = declarelst; g = globalvarlst; EOL
-      { (d, [], g, [])}
-  | t = taglst; e = fnlst; EOL 
-      { ([], t, [], e) }
-  | t = taglst; g = globalvarlst; EOL 
-      { ([], t, g, []) }
+  | t = taglst; d = declarelst; gf = globalvarfnlst; EOL 
+      { (d, t, gf) }
+  | t = taglst; d = declarelst; EOL 
+      { (d, t, []) }
+  | d = declarelst; gf = globalvarfnlst; EOL 
+      { (d, [], gf) }
+  | t = taglst; gf = globalvarfnlst; EOL 
+      { ([], t, gf) }
   | d = declarelst; EOL
-      { (d, [], [], [])}
-  | t = taglst; EOL              
-      { ([], t, [], []) }
-  | g = globalvarlst; EOL              
-      { ([], [], g, []) }
-  | e = fnlst; EOL             
-      { ([], [], [], e) }
+      { (d, [], [])}
+  | gf = globalvarfnlst; EOL
+      { ([], [], gf)}
+  | t = taglst; EOL 
+      { ([], t, []) }
 ;
 
 modification:
@@ -180,15 +164,22 @@ tag:
       { (Some m, x, pt, t) }
 ;
 
-fnlst: 
+globalvarfnlst:
+  | gv = globalvar
+      { GlobalVar gv::[] }
+  | gv = globalvar; l = globalvarfnlst
+      { GlobalVar gv::l }
+  | f = fn
+      { Fn f::[] }
+  | f = fn; l = globalvarfnlst
+      { Fn f::l }
+;
+
+fn: 
   | x = fn_decl; LBRACE; RBRACE;
-      { (x, [])::[] }
-  | x = fn_decl; LBRACE; RBRACE; fl = fnlst;
-      { (x, [])::fl }
+      { (x, []) }
   | x = fn_decl; LBRACE; c1 = commlst; RBRACE;
-      { (x, c1)::[] }
-  | x = fn_decl; LBRACE; c1 = commlst; RBRACE; fl = fnlst;
-      { (x, c1)::fl }
+      { (x, c1) }
 
 commlst:
   | c = comm 
@@ -202,13 +193,6 @@ globalvar:
       { (x, sq, t, None) }
   | sq = storagequal; t = typ; x = ID; GETS; v = value; SEMI 
       { (x, sq, t, Some v) }
-;
-
-globalvarlst:
-  | gv = globalvar
-      { gv::[] }
-  | gv1 = globalvar; gv2 = globalvarlst
-      { gv1::gv2 }
 ;
 
 
