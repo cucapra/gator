@@ -231,6 +231,7 @@ let rec is_subtype_with_strictness (to_check : typ) (target : typ) (d : delta) (
         | VarTyp s -> is_subtype_with_strictness (delta_lookup_unsafe s tl1 d) target d pm strict
         | _ -> false)
     | ParTyp (VarTyp s, tl), VarTyp _ -> is_subtype_with_strictness (delta_lookup_unsafe s tl d) target d pm strict
+    | ParTyp (VarTyp s, tl), TopVecTyp n -> not strict && (vec_dim to_check d pm) =  n
     | VarTyp s, ParTyp _ -> is_subtype_with_strictness (delta_lookup_unsafe s [] d) target d pm strict
     | VarTyp s1, VarTyp s2 -> s1 = s2 || is_subtype_with_strictness (delta_lookup_unsafe s1 [] d) target d pm strict
     | VarTyp _, TopVecTyp n -> not strict && (vec_dim to_check d pm) =  n
@@ -267,7 +268,8 @@ let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta
     | (GenVecTyp, GenVecTyp)
     | (TypConstraint (BotVecTyp _), GenVecTyp)
     | (TypConstraint (VarTyp _), GenVecTyp)
-    | (TypConstraint (TopVecTyp _), GenVecTyp) -> true
+    | (TypConstraint (TopVecTyp _), GenVecTyp)
+    | (TypConstraint (ParTyp (VarTyp _, _)), GenVecTyp) -> true
     | (_, GenVecTyp) -> false
     | (GenMatTyp, GenMatTyp)
     | (TypConstraint (TransTyp _), GenMatTyp) -> true
@@ -412,6 +414,7 @@ let check_typ_valid (ogt: typ) (d: delta) (pm: parameterization) : unit =
     let rec check_typ_valid_rec (t: typ) : unit =
         debug_print ">> check_typ_valid";
         match t with
+        | VarTyp s -> if Assoc.mem s d then () else raise (TypeException ("Unknown tag " ^ s))
         | ParTyp (t, tl) -> check_typ_valid_rec t; List.fold_left (fun acc t' -> check_typ_valid_rec t') () tl;
         | AbsTyp s -> if Assoc.mem s pm then () else raise (TypeException ("Unknown abstract type `" ^ s))
         | TransTyp (t1, t2) -> check_typ_valid_rec t1; check_typ_valid_rec t2;
@@ -692,6 +695,7 @@ let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parameteriz
 let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) (d: delta) 
 (pm: parameterization) (p: phi) (ps: psi) : exp = 
     debug_print ">> check_in_exp";
+    print_endline (string_of_psi ps);
     let rec psi_path_rec (to_search: (typ * exp) Queue.t) (found: typ list) : exp =
         let search_phi (tl: typ) (ps_lst : (typ * fn_inv) list) : (typ * fn_inv) list =
             (* This function searches phi for anonical abstract functions that map from the given type *)
@@ -725,7 +729,8 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
                         match rtr with
                         | TopVecTyp _ -> search_phi_rec t
                         | AbsTyp _
-                        | VarTyp _ -> let rec_result = search_phi_rec t in
+                        | VarTyp _ 
+                        | ParTyp (VarTyp _, _) -> let rec_result = search_phi_rec t in
                             if List.fold_left (fun acc (rt, _) -> is_typ_eq rt rtr || acc) false rec_result then
                             List.map (fun (rt, (id2, pml2, pr2)) -> 
                             if (List.length pr1 = List.length pr2) && (List.length pr1 = 0) then
@@ -958,7 +963,7 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
         | IntTyp -> (TypedAst.Dec (x, TypedAst.IntTyp), g, ps)
         | FloatTyp -> (TypedAst.Dec (x, TypedAst.FloatTyp), g, ps)
         | _ -> raise (TypeException "decrement must be applied to an integer or float"))
-    | Decl (t, tp, s, e) -> (* TODO: code insertion *)
+    | Decl (t, s, e) -> (* TODO: code insertion *)
         if Assoc.mem s g then raise (TypeException "variable name shadowing is illegal")        
         else 
         (check_typ_valid t d pm;
@@ -1018,8 +1023,10 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
         let (e, t) = exp_to_texp (check_exp e d m g pm p ps) d pm in
         (TypedAst.Return (Some (e, t)), g, ps)
     | Return None -> (TypedAst.Return None, g, ps)
-    | FnCall (i, args, pml) -> let ((i, args_exp), _) = check_fn_inv d m g p args i pml pm ps in 
+    | FnCall (it, args, pml) -> (match it with | VarTyp i -> 
+        let ((i, args_exp), _) = check_fn_inv d m g p args i pml pm ps in 
         (TypedAst.FnCall (i, args_exp), g, ps)
+        | _ -> raise (TypeException ("Cannot treat the type " ^ string_of_typ it ^ " as a function call")))
 
 and check_comm_lst (cl : comm list) (d: delta) (m: mu) (g: gamma) (pm : parameterization) (p: phi) (ps: psi) : TypedAst.comm list * gamma * psi = 
     debug_print ">> check_comm_lst";
@@ -1149,12 +1156,19 @@ let update_mu_with_function (((fm, id, (pr, r, pmd))): fn_decl) (d: delta) (m: m
     | (Some Canon, [(_, t)]) ->
     begin
         if is_typ_eq t r then raise (TypeException ("Canonical function " ^ id ^ " cannot be a map from a type to itself")) else
-        match (t, r) with
-        | VarTyp _, VarTyp _
-        | AbsTyp _, VarTyp _
-        | VarTyp _, AbsTyp _
-        | AbsTyp _, AbsTyp _ ->  m'
-        | _ -> raise (TypeException "Canonical functions must be between tag or abstract types")
+        let fail _ = raise (TypeException "Canonical functions must be between tag or abstract types") in
+        match t with
+        | VarTyp _
+        | ParTyp (VarTyp _, _)
+        | AbsTyp _ ->  
+        begin
+            match r with
+            | VarTyp _
+            | ParTyp (VarTyp _, _)
+            | AbsTyp _ ->  m'
+            | _ -> fail ()
+        end
+        | _ -> fail ()
     end
     | (Some Canon, _) -> raise (TypeException "Cannot have a canonical function with zero or more than one arguments")
     | _ -> m'
