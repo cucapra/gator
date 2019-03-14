@@ -114,9 +114,6 @@ let rec string_of_tags (t : tag_decl list) : string =
 let string_of_fn ((d, c1) : fn) : string = 
     string_of_fn_decl d ^ "{" ^ (string_of_comm_list c1) ^"}"
 
-let rec string_of_fn_lst (fl : fn list) : string = 
-    string_of_lst string_of_fn fl
-
 let string_of_declare (f: fn) : string = 
     "declare " ^ string_of_fn f
 
@@ -127,8 +124,13 @@ let string_of_global_var ((x, sq, t, v) : global_var) : string =
     string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ x 
     ^ string_of_option_removed (fun x -> "= " ^ string_of_value x) v
 
-let string_of_global_var_lst (gvl : global_var list) : string =
-    string_of_lst string_of_global_var gvl
+let string_of_global_var_or_fn (u : global_var_or_fn) : string =
+    match u with
+    | GlobalVar gv -> string_of_global_var gv
+    | Fn f -> string_of_fn f
 
-let string_of_prog ((d, t, g, f) : prog) : string =
-    (string_of_tags t) ^ (string_of_global_var_lst g) ^ (string_of_fn_lst f) 
+let string_of_global_var_or_fn_lst (l : global_var_or_fn list) : string =
+    string_of_lst string_of_global_var_or_fn l
+
+let string_of_prog ((d, t, gf) : prog) : string =
+    (string_of_tags t) ^ (string_of_global_var_or_fn_lst gf) 

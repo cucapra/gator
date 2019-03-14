@@ -86,8 +86,12 @@ type fn = fn_decl * comm list
 (* tag declaration statements *)
 type tag_decl = modification option * string * parameterization_decl * typ
 
+type global_var_or_fn =
+    | GlobalVar of global_var
+    | Fn of fn
+
 (* program *)
 (* Consists of list of (external) declare functions,
  * list of vector space tags,
  * and list of functions with at least one void main() function. *)
-type prog = extern_decl list * tag_decl list * global_var list * fn list
+type prog = extern_decl list * tag_decl list * global_var_or_fn list
