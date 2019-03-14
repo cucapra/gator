@@ -13,9 +13,10 @@ let rec string_of_typ (t: typ) : string =
     | FloatTyp -> "float"
     | TopVecTyp n -> "vec"^(string_of_int n)
     | BotVecTyp n -> "vec"^(string_of_int n)^"lit"
-    | VarTyp (s, t) -> s ^ (if List.length t > 0 then "<" ^ (string_of_lst string_of_typ t) ^ ">" else "")
+    | VarTyp s -> s
+    | ParTyp (t, tl) -> string_of_typ t ^ "<" ^ (string_of_lst string_of_typ tl) ^ ">"
     | TransTyp (s1, s2) -> (string_of_typ s1) ^ "->" ^ (string_of_typ s2)
-    | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D"
+    | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D "
     | SamplerCubeTyp -> "samplerCube"
     | AbsTyp s -> "`" ^ s
     | ArrTyp (t, c) -> string_of_typ t ^ "[" ^ string_of_constvar c ^ "]"
@@ -84,8 +85,7 @@ let rec string_of_comm (c: comm) : string =
     | Print e -> "print " ^ (string_of_exp e) ^ ";"
     | Inc x -> x ^ "++"
     | Dec x -> x ^ "--"
-    | Decl (t, None, s, e) -> (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_exp e) ^ ";"
-    | Decl (t, _, s, e) -> failwith "unsupported"
+    | Decl (t, s, e) -> (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_exp e) ^ ";"
     | Assign (b, x) -> b ^ " = " ^ (string_of_exp x) ^ ";"
     | AssignOp (x, op, e) -> x ^ " " ^  binop_string op ^ "= " ^ (string_of_exp e)
     | If ((b, c1), elif_list, c2) -> 
@@ -99,7 +99,7 @@ let rec string_of_comm (c: comm) : string =
     | For (d, b, u, cl) -> "for (" ^ string_of_comm d ^ string_of_exp b ^ "; " ^ string_of_comm u ^ ") {\n" ^ string_of_comm_list cl ^ "}"
     | Return None -> "return;"
     | Return Some e -> "return" ^ (string_of_exp e) ^ ";"
-    | FnCall (id, e, _) -> id ^ "(" ^ (String.concat "," (List.map string_of_exp e)) ^ "^" (* TODO *)
+    | FnCall (n, e, _) -> string_of_typ n ^ "(" ^ (String.concat "," (List.map string_of_exp e)) ^ "^" (* TODO *)
     
 
 and 

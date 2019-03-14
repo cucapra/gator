@@ -90,7 +90,9 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %left TRANS
 %left AS IN
 %left AND OR
-%left NOT EQ LEQ GEQ LWICK RWICK LBRACK
+%left NOT EQ LEQ GEQ LBRACK 
+%left LWICK RWICK 
+%left LPAREN
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
@@ -270,9 +272,7 @@ comm_element:
   | SKIP;                            
       { Skip }
   | t = typ; x = ID; GETS; e1 = exp; 
-      { Decl(t, None, x, e1) }
-  | t1= typ; x = ID; LWICK; t2 = typ; RWICK; GETS; e1 = exp; 
-      { Decl(t1, Some t2, x, e1) }
+      { Decl(t, x, e1) }
   | x = ID; GETS; e1 = exp; 
       { Assign(x, e1) }
   | x = ID; PLUSEQ; e1 = exp; 
@@ -295,14 +295,14 @@ comm_element:
       { Inc(x) }
   | x = ID; DEC; 
       { Dec(x) }
-  | x = ID; LPAREN; RPAREN; 
-      { FnCall(x, [], []) }
-  | x = ID; LPAREN; a = arglst; RPAREN; 
-      { FnCall(x, a, []) }
-  | x = ID; LWICK; p = typlst; RWICK; LPAREN; RPAREN; 
-      { FnCall(x, [], p) }
-  | x = ID; LWICK; p = typlst; RWICK; LPAREN; a = arglst; RPAREN; 
-      { FnCall(x, a, p) }
+  | t = typ; LPAREN; RPAREN; 
+      { FnCall(t, [], []) }
+  | t = typ; LPAREN; a = arglst; RPAREN; 
+      { FnCall(t, a, []) }
+  | t = typ; LWICK; p = typlst; RWICK; LPAREN; RPAREN; 
+      { FnCall(t, [], p) }
+  | t = typ; LWICK; p = typlst; RWICK; LPAREN; a = arglst; RPAREN; 
+      { FnCall(t, a, p) }
 ; 
 
 constrain:
@@ -336,10 +336,10 @@ typ:
         let dim_lst = Str.split_delim (regexp "x") dim in
         TransTyp (TopVecTyp (int_of_string(List.nth dim_lst 1)),
         (TopVecTyp (int_of_string(List.nth dim_lst 0))))}
-  | x1 = typ; TRANS; x2 = typ 
-      { TransTyp(x1,x2) }
-  | x = ID; LWICK; tl = typlst; RWICK; 
-      { VarTyp (x, tl) }
+  | t1 = typ; TRANS; t2 = typ 
+      { TransTyp(t1,t2) }
+  | t = typ; LWICK; tl = typlst; RWICK; 
+      { ParTyp(t,tl) }
   | x = ID 
       { if (Str.string_match vec x 0) then (
         let len = String.length x in 
@@ -351,15 +351,15 @@ typ:
         let dim = int_of_string (String.sub x 3 (len-3)) in
         TransTyp (TopVecTyp dim, TopVecTyp dim)
         ) 
-        else (VarTyp (x, [])) }
-  | SAMPLERCUBE
+        else (VarTyp x) }
+  | SAMPLERCUBE 
       { SamplerCubeTyp }
-  | s = SAMPLER                     
+  | s = SAMPLER 
       { let len = String.length s in
         let dim = String.sub s 7 (len-7) in 
         let dim_lst = Str.split_delim (regexp "D") dim in
         SamplerTyp (int_of_string(List.nth dim_lst 0)) }
-  | VOID
+  | VOID 
       { UnitTyp }
 ;
 

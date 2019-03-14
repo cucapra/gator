@@ -11,9 +11,10 @@ type typ =
     | FloatTyp
     | TopVecTyp of int
     | BotVecTyp of int
-    | VarTyp of id * typ list (* i.e. model or hom<model> *)
+    | VarTyp of id (* i.e. model *)
     | TransTyp of typ * typ
-    | SamplerTyp of int (* i.e. sampler2D *)
+    | ParTyp of typ * typ list (* i.e. hom<model> or sampler2D<model, world> *)
+    | SamplerTyp of int
     | SamplerCubeTyp
     | AbsTyp of id (* i.e. `t *)
     | ArrTyp of typ * constvar (* i.e. vec3[5] *)
@@ -71,13 +72,13 @@ type comm =
     | Print of exp
     | Inc of id
     | Dec of id
-    | Decl of typ * typ option * string * exp
+    | Decl of typ * string * exp
     | Assign of string * exp
     | AssignOp of string * binop * exp
     | If of if_block * if_block list * (comm list) option  (* if - elif list - else *)
     | For of comm * exp * comm * comm list
     | Return of exp option
-    | FnCall of string * args * typ list
+    | FnCall of typ * args * typ list (* e.g. f<model>(position) -- note that 'f' must be a string, but we treat it as a type to allow parsing of parametrized types *)
 and if_block = exp * comm list
 
 type fn = fn_decl * comm list
