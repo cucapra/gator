@@ -88,7 +88,6 @@ let delta_lookup_unsafe (s: id) (pml: typ list) (d: delta) : typ =
     if Assoc.mem s d then
     let (pm, t) = Assoc.lookup s d in
     replace_abstype t (match_parameterization_unsafe pm pml)
-    
     else raise (TypeException ("Unknown tag " ^ s))
 
 let rec etyp_to_typ (e : TypedAst.etyp) : typ =
@@ -603,6 +602,7 @@ let update_psi (start: typ) (target: typ) ((f, pml) : string * typ list) (m: mu)
     let is_valid (t: typ) : bool =
         match t with
         | VarTyp _ 
+        | ParTyp _
         | AbsTyp _ -> true
         | _ -> false
     in
@@ -618,11 +618,9 @@ let update_psi (start: typ) (target: typ) ((f, pml) : string * typ list) (m: mu)
         | _ -> false
     in
     let are_coord (t1: typ) (t2: typ) : bool =
+        (* Note that t1, t2 must be VarTyp based on the usecase below *)
         match t1, t2 with
-        | VarTyp s1, VarTyp s2
-        | ParTyp (VarTyp s1, _), VarTyp s2
-        | VarTyp s1, ParTyp (VarTyp s2, _)
-        | ParTyp (VarTyp s1, _), ParTyp (VarTyp s2, _) ->
+        | VarTyp s1, VarTyp s2 ->
             (if Assoc.mem s1 m && Assoc.mem s2 m
             then (match (Assoc.lookup s1 m, Assoc.lookup s2 m) with
             | (Some Coord, Some Coord) -> true
@@ -695,7 +693,6 @@ let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parameteriz
 let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) (d: delta) 
 (pm: parameterization) (p: phi) (ps: psi) : exp = 
     debug_print ">> check_in_exp";
-    print_endline (string_of_psi ps);
     let rec psi_path_rec (to_search: (typ * exp) Queue.t) (found: typ list) : exp =
         let search_phi (tl: typ) (ps_lst : (typ * fn_inv) list) : (typ * fn_inv) list =
             (* This function searches phi for anonical abstract functions that map from the given type *)
@@ -703,7 +700,7 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
             (* If multiple functions are possible, then ambiguities are resolved with the following priorities *)
             (* 1. Minimize upcasting requirements (actually handled by use of this function) *)
             (* 2. Minimize number of type parameters *)
-            (* 3. Minimize constraint bounds *)
+            (* 3. Minimize constraint bounds *)            
             let rec search_phi_rec (fns : (string * fn_type) list) : (typ * (id * typ list * constrain list)) list =
                 match fns with
                 (* Note that matrices are always selected over canonical function invocations *)
@@ -732,16 +729,16 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
                         | VarTyp _ 
                         | ParTyp (VarTyp _, _) -> let rec_result = search_phi_rec t in
                             if List.fold_left (fun acc (rt, _) -> is_typ_eq rt rtr || acc) false rec_result then
-                            List.map (fun (rt, (id2, pml2, pr2)) -> 
-                            if (List.length pr1 = List.length pr2) && (List.length pr1 = 0) then
+                                List.map (fun (rt, (id2, pml2, pr2)) -> 
+                                if (List.length pr1 = List.length pr2) && (List.length pr1 = 0) then
                                 fail id2 ("duplicate concrete paths from " ^ string_of_typ tl ^ " to " ^ string_of_typ rtr)
-                            else if not (is_typ_eq rt rtr) then (rt, (id2, pml2, pr2))
-                            else if List.length pr1 < List.length pr2 then (rt, (id, pml, pr1))
-                            else if List.length pr2 < List.length pr1 then (rt, (id2, pml2, pr2))
-                            else if (match List.fold_left2 (compare_parameterizations id2) None pr1 pr2 with
-                            | None -> failwith "Unexpected concrete function type duplicates in phi" 
-                            | Some b -> b) then (rt, (id2, pml2, pr2))
-                            else (rtr, (id, pml, pr1))) rec_result
+                                else if not (is_typ_eq rt rtr) then (rt, (id2, pml2, pr2))
+                                else if List.length pr1 < List.length pr2 then (rt, (id, pml, pr1))
+                                else if List.length pr2 < List.length pr1 then (rt, (id2, pml2, pr2))
+                                else if (match List.fold_left2 (compare_parameterizations id2) None pr1 pr2 with
+                                    | None -> failwith "Unexpected concrete function type duplicates in phi" 
+                                    | Some b -> b) then (rt, (id2, pml2, pr2))
+                                else (rtr, (id, pml, pr1))) rec_result
                             (* No duplicate type result found, just add this function to the list *)
                             else (rtr, (id, pml, pr1)) :: rec_result
                         | _ -> raise (TypeException ("Canonical function " ^ id ^ " resulted in type "
@@ -765,7 +762,7 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
             let ps_lst = if Assoc.mem s_lookup ps then Assoc.lookup s_lookup ps else [] in
             let to_return = search_phi nt ps_lst in
             let (ns, ntl) = as_par_typ nt in
-            let next_step = match nt with | VarTyp _ -> delta_lookup_unsafe ns ntl d | _ -> nt in
+            let next_step = match nt with | VarTyp _ | ParTyp _ -> delta_lookup_unsafe ns ntl d | _ -> nt in
             (match next_step with
             | VarTyp _
             | ParTyp _ -> 
@@ -966,7 +963,7 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
     | Decl (t, s, e) -> (* TODO: code insertion *)
         if Assoc.mem s g then raise (TypeException "variable name shadowing is illegal")        
         else 
-        (check_typ_valid t d pm;
+        (check_typ_valid t d pm; 
         let result = check_exp e d m g pm p ps in
         let t' = (match t with | AutoTyp -> 
             (match (snd result) with
