@@ -19,28 +19,41 @@ node_thread = Thread(target=openNode)
 node_thread.start()
 
 default_args = {'time': 10}
-phong = {'name': 'phong',
-         'shaders': ['raw', 'default', 'default', 'raw'],
-         'args': {
-             'num_objects': 40,
-         }
-         }
-texture = {'name': 'texture',
-           'shaders': ['raw', 'default', 'default', 'raw'],
-           'args': {}}
-shadow_map = {'name': 'shadow_map',
-              'shaders': ['raw', 'default', 'default', 'raw'],
-              'args': {}}
-reflection = {'name': 'reflection',
-<<<<<<< HEAD
-              'shaders': ['raw', 'default'],
-=======
-              'shaders': ['default', 'raw', 'default', 'raw'],
->>>>>>> c8b4d22abd3a4ae8a2ddfa21df2ac9fd84df614d
-              'args': {}}
+
+
+bump = {
+    'name': 'bump',
+    'shaders': ['raw'],
+    'args': {}
+}
+ray_tracing = {
+    'name': 'ray_tracing',
+    'shaders': ['raw', 'default'],
+    'args': {}
+}
+reflection = {
+    'name': 'reflection',
+    'shaders': ['raw', 'default'],
+    'args': {}
+}
+phong = {
+    'name': 'phong',
+    'shaders': ['raw', 'default', 'default', 'raw'],
+    'args': {'num_objects': 40}
+}
+shadow_map = {
+    'name': 'shadow_map',
+    'shaders': ['raw', 'default', 'default', 'raw'],
+    'args': {}
+}
+texture = {
+    'name': 'texture',
+    'shaders': ['raw', 'default', 'default', 'raw'],
+    'args': {}
+}
 
 # benchmarks = [phong, shadow_map, texture, reflection]
-benchmarks = [shadow_map]
+benchmarks = [bump]
 browser = webdriver.Chrome()
 for bench in benchmarks:
     print(f"Running {bench['name']}")
