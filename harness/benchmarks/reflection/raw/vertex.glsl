@@ -9,8 +9,7 @@ varying vec3 vPosition;
 varying vec3 vNormal;
 
 void main() {
-    mat4 model_modelHom = mat4(1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.);
     vPosition = aPosition;
     vNormal = aNormal;
-    gl_Position = uProjection * uView * uModel * (model_modelHom * vec4(aPosition, 0.) + vec4(0., 0., 0., 1.));
+    gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
 }
