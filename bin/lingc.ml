@@ -40,5 +40,5 @@ let _ =
                 end in
         close_in ch;
     let (typedProg, params) = Check.check_prog prog in
-    if !run_interp then Ops.eval_prog typedProg 
+    if !run_interp then Ops.eval_prog typedProg params
     else print_string (Emit.compile_program typedProg params)

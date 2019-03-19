@@ -9,7 +9,7 @@ tag norm<`t : vec> is `t;
 tag color is vec3;
 tag alpha<`t : color> is vec4;
 
-declare alpha<color> texture2D(sampler2D texture, vec2 cor);
+declare `t texture2D<`t : vec4>(sampler2D<`t> texture, vec2 cor);
 declare canon norm<`t> normalize<`t : vec>(`t x);
 declare float dot<`t: vec>(`t v1, `t v2);
 declare vec4 vec4(vec3 v, float f);
@@ -20,7 +20,7 @@ declare `t reflect<`t : vec>(`t v1, `t v2);
 declare float pow(float f1, float f2);
 declare float length<`t : vec>(`t v);
 
-uniform sampler2D uTexture;
+uniform sampler2D<alpha<color>> uTexture;
 varying vec3 vShadowPos;
 varying model vPosition;
 uniform hom<model>->hom<world> uModel;

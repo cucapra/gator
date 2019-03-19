@@ -12,11 +12,6 @@ type ltyp_top =
     | VecDim of int
     | MatDim of int * int
 
-(* Ignore original declarations of attributes and the like *)
-let check_name (var_name : string) : bool = 
-    let decl_reg = Str.regexp "[auv][A-Z]" in
-        Str.string_match decl_reg var_name 0
-
 (* Don't write the type of gl_Position or gl_FragColor *)
 let is_core (var_name : string) : bool = 
     var_name = "gl_Position" || var_name = "gl_FragColor"
@@ -40,7 +35,6 @@ and string_of_glsl_mat (m: exp list list) : string =
 
 and string_of_glsl_typ (t : etyp) : string =
     match t with
-    | UnitTyp -> failwith "Unit type is unwriteable in glsl"
     | MatTyp (m, n) -> "mat" ^ string_of_int (max m n)
     | _ -> string_of_typ t
 
@@ -50,12 +44,6 @@ and attrib_type (var_name : string) : string =
     (if (String.get var_name 0) = 'v' then "varying" else
     (if (String.get var_name 0) = 'u' then "uniform" else
     failwith "Not a supported glsl attribute"))
-
-(* Ignore original declarations of attributes and the like *)
-and check_name (var_name : string) : bool = 
-    debug_print ">> check_name";
-    let decl_reg = Str.regexp "[auv][A-Z]" in
-        Str.string_match decl_reg var_name 0
 
 (* Don't write the type of gl_Position or gl_FragColor *)
 and is_core (var_name : string) : bool = 
@@ -124,7 +112,6 @@ and comp_comm (c : comm list) : string =
         | Dec (x, _) -> x ^ "--;" ^ (comp_comm t)
         (* Super janky, but we need to have rules for weird glsl declarations and variables *)
         | Decl (ty, x, (e, _)) -> (
-            if check_name x then ""^ (comp_comm t) else  
             if is_core x  then x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
             else string_of_glsl_typ ty ^ " "^ x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t))
         | Assign (x, (e, _)) -> x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
@@ -141,7 +128,7 @@ and comp_comm (c : comm list) : string =
             ^ "{ " ^ (comp_comm cl) ^ " }" ^ (comp_comm t))
         | Return Some (e, _) -> "return " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
         | Return None -> "return;" ^ (comp_comm t)
-        | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
+        | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ");" ^ (comp_comm t)
 
 (* GenTyp - int, float, vec(2,3,4), mat(16 possibilites) *)
 let rec strings_of_constraint (c: constrain) : string list =
@@ -192,13 +179,13 @@ let rec comp_fn_lst (f : fn list) : string =
 
 let decl_attribs (gv : global_vars) : string = 
     debug_print ">> decl_attribs";
-    let rec decl_attribs_list (gv : (string * storage_qual * etyp) list) : string =
+    let rec decl_attribs_list (gv : (string * storage_qual * etyp * value option) list) : string =
         match gv with
         | [] -> ""
-        | (x, sq, et)::t -> 
-            if check_name x then
-                (string_of_storage_qual sq) ^ " " ^ (string_of_glsl_typ et) ^ " " ^ x ^ ";" ^ (decl_attribs_list t)
-            else decl_attribs_list t
+        | (x, sq, et, v)::t -> 
+            (string_of_storage_qual sq) ^ " " ^ (string_of_glsl_typ et)
+            ^ " " ^ x ^ string_of_option_removed (fun v -> " = " ^ string_of_value v) v ^
+            ";" ^ (decl_attribs_list t) 
     in
     decl_attribs_list gv
 
