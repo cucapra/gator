@@ -20,6 +20,7 @@ and constrain =
     | GenTyp
     | GenMatTyp
     | GenVecTyp
+    | GenSpaceTyp
     | ETypConstraint of etyp
 
 (* expressions *)

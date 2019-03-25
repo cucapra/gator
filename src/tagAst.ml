@@ -25,6 +25,7 @@ type constrain =
     | GenTyp
     | GenMatTyp
     | GenVecTyp
+    | GenSpaceTyp
     | TypConstraint of typ
 
 (* Global variables *)
@@ -46,11 +47,12 @@ and args = exp list
 type modification =
     | Coord
     | Canon
+    | Space
 
 (* function parameterization,
  * which may extend another type. *)
 type parameterization = constrain Assoc.context
-type parameterization_decl = (string * modification option * constrain) list
+type parameterization_decl = (string * modification list * constrain) list
 
 (* function parameters *)
 (* arguments may have an optional parameterization type *)
@@ -61,10 +63,10 @@ type fn_type = params * ret_type * parameterization
 (* Note that the parameterization declaration is only useful when checking the function, not calling it *)
 type fn_type_decl = params * ret_type * parameterization_decl
 (* function declaration *)
-type fn_decl = modification option * string * fn_type_decl
+type fn_decl = modification list * string * fn_type_decl
 type extern_decl =
     | ExternFn of fn_decl
-    | ExternVar of (typ * exp)
+    | ExternVar of (modification list * typ * exp)
 
 (* commands *)
 type comm =
@@ -84,7 +86,7 @@ and if_block = exp * comm list
 type fn = fn_decl * comm list
 
 (* tag declaration statements *)
-type tag_decl = modification option * string * parameterization_decl * typ
+type tag_decl = modification list * string * parameterization_decl * typ
 
 type global_var_or_fn =
     | GlobalVar of global_var
