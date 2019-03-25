@@ -2,7 +2,7 @@
 
 // Bounds should be sound because they INCREASE strictness
 // Note that explicit bounds can help with providing nicer error messages
-`t add_op<`t : vec>(`t x, `t y) {
+`t add_op<`t : space>(`t x, `t y) {
     return x + y;
 }
 
