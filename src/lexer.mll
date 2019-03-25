@@ -90,6 +90,7 @@ rule read = parse
   | "attribute"     { ATTRIBUTE }
   | "uniform"       { UNIFORM }
   | "varying"       { VARYING }
+  | "space"         { SPACE }
   | "break"
   | "continue"
   | "do"
