@@ -1,5 +1,5 @@
-tag model is vec3;
-tag coord modelHom is vec4;
+space model is vec3;
+space coord modelHom is vec4;
 tag coord worldHom is vec4;
 tag coord cameraHom is vec4;
 tag coord projectiveHom is vec4;

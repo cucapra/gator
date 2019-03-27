@@ -32,6 +32,7 @@ let rec string_of_constraint (t: constrain) : string =
     | GenTyp -> "genType"
     | GenMatTyp -> "mat"
     | GenVecTyp -> "vec"
+    | GenSpaceTyp -> "space"
     | ETypConstraint t -> string_of_typ t
 
 let rec string_of_exp (e: exp) : string =

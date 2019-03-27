@@ -6,11 +6,11 @@
 // https://capra.cs.cornell.edu/braid/dingus/#example=phong
 
 tag coord model is vec3;
-tag coord world is vec3;
+space coord world is vec3;
 tag coord camera is vec3;
 tag coord hom<`t : vec3> is vec4;
 tag norm<`t : vec> is `t;
-tag color is vec3;
+space color is vec3;
 tag alpha<`t : color> is vec4;
 
 declare canon norm<`t> normalize<`t : vec>(`t x);

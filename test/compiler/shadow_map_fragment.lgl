@@ -6,7 +6,7 @@ tag light is viewport;
 tag coord view<`t : viewport> is `t;
 tag coord hom<`t : vec3> is vec4;
 tag norm<`t : vec> is `t;
-tag color is vec3;
+space color is vec3;
 tag alpha<`t : color> is vec4;
 
 declare alpha<color> texture2D(sampler2D texture, vec2 cor);

@@ -24,9 +24,9 @@ type delta = (parameterization * typ) Assoc.context
 type phi = fn_type Assoc.context
 
 (* Tag and function modifiers *)
-(* Specifically the coord and canonical keywords *)
+(* Specifically the coord, canonical, and space keywords *)
 (* Is currently only modified during tag and function declaration steps *)
-type mu = (modification option) Assoc.context
+type mu = (modification list) Assoc.context
 
 (* Transformation context *)
 (* Effectively has the type 'start->(target, f<pml>) list' for types start and target (both restricted implicitely to var types), function/matrix name f, and function parameter list pml *)
@@ -46,7 +46,7 @@ let trans_bot (n1: int) (n2: int) : typ =
 let rec unwrap_abstyp (s: string) (pm : parameterization) : constrain =
     debug_print ">> unwrap_abstyp";
     if Assoc.mem s pm 
-    then match (Assoc.lookup s pm) with 
+    then match Assoc.lookup s pm with 
         | TypConstraint(AbsTyp s) ->  unwrap_abstyp s pm
         | p -> p
     else raise (TypeException ("AbsTyp " ^ s ^ " not found in parameterization"))
@@ -112,6 +112,7 @@ and constrain_to_constrain (c : TypedAst.constrain) : constrain =
     | TypedAst.GenTyp -> GenTyp
     | TypedAst.GenMatTyp -> GenMatTyp
     | TypedAst.GenVecTyp -> GenVecTyp
+    | TypedAst.GenSpaceTyp -> GenSpaceTyp
     | TypedAst.ETypConstraint t -> TypConstraint (etyp_to_typ t)
 
 type dim_constrain_typ = | UnconInt of int | ConString of string
@@ -124,7 +125,7 @@ let rec vec_dim_constrain (t: typ) (d: delta) (pm: parameterization) : dim_const
     | VarTyp s -> vec_dim_constrain (delta_lookup_unsafe s [] d) d pm
     | AbsTyp s -> (match unwrap_abstyp s pm with
         | TypConstraint t' -> vec_dim_constrain t' d pm
-        | GenVecTyp -> Some (ConString s)
+        | GenVecTyp | GenSpaceTyp -> Some (ConString s)
         | _ -> None)
     | _ -> None
 
@@ -143,7 +144,7 @@ let rec tag_erase_param (t: typ) (d: delta) (pm: parameterization) : TypedAst.et
     debug_print ">> tag_erase_param";
     match t with 
     | AbsTyp s -> if Assoc.mem s pm then 
-        let p = (Assoc.lookup s pm) in 
+        let p = Assoc.lookup s pm in 
         TypedAst.AbsTyp (s, constrain_erase p d pm)
         else raise (TypeException ("AbsTyp " ^ s ^ " was not found in function parameterization definition"))
     | _ -> tag_erase t d pm 
@@ -184,6 +185,7 @@ and constrain_erase (c: constrain) (d : delta) (pm : parameterization) : TypedAs
     | GenTyp -> TypedAst.GenTyp
     | GenMatTyp -> TypedAst.GenMatTyp
     | GenVecTyp -> TypedAst.GenVecTyp
+    | GenSpaceTyp -> TypedAst.GenSpaceTyp
     | TypConstraint t -> TypedAst.ETypConstraint (tag_erase t d pm)
 
 let rec is_typ_eq (t1: typ) (t2: typ) : bool =
@@ -210,7 +212,7 @@ let rec is_subtype_with_strictness (to_check : typ) (target : typ) (d : delta) (
     debug_print (">> is_subtype " ^ (string_of_typ to_check) ^ ", " ^(string_of_typ target));
     let abstyp_step (s: string) : bool =
         if Assoc.mem s pm 
-        then match (Assoc.lookup s pm) with
+        then match Assoc.lookup s pm with
         | TypConstraint t -> is_subtype_with_strictness t target d pm strict
         | _ -> false
         else raise (TypeException ("AbsTyp " ^ s ^ " not found in parameterization"))
@@ -253,13 +255,13 @@ and is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameterization
     debug_print ">> is_subtype";
     is_subtype_with_strictness to_check target d pm true
 
-let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta) (pm: parameterization): bool =
-    debug_print ">> is_sub_constraint";
+let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta) (pm: parameterization) (m: mu): bool =
+    debug_print (">> is_sub_constraint " ^ string_of_constraint to_check ^ " " ^ string_of_constraint target);
     match (to_check, target) with
     | _, AnyTyp -> true
     | AnyTyp, _ -> false
     | (TypConstraint t1, TypConstraint t2) -> is_subtype_with_strictness t1 t2 d pm false
-    | (TypConstraint (AbsTyp s), _) -> is_sub_constraint (unwrap_abstyp s pm) target d pm
+    | (TypConstraint (AbsTyp s), _) -> is_sub_constraint (unwrap_abstyp s pm) target d pm m
     | (_, TypConstraint _) -> false
     | (TypConstraint (BoolTyp), GenTyp) -> false
     | (TypConstraint (TransTyp _), GenTyp) -> false
@@ -268,37 +270,59 @@ let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta
     | (TypConstraint (BotVecTyp _), GenVecTyp)
     | (TypConstraint (VarTyp _), GenVecTyp)
     | (TypConstraint (TopVecTyp _), GenVecTyp)
+    | (GenSpaceTyp, GenVecTyp)
     | (TypConstraint (ParTyp (VarTyp _, _)), GenVecTyp) -> true
     | (_, GenVecTyp) -> false
+    | (TypConstraint (VarTyp t), GenSpaceTyp) -> List.mem Space (Assoc.lookup t m)
+    | (TypConstraint (TopVecTyp _), GenSpaceTyp)
+    | (TypConstraint (BotVecTyp _), GenSpaceTyp) -> true
+    | (_, GenSpaceTyp) -> false
     | (GenMatTyp, GenMatTyp)
     | (TypConstraint (TransTyp _), GenMatTyp) -> true
     | (_, GenMatTyp) -> false
 
-let is_bounded_by (t: typ) (c: constrain) (d: delta) (pm: parameterization): bool =
+let is_bounded_by (t: typ) (c: constrain) (d: delta) (pm: parameterization) (m: mu) : bool =
     debug_print ">> is_bounded_by";
-    is_sub_constraint (TypConstraint t) c d pm
+    is_sub_constraint (TypConstraint t) c d pm m
 
 (* Special case that comes up a bunch -- previously covered incorrectly by 'genType' *)
-let is_non_bool (t: typ) (d: delta) (pm: parameterization) : bool =
-    is_bounded_by t GenTyp d pm || is_bounded_by t GenMatTyp d pm
+let is_non_bool (t: typ) (d: delta) (pm: parameterization) (m: mu) : bool =
+    is_bounded_by t GenTyp d pm m || is_bounded_by t GenMatTyp d pm m
 
-let match_parameterization (d: delta) (pmb: (string * constrain) list) (pml : typ list) (pm: parameterization) : (typ Assoc.context) option =
+let match_parameterization (d: delta) (pmb: (string * constrain) list) (pml : typ list) (pm: parameterization) (m: mu) : (typ Assoc.context) option =
     debug_print ">> match_parametrization";
     if List.length pmb == List.length pml
     then List.fold_left2 (fun acc (s, c) t -> match acc with | None -> None 
-        | Some tl -> if is_bounded_by t c d pm then Some (Assoc.update s t tl) else None)
+        | Some tl -> if is_bounded_by t c d pm m then Some (Assoc.update s t tl) else None)
         (Some (Assoc.empty)) pmb pml
     else None
 
-let delta_lookup (s: id) (pml: typ list) (d: delta) (pm: parameterization) : typ =
+let delta_lookup (s: id) (pml: typ list) (d: delta) (pm: parameterization) (m: mu) : typ =
     (* The safe version, where we check the validity of abstract type resolution *)
     debug_print ">> delta_lookup";
     if Assoc.mem s d then
     let (pm_to_match, t) = Assoc.lookup s d in
-    match (match_parameterization d (Assoc.bindings pm_to_match) pml pm) with
+    match (match_parameterization d (Assoc.bindings pm_to_match) pml pm m) with
     | Some cont -> replace_abstype t cont
     | None -> raise (TypeException ("Invalid parameters <" ^ (string_of_lst string_of_typ pml) ^ "> to " ^ s))
     else raise (TypeException ("Unknown tag " ^ s))
+
+
+
+let rec raise_to_space (d: delta) (m: mu) (pm: parameterization) (t: typ) : typ =
+    match t with
+    | VarTyp x ->
+        if List.mem Space (Assoc.lookup x m) then t
+        else raise_to_space d m pm (delta_lookup x [] d pm m) 
+    | AbsTyp x ->
+        if Assoc.mem ("`" ^ x) m && List.mem Space (Assoc.lookup ("`" ^ x) m) then t
+        else (match Assoc.lookup x pm with
+            | GenVecTyp -> raise (TypeException ("Vectors of generic parameter type " ^ x ^ " cannot be added or multiplied by scalars"))
+            | GenSpaceTyp -> t
+            | TypConstraint t' -> raise_to_space d m pm t'
+            | _ -> t)
+    | ArrTyp (t, _) -> raise_to_space d m pm t
+    | _ -> t
 
 let rec greatest_common_child (t1: typ) (t2: typ) (d: delta) (pm: parameterization): typ =
     debug_print ">> greatest_common_child";
@@ -314,7 +338,7 @@ let rec greatest_common_child (t1: typ) (t2: typ) (d: delta) (pm: parameterizati
     | _, TopVecTyp _ -> t1
     | _ -> BotVecTyp n1 (* This works since both t1 and t2 are vectors with the same dimension and are not subtypes of each other *)
 
-let rec least_common_parent_with_strictness (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (strict: bool): typ =
+let rec least_common_parent_with_strictness (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu) (strict: bool): typ =
     debug_print ">> least_common_parent";
     let fail _ = raise (TypeException ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2))) in
     let check_dim (n1: int) (n2: int) : unit =
@@ -322,9 +346,9 @@ let rec least_common_parent_with_strictness (t1: typ) (t2: typ) (d: delta) (pm: 
     in
     let rec step_abstyp s1 s2 =
         begin
-            match (Assoc.lookup s2 pm) with
+            match Assoc.lookup s2 pm with
             | TypConstraint (AbsTyp s') -> if (is_subtype t1 (AbsTyp s') d pm) then (AbsTyp s') else step_abstyp s1 s'
-            | TypConstraint t -> least_common_parent_with_strictness t t2 d pm strict
+            | TypConstraint t -> least_common_parent_with_strictness t t2 d pm m strict
             | c -> fail ()
         end
     in
@@ -339,21 +363,21 @@ let rec least_common_parent_with_strictness (t1: typ) (t2: typ) (d: delta) (pm: 
         | VarTyp s, _
         | _, VarTyp s ->
             (* Just go up a step -- the end condition is the is_subtype check earlier *)
-            least_common_parent_with_strictness (delta_lookup s [] d pm) t2 d pm strict
+            least_common_parent_with_strictness (delta_lookup s [] d pm m) t2 d pm m strict
         | ParTyp (VarTyp s, tl), _
         | _, ParTyp (VarTyp s, tl) ->
-            least_common_parent_with_strictness (delta_lookup s tl d pm) t2 d pm strict
+            least_common_parent_with_strictness (delta_lookup s tl d pm m) t2 d pm m strict
         | (AbsTyp s1, AbsTyp s2) -> (step_abstyp s1 s2)
         | (TransTyp (t1, t2), TransTyp(t3, t4)) -> 
-            (TransTyp (greatest_common_child t1 t3 d pm, least_common_parent_with_strictness t2 t4 d pm strict))
+            (TransTyp (greatest_common_child t1 t3 d pm, least_common_parent_with_strictness t2 t4 d pm m strict))
         (* Note that every other possible pair of legal joins would be caught by the is_subtype calls above *)
         | _ -> fail ()
 
-let least_common_parent (t1: typ) (t2: typ) (d: delta) (pm: parameterization): typ =
-    least_common_parent_with_strictness t1 t2 d pm true
+let least_common_parent (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu): typ =
+    least_common_parent_with_strictness t1 t2 d pm m true
 
-let least_common_parent_safe (t1: typ) (t2: typ) (d: delta) (pm: parameterization): typ option =
-    try Some (least_common_parent t1 t2 d pm) with
+let least_common_parent_safe (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu): typ option =
+    try Some (least_common_parent t1 t2 d pm m) with
     | TypeException t -> None
     | DimensionException _ -> None
     | t -> raise t
@@ -362,13 +386,14 @@ let collapse_parameterization_decl (pmd: parameterization_decl) : parameterizati
     Assoc.gen_context (List.map (fun (x, y, z) -> (x, z)) pmd)
 
 let infer_pml (d : delta) ((params, rt, pr) : fn_type) (args_typ : typ list) 
-(pm : parameterization): (typ list) option =
+(pm : parameterization) (m : mu): (typ list) option =
+    debug_print ">> infer_pml";
     let update_inference (t : typ) (s : string) (fpm : (typ Assoc.context) option) : (typ Assoc.context) option =
         match fpm with | None -> None | Some p ->
-        if Assoc.mem s p then (match least_common_parent_safe t (Assoc.lookup s p) d pm with
+        if Assoc.mem s p then (match least_common_parent_safe t (Assoc.lookup s p) d pm m with
             | None -> None
-            | Some t' -> (Some (Assoc.update s t' p)))
-        else (Some (Assoc.update s t p)) in
+            | Some t' -> Some (Assoc.update s t' p))
+        else Some (Assoc.update s t p) in
     let rec unify_param (arg_typ : typ) (par_typ : typ) (fpm : (typ Assoc.context) option) : (typ Assoc.context) option =
         match (arg_typ, par_typ) with
         | (_, AbsTyp s) -> update_inference arg_typ s fpm
@@ -405,11 +430,11 @@ let check_subtype_list (t: typ) (l: typ list) (d: delta) (pm: parameterization) 
     debug_print ">> check_subtype_list";
     List.fold_left (fun acc t' -> acc || (is_subtype t t' d pm)) false l
 
-let check_bounds_list (t: typ) (l: constrain list) (d: delta) (pm: parameterization) : bool =
+let check_bounds_list (t: typ) (l: constrain list) (d: delta) (pm: parameterization) (m: mu) : bool =
     debug_print ">> check_bounds_list";
-    List.fold_left (fun acc t' -> acc || (is_bounded_by t t' d pm)) false l
+    List.fold_left (fun acc t' -> acc || (is_bounded_by t t' d pm m)) false l
     
-let check_typ_valid (ogt: typ) (d: delta) (pm: parameterization) : unit =
+let check_typ_valid (ogt: typ) (d: delta) (pm: parameterization) (m: mu) : unit =
     let rec check_typ_valid_rec (t: typ) : unit =
         debug_print ">> check_typ_valid";
         match t with
@@ -417,7 +442,7 @@ let check_typ_valid (ogt: typ) (d: delta) (pm: parameterization) : unit =
         | ParTyp (t, tl) -> check_typ_valid_rec t; List.fold_left (fun acc t' -> check_typ_valid_rec t') () tl;
         | AbsTyp s -> if Assoc.mem s pm then () else raise (TypeException ("Unknown abstract type `" ^ s))
         | TransTyp (t1, t2) -> check_typ_valid_rec t1; check_typ_valid_rec t2;
-            if is_bounded_by t1 GenVecTyp d pm && is_bounded_by t2 GenVecTyp d pm then ()
+            if is_bounded_by t1 GenVecTyp d pm m && is_bounded_by t2 GenVecTyp d pm m then ()
             else raise (TypeException ("Invalid matrix type " ^ (string_of_typ ogt) ^ " (must be a map from vectors to vectors)"))
         | _ -> ()
     in check_typ_valid_rec ogt
@@ -437,7 +462,7 @@ let check_val (v: value) (d: delta) : typ =
         else (raise (TypeException ("Matrix must have the same number of elements in each row"))))
     | _ -> raise (TypeException ("Unexpected typechecker value " ^ (string_of_value v)))
 
-let rec check_typ_exp (t: typ) (d: delta) : unit =
+let rec check_typ_exp (t: typ) (d: delta) (pm: parameterization) (m: mu) : unit =
     debug_print ">> check_typ";
     match t with
     | AutoTyp -> raise (TypeException "Cannot use type auto as a tag type")
@@ -451,120 +476,120 @@ let rec check_typ_exp (t: typ) (d: delta) : unit =
     | TopVecTyp n
     | BotVecTyp n -> (if (n > 0) then ()
         else raise (TypeException "Cannot declare a type with dimension less than 0"))
-    | VarTyp s -> delta_lookup s [] d |> ignore; ()
-    | ParTyp (VarTyp s, pml) -> delta_lookup s pml d |> ignore; ()
+    | VarTyp s -> delta_lookup s [] d pm m |> ignore; ()
+    | ParTyp (VarTyp s, pml) -> delta_lookup s pml d pm m |> ignore; ()
     | ParTyp _ -> ()
-    | TransTyp (t1, t2) -> check_typ_exp t1 d; check_typ_exp t2 d; ()
+    | TransTyp (t1, t2) -> check_typ_exp t1 d pm m; check_typ_exp t2 d pm m; ()
     | AbsTyp s -> raise  (TypeException "Cannot use a generic type as a tag argument yet")
 
 (* "scalar linear exp", (i.e. ctimes) returns generalized MatTyp *)
-let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) (pm : parameterization): typ = 
+let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm : parameterization): typ = 
     debug_print ">> check_ctimes_exp";
-    if is_bounded_by t1 GenVecTyp d pm
-    then (least_common_parent t1 t2 d pm |> ignore; TopVecTyp (vec_dim t1 d pm))
-    else if is_bounded_by t1 GenMatTyp d pm 
-    then (least_common_parent t1 t2 d pm |> ignore; 
+    if is_bounded_by t1 GenVecTyp d pm m
+    then (least_common_parent t1 t2 d pm m |> ignore; TopVecTyp (vec_dim t1 d pm))
+    else if is_bounded_by t1 GenMatTyp d pm m 
+    then (least_common_parent t1 t2 d pm m |> ignore; 
         (let (left, right) = as_matrix_pair t1 d pm in trans_top (vec_dim left d pm) (vec_dim right d pm)))
     else raise (TypeException ("Invalid expressions for component wise multiplication: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2)))
 
 (* Type check binary bool operators (i.e. &&, ||) *)
-let check_bool_binop (t1: typ) (t2: typ) (d: delta) (pm: parameterization): typ = 
+let check_bool_binop (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization): typ = 
     debug_print ">> check_bool_binop";
-    if is_subtype t1 BoolTyp d pm then least_common_parent t1 t2 d pm
+    if is_subtype t1 BoolTyp d pm then least_common_parent t1 t2 d pm m
     else raise (TypeException "Expected boolean expression for binop")
 
 (* Type check unary number operators (i.e. -) *)
-let check_num_unop (t: typ) (d: delta) (pm: parameterization) : typ =
+let check_num_unop (t: typ) (d: delta) (m: mu) (pm: parameterization) : typ =
     debug_print ">> check_num_unop";
-    if is_non_bool t d pm then t
+    if is_non_bool t d pm m then t
     else raise (TypeException "Expected integer, float, vector, or matrix expression")
 
 (* Type check unary bool operators (i.e. !) *)
-let check_bool_unop (t: typ) (d: delta) (pm: parameterization) : typ =
+let check_bool_unop (t: typ) (d: delta) (m: mu) (pm: parameterization) : typ =
     debug_print ">> check_bool_unop";
     if is_subtype t BoolTyp d pm then t
     else raise (TypeException "Expected boolean expression for boolean operator")
 
 (* Type check unary bool operators (i.e. !) *)
-let check_swizzle (s : id) (t: typ) (d: delta) (pm: parameterization) : typ =
+let check_swizzle (s : id) (t: typ) (d: delta) (m: mu) (pm: parameterization) : typ =
     debug_print ">> check_swizzle";
     let check_reg = if Str.string_match (Str.regexp "[xyzwrgbastpq]+") s 0 
         then if String.length s == 1 then FloatTyp else TopVecTyp (String.length s)
         else raise (TypeException ("Invalid characters used for swizzling in " ^ s)) in
-    if is_bounded_by t GenVecTyp d pm then check_reg
+    if is_bounded_by t GenVecTyp d pm m then check_reg
     else raise (TypeException "Expected vector for swizzling")
 
 (* Type check equality (==) *)
 (* Only bool, int, float are comparable *)
-let check_equality_exp (t1: typ) (t2: typ) (d: delta) (pm: parameterization) : typ = 
+let check_equality_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization) : typ = 
     debug_print ">> check_comp_binop";
     let subtype_list = [BoolTyp; IntTyp; FloatTyp] in
     if check_subtype_list t1 subtype_list d pm
-    then (least_common_parent t1 t2 d pm |> ignore; BoolTyp)
+    then (least_common_parent t1 t2 d pm m |> ignore; BoolTyp)
     else raise (TypeException "Equality checks must be between booleans, integers, or floats")
 
 (* Type check comparative binary operators (i.e. <. <=) *)
 (* Only int and float are comparable *)
-let check_comp_binop (t1: typ) (t2: typ) (d: delta) (pm: parameterization) : typ = 
+let check_comp_binop (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization) : typ = 
     debug_print ">> check_comp_binop";
     let subtype_list = [IntTyp; FloatTyp] in
     if check_subtype_list t1 subtype_list d pm
-    then (least_common_parent t1 t2 d pm |> ignore; BoolTyp)
+    then (least_common_parent t1 t2 d pm m |> ignore; BoolTyp)
     else raise (TypeException "Comparison checks must be between integers or floats")
 
-let check_as_exp (t1: typ) (t2: typ) (d: delta) (pm: parameterization) : typ =
-    least_common_parent_with_strictness t1 t2 d pm false |> ignore; t2
+let check_as_exp (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu) : typ =
+    least_common_parent_with_strictness t1 t2 d pm m false |> ignore; t2
 
 (* Type checking addition operations on scalar (int, float) expressions *)
 (* Types are closed under addition and scalar multiplication *)
-let check_addition_exp (t1: typ) (t2: typ) (d: delta) (pm: parameterization): typ =
+let check_addition_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization): typ =
     debug_print ">> check_addition";
-    if is_non_bool t1 d pm then least_common_parent t1 t2 d pm
+    if is_non_bool t1 d pm m then raise_to_space d m pm (least_common_parent t1 t2 d pm m)
     else raise (TypeException ("Invalid expressions for addition: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2)))
 
 (* Type checking times operator - on scalar mult & matrix transformations *)
-let check_times_exp (t1: typ) (t2: typ) (d: delta) (pm: parameterization): typ = 
+let check_times_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization): typ = 
     debug_print ">> check_times_exp";
     let fail () = raise (TypeException ("Invalid expressions for multiplication: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))) in
     let intfloat_list = [IntTyp; FloatTyp] in
     if is_subtype t1 IntTyp d pm && is_subtype t2 IntTyp d pm then 
-        least_common_parent t1 t2 d pm
+        least_common_parent t1 t2 d pm m
     (* Scalar multiplication *)
-    else if check_subtype_list t1 intfloat_list d pm && is_non_bool t2 d pm then t2
-    else if check_subtype_list t2 intfloat_list d pm && is_non_bool t1 d pm then t1
+    else if check_subtype_list t1 intfloat_list d pm && is_non_bool t2 d pm m then raise_to_space d m pm t2
+    else if check_subtype_list t2 intfloat_list d pm && is_non_bool t1 d pm m then raise_to_space d m pm t1
     (* Matrix-vector multiplication *)
-    else if is_bounded_by t1 GenMatTyp d pm then
+    else if is_bounded_by t1 GenMatTyp d pm m then
         (let (t1l, t1r) = as_matrix_pair t1 d pm in
-        if is_bounded_by t2 GenVecTyp d pm then
+        if is_bounded_by t2 GenVecTyp d pm m then
             (if is_subtype t2 t1l d pm then t1r else fail ())
-        else if is_bounded_by t2 GenMatTyp d pm then
+        else if is_bounded_by t2 GenMatTyp d pm m then
             (let (t2l, t2r) = as_matrix_pair t2 d pm in
-            least_common_parent t1l t2r d |> ignore; TransTyp(t2l, t1r))
+            least_common_parent t1l t2r d pm m |> ignore; TransTyp(t2l, t1r))
         else fail ())
     else fail ()
 
 (* Type checking division operations (/) *)
 (* Types are closed under scalar division *)
-let check_division_exp (t1: typ) (t2: typ) (d: delta) (pm: parameterization) : typ =
+let check_division_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization) : typ =
     debug_print ">> check_division";
     let subtype_list = [IntTyp; FloatTyp] in
     if check_subtype_list t1 subtype_list d pm
-        then least_common_parent t1 t2 d pm
-    else if check_subtype_list t2 subtype_list d pm && is_bounded_by t1 GenVecTyp d pm
+        then least_common_parent t1 t2 d pm m
+    else if check_subtype_list t2 subtype_list d pm && is_bounded_by t1 GenVecTyp d pm m
         then t1
     else raise (TypeException ("Invalid expressions for division: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2)))
 
-let check_index_exp (t1: typ) (t2: typ) (d: delta) (pm: parameterization): typ =
+let check_index_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization): typ =
     debug_print ">> check_index_exp";
     let fail _ = raise (TypeException ("Invalid expressions for indexing: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2))) in
     if is_subtype t2 IntTyp d pm then
-        if is_bounded_by t1 GenVecTyp d pm then FloatTyp
-        else if is_bounded_by t1 GenMatTyp d pm then
+        if is_bounded_by t1 GenVecTyp d pm m then FloatTyp
+        else if is_bounded_by t1 GenMatTyp d pm m then
             TopVecTyp (vec_dim (fst (as_matrix_pair t1 d pm)) d pm)
         else begin
         match t1 with
@@ -581,7 +606,7 @@ let check_parameterization (d: delta) (m: mu) (pmd: parameterization_decl) : mu 
         else 
         let updated_found = (Assoc.update s c found) in
         (match c with
-        | TypConstraint t' -> check_typ_valid t' d found; 
+        | TypConstraint t' -> check_typ_valid t' d found m; 
             Assoc.update ("`" ^ s) mo (check_para_list t updated_found)
         | _ -> Assoc.update ("`" ^ s) mo (check_para_list t updated_found))
     in
@@ -622,9 +647,7 @@ let update_psi (start: typ) (target: typ) ((f, pml) : string * typ list) (m: mu)
         match t1, t2 with
         | VarTyp s1, VarTyp s2 ->
             (if Assoc.mem s1 m && Assoc.mem s2 m
-            then (match (Assoc.lookup s1 m, Assoc.lookup s2 m) with
-            | (Some Coord, Some Coord) -> true
-            | _ -> false)
+            then List.mem Coord (Assoc.lookup s1 m) && List.mem Coord (Assoc.lookup s2 m)
             else failwith ("Expected to find " ^ s1 ^ " and " ^ s2 ^ " in mu"))
         | _ -> failwith ("Unexpected lookup of " ^ string_of_typ t1 ^ " or " ^ string_of_typ t2 ^ " to mu")
     in
@@ -659,7 +682,7 @@ let check_param ((id, t): (string * typ)) (g: gamma) (d: delta) (m: mu)
     debug_print ">> check_param";
     if Assoc.mem id g 
     then raise (TypeException ("Duplicate parameter name in function declaration: " ^ id))
-    else check_typ_valid t d pm; (Assoc.update id t g, update_psi_matrix id t m ps)
+    else check_typ_valid t d pm m; (Assoc.update id t g, update_psi_matrix id t m ps)
     
 (* Get list of parameters from param list *)
 let check_params (pl : (string * typ) list) (g: gamma) (d : delta) (m: mu) 
@@ -675,7 +698,7 @@ let check_global_variable ((id, sq, t, v): (string * storage_qual * typ * value 
     debug_print ">> check_global_variable";
     if Assoc.mem id g
     then raise (TypeException ("Duplicate global variable: " ^ id))
-    else check_typ_valid t d Assoc.empty; ((id, sq, tag_erase t d Assoc.empty, v), Assoc.update id t g, update_psi_matrix id t m ps)
+    else check_typ_valid t d Assoc.empty m; ((id, sq, tag_erase t d Assoc.empty, v), Assoc.update id t g, update_psi_matrix id t m ps)
     
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parameterization) : TypedAst.texp = 
     debug_print ">> exp_to_texp";
@@ -698,19 +721,16 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
                 (* Note that matrices are always selected over canonical function invocations *)
                 | [] -> List.map (fun (t, (x, y)) -> (t, (x, y, []))) ps_lst 
                 | (id, (params, rt, pr)) :: t -> 
-                begin
-                    match Assoc.lookup id m with
-                    | Some Canon -> 
-                    begin
+                    if List.mem Canon (Assoc.lookup id m) then
                         let pt = match params with | [(_, pt)] -> pt | _ -> failwith ("function " ^ id ^ " with non-one argument made canonical") in
-                        match infer_pml d (params, rt, pr) [tl] pm with | None -> search_phi_rec t | Some pml ->
+                        match infer_pml d (params, rt, pr) [tl] pm m with | None -> search_phi_rec t | Some pml ->
                         let pr1 = List.map snd (Assoc.bindings pr) in
                         let rtr = replace_abstype rt (match_parameterization_unsafe pr pml) in
                         let ptr = replace_abstype pt (match_parameterization_unsafe pr pml) in
                         let fail id2 s = raise (TypeException ("Ambiguity between viable canonical functions " 
                             ^ id ^ " and " ^ id2 ^ " (" ^ s ^ ")")) in
                         let compare_parameterizations id2 (acc : bool option) c1 c2 : bool option = 
-                            let result = is_sub_constraint c1 c2 d pm in match acc with | None -> Some result
+                            let result = is_sub_constraint c1 c2 d pm m in match acc with | None -> Some result
                             | Some b -> if b = result then acc else fail id2 
                             ("ambiguous constraint ordering between " ^ string_of_constraint c1 ^ " and " ^ string_of_constraint c2)
                         in
@@ -735,9 +755,7 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
                             else (rtr, (id, pml, pr1)) :: rec_result
                         | _ -> raise (TypeException ("Canonical function " ^ id ^ " resulted in type "
                             ^ (string_of_typ rtr) ^ ", while canonical functions should always result in an abs or vartyp"))
-                    end
-                    | _ -> search_phi_rec t
-                end
+                    else search_phi_rec t
             in
             List.map (fun (t, (x, y, z)) -> (t, (x, y))) (search_phi_rec (Assoc.bindings p))
         in
@@ -791,22 +809,16 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
 let rec check_exp (e : exp) (d : delta) (m: mu) (g : gamma) (pm : parameterization) (p : phi) (ps: psi)
  : TypedAst.exp * typ = 
     debug_print ">> check_exp";
-    let build_unop (op : unop) (e': exp) (check_fun: typ->delta->parameterization->typ) (pm: parameterization)
+    let build_unop (op : unop) (e': exp) (check_fun: typ->delta->mu->parameterization->typ) (pm: parameterization)
         : TypedAst.exp * typ =
         let result = check_exp e' d m g pm p ps in
-            (TypedAst.Unop(op, exp_to_texp result d pm), check_fun (snd result) d pm)
+            (TypedAst.Unop(op, exp_to_texp result d pm), check_fun (snd result) d m pm)
     in
-    let build_binop (op : binop) (e1: exp) (e2: exp) (check_fun: typ->typ->delta->parameterization->typ) (pm: parameterization)
+    let build_binop (op : binop) (e1: exp) (e2: exp) (check_fun: typ->typ->delta->mu->parameterization->typ) (pm: parameterization)
         : TypedAst.exp * typ =
         let e1r = check_exp e1 d m g pm p ps in
         let e2r = check_exp e2 d m g pm p ps in
-            (TypedAst.Binop(op, exp_to_texp e1r d pm, exp_to_texp e2r d pm), check_fun (snd e1r) (snd e2r) d pm)
-    in 
-    let req_parameterizations f =
-        fun a b c d -> f a b c d
-    in
-    let req_parameterizations2 f =
-     fun a b c  -> f a b c
+            (TypedAst.Binop(op, exp_to_texp e1r d pm, exp_to_texp e2r d pm), check_fun (snd e1r) (snd e2r) d m pm)
     in
     match e with
     | Val v -> (TypedAst.Val v, check_val v d)
@@ -814,26 +826,24 @@ let rec check_exp (e : exp) (d : delta) (m: mu) (g : gamma) (pm : parameterizati
         if Assoc.mem v g then (TypedAst.Var v, Assoc.lookup v g) else
         raise (TypeException ("Unknown variable " ^ v))
     | Arr a -> check_arr d m g p a pm ps
-    | As (e, t) -> let (er, tr) = check_exp e d m g pm p ps in (er, check_as_exp tr t d pm)
+    | As (e, t) -> let (er, tr) = check_exp e d m g pm p ps in (er, check_as_exp tr t d pm m)
     | In (e, t) -> let (_, tr) = check_exp e d m g pm p ps in 
         (check_exp (check_in_exp e tr t m g d pm p ps) d m g pm p ps)
-    | Unop (op, e') -> (match op with
-        | Neg -> build_unop op e' (req_parameterizations2 check_num_unop) pm
-        | Not -> build_unop op e' (req_parameterizations2 check_bool_unop) pm
-        | Swizzle s -> build_unop op e' (check_swizzle s) pm)
-    | Binop (op, e1, e2) -> (match op with
-        | Eq -> build_binop op e1 e2 (req_parameterizations check_equality_exp) pm
-        | Leq -> build_binop op e1 e2 (req_parameterizations check_comp_binop) pm
-        | Lt -> build_binop op e1 e2 (req_parameterizations check_comp_binop) pm
-        | Geq -> build_binop op e1 e2 (req_parameterizations check_comp_binop) pm
-        | Gt -> build_binop op e1 e2 (req_parameterizations check_comp_binop) pm
-        | Or | And -> build_binop op e1 e2 check_bool_binop pm
-        | Plus | Minus -> build_binop op e1 e2 check_addition_exp pm
-        | Times -> build_binop op e1 e2 check_times_exp pm
-        | Div  -> build_binop op e1 e2 (req_parameterizations check_division_exp) pm
-        | CTimes -> build_binop op e1 e2 check_ctimes_exp pm
-        | Index -> build_binop op e1 e2 check_index_exp pm
-    )
+    | Unop (op, e') -> let f = match op with
+            | Neg -> check_num_unop
+            | Not -> check_bool_unop
+            | Swizzle s -> check_swizzle s in
+        build_unop op e' f pm
+    | Binop (op, e1, e2) -> let f = match op with
+            | Eq -> check_equality_exp
+            | Leq | Lt | Geq | Gt -> check_comp_binop
+            | Or | And -> check_bool_binop
+            | Plus | Minus -> check_addition_exp
+            | Times -> check_times_exp
+            | Div  -> check_division_exp
+            | CTimes -> check_ctimes_exp
+            | Index -> check_index_exp
+        in build_binop op e1 e2 f pm
     | FnInv (i, args, pr) -> let ((i, args_exp), rt) = check_fn_inv d m g p args i pr pm ps in 
         (FnInv (i, args_exp), rt)
         
@@ -861,7 +871,7 @@ and check_arr (d : delta) (m: mu) (g : gamma) (p : phi) (a : exp list) (pm : par
 
 and check_fn_inv (d : delta) (m: mu) (g : gamma) (p : phi) (args : args) (i : string) (pml: typ list) (pm : parameterization) (ps: psi)
  : (string * TypedAst.args) * typ = 
-    debug_print ">> check_fn_inv";
+    debug_print (">> check_fn_inv " ^ i);
     let fn_invocated = if Assoc.mem i p
         then Assoc.lookup i p
         else raise (TypeException ("Invocated function " ^ i ^ " not found")) in
@@ -882,7 +892,7 @@ and check_fn_inv (d : delta) (m: mu) (g : gamma) (p : phi) (args : args) (i : st
         (* Work out the parameter inference if one is needed *)
         let inferred_pml = 
             (if Assoc.size pr == List.length pml then Some pml
-            else if List.length pml == 0 then infer_pml d (params, rt, pr) args_typ pm 
+            else if List.length pml == 0 then infer_pml d (params, rt, pr) args_typ pm m
             else None)
         in
         match inferred_pml with
@@ -907,7 +917,7 @@ and check_fn_inv (d : delta) (m: mu) (g : gamma) (p : phi) (args : args) (i : st
             (match acc with 
             | None -> None
             | Some fpm -> let bound = apply_fpm c fpm in 
-                if is_bounded_by given_pm bound d pm 
+                if is_bounded_by given_pm bound d pm m
                 then Some (Assoc.update s given_pm fpm) else None))
             (Some Assoc.empty) pml' (Assoc.bindings pr)
         in
@@ -955,7 +965,7 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
     | Decl (t, s, e) -> (* TODO: code insertion *)
         if Assoc.mem s g then raise (TypeException "variable name shadowing is illegal")        
         else 
-        (check_typ_valid t d pm; 
+        (check_typ_valid t d pm m; 
         let result = check_exp e d m g pm p ps in
         let t' = (match t with | AutoTyp -> 
             (match (snd result) with
@@ -964,12 +974,12 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
                 | t' -> t')
             | _ -> t) in
             (TypedAst.Decl (tag_erase t' d pm, s, (exp_to_texp result d pm)), 
-            (check_assign t' s (snd result) d g p pm), update_psi_matrix s t m ps))
+            (check_assign t' s (snd result) d g p pm m), update_psi_matrix s t m ps))
     | Assign (s, e) ->
         if Assoc.mem s g then
             let t = Assoc.lookup s g in
             let result = check_exp e d m g pm p ps in
-            (TypedAst.Assign (s, (exp_to_texp result d pm)), check_assign t s (snd result) d g p pm, ps)
+            (TypedAst.Assign (s, (exp_to_texp result d pm)), check_assign t s (snd result) d g p pm m, ps)
         else raise (TypeException ("Assignment to undeclared variable: " ^ s))
     | AssignOp (s, b, e) -> 
         let (c', g', ps') = check_comm (Assign (s, Binop(b, Var s, e))) d m g pm p ps in
@@ -1025,13 +1035,14 @@ and check_comm_lst (cl : comm list) (d: delta) (m: mu) (g: gamma) (pm : paramete
         let (cl', g'', ps'') = check_comm_lst t d m g' pm p ps' in 
         (c' :: cl', g'', ps'')
 
-and check_assign (t: typ) (s: string) (etyp : typ)  (d: delta) (g: gamma) (p: phi) (pm: parameterization): gamma =
+and check_assign (t: typ) (s: string) (etyp : typ)  (d: delta) (g: gamma) (p: phi) (pm: parameterization) (m:mu): gamma =
     debug_print (">> check_assign <<"^s^">>");
+    debug_print (string_of_typ t);
     (* Check that t, if not a core type, is a registered tag *)
     let rec check_tag (t: typ) : unit =
         match t with
-        | VarTyp s -> delta_lookup s [] d pm |> ignore; ()
-        | ParTyp (VarTyp s, pml) -> delta_lookup s pml d pm |> ignore; ()
+        | VarTyp s -> delta_lookup s [] d pm m |> ignore; ()
+        | ParTyp (VarTyp s, pml) -> delta_lookup s pml d pm m |> ignore; ()
         | TransTyp (t1, t2) -> check_tag t1; check_tag t2; ()
         | _ -> ()
     in
@@ -1051,7 +1062,7 @@ and check_assign (t: typ) (s: string) (etyp : typ)  (d: delta) (g: gamma) (p: ph
         if is_subtype etyp t d pm then Assoc.update s t g
         else raise (TypeException ("Mismatched types for var decl for " ^ s ^  ": expected " ^ (string_of_typ t) ^ ", found " ^ (string_of_typ etyp)))
 
-let check_tag (s: string) (pm: parameterization) (tm : modification option) (t: typ) (d: delta) (m: mu) : delta * mu = 
+let check_tag (s: string) (pm: parameterization) (tm : modification list) (t: typ) (d: delta) (m: mu) : delta * mu = 
     debug_print ">> check_tag";
     let rec check_valid_supertype (t: typ) : constrain =
         match t with
@@ -1063,7 +1074,7 @@ let check_tag (s: string) (pm: parameterization) (tm : modification option) (t: 
             else let (tpm, _) = Assoc.lookup s d in
             let pmb = Assoc.bindings tpm in
             if List.length pmb == List.length pml
-            then (List.fold_left2 (fun acc (s, c) t -> if is_sub_constraint t c d pm then () else
+            then (List.fold_left2 (fun acc (s, c) t -> if is_sub_constraint t c d pm m then () else
                 raise (TypeException ("Invalid constraint used for parameterization of " ^ s)))
                 () (Assoc.bindings tpm) (List.map check_valid_supertype pml); TypConstraint t)
             else raise (TypeException ("Invalid number of parameters provided to parameterized type " ^ s))
@@ -1073,25 +1084,25 @@ let check_tag (s: string) (pm: parameterization) (tm : modification option) (t: 
     let rec check_param_vec_bounds (cl : constrain list) : unit =
         match cl with
         | [] -> ()
-        | h::t -> if is_sub_constraint h GenVecTyp d pm then check_param_vec_bounds t
+        | h::t -> if is_sub_constraint h GenVecTyp d pm m then check_param_vec_bounds t
             else raise (TypeException ("Invalid declaration of " ^ s ^ " -- must parameterize on vectors only"))
     in
     let rec check_coord (t : typ) : unit =
         match t with
-        | VarTyp s -> (match Assoc.lookup s m with 
-            | None -> check_coord (delta_lookup s [] d pm)
-            | Some Coord -> raise (TypeException "Cannot declare a coord as a subtype of another coord")
-            | Some Canon -> failwith "Cannot have a canonical tag?")
-        | ParTyp (VarTyp s, pml) -> (match Assoc.lookup s m with 
-            | None -> check_coord (delta_lookup s pml d pm)
-            | Some Coord -> raise (TypeException "Cannot declare a coord as a subtype of another coord")
-            | Some Canon -> failwith "Cannot have a canonical tag?")
+        | VarTyp s ->
+            let ml = Assoc.lookup s m in
+            if List.mem Coord ml then raise (TypeException "Cannot declare a coord as a subtype of another coord")
+            else check_coord (delta_lookup s [] d pm m)
+        | ParTyp (VarTyp s, pml) ->
+            let ml = Assoc.lookup s m in
+            if List.mem Coord ml then raise (TypeException "Cannot declare a coord as a subtype of another coord")
+            else check_coord (delta_lookup s pml d pm m)
         | _ -> ()
     in
     check_valid_supertype t |> ignore;
     check_param_vec_bounds (List.map snd (Assoc.bindings pm));
     if Assoc.mem s d then raise (TypeException "Cannot redeclare tag")
-    else (match tm with | Some Coord -> check_coord t | _ -> ());
+    else if List.mem Coord tm then check_coord t else ();
     (Assoc.update s (pm, t) d, Assoc.update s tm m)
 
 let rec check_tags (t: tag_decl list) (d: delta) (m: mu): delta * mu =
@@ -1109,7 +1120,7 @@ let check_fn_decl (g: gamma) (d: delta) (m: mu) ((fm, id, (pl, rt, pmd)): fn_dec
     let pm = collapse_parameterization_decl pmd in
     let m' = check_parameterization d m pmd in
     let pr = check_params pl g d m' pm ps in 
-    check_typ_valid rt d pm;
+    check_typ_valid rt d pm m;
     let pme = Assoc.gen_context (List.map (fun (s, c) -> (s, constrain_erase c d pm)) (Assoc.bindings pm)) in
     if Assoc.mem id p 
     then raise (TypeException ("Function of duplicate name has been found: " ^ id))
@@ -1139,28 +1150,29 @@ let check_return (t: typ) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (
 
 let update_mu_with_function (((fm, id, (pr, r, pmd))): fn_decl) (d: delta) (m: mu) (ps: psi) : mu =
     let m' = Assoc.update id fm m in
-    match (fm, pr) with
-    (* Only update if it is a canon function with exactly one argument *)
-    (* TODO: add to phi, not to psi unless it is concrete *)
-    | (Some Canon, [(_, t)]) ->
-    begin
-        if is_typ_eq t r then raise (TypeException ("Canonical function " ^ id ^ " cannot be a map from a type to itself")) else
-        let fail _ = raise (TypeException "Canonical functions must be between tag or abstract types") in
-        match t with
-        | VarTyp _
-        | ParTyp (VarTyp _, _)
-        | AbsTyp _ ->  
+    if List.mem Canon fm then
+        match pr with
+        (* Only update if it is a canon function with exactly one argument *)
+        (* TODO: add to phi, not to psi unless it is concrete *)
+        | [(_, t)] ->
         begin
-            match r with
+            if is_typ_eq t r then raise (TypeException ("Canonical function " ^ id ^ " cannot be a map from a type to itself")) else
+            let fail _ = raise (TypeException "Canonical functions must be between tag or abstract types") in
+            match t with
             | VarTyp _
             | ParTyp (VarTyp _, _)
-            | AbsTyp _ ->  m'
+            | AbsTyp _ ->  
+            begin
+                match r with
+                | VarTyp _
+                | ParTyp (VarTyp _, _)
+                | AbsTyp _ ->  m'
+                | _ -> fail ()
+            end
             | _ -> fail ()
         end
-        | _ -> fail ()
-    end
-    | (Some Canon, _) -> raise (TypeException "Cannot have a canonical function with zero or more than one arguments")
-    | _ -> m'
+        | _ -> raise (TypeException "Cannot have a canonical function with zero or more than one arguments")
+    else m'
 
 let check_fn (((fm, id, (pr, r, pmd)), cl): fn) (g: gamma) (d: delta) (m: mu) (p: phi) (ps: psi) : psi * mu * TypedAst.fn * phi = 
     debug_print (">> check_fn : " ^ id);
@@ -1202,7 +1214,7 @@ let check_decls (g: gamma) (d: delta) (m: mu) (dl : extern_decl) (p: phi) (ps: p
     | ExternFn f -> let (_, _, _, p') = (check_fn_decl g d m f p ps) in 
         let m' = update_mu_with_function f d m ps in
         (g, m', p')
-    | ExternVar (t, Var x) -> (Assoc.update x t g, m, p)
+    | ExternVar (ml, t, Var x) -> (Assoc.update x t g, Assoc.update x ml m, p)
     | _ -> raise (TypeException ("Invalid declaration, must be a function or variable"))
 
 (* Returns the list of fn's which represent the program 
