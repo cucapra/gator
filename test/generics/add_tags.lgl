@@ -1,0 +1,11 @@
+space a is vec3;
+tag b is a;
+
+`t add<`t : space>(`t a1, `t a2) { return a1 + a2; }
+
+void main() {
+    b v1 = [0., 0., 0.];
+    b v2 = [1., 1., 1.];
+    a v3 = add(v1, v2);
+    print v3;
+}
