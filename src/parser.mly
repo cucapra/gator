@@ -303,7 +303,7 @@ comm_element:
 ; 
 
 constrain:
-  | SPACE
+  | SPACE 
       { GenSpaceTyp }
   | VEC 
       { GenVecTyp }
@@ -313,6 +313,17 @@ constrain:
       { GenTyp }
   | t = typ 
       { TypConstraint t }
+
+dexp:
+  | d1 = dexp; PLUS; d2 = dexp 
+      { DimBinop(Plus, d1, d2) }
+  | d1 = dexp; MINUS; d2 = dexp 
+      { DimBinop(Plus, d1, d2) }
+  | n = NUM 
+      { DimNum n }
+  | x = ID 
+      { DimVar x }
+  
 
 typ:
   | AUTOTYP 
@@ -333,22 +344,24 @@ typ:
       { let len = String.length m in
         let dim = String.sub m 3 (len-3) in
         let dim_lst = Str.split_delim (regexp "x") dim in
-        TransTyp (TopVecTyp (int_of_string(List.nth dim_lst 1)),
-        (TopVecTyp (int_of_string(List.nth dim_lst 0))))}
+        TransTyp (TopVecTyp (DimNum (int_of_string(List.nth dim_lst 1))),
+        (TopVecTyp (DimNum (int_of_string(List.nth dim_lst 0)))))}
   | t1 = typ; TRANS; t2 = typ 
       { TransTyp(t1,t2) }
   | t = typ; LWICK; tl = typlst; RWICK; 
       { ParTyp(t,tl) }
+  | VEC; LWICK; d = dexp; RWICK;
+      { TopVecTyp d } 
   | x = ID 
       { if (Str.string_match vec x 0) then (
         let len = String.length x in 
         let dim = int_of_string (String.sub x 3 (len-3)) in
-        TopVecTyp dim
+        VecTyp dim
         ) else
         if (Str.string_match mat x 0) then (
         let len = String.length x in 
         let dim = int_of_string (String.sub x 3 (len-3)) in
-        TransTyp (TopVecTyp dim, TopVecTyp dim)
+        TransTyp (TopVecTyp (DimNum dim), TopVecTyp (DimNum dim))
         ) 
         else (VarTyp x) }
   | SAMPLERCUBE 

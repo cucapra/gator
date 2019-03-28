@@ -4,6 +4,16 @@ open CoreAst
 open Util
 open TagAst
 
+let rec string_of_dexp (d : dexp) : string = 
+    match d with
+    | DimBinop (op, l, r) -> 
+        let ls = (string_of_dexp l) in
+        let rs = (string_of_dexp r) in
+        (match op with
+        | _ -> (string_of_binop op ls rs))
+    | DimNum n -> string_of_int n
+    | DimVar s -> s
+
 let rec string_of_typ (t: typ) : string = 
     match t with
     | AutoTyp -> "auto"
@@ -11,7 +21,8 @@ let rec string_of_typ (t: typ) : string =
     | BoolTyp -> "bool"
     | IntTyp -> "int"
     | FloatTyp -> "float"
-    | TopVecTyp n -> "vec"^(string_of_int n)
+    | TopVecTyp d -> "vec<"^(string_of_dexp d) ^ ">"
+    | VecTyp n -> "vec"^(string_of_int n)
     | BotVecTyp n -> "vec"^(string_of_int n)^"lit"
     | VarTyp s -> s
     | ParTyp (t, tl) -> string_of_typ t ^ "<" ^ (string_of_lst string_of_typ tl) ^ ">"

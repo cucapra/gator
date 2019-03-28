@@ -2,6 +2,11 @@
 
 open CoreAst
 
+type dexp =
+    | DimVar of string
+    | DimNum of int
+    | DimBinop of binop * dexp * dexp
+
 (* types *)
 type typ =
     | AutoTyp
@@ -9,7 +14,8 @@ type typ =
     | BoolTyp
     | IntTyp
     | FloatTyp
-    | TopVecTyp of int
+    | TopVecTyp of dexp
+    | VecTyp of int
     | BotVecTyp of int
     | VarTyp of id (* i.e. model *)
     | TransTyp of typ * typ
