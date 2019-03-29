@@ -229,20 +229,22 @@ let rec is_typ_eq (t1: typ) (t2: typ) : bool =
     | ArrTyp (t1, n1), ArrTyp (t2, n2) -> n1 = n2 && is_typ_eq t1 t2
     | _ -> false
 
-let rec is_subtype_with_strictness (to_check : typ) (target : typ) (d : delta) (pm: parameterization) (strict : bool) : bool =
+let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameterization) : bool =
     debug_print (">> is_subtype " ^ (string_of_typ to_check) ^ ", " ^(string_of_typ target));
     let abstyp_step (s: string) : bool =
         if Assoc.mem s pm 
         then match Assoc.lookup s pm with
-        | TypConstraint t -> is_subtype_with_strictness t target d pm strict
+        | TypConstraint t -> is_subtype t target d pm
         | _ -> false
         else raise (TypeException ("AbsTyp " ^ s ^ " not found in parameterization"))
     in
     match (to_check, target) with 
     | BotVecTyp n1, BotVecTyp n2 -> n1 = n2
-    | BotVecTyp n1, TopVecTyp d2 -> n1 = dim_top d2
+    | BotVecTyp n1, TopVecTyp d2 
+    | UntaggedVecTyp n1, TopVecTyp d2 -> n1 = dim_top d2
     | TopVecTyp d1, TopVecTyp d2 -> dim_top d2 = dim_top d2
     | TopVecTyp _, _ -> false
+    | BotVecTyp n, UntaggedVecTyp _
     | BotVecTyp n, VarTyp _ 
     | BotVecTyp n, ParTyp (VarTyp _, _) -> n = (vec_dim target d pm)
     | BotVecTyp _, ArrTyp (IntTyp, _) -> true
@@ -250,38 +252,34 @@ let rec is_subtype_with_strictness (to_check : typ) (target : typ) (d : delta) (
     | ParTyp (t1, tl1), ParTyp (t2, tl2) -> (List.length tl1 = List.length tl2
         && is_typ_eq t1 t2 && List.fold_left2 (fun acc x y -> acc && is_typ_eq x y) true tl1 tl2)
         || (match t1 with 
-        | VarTyp s -> is_subtype_with_strictness (delta_lookup_unsafe s tl1 d) target d pm strict
+        | VarTyp s -> is_subtype (delta_lookup_unsafe s tl1 d) target d pm
         | _ -> false)
-    | ParTyp (VarTyp s, tl), VarTyp _ -> is_subtype_with_strictness (delta_lookup_unsafe s tl d) target d pm strict
-    | ParTyp (VarTyp s, tl), TopVecTyp dx -> not strict && (vec_dim to_check d pm) = dim_top dx
-    | VarTyp s, ParTyp _ -> is_subtype_with_strictness (delta_lookup_unsafe s [] d) target d pm strict
-    | VarTyp s1, VarTyp s2 -> s1 = s2 || is_subtype_with_strictness (delta_lookup_unsafe s1 [] d) target d pm strict
-    | VarTyp _, TopVecTyp dx -> not strict && (vec_dim to_check d pm) = dim_top dx
+    | ParTyp (VarTyp s, tl), VarTyp _ -> is_subtype (delta_lookup_unsafe s tl d) target d pm
+    | ParTyp (VarTyp s, tl), TopVecTyp dx -> (vec_dim to_check d pm) = dim_top dx
+    | VarTyp s, ParTyp _ -> is_subtype (delta_lookup_unsafe s [] d) target d pm
+    | VarTyp s1, VarTyp s2 -> s1 = s2 || is_subtype (delta_lookup_unsafe s1 [] d) target d pm
+    | VarTyp _, TopVecTyp dx -> (vec_dim to_check d pm) = dim_top dx
     | SamplerTyp i1, SamplerTyp i2 -> i1 = i2 
     | BoolTyp, BoolTyp
     | IntTyp, IntTyp
     | FloatTyp, FloatTyp
     | SamplerCubeTyp, SamplerCubeTyp -> true
     | TransTyp (t1, t2), TransTyp (t3, t4) -> 
-        (is_subtype_with_strictness t3 t1 d pm false && is_subtype_with_strictness t2 t4 d pm strict)
+        (is_subtype t3 t1 d pm && is_subtype t2 t4 d pm)
     | AbsTyp s1, AbsTyp s2 -> 
         s1 = s2 || abstyp_step s1
     | AbsTyp s, _ -> 
         abstyp_step s
     (* Necessary because we have a lattice and the bottype is less than EVERYTHING in that lattice *)
-    | BotVecTyp n, AbsTyp _ -> (is_subtype_with_strictness target (TopVecTyp (DimNum n)) d pm false)
+    | BotVecTyp n, AbsTyp _ -> (is_subtype target (TopVecTyp (DimNum n)) d pm)
     | _ -> false
-
-and is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameterization) : bool =
-    debug_print ">> is_subtype";
-    is_subtype_with_strictness to_check target d pm true
 
 let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta) (pm: parameterization) (m: mu): bool =
     debug_print (">> is_sub_constraint " ^ string_of_constraint to_check ^ " " ^ string_of_constraint target);
     match (to_check, target) with
     | _, AnyTyp -> true
     | AnyTyp, _ -> false
-    | (TypConstraint t1, TypConstraint t2) -> is_subtype_with_strictness t1 t2 d pm false
+    | (TypConstraint t1, TypConstraint t2) -> is_subtype t1 t2 d pm
     | (TypConstraint (AbsTyp s), _) -> is_sub_constraint (unwrap_abstyp s pm) target d pm m
     | (_, TypConstraint _) -> false
     | (TypConstraint (BoolTyp), GenTyp) -> false
@@ -290,12 +288,14 @@ let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta
     | (GenVecTyp, GenVecTyp)
     | (TypConstraint (BotVecTyp _), GenVecTyp)
     | (TypConstraint (VarTyp _), GenVecTyp)
+    | (TypConstraint (UntaggedVecTyp _), GenVecTyp)
     | (TypConstraint (TopVecTyp _), GenVecTyp)
     | (GenSpaceTyp, GenVecTyp)
     | (TypConstraint (ParTyp (VarTyp _, _)), GenVecTyp) -> true
     | (_, GenVecTyp) -> false
     | (TypConstraint (VarTyp t), GenSpaceTyp) -> List.mem Space (Assoc.lookup t m)
     | (TypConstraint (TopVecTyp _), GenSpaceTyp)
+    | (TypConstraint (UntaggedVecTyp _), GenSpaceTyp)
     | (TypConstraint (BotVecTyp _), GenSpaceTyp) -> true
     | (_, GenSpaceTyp) -> false
     | (GenMatTyp, GenMatTyp)
@@ -359,7 +359,7 @@ let rec greatest_common_child (t1: typ) (t2: typ) (d: delta) (pm: parameterizati
     | _, TopVecTyp _ -> t1
     | _ -> BotVecTyp n1 (* This works since both t1 and t2 are vectors with the same dimension and are not subtypes of each other *)
 
-let rec least_common_parent_with_strictness (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu) (strict: bool): typ =
+let rec least_common_parent (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu): typ =
     debug_print ">> least_common_parent";
     let fail _ = raise (TypeException ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2))) in
     let check_dim (n1: int) (n2: int) : unit =
@@ -369,33 +369,28 @@ let rec least_common_parent_with_strictness (t1: typ) (t2: typ) (d: delta) (pm: 
         begin
             match Assoc.lookup s2 pm with
             | TypConstraint (AbsTyp s') -> if (is_subtype t1 (AbsTyp s') d pm) then (AbsTyp s') else step_abstyp s1 s'
-            | TypConstraint t -> least_common_parent_with_strictness t t2 d pm m strict
+            | TypConstraint t -> least_common_parent t t2 d pm m
             | c -> fail ()
         end
     in
-    if (is_subtype_with_strictness t1 t2 d pm strict) then t2 else if (is_subtype_with_strictness t2 t1 d pm strict) then t1 
+    if (is_subtype t1 t2 d pm) then t2 else if (is_subtype t2 t1 d pm) then t1 
     else match (t1, t2) with
         | VarTyp s, TopVecTyp dx
         | TopVecTyp dx, VarTyp s ->
             check_dim (vec_dim (VarTyp s) d pm) (dim_top dx);
-            if strict then
-            raise (TypeException ("Cannot implicitly cast " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2) ^ " to the top vector type"  ))
-            else TopVecTyp dx
+            TopVecTyp dx
         | VarTyp s, _
         | _, VarTyp s ->
             (* Just go up a step -- the end condition is the is_subtype check earlier *)
-            least_common_parent_with_strictness (delta_lookup s [] d pm m) t2 d pm m strict
+            least_common_parent (delta_lookup s [] d pm m) t2 d pm m
         | ParTyp (VarTyp s, tl), _
         | _, ParTyp (VarTyp s, tl) ->
-            least_common_parent_with_strictness (delta_lookup s tl d pm m) t2 d pm m strict
+            least_common_parent (delta_lookup s tl d pm m) t2 d pm m
         | (AbsTyp s1, AbsTyp s2) -> (step_abstyp s1 s2)
         | (TransTyp (t1, t2), TransTyp(t3, t4)) -> 
-            (TransTyp (greatest_common_child t1 t3 d pm, least_common_parent_with_strictness t2 t4 d pm m strict))
+            (TransTyp (greatest_common_child t1 t3 d pm, least_common_parent t2 t4 d pm m))
         (* Note that every other possible pair of legal joins would be caught by the is_subtype calls above *)
         | _ -> fail ()
-
-let least_common_parent (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu): typ =
-    least_common_parent_with_strictness t1 t2 d pm m true
 
 let least_common_parent_safe (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu): typ option =
     try Some (least_common_parent t1 t2 d pm m) with
@@ -562,7 +557,7 @@ let check_comp_binop (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterizatio
     else raise (TypeException "Comparison checks must be between integers or floats")
 
 let check_as_exp (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu) : typ =
-    least_common_parent_with_strictness t1 t2 d pm m false |> ignore; t2
+    least_common_parent t1 t2 d pm m |> ignore; t2
 
 (* Type checking addition operations on scalar (int, float) expressions *)
 (* Types are closed under addition and scalar multiplication *)
@@ -822,7 +817,7 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
             else Queue.pop to_search 
         in 
         (* We use the 'with_strictness' version to avoid throwing an exception *)
-        if is_subtype_with_strictness nt target d pm false then e
+        if is_subtype nt target d pm then e
         else psi_path_rec to_search (update_search_and_found (psi_lookup_rec nt) e)
     in	
 	if string_of_typ start = string_of_typ target then start_exp else
