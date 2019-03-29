@@ -11,10 +11,6 @@ exception DimensionException of int * int
 (* For readability, especially with psi *)
 type fn_inv = string * typ list 
 
-(* Dimension variables *)
-(* Maps from dimension variable names to the dimension represented *)
-type sigma = int Assoc.context
-
 (* Variable definitions *)
 (* Maps from variable names to the type of that variable *)
 type gamma = typ Assoc.context
@@ -47,16 +43,6 @@ let trans_top (n1: int) (n2: int) : typ =
 let trans_bot (n1: int) (n2: int) : typ =
     TransTyp (TopVecTyp (DimNum n1), BotVecTyp n2)
 
-let rec compute_dimension (d : dexp) (s : sigma) : int =
-    match d with
-    | DimNum n -> n
-    | DimVar x -> if Assoc.mem x s then Assoc.lookup x s else
-        failwith ("Unbound instance of " ^ x ^ " in dimension calculation")
-    | DimBinop (b, l, r) -> (match b with
-        | Plus -> compute_dimension l s + compute_dimension r s
-        | Minus -> compute_dimension l s - compute_dimension r s
-        | _ -> failwith ("Invalid binary operation to dimension expression " ^ binop_string b))
-
 let rec unwrap_abstyp (s: string) (pm : parameterization) : constrain =
     debug_print ">> unwrap_abstyp";
     if Assoc.mem s pm 
@@ -76,6 +62,16 @@ let as_matrix_pair (t: typ) (d: delta) (pm: parameterization) : typ * typ =
         | _ -> fail ())
     | _ -> fail ()
 
+let rec dim_dexp (d : dexp) (s : int Assoc.context) : int =
+    match d with
+    | DimNum n -> n
+    | DimVar x -> if Assoc.mem x s then Assoc.lookup x s else
+        failwith ("Unbound instance of " ^ x ^ " in dimension calculation")
+    | DimBinop (b, l, r) -> (match b with
+        | Plus -> dim_dexp l s + dim_dexp r s
+        | Minus -> dim_dexp l s - dim_dexp r s
+        | _ -> failwith ("Invalid binary operation to dimension expression " ^ binop_string b))
+
 (* Given a parameterization and a list of types being invoked on that parameterization *)
 (* Returns the appropriate concretized context if one exists *)
 (* Should only be used on previously verified parameterized type invokations *)
@@ -90,19 +86,47 @@ let match_parameterization_unsafe (pm: parameterization) (pml : typ list) : typ 
 let rec replace_abstype (t: typ) (c: typ Assoc.context) : typ =
     debug_print ">> replace_abstype";
     match t with
+    | TopVecTyp d -> failwith "unimplemented"
     | ParTyp (s, tl) -> ParTyp (s, List.map (fun x -> replace_abstype x c) tl)
     | AbsTyp s -> Assoc.lookup s c
     | TransTyp (t1, t2) -> TransTyp (replace_abstype t1 c, replace_abstype t2 c)
     | _ -> t
 
-(* Looks up delta without checking the bounds on the pml *)
-let delta_lookup_unsafe (s: id) (pml: typ list) (d: delta) : typ =
-    (* If the given type evaluates to a declared a tag, return it *)
+(* Looks up delta without checking the bounds on the pml (hence, 'unsafe') *)
+let delta_lookup_unsafe (x: id) (pml: typ list) (d: delta) : typ =
+    (* If the given type evaluates to a declared tag, return it *)
+    (* If the return type would be a top type, resolve the dimension to a number *)
     debug_print ">> delta_lookup_unsafe";
-    if Assoc.mem s d then
-    let (pm, t) = Assoc.lookup s d in
+    if Assoc.mem x d then
+    let (pm, t) = Assoc.lookup x d in
     replace_abstype t (match_parameterization_unsafe pm pml)
-    else raise (TypeException ("Unknown tag " ^ s))
+    else raise (TypeException ("Unknown tag " ^ x))
+
+type dim_constrain_typ = | UnconInt of int | ConString of string
+let rec vec_dim_constrain (t: typ) (d: delta) (pm: parameterization) : dim_constrain_typ option =
+    debug_print ">> vec_dim";
+    match t with
+    | TopVecTyp d -> Some (UnconInt (dim_dexp d Assoc.empty))
+    | UntaggedVecTyp n
+    | BotVecTyp n -> Some (UnconInt n)
+    | ParTyp (VarTyp s, pml) -> vec_dim_constrain (delta_lookup_unsafe s pml d) d pm 
+    | VarTyp s -> vec_dim_constrain (delta_lookup_unsafe s [] d) d pm
+    | AbsTyp s -> (match unwrap_abstyp s pm with
+        | TypConstraint t' -> vec_dim_constrain t' d pm
+        | GenVecTyp | GenSpaceTyp -> Some (ConString s)
+        | _ -> None)
+    | _ -> None
+
+let vec_dim_safe (t: typ) (d: delta) (pm: parameterization) : int option =
+    match vec_dim_constrain t d pm with
+    | Some (UnconInt i) -> Some i 
+    | Some (ConString _) -> raise (TypeException ("Vector " ^ string_of_typ t ^ " does not have a concrete dimension"))
+    | None -> None
+
+let vec_dim (t: typ) (d: delta) (pm: parameterization) : int =
+    match vec_dim_safe t d pm with
+    | Some i -> i
+    | None -> failwith ("Expected vector for computing dimension, got " ^ string_of_typ t)
 
 let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     debug_print ">> etyp_to_typ";
@@ -129,31 +153,6 @@ and constrain_to_constrain (c : TypedAst.constrain) : constrain =
     | TypedAst.GenSpaceTyp -> GenSpaceTyp
     | TypedAst.ETypConstraint t -> TypConstraint (etyp_to_typ t)
 
-type dim_constrain_typ = | UnconInt of int | ConString of string
-let rec vec_dim_constrain (t: typ) (d: delta) (pm: parameterization) : dim_constrain_typ option =
-    debug_print ">> vec_dim";
-    match t with
-    | TopVecTyp n
-    | BotVecTyp n -> Some (UnconInt n)
-    | ParTyp (VarTyp s, pml) -> vec_dim_constrain (delta_lookup_unsafe s pml d) d pm 
-    | VarTyp s -> vec_dim_constrain (delta_lookup_unsafe s [] d) d pm
-    | AbsTyp s -> (match unwrap_abstyp s pm with
-        | TypConstraint t' -> vec_dim_constrain t' d pm
-        | GenVecTyp | GenSpaceTyp -> Some (ConString s)
-        | _ -> None)
-    | _ -> None
-
-let vec_dim_safe (t: typ) (d: delta) (pm: parameterization) : int option =
-    match vec_dim_constrain t d pm with
-    | Some (UnconInt i) -> Some i 
-    | Some (ConString _) -> raise (TypeException ("Vector " ^ string_of_typ t ^ " does not have a concrete dimension"))
-    | None -> None
-
-let vec_dim (t: typ) (d: delta) (pm: parameterization) : int =
-    match vec_dim_safe t d pm with
-    | Some i -> i
-    | None -> failwith ("Expected vector for computing dimension, got " ^ string_of_typ t)
-
 let rec tag_erase_param (t: typ) (d: delta) (pm: parameterization) : TypedAst.etyp = 
     debug_print ">> tag_erase_param";
     match t with 
@@ -171,14 +170,13 @@ and tag_erase (t : typ) (d : delta) (pm: parameterization) : TypedAst.etyp =
     | IntTyp -> TypedAst.IntTyp
     | FloatTyp -> TypedAst.FloatTyp
     | TopVecTyp _
+    | UntaggedVecTyp _
     | BotVecTyp _
     | VarTyp _
     | ParTyp (VarTyp _, _) -> (match vec_dim_constrain t d pm with
         | Some (UnconInt i) -> TypedAst.VecTyp i 
         | Some (ConString s) -> TypedAst.AbsTyp (s, TypedAst.GenVecTyp)
         | None -> raise (TypeException ("No valid vector interpretation of " ^ string_of_typ t)))
-    (* Convert to the strange glsl style of doing things *)
-    (* TODO: standardize this and handle switching in the emitter *)
     | ParTyp (t', _) -> tag_erase t' d pm
     | TransTyp (t1, t2) -> 
     begin

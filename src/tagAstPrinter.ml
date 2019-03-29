@@ -22,7 +22,7 @@ let rec string_of_typ (t: typ) : string =
     | IntTyp -> "int"
     | FloatTyp -> "float"
     | TopVecTyp d -> "vec<"^(string_of_dexp d) ^ ">"
-    | VecTyp n -> "vec"^(string_of_int n)
+    | UntaggedVecTyp n -> "vec"^(string_of_int n)
     | BotVecTyp n -> "vec"^(string_of_int n)^"lit"
     | VarTyp s -> s
     | ParTyp (t, tl) -> string_of_typ t ^ "<" ^ (string_of_lst string_of_typ tl) ^ ">"
