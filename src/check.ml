@@ -11,6 +11,10 @@ exception DimensionException of int * int
 (* For readability, especially with psi *)
 type fn_inv = string * typ list 
 
+(* Dimension variables *)
+(* Maps from dimension variable names to the dimension represented *)
+type sigma = int Assoc.context
+
 (* Variable definitions *)
 (* Maps from variable names to the type of that variable *)
 type gamma = typ Assoc.context
@@ -38,10 +42,20 @@ let string_of_fn_inv ((s, tl) : fn_inv) = s ^ "<" ^ string_of_lst string_of_typ 
 let string_of_psi (ps : psi) = Assoc.to_string (fun x -> string_of_arr (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_fn_inv p ^ ")") x) ps
 
 let trans_top (n1: int) (n2: int) : typ =
-    TransTyp (BotVecTyp n1, TopVecTyp n2)
+    TransTyp (BotVecTyp n1, TopVecTyp (DimNum n2))
 
 let trans_bot (n1: int) (n2: int) : typ =
-    TransTyp (TopVecTyp n1, BotVecTyp n2)
+    TransTyp (TopVecTyp (DimNum n1), BotVecTyp n2)
+
+let rec compute_dimension (d : dexp) (s : sigma) : int =
+    match d with
+    | DimNum n -> n
+    | DimVar x -> if Assoc.mem x s then Assoc.lookup x s else
+        failwith ("Unbound instance of " ^ x ^ " in dimension calculation")
+    | DimBinop (b, l, r) -> (match b with
+        | Plus -> compute_dimension l s + compute_dimension r s
+        | Minus -> compute_dimension l s - compute_dimension r s
+        | _ -> failwith ("Invalid binary operation to dimension expression " ^ binop_string b))
 
 let rec unwrap_abstyp (s: string) (pm : parameterization) : constrain =
     debug_print ">> unwrap_abstyp";
