@@ -1,5 +1,5 @@
-tag a is vec2;
-tag b is vec2;
+tag a is vec<2>;
+tag b is vec<2>;
 
 void main() {
     a x = [1., 2.];

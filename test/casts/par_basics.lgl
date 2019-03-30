@@ -1,9 +1,9 @@
-tag coord a is vec2;
-tag coord b is vec2;
-tag coord par<`t : vec2> is vec3;
+tag coord a is vec<2>;
+tag coord b is vec<2>;
+tag coord par<`t : vec<2>> is vec<3>;
 
 void main() {
-    par<vec2> p = [1., 1., 1.];
+    par<vec<2>> p = [1., 1., 1.];
 
     print p;
 

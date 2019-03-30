@@ -1,13 +1,13 @@
-tag coord a is vec2;
-tag coord b is vec2;
-tag c is vec2;
-tag d is vec3;
+tag coord a is vec<2>;
+tag coord b is vec<2>;
+tag c is vec<2>;
+tag d is vec<3>;
 
-`u app<`t : coord vec2, `u : coord vec2>(`t v, `t->`u m) {
+`u app<`t : coord vec<2>, `u : coord vec<2>>(`t v, `t->`u m) {
     return v in `u;
 }
 
-canon d f<`t : vec2>(`t x) {
+canon d f<`t : vec<2>>(`t x) {
     return [1., 2., 3.];
 }
 

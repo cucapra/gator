@@ -1,5 +1,5 @@
-tag pos is vec3;
-tag color is vec3;
+tag pos is vec<3>;
+tag color is vec<3>;
 tag tinted is color;
 
 declare `t normalize<`t : vec>(`t x);

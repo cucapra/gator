@@ -2,8 +2,8 @@
 // You might want to take a look at tags.lgl first to get a sense of how that works
 // Also, make sure to take a look at fails/declare* to see why this is useful
 
-tag pos is vec3;
-tag color is vec3;
+tag pos is vec<3>;
+tag color is vec<3>;
 tag tinted is color;
 
 declare float dot<`t : genType>(`t x, `t y);

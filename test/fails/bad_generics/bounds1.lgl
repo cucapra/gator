@@ -1,4 +1,4 @@
-bool uninvokable<`t : vec2>(`t x) {
+bool uninvokable<`t : vec<2>>(`t x) {
     return x && true; // Doesn't typecheck
 }
 

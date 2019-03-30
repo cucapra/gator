@@ -1,12 +1,13 @@
-tag a is vec2;
+tag a is vec<2>;
 tag a2 is a;
-tag b is vec3;
-tag p<`t : vec2> is vec2;
-tag pl<`t : vec2> is `t;
+tag b is vec<3>;
+tag c is vec<3>;
+tag p<`t : vec<2>> is vec<2>;
+tag pl<`t : vec<2>> is `t;
 tag bl<`t : b> is `t;
-tag pany<`t : vec> is vec2;
-tag p3<`t : vec3> is pany<`t>;
-tag r<`t : a> is vec3;
+tag pany<`t : vec> is vec<2>;
+tag p3<`t : vec<3>> is pany<`t>;
+tag r<`t : a> is vec<3>;
 
 void main() {
     p3<p3<b>> fail = [1., 1.]; // Dimensions incorrect from pany<b> having vec2

@@ -1,6 +1,6 @@
-tag a is vec2;
+tag a is vec<2>;
 tag coord b is a;
-tag coord c is vec2;
+tag coord c is vec<2>;
 tag cnc is c;
 
 void main() {

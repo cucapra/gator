@@ -1,48 +1,48 @@
-tag model is vec3;
-tag world is vec3;
-tag camera is vec3;
-tag rot<`t : vec3> is vec3; // Rotated by 90 degrees counterclockwise around the z-axis as an example
-tag norm<`t : vec> is `t;
-tag hom<`t : vec3> is vec4;
+tag model is vec<3>;
+tag world is vec<3>;
+tag camera is vec<3>;
+tag rot<`t : vec<3>> is vec<3>; // Rotated by 90 degrees counterclockwise around the z-axis as an example
+tag dir<`t : vec<3>> is vec<3>;
+tag hom<`t : vec<3>> is vec<4>;
 
-declare norm<`t> normalize<`t : vec>(`t v);
-declare vec4 vec4(vec3 v, float f);
-declare vec3 vec3(vec4 v);
-declare float dot<`t : vec>(norm<`t> v1, norm<`t> v2);
+declare dir<`t> normalize<`t : vec>(`t v);
+declare vec4 vec4(vec<3> v, float f);
+declare vec3 vec3(vec<4> v);
+declare float dot<`t : vec>(dir<`t> v1, dir<`t> v2);
 
-hom<`q> homify<`q : vec3>(`q v) {
-    return vec4(v as vec3, 1.) as hom<`q>;
+hom<`t> homify<`t : vec<3>>(`t v) {
+    return vec4(v, 1.) as hom<`t>;
 }
 
-hom<`t> homNorm<`t : vec3>(norm<`t> v) {
-    return vec4(v as vec3, 0.) as hom<`t>;
+hom<`t> homNorm<`t : vec<3>>(dir<`t> v) {
+    return vec4(v, 0.) as hom<`t>;
 }
 
-`t hom_reduce<`t : vec3>(hom<`t> v) {
+`t hom_reduce<`t : vec<3>>(hom<`t> v) {
     return vec3(v as vec4) as `t;
 }
 
-`t->`u hom_matrix_reduce<`t : vec3, `u : vec3>(hom<`t>->hom<`u> m) {
+`t->`u hom_matrix_reduce<`t : vec<3>, `u : vec<3>>(hom<`t>->hom<`u> m) {
     `t->hom<`t> asHomFlat = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [0., 0., 0.]];
     hom<`u>->`u homReduce = [[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.]];
     return homReduce * m * asHomFlat;
 }
 
-rot<`t> rotate<`t : vec3>(`t v) {
+rot<`t> rotate<`t : vec<3>>(`t v) {
     `t->rot<`t> rotation_matrix = [[0., -1., 0.], [1., 0., 0.], [0., 0., 1.]];
     return rotation_matrix * v;
 }
 
-`t->rot<`u> rotate_matrix<`t : vec3, `u : vec3>(`t->`u m) {
+`t->rot<`u> rotate_matrix<`t : vec<3>, `u : vec<3>>(`t->`u m) {
     `u->rot<`u> rotation_matrix = [[0., -1., 0.], [1., 0., 0.], [0., 0., 1.]];
     return rotation_matrix * m;
 }
 
-`t rot_reduce<`t : vec3>(rot<rot<rot<rot<`t>>>> v) {
+`t rot_reduce<`t : vec<3>>(rot<rot<rot<rot<`t>>>> v) {
     return v as `t;
 }
 
-norm<`u> normify<`t : vec, `u : vec>(`t v, `t->`u m) {
+dir<`u> normify<`t : vec, `u : vec>(`t v, `t->`u m) {
     return normalize<`u>(m * v);
 }
 
