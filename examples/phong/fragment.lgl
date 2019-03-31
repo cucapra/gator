@@ -1,82 +1,34 @@
-// Phong lighting with top types
-// Referenced https://learnopengl.com/Lighting/Basic-Lighting
+declare float dot<`t: genType>(`t v1, `t v2);
+declare `t normalize<`t : genType>(`t x);
+declare vec4 vec4(vec3 v, float f);
+declare vec3 vec3(vec4 v);
+declare float max(float f1, float f2);
+declare `t reflect<`t : vec>(`t v1, `t v2);
+declare float pow(float f1, float f2);
 
+varying vec3 vPosition;
+uniform vec4->vec4 uModel;
+uniform vec4->vec4 uView;
+varying vec3 vNormal;
+uniform vec3 uLight;
 
-declare float dot(vec3 v1, vec3 v2);
-declare vec3 normalize(vec3 v1); 
+void main() {
+    vec3 ambient = [.1, 0., 0.];
+    vec3 diffColor = [0.4, 0.3, 0.9];
+    vec3 specColor = [1.0, 1.0, 1.0];
 
-void main(vec3 uPosition, vec4->vec4 uModel, vec4->vec4 uView, vec3 vNormal, vec3 uLight, vec3 vPosition) {
-    vec4->vec3 v4_v3 = [
-        [1.,0.,0.,0.],
-        [0.,1.,0.,0.],
-        [0.,0.,1.,0.]
-    ];
-
-    vec3->vec4 v3_v4 = [
-        [1., 0., 0.],
-        [0., 1., 0.],
-        [0., 0., 1.],
-        [0., 0., 0.]
-    ];
-
-    vec3 color = [0.9, 0.8, 0.9]; // tasty orange
-    vec3 lightColor = [0.4, 0.3, 0.9];
-
-    // ****************
-    // Ambient lighting 
-    // ****************
-    float ambientStrength = 0.5;
-    vec3 ambient = ambientStrength * lightColor;
-
-    // ****************
-    // Diffuse lighting
-    // ****************
-    // Calculate the real position of this pixel in 3d space
-    vec3 worldPos = v4_v3 * (uModel * ((v3_v4 * vPosition) + [0., 0., 0., 1.]));
-
-    // Calculate the normal including the model rotation and scale
-    vec3 worldNorm = normalize(v4_v3 * (uModel * (v3_v4 * vNormal)));
+    vec3 worldPos = vec3(uModel*vec4(vPosition, 1.0));
+    vec3 camPos = vec3(uView*vec4(worldPos, 1.));
+    vec3 worldNorm = normalize(vec3(uModel*vec4(vNormal, 0.0)));
 
     vec3 lightDir = normalize(uLight - worldPos);
+    float lightWorldDot = dot(lightDir, worldNorm);
+    float diffuse = max(lightWorldDot, 0.0);
 
-    // An example simple lighting effect, taking the dot product of the normal
-    float diff = (dot (worldNorm, lightDir));
-    bool diff_is_neg = (diff <= 0.);
-    if (diff_is_neg) {
-        diff = 0.;
-    } else { skip; }
+    vec3 reflectDir = vec3(uView * vec4(reflect(-lightDir, worldNorm), 0.));
 
-    vec3 diffuse = diff * lightColor;
+    float specular = pow(max(-dot(normalize(camPos), reflectDir), 0.), 32.);
 
-    // ****************
-    // Specular lighting
-    // ****************
-
-    float specularStrength = 3.;
-
-    vec3 viewDir = normalize([0., 0., 0.] - v4_v3 * (uView * ((v3_v4 * worldPos) + [0., 0., 0., 1.])));
-
-    vec3->vec3 neg = [
-        [-1., 0., 0.],
-        [0., -1., 0.],
-        [0., 0., -1.]
-    ];
-
-    vec3 reflectDir = (neg * lightDir) - 2. * (dot ((neg * lightDir), worldNorm)) * worldNorm;
-    vec3 cameraReflect = v4_v3 * (uView * (v3_v4 * reflectDir));
-    float spec = dot(viewDir, cameraReflect); 
-    bool spec_is_neg = (spec <= 0.);
-    if (spec_is_neg) {
-        spec = 0.;
-    } else { skip; }
-
-    spec = spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec; // We don't have a pow function yet..
-    vec3 specular = specularStrength * spec * [1., 1., 1.];  
-
-    // Combining ambient, diffuse, and spectral lighting
-    vec3 result = (color .* (ambient + diffuse + specular)); 
-    vec4 gl_FragColor = (v3_v4 * result) + [0., 0., 0., 1.];
-
-    //vec4 gl_FragColor = [0., 0., 0., 1.];
-    print gl_FragColor;
+    vec4 gl_FragColor = vec4(ambient + diffuse * diffColor + specular * specColor, 1.0);
 }
+
