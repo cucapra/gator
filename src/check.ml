@@ -62,21 +62,23 @@ let as_matrix_pair (t: typ) (d: delta) (pm: parameterization) : typ * typ =
         | _ -> fail ())
     | _ -> fail ()
 
-let rec dim_dexp (d : dexp) (s : int Assoc.context) : int =
+let rec reduce_dexp (d : dexp) (s : dexp Assoc.context) : dexp =
+    debug_print (">> reduce_dexp " ^ string_of_dexp d);
     match d with
-    | DimNum n -> n
+    | DimNum n -> d
     | DimVar x -> if Assoc.mem x s then Assoc.lookup x s else
         raise (TypeException ("Unbound instance of " ^ x ^ " in dimension calculation of " ^ string_of_typ (TopVecTyp d)))
-    | DimBinop (b, l, r) -> (match b with
-        | Plus -> dim_dexp l s + dim_dexp r s
-        | Minus -> dim_dexp l s - dim_dexp r s
-        | _ -> raise (TypeException ("Invalid binary operation to dimension expression " ^ binop_string b)))
+    | DimBinop (b, l, r) -> (match (reduce_dexp l s, reduce_dexp r s) with
+        | (DimNum n1, DimNum n2) -> (match b with
+            | Plus -> DimNum (n1 + n2)
+            | Minus -> DimNum (n1 - n2)
+            | _ -> raise (TypeException ("Invalid binary operation to dimension expression " ^ binop_string b)))
+        | _ -> d)
 
 let dim_top (d: dexp) : int =
-    dim_dexp d Assoc.empty
-
-(* Type for  *)
-type dim_constrain_typ = | UnconInt of int | ConString of string
+    match (reduce_dexp d Assoc.empty) with
+    | DimNum n -> n
+    | _ -> failwith ("Unexpected inclusion of an abstract type in dimension calculation of " ^ (string_of_dexp d))
 
 let rec replace_abstype (t: typ) (c: typ Assoc.context) : typ =
     debug_print ">> replace_abstype";
@@ -89,51 +91,54 @@ let rec replace_abstype (t: typ) (c: typ Assoc.context) : typ =
 (* Given a parameterization and a list of types being invoked on that parameterization *)
 (* Returns the appropriate concretized context if one exists *)
 (* Should only be used on previously verified parameterized type invokations *)
-let rec match_parameterization_unsafe (d: delta) (pm: parameterization) (pml : typ list) : (typ Assoc.context * int Assoc.context) =
+let rec match_parameterization_unsafe (d: delta) (pm: parameterization) (dim_pm: parameterization) (pml : typ list) : (typ Assoc.context * dexp Assoc.context) =
     debug_print ">> match_parameterization_unsafe";
-    print_endline (string_of_parameterization pm);
     let pmb = Assoc.bindings pm in
+    let check_vec t = match t with | Some x -> x | None -> failwith ("Expected vector for computing dimension, got something else") in
+    let update_assic c (dim : dexp) (assic : dexp Assoc.context) : dexp Assoc.context = 
+        match c with 
+        | TypConstraint (TopVecTyp (DimVar s)) -> Assoc.update s dim assic 
+        | TypConstraint (TopVecTyp (DimNum _)) -> assic
+        | TypConstraint (TopVecTyp _) -> raise (TypeException ("Dimension constraints on types must be exactly single variables to recover dimensions"))
+        | _ -> assic
+    in
     if List.length pmb == List.length pml
-    then List.fold_left2 (fun (tcacc, icacc) (s, _) t -> (Assoc.update s t tcacc, Assoc.update s (vec_dim t d pm) icacc))
+    then List.fold_left2 (fun (tcacc, icacc) (s, c) t -> (Assoc.update s t tcacc, update_assic c (check_vec (vec_dim_constrain t d dim_pm)) icacc))
     (Assoc.empty, Assoc.empty) (Assoc.bindings pm) pml
     else raise (TypeException ("Invalid parameterization provided in " ^ (string_of_arr string_of_typ pml)))
 
 (* Looks up delta without checking the bounds on the pml (hence, 'unsafe') *)
-and delta_lookup_unsafe (x: id) (pml: typ list) (d: delta) : typ =
+and delta_lookup_unsafe (x: id) (pml: typ list) (dim_pm: parameterization) (d: delta) : typ =
     (* If the given type evaluates to a declared tag, return it *)
     (* If the return type would be a top type, resolve the dimension to a number *)
     debug_print ">> delta_lookup_unsafe";
-    print_endline x;
-    print_endline (string_of_lst string_of_typ pml);
     if Assoc.mem x d then
     let (pm, t) = Assoc.lookup x d in
-    let (tc, ic) = (match_parameterization_unsafe d pm pml) in
+    let (tc, ic) = (match_parameterization_unsafe d pm dim_pm pml) in
     let reduced = replace_abstype t tc in
     (match reduced with
-    | TopVecTyp d -> TopVecTyp (DimNum (dim_dexp d ic))
+    | TopVecTyp d -> TopVecTyp (reduce_dexp d ic)
     | _ -> reduced)
     else raise (TypeException ("Unknown tag " ^ x))
 
-and vec_dim_constrain (t: typ) (d: delta) (pm: parameterization) : dim_constrain_typ option =
+and vec_dim_constrain (t: typ) (d: delta) (pm: parameterization) : dexp option =
     debug_print ">> vec_dim";
-    print_endline (string_of_typ t);
-    print_endline (string_of_parameterization pm);
     match t with
-    | TopVecTyp d -> Some (UnconInt (dim_top d))
+    | TopVecTyp d -> Some d
     | UntaggedVecTyp n
-    | BotVecTyp n -> Some (UnconInt n)
-    | ParTyp (VarTyp s, pml) -> vec_dim_constrain (delta_lookup_unsafe s pml d) d pm 
-    | VarTyp s -> vec_dim_constrain (delta_lookup_unsafe s [] d) d pm
+    | BotVecTyp n -> Some (DimNum n)
+    | ParTyp (VarTyp s, pml) -> vec_dim_constrain (delta_lookup_unsafe s pml pm d) d pm 
+    | VarTyp s -> vec_dim_constrain (delta_lookup_unsafe s [] pm d) d pm
     | AbsTyp s -> (match unwrap_abstyp s pm with
         | TypConstraint t' -> vec_dim_constrain t' d pm
-        | GenVecTyp | GenSpaceTyp -> Some (ConString s)
+        | GenVecTyp | GenSpaceTyp -> Some (DimVar s)
         | _ -> None)
     | _ -> None
 
 and vec_dim_safe (t: typ) (d: delta) (pm: parameterization) : int option =
     match vec_dim_constrain t d pm with
-    | Some (UnconInt i) -> Some i 
-    | Some (ConString _) -> raise (TypeException ("Vector " ^ string_of_typ t ^ " does not have a concrete dimension"))
+    | Some (DimNum i) -> Some i 
+    | Some _ -> raise (TypeException ("Vector " ^ string_of_typ t ^ " does not have a concrete dimension"))
     | None -> None
 
 and vec_dim (t: typ) (d: delta) (pm: parameterization) : int =
@@ -187,14 +192,14 @@ and tag_erase (t : typ) (d : delta) (pm: parameterization) : TypedAst.etyp =
     | BotVecTyp _
     | VarTyp _
     | ParTyp (VarTyp _, _) -> (match vec_dim_constrain t d pm with
-        | Some (UnconInt i) -> TypedAst.VecTyp i 
-        | Some (ConString s) -> TypedAst.AbsTyp (s, TypedAst.GenVecTyp)
-        | None -> raise (TypeException ("No valid vector interpretation of " ^ string_of_typ t)))
+        | Some (DimNum i) -> TypedAst.VecTyp i 
+        | Some (DimVar s) -> TypedAst.AbsTyp (s, TypedAst.GenVecTyp)
+        | _ -> raise (TypeException ("No valid vector interpretation of " ^ string_of_typ t)))
     | ParTyp (t', _) -> tag_erase t' d pm
     | TransTyp (t1, t2) -> 
     begin
         match (vec_dim_constrain t1 d pm, vec_dim_constrain t2 d pm) with
-        | (Some (UnconInt n1), Some (UnconInt n2)) -> TypedAst.MatTyp (n2, n1)
+        | (Some (DimNum n1), Some (DimNum n2)) -> TypedAst.MatTyp (n2, n1)
         | _ -> TypedAst.TransTyp (tag_erase t1 d pm, tag_erase t2 d pm)
     end
     | SamplerTyp i -> TypedAst.SamplerTyp i
@@ -236,6 +241,7 @@ let rec is_typ_eq (t1: typ) (t2: typ) : bool =
 
 let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameterization) : bool =
     debug_print (">> is_subtype " ^ (string_of_typ to_check) ^ ", " ^(string_of_typ target));
+    
     let abstyp_step (s: string) : bool =
         if Assoc.mem s pm 
         then match Assoc.lookup s pm with
@@ -244,6 +250,12 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameteriza
         else raise (TypeException ("AbsTyp " ^ s ^ " not found in parameterization"))
     in
     match (to_check, target) with 
+    (* A top type with a single variable is the same as genvectyp except for the untagged type *)
+    | BotVecTyp _, TopVecTyp (DimVar _) -> true
+    | VarTyp _, TopVecTyp (DimVar _) -> true
+    | ParTyp (VarTyp _, _), TopVecTyp (DimVar _) -> true
+    | TopVecTyp _, TopVecTyp (DimVar _) -> true
+
     | BotVecTyp n1, BotVecTyp n2 -> n1 = n2
     | UntaggedVecTyp n1, UntaggedVecTyp n2 -> n1 = n2
     | TopVecTyp d1, TopVecTyp d2 -> dim_top d2 = dim_top d2
@@ -258,12 +270,12 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameteriza
     | ParTyp (t1, tl1), ParTyp (t2, tl2) -> (List.length tl1 = List.length tl2
         && is_typ_eq t1 t2 && List.fold_left2 (fun acc x y -> acc && is_typ_eq x y) true tl1 tl2)
         || (match t1 with 
-        | VarTyp s -> is_subtype (delta_lookup_unsafe s tl1 d) target d pm
+        | VarTyp s -> is_subtype (delta_lookup_unsafe s tl1 pm d) target d pm
         | _ -> false)
-    | ParTyp (VarTyp s, tl), VarTyp _ -> is_subtype (delta_lookup_unsafe s tl d) target d pm
+    | ParTyp (VarTyp s, tl), VarTyp _ -> is_subtype (delta_lookup_unsafe s tl pm d) target d pm
     | ParTyp (VarTyp s, tl), TopVecTyp dx -> (vec_dim to_check d pm) = dim_top dx
-    | VarTyp s, ParTyp _ -> is_subtype (delta_lookup_unsafe s [] d) target d pm
-    | VarTyp s1, VarTyp s2 -> s1 = s2 || is_subtype (delta_lookup_unsafe s1 [] d) target d pm
+    | VarTyp s, ParTyp _ -> is_subtype (delta_lookup_unsafe s [] pm d) target d pm
+    | VarTyp s1, VarTyp s2 -> s1 = s2 || is_subtype (delta_lookup_unsafe s1 [] pm d) target d pm
     | VarTyp _, TopVecTyp dx -> (vec_dim to_check d pm) = dim_top dx
     | SamplerTyp i1, SamplerTyp i2 -> i1 = i2 
     | BoolTyp, BoolTyp
@@ -282,7 +294,6 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameteriza
 
 let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta) (pm: parameterization) (m: mu): bool =
     debug_print (">> is_sub_constraint " ^ string_of_constraint to_check ^ " " ^ string_of_constraint target);
-    print_endline (string_of_parameterization pm);
     match (to_check, target) with
     | _, AnyTyp -> true
     | AnyTyp, _ -> false
@@ -316,25 +327,19 @@ let is_bounded_by (t: typ) (c: constrain) (d: delta) (pm: parameterization) (m: 
 let is_non_bool (t: typ) (d: delta) (pm: parameterization) (m: mu) : bool =
     is_bounded_by t GenTyp d pm m || is_bounded_by t GenMatTyp d pm m
 
-let match_parameterization (d: delta) (pmb: (string * constrain) list) (pml : typ list) (pm: parameterization) (m: mu) : (typ Assoc.context) option =
-    debug_print ">> match_parametrization";
-    if List.length pmb == List.length pml
-    then List.fold_left2 (fun acc (s, c) t -> match acc with | None -> None 
-        | Some tl -> if is_bounded_by t c d pm m then Some (Assoc.update s t tl) else None)
-        (Some (Assoc.empty)) pmb pml
-    else None
+let check_parameterization (d: delta) (pmb: (string * constrain) list) (pml : typ list) (pm: parameterization) (m: mu) : bool =
+    debug_print ">> check_parameterization";
+    List.length pmb == List.length pml && List.fold_left2 (fun acc (s, c) t -> is_bounded_by t c d pm m && acc) true pmb pml
 
 let delta_lookup (s: id) (pml: typ list) (d: delta) (pm: parameterization) (m: mu) : typ =
     (* The safe version, where we check the validity of abstract type resolution *)
     debug_print ">> delta_lookup";
     if Assoc.mem s d then
-    let (pm_to_match, t) = Assoc.lookup s d in
-    match (match_parameterization d (Assoc.bindings pm_to_match) pml pm m) with
-    | Some cont -> replace_abstype t cont
-    | None -> raise (TypeException ("Invalid parameters <" ^ (string_of_lst string_of_typ pml) ^ "> to " ^ s))
+        let (pm_to_match, t) = Assoc.lookup s d in
+        if check_parameterization d (Assoc.bindings pm_to_match) pml pm m 
+        then delta_lookup_unsafe s pml pm d
+        else raise (TypeException ("Invalid parameters <" ^ (string_of_lst string_of_typ pml) ^ "> to " ^ s))
     else raise (TypeException ("Unknown tag " ^ s))
-
-
 
 let rec raise_to_space (d: delta) (m: mu) (pm: parameterization) (t: typ) : typ =
     match t with
@@ -748,8 +753,8 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
                         let pt = match params with | [(_, pt)] -> pt | _ -> failwith ("function " ^ id ^ " with non-one argument made canonical") in
                         match infer_pml d (params, rt, pr) [tl] pm m with | None -> search_phi_rec t | Some pml ->
                         let pr1 = List.map snd (Assoc.bindings pr) in
-                        let rtr = replace_abstype rt (fst (match_parameterization_unsafe d pr pml)) in
-                        let ptr = replace_abstype pt (fst (match_parameterization_unsafe d pr pml)) in
+                        let rtr = replace_abstype rt (fst (match_parameterization_unsafe d pr pm pml)) in
+                        let ptr = replace_abstype pt (fst (match_parameterization_unsafe d pr pm pml)) in
                         let fail id2 s = raise (TypeException ("Ambiguity between viable canonical functions " 
                             ^ id ^ " and " ^ id2 ^ " (" ^ s ^ ")")) in
                         let compare_parameterizations id2 (acc : bool option) c1 c2 : bool option = 
@@ -795,7 +800,7 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
             let ps_lst = if Assoc.mem s_lookup ps then Assoc.lookup s_lookup ps else [] in
             let to_return = search_phi nt ps_lst in
             let (ns, ntl) = as_par_typ nt in
-            let next_step = match nt with | VarTyp _ | ParTyp _ -> delta_lookup_unsafe ns ntl d | _ -> nt in
+            let next_step = match nt with | VarTyp _ | ParTyp _ -> delta_lookup_unsafe ns ntl pm d | _ -> nt in
             (match next_step with
             | VarTyp _
             | ParTyp _ -> 
