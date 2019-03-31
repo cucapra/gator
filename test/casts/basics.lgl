@@ -1,6 +1,6 @@
-tag coord a is vec2;
-tag coord b is vec3;
-tag coord c is vec3;
+tag coord a is vec<2>;
+tag coord b is vec<3>;
+tag coord c is vec<3>;
 
 void main() {
     a avec = [1., 2.] in a; // This is fine, since upcasting is part of 'in' expressions (and is just the identity)

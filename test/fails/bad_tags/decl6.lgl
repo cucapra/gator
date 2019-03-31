@@ -1,0 +1,5 @@
+tag a is vec2; // Can't subtype an untagged vector
+
+void main() {
+    print 1;
+}

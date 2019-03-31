@@ -1,8 +1,8 @@
-tag a is vec2;
+tag a is vec<2>;
 tag coord ac is a;
 tag coord b is a;
 tag bnc is b;
-tag coord c is vec2;
+tag coord c is vec<2>;
 tag cnc is c;
 tag cncnc is cnc;
 

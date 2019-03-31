@@ -1,9 +1,9 @@
-tag a is vec3;
-tag b is vec3;
+tag a is vec<3>;
+tag b is vec<3>;
 
 // Cannot use a canonical function with a generic return type not dependent on the input type
 // This is enforced to avoid reasoning about the universal quantifier -- necessary due to potentially infinite generic parameterization recursion
-canon `u any<`t : vec3, `u : vec3>(`t v) {
+canon `u any<`t : vec<3>, `u : vec<3>>(`t v) {
     return v as `u;
 }
 

@@ -1,9 +1,9 @@
-tag coord a is vec2;
-tag coord b is vec2;
-tag coord c is vec2;
-tag coord d is vec3;
+tag coord a is vec<2>;
+tag coord b is vec<2>;
+tag coord c is vec<2>;
+tag coord d is vec<2>;
 
-canon `t _collapse<`t : vec2>(d v) {
+canon `t _collapse<`t : vec<2>>(d v) {
     d->`t m = [[1., 0., 0.], [0., 0., 1.]];
     return v in `t; // we can't use 'in' cause we don't allow it for the abstract `t atm
 }

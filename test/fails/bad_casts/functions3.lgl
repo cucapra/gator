@@ -1,5 +1,5 @@
-tag coord a is vec2;
-tag coord b is vec2;
+tag coord a is vec<2>;
+tag coord b is vec<2>;
 
 canon b f(a x) { 
     return [1., 2.];

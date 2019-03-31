@@ -1,14 +1,14 @@
-tag a is vec2;
-tag b is vec2;
+tag a is vec<2>;
+tag b is vec<2>;
 tag c is b;
 tag d is b;
 tag e is c;
 
 // Note also that bounds using tags can make using a function impossible
-vec2 uninvokable<`t : a>(`t x) {
+vec<2> uninvokable<`t : a>(`t x) {
     return x;
 }
 
 void main() {
-    vec2 fail = uninvokable<a>([1., 2.]);
+    vec<2> fail = uninvokable<a>([1., 2.]);
 }

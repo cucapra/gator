@@ -1,5 +1,5 @@
-space a is vec2;
-space b is vec3;
+space a is vec<2>;
+space b is vec<3>;
 tag c is b;
 tag d is b;
 
@@ -23,13 +23,13 @@ void main() {
     print s12;
     print s13;
 
-    vec2->d v2_d = [[1., 1.], [1., 1.], [1., 1.]];
+    vec<2>->d v2_d = [[1., 1.], [1., 1.], [1., 1.]];
     a->b a_b = v2_d;
-    vec3->c v3_c = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
+    vec<3>->c v3_c = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
 
     // Matrix safety
     c->b s21 = v3_c * 2.;
-    vec2->d s22 = v2_d + [[1., 1.], [1., 1.], [1., 1.]];
+    vec<2>->d s22 = v2_d + [[1., 1.], [1., 1.], [1., 1.]];
     a->b s23 = a_b + v2_d;
 
     print s21;

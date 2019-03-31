@@ -1,4 +1,4 @@
-tag a is vec2;
+tag a is vec<2>;
 
 void main() {
     a->a x = [[1., 2.], [1., 2.]];

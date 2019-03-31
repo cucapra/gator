@@ -1,5 +1,5 @@
-tag pos is vec3;
-tag color is vec3;
+tag pos is vec<3>;
+tag color is vec<3>;
 tag tinted is color;
 
 declare float dot<`t : vec>(`t x, `t y);
@@ -7,5 +7,5 @@ declare float dot<`t : vec>(`t x, `t y);
 void main() {
     pos x = [1., 2., 3.];
     color red = [1., 0., 0.];
-    float fail = dot<vec2>(x, red);  // Can't upcast to save
+    float fail = dot<vec<2>>(x, red);  // Can't upcast to save
 }

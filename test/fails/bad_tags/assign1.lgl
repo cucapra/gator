@@ -1,6 +1,6 @@
-tag a is vec2;
+tag a is vec<2>;
 
 void main() {
-    vec2 x = [1., 2.]; 
+    vec<2> x = [1., 2.]; 
     a y = x; // No downcasting!
 }
