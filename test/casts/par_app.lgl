@@ -19,7 +19,7 @@ hom<`t> homNorm<`t : vec<3>>(dir<`t> v) {
 }
 
 `t hom_reduce<`t : vec<3>>(hom<`t> v) {
-    return vec3(v as vec4) as `t;
+    return vec3(v) as `t;
 }
 
 `t->`u hom_matrix_reduce<`t : vec<3>, `u : vec<3>>(hom<`t>->hom<`u> m) {
@@ -44,15 +44,15 @@ rot<`t> rotate<`t : vec<3>>(`t v) {
 
 void main() {
     model uPosition = [1., 1., 1.];
-    norm<model> uNorm = [0., 0., 1.];
+    dir<model> uNorm = [0., 0., 1.];
     hom<model>->hom<world> uModel = [[1., .5, 0., 0.], [0., 1., 0., 0.], [1., 0., 1., 0.], [0., 0., .5, 1.]];
     hom<world>->hom<camera> uWorld = [[1., .5, 0., 0.], [0., 1., 0., 0.], [1., 0., 1., 0.], [0., 0., .5, 1.]];
     world lightPos = [0., 1., 0.];
     
-    float angle = dot(uPosition in norm<model>, uNorm);
+    float angle = dot(uPosition in dir<model>, uNorm);
     auto worldHomPosition = uPosition in hom<world>;
     auto worldPosition = worldHomPosition in world;
-    float camAngle = dot(uNorm in norm<camera>, lightPos in norm<camera>);
+    float camAngle = dot(uNorm in dir<camera>, lightPos in dir<camera>);
 
     print angle;
     print worldHomPosition;

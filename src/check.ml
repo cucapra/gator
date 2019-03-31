@@ -91,6 +91,7 @@ let rec replace_abstype (t: typ) (c: typ Assoc.context) : typ =
 (* Should only be used on previously verified parameterized type invokations *)
 let rec match_parameterization_unsafe (d: delta) (pm: parameterization) (pml : typ list) : (typ Assoc.context * int Assoc.context) =
     debug_print ">> match_parameterization_unsafe";
+    print_endline (string_of_parameterization pm);
     let pmb = Assoc.bindings pm in
     if List.length pmb == List.length pml
     then List.fold_left2 (fun (tcacc, icacc) (s, _) t -> (Assoc.update s t tcacc, Assoc.update s (vec_dim t d pm) icacc))
@@ -102,6 +103,8 @@ and delta_lookup_unsafe (x: id) (pml: typ list) (d: delta) : typ =
     (* If the given type evaluates to a declared tag, return it *)
     (* If the return type would be a top type, resolve the dimension to a number *)
     debug_print ">> delta_lookup_unsafe";
+    print_endline x;
+    print_endline (string_of_lst string_of_typ pml);
     if Assoc.mem x d then
     let (pm, t) = Assoc.lookup x d in
     let (tc, ic) = (match_parameterization_unsafe d pm pml) in
@@ -113,6 +116,8 @@ and delta_lookup_unsafe (x: id) (pml: typ list) (d: delta) : typ =
 
 and vec_dim_constrain (t: typ) (d: delta) (pm: parameterization) : dim_constrain_typ option =
     debug_print ">> vec_dim";
+    print_endline (string_of_typ t);
+    print_endline (string_of_parameterization pm);
     match t with
     | TopVecTyp d -> Some (UnconInt (dim_top d))
     | UntaggedVecTyp n
@@ -240,9 +245,10 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameteriza
     in
     match (to_check, target) with 
     | BotVecTyp n1, BotVecTyp n2 -> n1 = n2
+    | UntaggedVecTyp n1, UntaggedVecTyp n2 -> n1 = n2
+    | TopVecTyp d1, TopVecTyp d2 -> dim_top d2 = dim_top d2
     | BotVecTyp n1, TopVecTyp d2 
     | UntaggedVecTyp n1, TopVecTyp d2 -> n1 = dim_top d2
-    | TopVecTyp d1, TopVecTyp d2 -> dim_top d2 = dim_top d2
     | TopVecTyp _, _ -> false
     | BotVecTyp n, UntaggedVecTyp _
     | BotVecTyp n, VarTyp _ 
@@ -276,6 +282,7 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameteriza
 
 let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta) (pm: parameterization) (m: mu): bool =
     debug_print (">> is_sub_constraint " ^ string_of_constraint to_check ^ " " ^ string_of_constraint target);
+    print_endline (string_of_parameterization pm);
     match (to_check, target) with
     | _, AnyTyp -> true
     | AnyTyp, _ -> false
@@ -294,7 +301,6 @@ let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta
     | (TypConstraint (ParTyp (VarTyp _, _)), GenVecTyp) -> true
     | (_, GenVecTyp) -> false
     | (TypConstraint (VarTyp t), GenSpaceTyp) -> List.mem Space (Assoc.lookup t m)
-    | (TypConstraint (TopVecTyp _), GenSpaceTyp)
     | (TypConstraint (UntaggedVecTyp _), GenSpaceTyp)
     | (TypConstraint (BotVecTyp _), GenSpaceTyp) -> true
     | (_, GenSpaceTyp) -> false
@@ -346,7 +352,7 @@ let rec raise_to_space (d: delta) (m: mu) (pm: parameterization) (t: typ) : typ 
     | _ -> t
 
 let rec greatest_common_child (t1: typ) (t2: typ) (d: delta) (pm: parameterization): typ =
-    debug_print ">> greatest_common_child";
+    debug_print ">> greatest_common_child";    
     let fail _ = raise (TypeException ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2))) in
     if (is_subtype t1 t2 d pm) then t1 else 
     if (is_subtype t2 t1 d pm ) then t2 else 
@@ -362,9 +368,6 @@ let rec greatest_common_child (t1: typ) (t2: typ) (d: delta) (pm: parameterizati
 let rec least_common_parent (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu): typ =
     debug_print ">> least_common_parent";
     let fail _ = raise (TypeException ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2))) in
-    let check_dim (n1: int) (n2: int) : unit =
-        if n1 = n2 then () else (raise (DimensionException (n1, n2)))
-    in
     let rec step_abstyp s1 s2 =
         begin
             match Assoc.lookup s2 pm with
@@ -375,13 +378,15 @@ let rec least_common_parent (t1: typ) (t2: typ) (d: delta) (pm: parameterization
     in
     if (is_subtype t1 t2 d pm) then t2 else if (is_subtype t2 t1 d pm) then t1 
     else match (t1, t2) with
-        | VarTyp s, TopVecTyp dx
-        | TopVecTyp dx, VarTyp s ->
-            check_dim (vec_dim (VarTyp s) d pm) (dim_top dx);
-            TopVecTyp dx
-        | VarTyp s, _
-        | _, VarTyp s ->
+        | UntaggedVecTyp n, _ ->
+            (* If we can't unify initially, then the next best thing is trying top *)
+            least_common_parent (TopVecTyp (DimNum n)) t2 d pm m
+        | _, UntaggedVecTyp n ->
+            least_common_parent t1 (TopVecTyp (DimNum n)) d pm m
+        | VarTyp s, _ ->
             (* Just go up a step -- the end condition is the is_subtype check earlier *)
+            least_common_parent t1 (delta_lookup s [] d pm m) d pm m
+        | _, VarTyp s ->
             least_common_parent (delta_lookup s [] d pm m) t2 d pm m
         | ParTyp (VarTyp s, tl), _
         | _, ParTyp (VarTyp s, tl) ->
@@ -1097,7 +1102,7 @@ let check_tag (s: string) (pm: parameterization) (tm : modification list) (t: ty
                 () (Assoc.bindings tpm) (List.map check_valid_supertype pml); TypConstraint t)
             else raise (TypeException ("Invalid number of parameters provided to parameterized type " ^ s))
         | AbsTyp s -> if Assoc.mem s pm then Assoc.lookup s pm else raise (TypeException ("Unknown type " ^ (string_of_typ t)))
-        | _ -> raise (TypeException ("Invalid type for tag declaration " ^ (string_of_typ t) ^ ", expected vector"))
+        | _ -> raise (TypeException ("Invalid type for tag declaration " ^ (string_of_typ t) ^ ", expected vector (not an untagged vector)"))
     in
     let rec check_param_vec_bounds (cl : constrain list) : unit =
         match cl with

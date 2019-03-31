@@ -100,6 +100,6 @@ let string_of_binop (op: binop) (left: string) (right: string) : string =
  * Debug-printer
  *****************************************************)
 
- let debug = false
+ let debug = true
 
  let debug_print (s: string) : unit = if debug then Printf.printf "%s\n" s

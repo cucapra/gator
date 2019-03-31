@@ -361,7 +361,7 @@ typ:
         if (Str.string_match mat x 0) then (
         let len = String.length x in 
         let dim = int_of_string (String.sub x 3 (len-3)) in
-        TransTyp (TopVecTyp (DimNum dim), TopVecTyp (DimNum dim))
+        TransTyp (UntaggedVecTyp dim, UntaggedVecTyp dim)
         ) 
         else (VarTyp x) }
   | SAMPLERCUBE 
