@@ -33,6 +33,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token TRANS
 %token GETS
 %token IN
+%token OUT
 %token AS
 %token INC
 %token DEC
@@ -78,17 +79,20 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token RWICK
 %token VEC
 %token MAT
+%token CONST
 %token ATTRIBUTE
 %token UNIFORM
 %token VARYING
 
 (* Precedences *)
 
-%left ID 
+%left ID
 %left TRANS
 %left AS IN
 %left AND OR
-%left NOT EQ LEQ GEQ LWICK RWICK
+%left NOT EQ LEQ GEQ LBRACK 
+%left LWICK RWICK 
+%left LPAREN
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
@@ -108,36 +112,20 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %%
 
 main:
-  | t = taglst; d = declarelst; g = globalvarlst; e = fnlst; EOL 
-      { (d, t, g, e) }
-  | t = taglst; d = declarelst; g = globalvarlst; EOL 
-      { (d, t, g, []) }
-  | t = taglst; d = declarelst; e = fnlst; EOL 
-      { (d, t, [], e) }
-  | d = declarelst; g = globalvarlst; e = fnlst; EOL 
-      { (d, [], g, e) }
-  | t = taglst; g = globalvarlst; e = fnlst; EOL 
-      { ([], t, g, e) }
-  | t = taglst; d = declarelst; EOL              
-      { (d, t, [], []) }
-  | d = declarelst; e = fnlst; EOL
-      { (d, [], [], e)}
-  | g = globalvarlst; e = fnlst; EOL
-      { ([], [], g, e)}
-  | d = declarelst; g = globalvarlst; EOL
-      { (d, [], g, [])}
-  | t = taglst; e = fnlst; EOL 
-      { ([], t, [], e) }
-  | t = taglst; g = globalvarlst; EOL 
-      { ([], t, g, []) }
+  | t = taglst; d = declarelst; gf = globalvarfnlst; EOL 
+      { (d, t, gf) }
+  | t = taglst; d = declarelst; EOL 
+      { (d, t, []) }
+  | d = declarelst; gf = globalvarfnlst; EOL 
+      { (d, [], gf) }
+  | t = taglst; gf = globalvarfnlst; EOL 
+      { ([], t, gf) }
   | d = declarelst; EOL
-      { (d, [], [], [])}
-  | t = taglst; EOL              
-      { ([], t, [], []) }
-  | g = globalvarlst; EOL              
-      { ([], [], g, []) }
-  | e = fnlst; EOL             
-      { ([], [], [], e) }
+      { (d, [], [])}
+  | gf = globalvarfnlst; EOL
+      { ([], [], gf)}
+  | t = taglst; EOL 
+      { ([], t, []) }
 ;
 
 modification:
@@ -178,15 +166,22 @@ tag:
       { (Some m, x, pt, t) }
 ;
 
-fnlst: 
+globalvarfnlst:
+  | gv = globalvar
+      { GlobalVar gv::[] }
+  | gv = globalvar; l = globalvarfnlst
+      { GlobalVar gv::l }
+  | f = fn
+      { Fn f::[] }
+  | f = fn; l = globalvarfnlst
+      { Fn f::l }
+;
+
+fn: 
   | x = fn_decl; LBRACE; RBRACE;
-      { (x, [])::[] }
-  | x = fn_decl; LBRACE; RBRACE; fl = fnlst;
-      { (x, [])::fl }
+      { (x, []) }
   | x = fn_decl; LBRACE; c1 = commlst; RBRACE;
-      { (x, c1)::[] }
-  | x = fn_decl; LBRACE; c1 = commlst; RBRACE; fl = fnlst;
-      { (x, c1)::fl }
+      { (x, c1) }
 
 commlst:
   | c = comm 
@@ -196,15 +191,10 @@ commlst:
 ;
 
 globalvar:
-  | sq = storagequal; t = typ; x = ID; SEMI
-      { (x, sq, t) }
-;
-
-globalvarlst:
-  | gv = globalvar
-      { gv::[] }
-  | gv1 = globalvar; gv2 = globalvarlst
-      { gv1::gv2 }
+  | sq = storagequal; t = typ; x = ID; SEMI 
+      { (x, sq, t, None) }
+  | sq = storagequal; t = typ; x = ID; GETS; v = value; SEMI 
+      { (x, sq, t, Some v) }
 ;
 
 
@@ -282,9 +272,7 @@ comm_element:
   | SKIP;                            
       { Skip }
   | t = typ; x = ID; GETS; e1 = exp; 
-      { Decl(t, None, x, e1) }
-  | t1= typ; x = ID; LWICK; t2 = typ; RWICK; GETS; e1 = exp; 
-      { Decl(t1, Some t2, x, e1) }
+      { Decl(t, x, e1) }
   | x = ID; GETS; e1 = exp; 
       { Assign(x, e1) }
   | x = ID; PLUSEQ; e1 = exp; 
@@ -307,14 +295,14 @@ comm_element:
       { Inc(x) }
   | x = ID; DEC; 
       { Dec(x) }
-  | x = ID; LPAREN; RPAREN; 
-      { FnCall(x, [], []) }
-  | x = ID; LPAREN; a = arglst; RPAREN; 
-      { FnCall(x, a, []) }
-  | x = ID; LWICK; p = typlst; RWICK; LPAREN; RPAREN; 
-      { FnCall(x, [], p) }
-  | x = ID; LWICK; p = typlst; RWICK; LPAREN; a = arglst; RPAREN; 
-      { FnCall(x, a, p) }
+  | t = typ; LPAREN; RPAREN; 
+      { FnCall(t, [], []) }
+  | t = typ; LPAREN; a = arglst; RPAREN; 
+      { FnCall(t, a, []) }
+  | t = typ; LWICK; p = typlst; RWICK; LPAREN; RPAREN; 
+      { FnCall(t, [], p) }
+  | t = typ; LWICK; p = typlst; RWICK; LPAREN; a = arglst; RPAREN; 
+      { FnCall(t, a, p) }
 ; 
 
 constrain:
@@ -338,16 +326,20 @@ typ:
       { FloatTyp }
   | INTTYP                          
       { IntTyp }
+  | t = typ; LBRACK; n = NUM; RBRACK; 
+      { ArrTyp(t, ConstInt n) }
+  | t = typ; LBRACK; s = ID; RBRACK; 
+      { ArrTyp(t, ConstVar s) }
   | m = MATTYP                      
       { let len = String.length m in
         let dim = String.sub m 3 (len-3) in
         let dim_lst = Str.split_delim (regexp "x") dim in
         TransTyp (TopVecTyp (int_of_string(List.nth dim_lst 1)),
         (TopVecTyp (int_of_string(List.nth dim_lst 0))))}
-  | x1 = typ; TRANS; x2 = typ 
-      { TransTyp(x1,x2) }
-  | x = ID; LWICK; tl = typlst; RWICK; 
-      { VarTyp (x, tl) }
+  | t1 = typ; TRANS; t2 = typ 
+      { TransTyp(t1,t2) }
+  | t = typ; LWICK; tl = typlst; RWICK; 
+      { ParTyp(t,tl) }
   | x = ID 
       { if (Str.string_match vec x 0) then (
         let len = String.length x in 
@@ -359,31 +351,37 @@ typ:
         let dim = int_of_string (String.sub x 3 (len-3)) in
         TransTyp (TopVecTyp dim, TopVecTyp dim)
         ) 
-        else (VarTyp (x, [])) }
-  | SAMPLERCUBE
+        else (VarTyp x) }
+  | SAMPLERCUBE 
       { SamplerCubeTyp }
-  | s = SAMPLER                     
+  | s = SAMPLER 
       { let len = String.length s in
         let dim = String.sub s 7 (len-7) in 
         let dim_lst = Str.split_delim (regexp "D") dim in
         SamplerTyp (int_of_string(List.nth dim_lst 0)) }
-  | VOID
+  | VOID 
       { UnitTyp }
 ;
 
 storagequal:
-  | ATTRIBUTE
+  | IN 
+      { In }
+  | OUT 
+      { Out }
+  | CONST 
+      { Const }
+  | ATTRIBUTE 
       { Attribute }
-  | UNIFORM
+  | UNIFORM 
       { Uniform }
-  | VARYING
+  | VARYING 
       { Varying }
 ;
 
 arr:
   | e = exp 
       { e::[] }
-  | e = exp; COMMA; a = arr 
+  | e = exp; COMMA; a = arr
       { e::a@[] }
 ;
 
@@ -414,7 +412,8 @@ typlst:
   | t = typ 
       { t::[] }
   | t = typ; COMMA; tl = typlst
-      { t::tl }
+      { t::tl } 
+
 exp:
   | LPAREN; a = exp; RPAREN    
       { a }

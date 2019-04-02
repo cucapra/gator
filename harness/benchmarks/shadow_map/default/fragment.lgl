@@ -54,7 +54,6 @@ float specStrength, float linear, float quad) {
     return (lambertian * baseColor + specStrength * specular * [1., 1., 1.]) * attenuation;
 }
 void main() {
-  // vec4 color = [.6, .5, .2, 1.];
   color ambient = [.1, 0., 0.];
   float texelSize = 1. / 1024.;
   alpha<color> v = texture2D(uTexture, vShadowPos.xy);
@@ -62,7 +61,6 @@ void main() {
   for (int x = -1; x <= 1; x++) {
     for (int y = -1; y <= 1; y++) {
       float texelDepth = decodeFloat(texture2D(uTexture, vShadowPos.xy + [x, y] * texelSize));
-      // float texelDepth = texture2D(uTexture, vShadowPos.xy + [x, y] * texelSize).z;
       if (vShadowPos.z - 0.007 <= texelDepth) {
         amountInLight += 1.0;
       }

@@ -20,6 +20,5 @@ canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
 canon `t hom_reduce<`t : vec3>(hom<`t> v) { return vec3(v as vec4) as `t; }
 
 void main() {
-    vPosition = aPosition in proj<light>;
     hom<proj<light>> gl_Position = aPosition in hom<proj<light>>;
 }

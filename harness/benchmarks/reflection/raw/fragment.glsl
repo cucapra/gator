@@ -2,6 +2,7 @@ precision mediump float;
 
 varying vec3 vPosition;
 varying vec3 vNormal;
+
 uniform samplerCube uSkybox;
 uniform mat4 uView;
 uniform mat4 uModel;

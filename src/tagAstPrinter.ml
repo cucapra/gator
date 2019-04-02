@@ -13,11 +13,13 @@ let rec string_of_typ (t: typ) : string =
     | FloatTyp -> "float"
     | TopVecTyp n -> "vec"^(string_of_int n)
     | BotVecTyp n -> "vec"^(string_of_int n)^"lit"
-    | VarTyp (s, t) -> s ^ (if List.length t > 0 then "<" ^ (string_of_lst string_of_typ t) ^ ">" else "")
+    | VarTyp s -> s
+    | ParTyp (t, tl) -> string_of_typ t ^ "<" ^ (string_of_lst string_of_typ tl) ^ ">"
     | TransTyp (s1, s2) -> (string_of_typ s1) ^ "->" ^ (string_of_typ s2)
-    | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D"
+    | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D "
     | SamplerCubeTyp -> "samplerCube"
     | AbsTyp s -> "`" ^ s
+    | ArrTyp (t, c) -> string_of_typ t ^ "[" ^ string_of_constvar c ^ "]"
 
 let string_of_constraint (c: constrain) : string =
     match c with
@@ -83,8 +85,7 @@ let rec string_of_comm (c: comm) : string =
     | Print e -> "print " ^ (string_of_exp e) ^ ";"
     | Inc x -> x ^ "++"
     | Dec x -> x ^ "--"
-    | Decl (t, None, s, e) -> (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_exp e) ^ ";"
-    | Decl (t, _, s, e) -> failwith "unsupported"
+    | Decl (t, s, e) -> (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_exp e) ^ ";"
     | Assign (b, x) -> b ^ " = " ^ (string_of_exp x) ^ ";"
     | AssignOp (x, op, e) -> x ^ " " ^  binop_string op ^ "= " ^ (string_of_exp e)
     | If ((b, c1), elif_list, c2) -> 
@@ -98,18 +99,12 @@ let rec string_of_comm (c: comm) : string =
     | For (d, b, u, cl) -> "for (" ^ string_of_comm d ^ string_of_exp b ^ "; " ^ string_of_comm u ^ ") {\n" ^ string_of_comm_list cl ^ "}"
     | Return None -> "return;"
     | Return Some e -> "return" ^ (string_of_exp e) ^ ";"
-    | FnCall (id, e, _) -> id ^ "(" ^ (String.concat "," (List.map string_of_exp e)) ^ "^" (* TODO *)
+    | FnCall (n, e, _) -> string_of_typ n ^ "(" ^ (String.concat "," (List.map string_of_exp e)) ^ "^" (* TODO *)
     
 
 and 
 string_of_comm_list (cl : comm list) : string = 
     string_of_lst string_of_comm cl
-
-let string_of_storage_qual (s : storage_qual) : string =
-    match s with
-    | Attribute -> "attribute"
-    | Uniform -> "uniform"
-    | Varying -> "varying"
 
 let rec string_of_tags (t : tag_decl list) : string =
     match t with | [] -> "" | (m, s, pm, a)::t -> 
@@ -119,20 +114,23 @@ let rec string_of_tags (t : tag_decl list) : string =
 let string_of_fn ((d, c1) : fn) : string = 
     string_of_fn_decl d ^ "{" ^ (string_of_comm_list c1) ^"}"
 
-let rec string_of_fn_lst (fl : fn list) : string = 
-    string_of_lst string_of_fn fl
-
 let string_of_declare (f: fn) : string = 
     "declare " ^ string_of_fn f
 
 let string_of_declare_lst (fl : fn list) : string = 
     string_of_lst string_of_declare fl
 
-let string_of_global_var ((x, sq, t) : global_var) : string =
-    string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ x
+let string_of_global_var ((x, sq, t, v) : global_var) : string =
+    string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ x 
+    ^ string_of_option_removed (fun x -> "= " ^ string_of_value x) v
 
-let string_of_global_var_lst (gvl : global_var list) : string =
-    string_of_lst string_of_global_var gvl
+let string_of_global_var_or_fn (u : global_var_or_fn) : string =
+    match u with
+    | GlobalVar gv -> string_of_global_var gv
+    | Fn f -> string_of_fn f
 
-let string_of_prog ((d, t, g, f) : prog) : string =
-    (string_of_tags t) ^ (string_of_global_var_lst g) ^ (string_of_fn_lst f) 
+let string_of_global_var_or_fn_lst (l : global_var_or_fn list) : string =
+    string_of_lst string_of_global_var_or_fn l
+
+let string_of_prog ((d, t, gf) : prog) : string =
+    (string_of_tags t) ^ (string_of_global_var_or_fn_lst gf) 
