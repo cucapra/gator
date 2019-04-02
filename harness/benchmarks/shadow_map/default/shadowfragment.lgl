@@ -20,6 +20,7 @@ vec4 encodeFloat (float depth) {
   comp -= comp.xxyz .* bitMask;
   return comp;
 }
+
 void main() {
   vec4 gl_FragColor = encodeFloat(gl_FragCoord.z);
     // vec4 gl_FragColor = vec4(vPosition, 1.);

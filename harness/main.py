@@ -1,3 +1,4 @@
+from random import shuffle
 import subprocess
 from threading import Thread
 from selenium import webdriver
@@ -29,20 +30,24 @@ texture = {'name': 'texture',
            'shaders': ['raw', 'default', 'default', 'raw'],
            'args': {}}
 shadow_map = {'name': 'shadow_map',
-              'shaders': ['raw', 'default', 'default', 'raw'],
+              'shaders': ['raw', 'default', 'raw', 'default'],
               'args': {}}
 reflection = {'name': 'reflection',
               'shaders': ['default', 'raw', 'default', 'raw'],
               'args': {}}
+synthetic = {'name': 'synthetic',
+             'shaders': ['default', 'raw', 'default', 'raw'],
+             'args': {}}
 
-# benchmarks = [phong, shadow_map, texture, reflection]
-benchmarks = [shadow_map]
+benchmarks = [shadow_map]*3 + [texture]*3 + \
+    [reflection]*3 + [phong]*3 + [synthetic]*3
+shuffle(benchmarks)
 browser = webdriver.Chrome()
 for bench in benchmarks:
     print(f"Running {bench['name']}")
     subprocess.run(
         ["parcel", "build", f"benchmarks/{bench['name']}/index.html"])
-
+    shuffle(bench['shaders'])
     for shader in bench['shaders']:
         print(f"Running with {shader} shader")
         bench_args = {**default_args, **bench['args']}

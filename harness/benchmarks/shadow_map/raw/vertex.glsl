@@ -13,7 +13,7 @@ uniform mat4 uLightProjection;
 void main() {
     mat4 texUnitConverter = mat4(0.5, 0., 0., 0., 0., 0.5, 0., 0., 0., 0., 0.5, 0., 0.5, 0.5, 0.5, 1.);
     vec4 worldPos = uModel*vec4(aPosition, 1.);
-    vShadowPos = vec3(texUnitConverter * uLightProjection * uLightView * worldPos);
+    vShadowPos = (texUnitConverter * uLightProjection * uLightView * worldPos).xyz;
     vPosition = aPosition;
     vNormal = aNormal;
     gl_Position = uProjection * uCamera * worldPos;

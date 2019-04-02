@@ -22,9 +22,8 @@ vec3 phong_light(vec3 lightPos, vec3 fragPos, vec3 normalDir, vec3 baseColor,
  float specStrength, float linear, float quad){
     vec3 normLightPos = normalize(lightPos);
 
-    float lightWorldDot = dot(normLightPos, normalDir);
-    float lambertian = max(0., lightWorldDot);
-    vec3 reflectDir = 2.0*lightWorldDot*normalDir - normLightPos;
+    float lambertian = max(0., dot(normalDir, normLightPos));
+    vec3 reflectDir = reflect(-normLightPos, normalDir);
     float specular = 0.;
     if (0. <= lambertian){
         specular = pow(max(0., -dot(normalize(fragPos), reflectDir)), 32.);
@@ -48,6 +47,6 @@ void main() {
         }
     }
     amountInLight /= 9.;
-    vec3 phong_color = phong_light(uLight, hom_reduce(uModel * homify(vPosition)), normalize(hom_reduce(uModel * homify_normal(vNormal))), uBaseColor, uSpecStrength, 0.08, 0.0001);
+    vec3 phong_color = phong_light(uLight, (uModel * homify(vPosition)).xyz, normalize((uModel * homify_normal(vNormal)).xyz), uBaseColor, uSpecStrength, 0.08, 0.0001);
     gl_FragColor = extendColor(ambient + phong_color * amountInLight);
 }

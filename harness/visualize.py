@@ -2,7 +2,7 @@ import matplotlib.patches as mpatches
 import scipy.stats
 import json
 import numpy as np
-import seaborn
+import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 import sys
@@ -30,15 +30,27 @@ for bench in bench_names:
     print(f" Wilcox: {scipy.stats.wilcoxon(data_raw, data_default).pvalue}")
     print('---------')
 
-fig, ax = plt.subplots()
-seaborn.violinplot(
-    ax=ax, data=df.loc[df['shader'] == 'default'], x="frame", y="bench_name", color='red')
-seaborn.violinplot(
-    ax=ax, data=df.loc[df['shader'] == 'raw'], x="frame", y="bench_name", color='blue')
-plt.setp(ax.collections, alpha=.3)
-red_patch = mpatches.Patch(color='red', label='default')
-blue_patch = mpatches.Patch(color='blue', label='raw')
+PLOT_TYPE = "bar"
+if PLOT_TYPE == "violin":
+    fig, ax = plt.subplots()
+    sns.violinplot(
+        ax=ax, data=df.loc[df['shader'] == 'default'], x="frame", y="bench_name", color='red')
+    sns.violinplot(
+        ax=ax, data=df.loc[df['shader'] == 'raw'], x="frame", y="bench_name", color='blue')
+    plt.setp(ax.collections, alpha=.3)
+    red_patch = mpatches.Patch(color='red', label='default')
+    blue_patch = mpatches.Patch(color='blue', label='raw')
 
-plt.legend(handles=[red_patch, blue_patch])
-plt.show()
-plt.show()
+    plt.legend(handles=[blue_patch, red_patch])
+    plt.show()
+elif PLOT_TYPE == "bar":
+    fig, ax = plt.subplots()
+    g = sns.barplot(x="bench_name", y="frame",
+                    data=df, hue="shader", ci="sd", ax=ax)
+    L = ax.legend()
+    L.get_texts()[0].set_text('GLSL')
+    L.get_texts()[1].set_text('Lathe')
+    plt.xlabel('Shader')
+    plt.ylabel('fps')
+
+    plt.show()
