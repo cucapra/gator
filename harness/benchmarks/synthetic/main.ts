@@ -4,7 +4,6 @@ import { mat4, vec3 } from 'gl-matrix';
 function main() {
   let [gl, params] = lgl.setup(render);
   const NUM_OBJECTS = parseInt(params['num_objects'] || "100");
-  const NUM_LIGHTS = 5;
   const SHADER = params['shader'] || 'default';
 
   const shaders = {
@@ -25,9 +24,7 @@ function main() {
     location['uProjection'] = lgl.uniformLoc(gl, program, 'uProjection');
     location['uView'] = lgl.uniformLoc(gl, program, 'uView');
     location['uModel'] = lgl.uniformLoc(gl, program, 'uModel');
-    for (let i = 0; i < NUM_LIGHTS; i++) {
-      location['uLight' + i] = lgl.uniformLoc(gl, program, 'uLight' + i);
-    }
+    location['uLight'] = lgl.uniformLoc(gl, program, 'uLight');
     location['aPosition'] = lgl.attribLoc(gl, program, 'aPosition');
     location['aNormal'] = lgl.attribLoc(gl, program, 'aNormal');
     locations.push(location);
@@ -49,11 +46,7 @@ function main() {
   }
 
   // Position the light source for the lighting effect.
-  let lights: vec3[] = [];
-  for (let i = 0; i < NUM_LIGHTS; i++) {
-    lights.push(vec3.fromValues(i * 10., 0., i * 10.));
-  }
-
+  let light = vec3.fromValues(20., 0., 20.);
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
 
@@ -67,8 +60,7 @@ function main() {
       gl.uniformMatrix4fv(locations[i]["uProjection"], false, projection);
       gl.uniformMatrix4fv(locations[i]["uView"], false, view);
       gl.uniformMatrix4fv(locations[i]["uModel"], false, models[i]);
-      for (let j = 0; j < NUM_LIGHTS; j++)
-        gl.uniform3fv(locations[i]["uLight" + j], lights[j]);
+      gl.uniform3fv(locations[i]["uLight"], light);
 
       // Set the attribute arrays.
       lgl.bind_attrib_buffer(gl, locations[i]["aNormal"] as number, meshes[i].normals, 3);

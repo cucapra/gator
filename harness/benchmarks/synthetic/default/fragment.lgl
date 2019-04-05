@@ -23,11 +23,7 @@ declare `t reflect<`t : vec>(`t v1, `t v2);
 declare float pow(float f1, float f2);
 
 
-uniform world uLight0;
-uniform world uLight1;
-uniform world uLight2;
-uniform world uLight3;
-uniform world uLight4;
+uniform world uLight;
 uniform model vPosition;
 uniform hom<model>->hom<world> uModel;
 uniform hom<world>->hom<camera> uView;
@@ -41,45 +37,18 @@ canon alpha<color> extendColor(color v) { return vec4(v as vec3, 1.) as alpha<co
 
 void main(){
     color ambient = [.1, 0., 0.];
-    color diffuse = 0.5*[0.4, 0.3, 0.9];
-    color spec = [1.0, 1.0, 1.0];
-
-    norm<world> lightDir = [0,0,0];
+    color diffuse = [0.004, 0.003, 0.009];
+    color spec = [0.01, 0.01, 0.01];
     float lambertian = 0.;
-    norm<camera> reflectDir = [0,0,0];
     float specular = 0.;
+    for (int x=-5; x<=5; x++) {
+        for (int y=-5; y<=5; y++) {
+            auto lightDir = (uLight + [x,y,0] - (vPosition in world)) in norm<world>;
+            lambertian += max(dot(vNormal in norm<world>, lightDir), 0.);
+            auto reflectDir = normalize(reflect(-lightDir, vNormal in norm<world>) in camera);
+            specular += pow(max(dot(-(vPosition in norm<camera>), reflectDir), 0.0), 32.);
 
-    world lightPos = [0,0,0];
-
-    lightPos = uLight0;
-    lightDir = (lightPos - (vPosition in world)) in norm<world>;
-    lambertian += max(dot(vNormal in norm<world>, lightDir), 0.);
-    reflectDir = normalize(reflect(-lightDir, vNormal in norm<world>) in camera);
-    specular += pow(max(dot(-(vPosition in norm<camera>), reflectDir), 0.0), 32.);
-
-    lightPos = uLight1;
-    lightDir = (lightPos - (vPosition in world)) in norm<world>;
-    lambertian += max(dot(vNormal in norm<world>, lightDir), 0.);
-    reflectDir = normalize(reflect(-lightDir, vNormal in norm<world>) in camera);
-    specular += pow(max(dot(-(vPosition in norm<camera>), reflectDir), 0.0), 32.);
-
-    lightPos = uLight2;
-    lightDir = (lightPos - (vPosition in world)) in norm<world>;
-    lambertian += max(dot(vNormal in norm<world>, lightDir), 0.);
-    reflectDir = normalize(reflect(-lightDir, vNormal in norm<world>) in camera);
-    specular += pow(max(dot(-(vPosition in norm<camera>), reflectDir), 0.0), 32.);
-
-    lightPos = uLight3;
-    lightDir = (lightPos - (vPosition in world)) in norm<world>;
-    lambertian += max(dot(vNormal in norm<world>, lightDir), 0.);
-    reflectDir = normalize(reflect(-lightDir, vNormal in norm<world>) in camera);
-    specular += pow(max(dot(-(vPosition in norm<camera>), reflectDir), 0.0), 32.);
-
-    lightPos = uLight4;
-    lightDir = (lightPos - (vPosition in world)) in norm<world>;
-    lambertian += max(dot(vNormal in norm<world>, lightDir), 0.);
-    reflectDir = normalize(reflect(-lightDir, vNormal in norm<world>) in camera);
-    specular += pow(max(dot(-(vPosition in norm<camera>), reflectDir), 0.0), 32.);
-
-    alpha<color> gl_FragColor = extendColor(ambient + lambertian*diffuse + specular*spec);
+        }
+    }
+    alpha<color> gl_FragColor = extendColor(ambient + lambertian * diffuse + specular * spec);
 }
