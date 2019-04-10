@@ -1,12 +1,23 @@
-void main(vec3 aPosition, vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel, vec2 aTexCoord, vec2 vTexCoord) {
-  vec3->vec4 v3_v4 = [
-    [1., 0., 0.],
-    [0., 1., 0.],
-    [0., 0., 1.],
-    [0., 0., 0.]
-  ];
-  
-  vTexCoord = aTexCoord;
+space coord model is vec<3>;
+space coord world is vec<3>;
+space coord camera is vec<3>;
+tag coord projective is vec<3>;
+space coord hom<`t : vec<n>> is vec<n+1>;
 
-  vec4 gl_Position = uProjection * uView * uModel * (v3_v4 * aPosition + [0., 0., 0., 1.]);
+declare vec4 vec4<`t : vec<3>>(`t v, float f);
+declare vec3 vec3<`t : vec<4>>(`t v);
+
+attribute model aPosition;
+uniform hom<camera>->hom<projective> uProjection;
+uniform hom<world>->hom<camera> uView;
+uniform hom<model>->hom<world> uModel;
+attribute vec2 aTexCoord;
+varying vec2 vTexCoord;
+
+canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
+canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }
+
+void main() {
+  vTexCoord = aTexCoord;
+  hom<projective> gl_Position = aPosition in hom<projective>;
 }

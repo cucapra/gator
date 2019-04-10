@@ -1,4 +1,4 @@
 void main() {
-    vec4 v = [1., 2., 3., 4.];
-    vec3 fail = v as vec3; // Not a subtype
+    vec<4> v = [1., 2., 3., 4.];
+    vec<3> fail = v as vec<3>; // Not a subtype
 }

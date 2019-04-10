@@ -136,6 +136,7 @@ let rec strings_of_constraint (c: constrain) : string list =
     | AnyTyp -> string_of_glsl_typ BoolTyp :: strings_of_constraint GenTyp
     | GenTyp -> List.map string_of_glsl_typ [IntTyp; FloatTyp] @ 
         (strings_of_constraint GenVecTyp @ strings_of_constraint GenMatTyp)
+    | GenSpaceTyp
     | GenVecTyp -> List.map string_of_glsl_typ [VecTyp 2; VecTyp 3; VecTyp 4]
     | GenMatTyp -> List.map string_of_glsl_typ [MatTyp(2,1); MatTyp(3,1); MatTyp(4,1)]
     | ETypConstraint t -> [string_of_glsl_typ t]

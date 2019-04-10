@@ -1,8 +1,8 @@
-tag a is vec2;
+tag a is vec<2>;
 tag b is a;
 tag c is a;
 
-declare c f(vec2 x);
+declare c f(vec<2> x);
 declare b g(c x);
 declare int h(b x, c y);
 declare a->b build(a x, b->a m);

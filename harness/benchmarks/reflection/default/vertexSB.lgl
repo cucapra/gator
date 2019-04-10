@@ -1,33 +1,23 @@
-tag coord model is vec3;
-tag coord world is vec3;
-tag coord camera is vec3;
-tag coord hom<`t : vec3> is vec4;
-tag norm<`t : vec> is `t;
-tag color is vec3;
-tag alpha<`t : color> is vec4;
-tag coord projective is vec3;
+space coord model is vec<3>;
+space coord world is vec<3>;
+space coord camera is vec<3>;
+tag coord projective is vec<3>;
+space coord hom<`t : vec<n>> is vec<n+1>;
 
-declare vec4 vec4(vec3 v, float f);
-declare vec3 vec3(vec4 v);
-declare float min(float f1, float f2);
-declare float max(float f1, float f2);
-declare `t reflect<`t : vec>(`t v1, `t v2);
-declare float pow(float f1, float f2);
+declare vec4 vec4<`t : vec<3>>(`t v, float f);
+declare vec3 vec3<`t : vec<4>>(`t v);
+
 attribute model aPosition;
 attribute model aNormal;
+varying model vPosition;
 uniform hom<camera>->hom<projective> uProjection;
 uniform hom<world>->hom<camera> uView;
 uniform hom<model>->hom<world> uModel;
-varying model vPosition;
 
-
-// Annoying setup -- will be cleaned up a bunch by parametrized types
-// Note that this doesn't work with normalize properly -- we need to figure that out I suppose
-canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
-canon `t hom_reduce<`t : vec3>(hom<`t> v) { return vec3(v as vec4) as `t; }
-
+canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
+canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }
 
 void main() {
-    vPosition = aPosition;
-    hom<projective> gl_Position = aPosition in hom<projective>;
+  vPosition = aPosition;
+  hom<projective> gl_Position = aPosition in hom<projective>;
 }

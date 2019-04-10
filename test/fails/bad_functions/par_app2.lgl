@@ -1,15 +1,16 @@
-tag model is vec3;
-tag world is vec3;
-tag camera is vec3;
-tag rot<`t : vec3> is vec3; // Rotated by 90 degrees counterclockwise around the z-axis as an example
-tag norm<`t : vec> is `t;
-tag hom<`t : vec3> is vec4;
+tag model is vec<3>;
+tag world is vec<3>;
+tag camera is vec<3>;
+tag rot<`t : vec<3>> is vec<3>; // Rotated by 90 degrees counterclockwise around the z-axis as an example
+tag dir<`t : vec<3>> is vec<3>;
+tag hom<`t : vec<3>> is vec<4>;
 
-declare norm<`t> normalize<`t : vec>(`t v);
-declare vec4 vec4(vec3 v, float f);
-declare float dot<`t : vec>(norm<`t> v1, norm<`t> v2);
+declare dir<`t> normalize<`t : vec>(`t v);
+declare vec4 vec4(vec<3> v, float f);
+declare vec3 vec3(vec<4> v);
+declare float dot<`t : vec>(dir<`t> v1, dir<`t> v2);
 
-`t->rot<`u> rotate_matrix<`t : vec3, `u : vec3>(`t->`u m) {
+`t->rot<`u> rotate_matrix<`t : vec<3>, `u : vec<3>>(`t->`u m) {
     `u->rot<`t> rotation_matrix = [[0., -1., 0.], [1., 0., 0.], [0., 0., 1.]]; // Invalid internal type
     return rotation_matrix * m;
 }

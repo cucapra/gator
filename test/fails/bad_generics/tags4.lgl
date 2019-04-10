@@ -1,5 +1,5 @@
-tag a is vec2;
-tag b is vec2;
+tag a is vec<2>;
+tag b is vec<2>;
 tag c is b;
 tag d is b;
 tag e is c;
@@ -10,5 +10,5 @@ vec2 uninvokable<`t : a>(`t x) {
 }
 
 void main() {
-    vec2 fail = uninvokable<vec2>([1., 2.]);
+    vec2 fail = uninvokable<vec<2>>([1., 2.]);
 }

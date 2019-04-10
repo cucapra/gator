@@ -1,6 +1,6 @@
-tag a is vec2;
-tag b is vec2;
-tag c is vec2;
+tag a is vec<2>;
+tag b is vec<2>;
+tag c is vec<2>;
 
 void main() {
     a->b x = [[1., 2.], [1., 2.]];

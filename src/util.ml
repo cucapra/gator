@@ -18,6 +18,9 @@ let string_of_option_removed (f : 'a -> string) (o : 'a option) : string =
   | Some v -> f v
   | None -> ""
 
+let string_of_pair (a: string) (b: string) : string = 
+  "(" ^ a ^ ", " ^ b ^ ")"
+
 let string_of_lst (f: ('a -> string)) (l: 'a list) : string =
   "[" ^ (String.concat ", " (List.map f l)) ^ "]"
 

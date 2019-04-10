@@ -1,48 +1,45 @@
-// Blinn-Phong
-// GLSL reference:
-// https://learnopengl.com/Lighting/Basic-Lighting
-// Note that some varying values are baked in differently here (e.g. vNormal vs. normalWorld)
-// Thus we sometimes use Braid example as a reference
-// https://capra.cs.cornell.edu/braid/dingus/#example=phong
+// Type Declarations
+space coord model is vec<3>;
+space coord world is vec<3>;
+space coord view is vec<3>;
+tag coord hom<`t : vec<n>> is vec<n+1>;
+tag dir<`t : vec<n>> is vec<n>;
+space color is vec<3>;
+tag alpha<`t : color> is vec<4>;
 
-tag coord model is vec3;
-tag coord world is vec3;
-tag coord camera is vec3;
-tag coord hom<`t : vec3> is vec4;
-tag norm<`t : vec> is `t;
-tag color is vec3;
-tag alpha<`t : color> is vec4;
-
-declare canon norm<`t> normalize<`t : vec>(`t x);
-declare float dot<`t: vec>(norm<`t> v1, norm<`t> v2);
-declare vec4 vec4(vec3 v, float f);
-declare vec3 vec3(vec4 v);
+// External Function Declarations
+declare canon dir<`t> normalize<`t : vec>(`t x);
+declare float dot<`t: vec>(dir<`t> v1, dir<`t> v2);
+declare vec4 vec4<`t : vec<3>>(`t v, float f);
+declare vec3 vec3<`t : vec<4>>(`t v);
 declare float min(float f1, float f2);
 declare float max(float f1, float f2);
 declare `t reflect<`t : vec>(`t v1, `t v2);
 declare float pow(float f1, float f2);
 
+// Canonical Function Declarations
+canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
+canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return v.xyz as `t; }
+canon hom<`t> homify_dir<`t : vec<3>>(dir<`t> v) { return vec4(v, 0.) as hom<`t>; }
+canon alpha<`t> extendColor<`t : color>(`t c) { return vec4(c, 1.) as alpha<`t>; }
+
+// External Vector Declarations
 varying model vPosition;
 uniform hom<model>->hom<world> uModel;
-uniform hom<world>->hom<camera> uView;
-varying norm<model> vNormal;
+uniform hom<world>->hom<view> uView;
+varying dir<model> vNormal;
 uniform world uLight;
-
-canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
-canon `t hom_reduce<`t : vec3>(hom<`t> v) { return vec3(v as vec4) as `t; }
-canon hom<`t> homify_normal<`t : vec3>(norm<`t> v) { return vec4(v as vec3, 0.) as hom<`t>; }
-canon alpha<color> extendColor(color v) { return vec4(v as vec3, 1.) as alpha<color>; }
 
 void main() {
     color ambient = [.1, 0., 0.];
     color diffuse = [0.4, 0.3, 0.9];
     color spec = [1.0, 1.0, 1.0];
 
-    auto lightDir = (uLight - (vPosition in world)) in norm<world>;
-    float lambertian = max(dot(vNormal in norm<world>, lightDir), 0.);
+    auto lightDir = normalize(uLight - (vPosition in world));
+    float lambertian = max(dot(normalize(vNormal in world), lightDir), 0.);
     
-    auto reflectDir = normalize(reflect(-lightDir, vNormal in norm<world>) in camera);
-    float specular = pow(max(dot(-(vPosition in norm<camera>), reflectDir), 0.0), 32.);
+    auto reflectDir = normalize(reflect(-lightDir, normalize(vNormal in world)) in view);
+    float specular = pow(max(dot(-(normalize(vPosition in view)), reflectDir), 0.0), 32.);
 
     alpha<color> gl_FragColor = extendColor(ambient + lambertian * diffuse + specular * spec);
 }

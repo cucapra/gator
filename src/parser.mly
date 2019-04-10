@@ -83,6 +83,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token ATTRIBUTE
 %token UNIFORM
 %token VARYING
+%token SPACE
 
 (* Precedences *)
 
@@ -128,11 +129,13 @@ main:
       { ([], t, []) }
 ;
 
-modification:
-  | CANON 
-      { Canon }
-  | COORD 
-      { Coord }
+modificationlst:
+  | (* empty *)
+      { [] }
+  | CANON
+      { [Canon] }
+  | COORD
+      { [Coord] }
 
 declarelst: 
   | DECLARE; d = decl_extern; SEMI;
@@ -141,12 +144,10 @@ declarelst:
       { d::dl }
 
 decl_extern:
-  | t = typ; x = ID; p = fn_params; 
-      { ExternFn((None, x, (fst p, t, snd p))) }
-  | t = typ; x = ID;
-      { ExternVar(t, Var x) }
-  | m = modification; t = typ; x = ID; p = fn_params; 
-      { ExternFn((Some m, x, (fst p, t, snd p))) }
+  | m = modificationlst; t = typ; x = ID;
+      { ExternVar(m, t, Var x) }
+  | m = modificationlst; t = typ; x = ID; p = fn_params; 
+      { ExternFn((m, x, (fst p, t, snd p))) }
 
 taglst: 
   | t = tag               
@@ -156,14 +157,14 @@ taglst:
 ; 
 
 tag:
-  | TAG; x = ID; IS; t = typ; SEMI; 
-      { (None, x, [], t) }
-  | TAG; x = ID; LWICK; pt = paramet_decl; RWICK; IS; t = typ; SEMI; 
-      { (None, x, pt, t) }
-  | TAG; m = modification; x = ID; IS; t = typ; SEMI; 
-      { (Some m, x, [], t) }
-  | TAG; m = modification; x = ID; LWICK; pt = paramet_decl; RWICK; IS; t = typ; SEMI; 
-      { (Some m, x, pt, t) }
+  | TAG; m = modificationlst; x = ID; IS; t = typ; SEMI; 
+      { (m, x, [], t) }
+  | TAG; m = modificationlst; x = ID; LWICK; pt = paramet_decl; RWICK; IS; t = typ; SEMI; 
+      { (m, x, pt, t) }
+  | SPACE; m = modificationlst; x = ID; IS; t = typ; SEMI; 
+      { (Space::m, x, [], t) }
+  | SPACE; m = modificationlst; x = ID; LWICK; pt = paramet_decl; RWICK; IS; t = typ; SEMI; 
+      { (Space::m, x, pt, t) }
 ;
 
 globalvarfnlst:
@@ -207,11 +208,9 @@ params:
 
 parameterization:
   | BACKTICK; t = ID;
-      { (t, None, AnyTyp) }
-  | BACKTICK; t = ID; COLON; c = constrain;
-      { (t, None, c) }
-  | BACKTICK; t = ID; COLON; m = modification; c = constrain;
-      { (t, Some m, c) }
+      { (t, [], AnyTyp) }
+  | BACKTICK; t = ID; COLON; m = modificationlst; c = constrain;
+      { (t, m, c) }
 
 paramet_decl:
   | p = parameterization;
@@ -220,10 +219,8 @@ paramet_decl:
       { p::pl }
 
 fn_decl:
-  | t = typ; x = ID; p = fn_params;
-      { (None, x, (fst p, t, snd p)) }
-  | m = modification; t = typ; x = ID; p = fn_params;
-      { (Some m, x, (fst p, t, snd p)) }
+  | m = modificationlst; t = typ; x = ID; p = fn_params;
+      { (m, x, (fst p, t, snd p)) }
 ;
 
 fn_params:
@@ -306,6 +303,8 @@ comm_element:
 ; 
 
 constrain:
+  | SPACE 
+      { GenSpaceTyp }
   | VEC 
       { GenVecTyp }
   | MAT 
@@ -314,6 +313,17 @@ constrain:
       { GenTyp }
   | t = typ 
       { TypConstraint t }
+
+dexp:
+  | d1 = dexp; PLUS; d2 = dexp 
+      { DimBinop(Plus, d1, d2) }
+  | d1 = dexp; MINUS; d2 = dexp 
+      { DimBinop(Plus, d1, d2) }
+  | n = NUM 
+      { DimNum n }
+  | x = ID 
+      { DimVar x }
+  
 
 typ:
   | AUTOTYP 
@@ -334,22 +344,24 @@ typ:
       { let len = String.length m in
         let dim = String.sub m 3 (len-3) in
         let dim_lst = Str.split_delim (regexp "x") dim in
-        TransTyp (TopVecTyp (int_of_string(List.nth dim_lst 1)),
-        (TopVecTyp (int_of_string(List.nth dim_lst 0))))}
+        TransTyp (UntaggedVecTyp (int_of_string(List.nth dim_lst 1)),
+        (UntaggedVecTyp (int_of_string(List.nth dim_lst 0))))}
   | t1 = typ; TRANS; t2 = typ 
       { TransTyp(t1,t2) }
   | t = typ; LWICK; tl = typlst; RWICK; 
       { ParTyp(t,tl) }
+  | VEC; LWICK; d = dexp; RWICK;
+      { TopVecTyp d } 
   | x = ID 
       { if (Str.string_match vec x 0) then (
         let len = String.length x in 
         let dim = int_of_string (String.sub x 3 (len-3)) in
-        TopVecTyp dim
+        UntaggedVecTyp dim
         ) else
         if (Str.string_match mat x 0) then (
         let len = String.length x in 
         let dim = int_of_string (String.sub x 3 (len-3)) in
-        TransTyp (TopVecTyp dim, TopVecTyp dim)
+        TransTyp (UntaggedVecTyp dim, UntaggedVecTyp dim)
         ) 
         else (VarTyp x) }
   | SAMPLERCUBE 

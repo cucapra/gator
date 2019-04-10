@@ -1,4 +1,4 @@
-tag color is vec3;
+tag color is vec<3>;
 
 // Note that t cannot be a bool
 `t add_op<`t : genType>(`t x, `t y) {
@@ -10,12 +10,12 @@ tag color is vec3;
     return m * x;
 }
 
-`t id_vec3<`t : vec3>(`t x) {
+`t id_vec3<`t : vec<3>>(`t x) {
     `t->`t id = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]];
     return x;
 }
 
-vec2 project_r3_r2<`t : vec3>(`t x) {
+vec2 project_r3_r2<`t : vec<3>>(`t x) {
     `t->vec2 proj = [[1., 0., 0.], [0., 1., 0.]];
     // Multiply, but annoying as a test
     return app_mat<`t, vec2>(proj, x);

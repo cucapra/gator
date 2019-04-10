@@ -1,20 +1,20 @@
-tag coord model is vec3;
-tag coord world is vec3;
-tag viewport is vec3;
+space coord model is vec<3>;
+space coord world is vec<3>;
+tag viewport is vec<3>;
 tag camera is viewport;
 tag light is viewport;
-tag coord view<`t : viewport> is `t;
+space coord view<`t : viewport> is `t;
 tag coord proj<`t : viewport> is `t;
-tag coord hom<`t : vec3> is vec4;
-tag norm<`t : vec> is `t;
+tag coord hom<`t : vec<n>> is vec<n+1>;
+tag dir<`t : vec<n>> is vec<n>;
 
-declare vec4 vec4(vec3 v, float f);
-declare vec3 vec3(vec4 v);
+declare vec4 vec4<`t : vec<3>>(`t v, float f);
+declare vec3 vec3<`t : vec<4>>(`t v);
 
 attribute model aPosition;
 varying model vPosition;
-attribute norm<model> aNormal;
-varying norm<model> vNormal;
+attribute dir<model> aNormal;
+varying dir<model> vNormal;
 varying proj<light> vShadowPos;
 uniform hom<model>->hom<world> uModel;
 uniform hom<world>->hom<view<camera>> uCamera;
@@ -22,8 +22,8 @@ uniform hom<view<camera>>->hom<proj<camera>> uProjection;
 uniform hom<world>->hom<view<light>> uLightView;
 uniform hom<view<light>>->hom<proj<light>> uLightProjection;
 
-canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
-canon `t hom_reduce<`t : vec3>(hom<`t> v) { return vec3(v as vec4) as `t; }
+canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
+canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }
 
 void main() {
   hom<proj<light>>->hom<proj<light>> texUnitConverter = [[0.5, 0.0, 0.0, 0.5], 

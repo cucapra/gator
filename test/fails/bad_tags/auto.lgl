@@ -1,4 +1,4 @@
-tag a is vec3;
+tag a is vec<3>;
 tag b is a;
 
 void main(a v1, b v2) {

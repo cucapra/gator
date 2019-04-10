@@ -1,52 +1,53 @@
-tag coord model is vec3;
-tag coord world is vec3;
-tag viewport is vec3;
+space coord model is vec<3>;
+space coord world is vec<3>;
+tag viewport is vec<3>;
 tag camera is viewport;
 tag light is viewport;
-tag coord view<`t : viewport> is `t;
-tag coord hom<`t : vec3> is vec4;
-tag norm<`t : vec> is `t;
-tag color is vec3;
-tag alpha<`t : color> is vec4;
+space coord view<`t : viewport> is `t;
+tag coord proj<`t : viewport> is `t;
+tag coord hom<`t : vec<n>> is vec<n+1>;
+tag dir<`t : vec<n>> is vec<n>;
+space color is vec<3>;
+tag alpha<`t : color> is vec<4>;
 
-declare alpha<color> texture2D(sampler2D texture, vec2 cor);
-declare canon norm<`t> normalize<`t : vec>(`t x);
+declare `t texture2D<`t : vec<4>>(sampler2D<`t> texture, vec2 cor);
+declare canon dir<`t> normalize<`t : vec>(`t x);
 declare float dot<`t: vec>(`t v1, `t v2);
-declare vec4 vec4(vec3 v, float f);
-declare vec3 vec3(vec4 v);
+declare vec4 vec4<`t : vec<3>>(`t v, float f);
+declare vec3 vec3<`t : vec<4>>(`t v);
 declare float min(float f1, float f2);
 declare float max(float f1, float f2);
 declare `t reflect<`t : vec>(`t v1, `t v2);
 declare float pow(float f1, float f2);
 declare float length<`t : vec>(`t v);
 
-uniform sampler2D uTexture;
+uniform sampler2D<alpha<color>> uTexture;
 varying vec3 vShadowPos;
 varying model vPosition;
 uniform hom<model>->hom<world> uModel;
 uniform hom<world>->hom<view<camera>> uCamera;
-varying norm<model> vNormal;
+varying dir<model> vNormal;
 uniform world uLight;
 uniform color uBaseColor;
 uniform float uSpecStrength;
 
-canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
-canon `t hom_reduce<`t : vec3>(hom<`t> v) { return vec3(v as vec4) as `t; }
-canon hom<`t> homify_normal<`t : vec3>(norm<`t> v) { return vec4(v as vec3, 0.) as hom<`t>; }
-canon alpha<color> extendColor(color v) { return vec4(v as vec3, 1.) as alpha<color>; }
+canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
+canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }
+canon hom<`t> homify_normal<`t : vec<3>>(dir<`t> v) { return vec4(v, 0.) as hom<`t>; }
+canon alpha<color> extendColor(color v) { return vec4(v, 1.) as alpha<color>; }
 
 float decodeFloat (alpha<color> c) {
   alpha<color> bitShift = [1.0 / (256. * 256. * 256.), 1.0 / (256. * 256.), 1.0 / (256.0), 1.];
   return dot(c, bitShift);
 }
 
-color phong_light<`t: vec3>(`t lightPos, `t fragPos, norm<`t> normalDir, color baseColor,
+color phong_light<`t: vec<3>>(`t lightPos, `t fragPos, dir<`t> normalDir, color baseColor,
 float specStrength, float linear, float quad) {
     float lambertian = max(0., dot(normalDir, normalize<`t>(lightPos)));
-    norm<`t> reflectDir = reflect(-lightPos in norm<`t>, normalDir);
+    dir<`t> reflectDir = reflect(-lightPos in dir<`t>, normalDir);
     float specular = 0.;
     if (0. <= lambertian) {
-        specular = pow(max(0., dot(-fragPos in norm<`t>, reflectDir)), 32.);
+        specular = pow(max(0., dot(-fragPos in dir<`t>, reflectDir)), 32.);
     }
 
     float distance = length(lightPos - fragPos);
@@ -70,7 +71,7 @@ void main() {
     }
   }
   amountInLight /= 9.;
-  color phong_color = phong_light(uLight, vPosition in world, vNormal in norm<world>, 
+  color phong_color = phong_light(uLight, vPosition in world, vNormal in dir<world>, 
     uBaseColor, uSpecStrength, .08, .0001);
 
   alpha<color> gl_FragColor = extendColor(ambient + phong_color * amountInLight);

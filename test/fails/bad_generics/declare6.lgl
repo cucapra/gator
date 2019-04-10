@@ -1,5 +1,5 @@
-tag pos is vec3;
-tag color is vec3;
+tag pos is vec<3>;
+tag color is vec<3>;
 tag tinted is color;
 
 declare float dot<`t : vec>(`t x, `t y);
@@ -16,5 +16,5 @@ float normed_dot<`t : vec>(`t x, `t y) {
 void main() {
     pos x = [1., 2., 3.];
     color red = [1., 0., 0.];
-    float fail = dot<vec2>(x, red);  // The intended bug catch
+    float fail = dot<vec<2>>(x, red);  // The intended bug catch
 }

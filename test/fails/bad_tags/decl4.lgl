@@ -1,2 +1,2 @@
 tag b is a;
-tag a is vec2;  // Out of order
+tag a is vec<2>;  // Out of order

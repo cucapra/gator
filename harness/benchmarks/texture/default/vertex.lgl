@@ -1,11 +1,11 @@
-tag coord model is vec3;
-tag coord world is vec3;
-tag coord camera is vec3;
-tag coord projective is vec3;
-tag coord hom<`t : vec3> is vec4;
+space coord model is vec<3>;
+space coord world is vec<3>;
+space coord camera is vec<3>;
+tag coord projective is vec<3>;
+space coord hom<`t : vec<n>> is vec<n+1>;
 
-declare vec4 vec4(vec3 v, float f);
-declare vec3 vec3(vec4 v);
+declare vec4 vec4<`t : vec<3>>(`t v, float f);
+declare vec3 vec3<`t : vec<4>>(`t v);
 
 attribute model aPosition;
 uniform hom<camera>->hom<projective> uProjection;
@@ -14,8 +14,8 @@ uniform hom<model>->hom<world> uModel;
 attribute vec2 aTexCoord;
 varying vec2 vTexCoord;
 
-canon hom<`t> homify<`t : vec3>(`t v) { return vec4(v as vec3, 1.) as hom<`t>; }
-canon `t hom_reduce<`t : vec3>(hom<`t> v) { return vec3(v as vec4) as `t; }
+canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
+canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }
 
 void main() {
   vTexCoord = aTexCoord;

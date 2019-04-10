@@ -1,12 +1,12 @@
-tag a is vec2;
-tag b is vec3;
+tag a is vec<2>;
+tag b is vec<3>;
 tag c is b;
-tag d is vec3;
+tag d is vec<3>;
 
 void main() {
     a->b a_b = [[1., 1.], [1., 1.], [1., 1.]];
     b->c b_c = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
     b->d b_d = [[1., -1., 1.], [-1., 1., 1.], [1., 1., -1.]];
 
-    b->vec3 fail = b_c + b_d; // No upcast to top during addition
+    b->vec<3> fail = b_c + b_d; // No declaring matrices with the top vec type as a return
 }
