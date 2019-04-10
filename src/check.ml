@@ -312,8 +312,13 @@ let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta
     | (GenSpaceTyp, GenVecTyp)
     | (TypConstraint (ParTyp (VarTyp _, _)), GenVecTyp) -> true
     | (_, GenVecTyp) -> false
-    | (TypConstraint (VarTyp t), GenSpaceTyp) -> List.mem Space (Assoc.lookup t m)
+    | (TypConstraint (VarTyp t), GenSpaceTyp) ->
+    (* Check if it's a subtype of a space *)
+    (* upcast if type parameter is inferred, fail if explicit *)
+        List.mem Space (Assoc.lookup t m) ||
+        is_sub_constraint (TypConstraint (delta_lookup_unsafe t [] pm d)) GenSpaceTyp d pm m
     | (TypConstraint (UntaggedVecTyp _), GenSpaceTyp)
+    | (TypConstraint (TopVecTyp _), GenSpaceTyp)
     | (TypConstraint (BotVecTyp _), GenSpaceTyp) -> true
     | (_, GenSpaceTyp) -> false
     | (GenMatTyp, GenMatTyp)
@@ -420,8 +425,12 @@ let infer_pml (d : delta) ((params, rt, pr) : fn_type) (args_typ : typ list)
         match fpm with | None -> None | Some p ->
         if Assoc.mem s p then (match least_common_parent_safe t (Assoc.lookup s p) d pm m with
             | None -> None
-            | Some t' -> Some (Assoc.update s t' p))
-        else Some (Assoc.update s t p) in
+            | Some t' -> match Assoc.lookup s pr with
+                         | GenSpaceTyp -> Some (Assoc.update s (raise_to_space d m pm t') p)
+                         | _ -> Some (Assoc.update s t' p))
+        else match Assoc.lookup s pr with
+             | GenSpaceTyp -> Some (Assoc.update s (raise_to_space d m pm t) p)
+             | _ -> Some (Assoc.update s t p) in
     let rec unify_param (arg_typ : typ) (par_typ : typ) (fpm : (typ Assoc.context) option) : (typ Assoc.context) option =
         match (arg_typ, par_typ) with
         | (_, AbsTyp s) -> update_inference arg_typ s fpm
@@ -447,7 +456,9 @@ let infer_pml (d : delta) ((params, rt, pr) : fn_type) (args_typ : typ list)
         option_map (fun c -> List.rev (List.map snd (Assoc.bindings c))) 
             (List.fold_left (fun acc (s, c) -> match acc with | None -> None | Some a -> 
                 if Assoc.mem s tc then Some (Assoc.update s (Assoc.lookup s tc) a) else
-                (match c with | TypConstraint t' -> Some (Assoc.update s (reduce_typ t' a) a) | _ -> None))
+                (match c with
+                | TypConstraint t' -> Some (Assoc.update s (reduce_typ t' a) a)
+                | _ -> None))
             (Some Assoc.empty) (Assoc.bindings pr))
     in
     gen_pml (List.fold_left2 (fun fpm arg_typ (_, par_typ) -> unify_param arg_typ par_typ fpm) 
