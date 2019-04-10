@@ -1,8 +1,8 @@
-tag coord model is vec<3>;
-tag coord world is vec<3>;
-tag coord camera is vec<3>;
+space coord model is vec<3>;
+space coord world is vec<3>;
+space coord camera is vec<3>;
 tag coord projective is vec<3>;
-tag coord hom<`t : vec<n>> is vec<n+1>;
+space coord hom<`t : vec<n>> is vec<n+1>;
 
 declare vec4 vec4<`t : vec<3>>(`t v, float f);
 declare vec3 vec3<`t : vec<4>>(`t v);

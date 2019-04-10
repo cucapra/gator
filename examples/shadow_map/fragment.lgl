@@ -11,7 +11,7 @@ space color is vec<3>;
 tag alpha<`t : color> is vec<4>;
 
 declare `t texture2D<`t : vec<4>>(sampler2D<`t> texture, vec2 cor);
-declare canon dir<`t> normalize<`t : vec>(`t x);
+declare dir<`t> normalize<`t : vec>(`t x);
 declare float dot<`t: vec>(`t v1, `t v2);
 declare vec4 vec4<`t : vec<3>>(`t v, float f);
 declare vec3 vec3<`t : vec<4>>(`t v);

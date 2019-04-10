@@ -1,26 +1,25 @@
-tag model is vec3;
-space modelHom is vec4;
-tag worldHom is vec4;
-tag cameraHom is vec4;
-tag projectiveHom is vec4;
+space coord model is vec<3>;
+space coord world is vec<3>;
+space coord camera is vec<3>;
+tag coord projective is vec<3>;
+space coord hom<`t : vec<n>> is vec<n+1>;
+
+declare vec4 vec4<`t : vec<3>>(`t v, float f);
+declare vec3 vec3<`t : vec<4>>(`t v);
 
 attribute model aPosition;
 attribute model aNormal;
-uniform cameraHom->projectiveHom uProjection;
-uniform worldHom->cameraHom uView;
-uniform modelHom->worldHom uModel;
 varying model vPosition;
 varying model vNormal;
+uniform hom<camera>->hom<projective> uProjection;
+uniform hom<world>->hom<camera> uView;
+uniform hom<model>->hom<world> uModel;
+
+canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
+canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }
 
 void main() {
-    model->modelHom model_modelHom = [
-        [1., 0., 0.],
-        [0., 1., 0.],
-        [0., 0., 1.],
-        [0., 0., 0.]
-    ];
-
-    vPosition = aPosition;
-    vNormal = aNormal;
-    projectiveHom gl_Position = uProjection * uView * uModel * (model_modelHom * aPosition + [0., 0., 0., 1.]);
+  vNormal = aNormal;
+  vPosition = aPosition;
+  hom<projective> gl_Position = aPosition in hom<projective>;
 }

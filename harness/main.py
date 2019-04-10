@@ -1,3 +1,4 @@
+from random import shuffle
 import subprocess
 from threading import Thread
 from selenium import webdriver
@@ -18,48 +19,44 @@ def openNode():
 node_thread = Thread(target=openNode)
 node_thread.start()
 
-default_args = {'time': 10}
+default_args = {'time': 300}
+phong = {'name': 'phong',
+         'shaders': ['raw', 'default', 'default', 'raw'],
+         'args': {
+             'num_objects': 40,
+         }
+         }
+texture = {'name': 'texture',
+           'shaders': ['raw', 'default', 'default', 'raw'],
+           'args': {}}
+shadow_map = {'name': 'shadow_map',
+              'shaders': ['raw', 'default', 'raw', 'default'],
+              'args': {}}
+reflection = {'name': 'reflection',
+              'shaders': ['default', 'raw', 'default', 'raw'],
+              'args': {}}
+synthetic = {'name': 'synthetic',
+             'shaders': ['default', 'raw', 'default', 'raw'],
+             'args': {}}
+# bump = {
+#     'name': 'bump',
+#     'shaders': ['raw'],
+#     'args': {}
+# }
+# ray_tracing = {
+#     'name': 'ray_tracing',
+#     'shaders': ['raw', 'default'],
+#     'args': {}
+# }
 
-
-bump = {
-    'name': 'bump',
-    'shaders': ['raw'],
-    'args': {}
-}
-ray_tracing = {
-    'name': 'ray_tracing',
-    'shaders': ['raw', 'default'],
-    'args': {}
-}
-reflection = {
-    'name': 'reflection',
-    'shaders': ['raw', 'default'],
-    'args': {}
-}
-phong = {
-    'name': 'phong',
-    'shaders': ['raw', 'default', 'default', 'raw'],
-    'args': {'num_objects': 40}
-}
-shadow_map = {
-    'name': 'shadow_map',
-    'shaders': ['raw', 'default', 'default', 'raw'],
-    'args': {}
-}
-texture = {
-    'name': 'texture',
-    'shaders': ['raw', 'default', 'default', 'raw'],
-    'args': {}
-}
-
-# benchmarks = [phong, shadow_map, texture, reflection]
-benchmarks = [bump]
+benchmarks = [shadow_map]*3 + [synthetic]*2
+shuffle(benchmarks)
 browser = webdriver.Chrome()
 for bench in benchmarks:
     print(f"Running {bench['name']}")
     subprocess.run(
         ["parcel", "build", f"benchmarks/{bench['name']}/index.html"])
-
+    shuffle(bench['shaders'])
     for shader in bench['shaders']:
         print(f"Running with {shader} shader")
         bench_args = {**default_args, **bench['args']}
