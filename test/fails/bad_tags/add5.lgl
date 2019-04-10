@@ -8,5 +8,5 @@ void main() {
     b->c b_c = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
     b->d b_d = [[1., -1., 1.], [-1., 1., 1.], [1., 1., -1.]];
 
-    b->vec<3> fail = b_c + b_d; // No upcast to top during addition (or ever)
+    b->vec<3> fail = b_c + b_d; // No declaring matrices with the top vec type as a return
 }

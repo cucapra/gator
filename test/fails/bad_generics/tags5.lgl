@@ -10,5 +10,5 @@ vec<2> uninvokable<`t : a>(`t x) {
 }
 
 void main() {
-    vec<2> fail = uninvokable<a>([1., 2.]);
+    vec<2> fail = uninvokable<a>([1., 2.]); // Cannot declare variables of the top type
 }

@@ -1,0 +1,9 @@
+tag hom<`t : vec<n>> is vec<n+1>;
+
+hom<`t> homify<`t : vec>(`t v) {
+    return v as hom<`t>; // Bad dimensions -- a stronger result of par_app7
+}
+
+void main() {
+    print 1;
+}

@@ -344,8 +344,8 @@ typ:
       { let len = String.length m in
         let dim = String.sub m 3 (len-3) in
         let dim_lst = Str.split_delim (regexp "x") dim in
-        TransTyp (TopVecTyp (DimNum (int_of_string(List.nth dim_lst 1))),
-        (TopVecTyp (DimNum (int_of_string(List.nth dim_lst 0)))))}
+        TransTyp (UntaggedVecTyp (int_of_string(List.nth dim_lst 1)),
+        (UntaggedVecTyp (int_of_string(List.nth dim_lst 0))))}
   | t1 = typ; TRANS; t2 = typ 
       { TransTyp(t1,t2) }
   | t = typ; LWICK; tl = typlst; RWICK; 

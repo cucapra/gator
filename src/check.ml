@@ -67,7 +67,7 @@ let rec reduce_dexp (d : dexp) (s : dexp Assoc.context) : dexp =
     match d with
     | DimNum n -> d
     | DimVar x -> if Assoc.mem x s then Assoc.lookup x s else
-        raise (TypeException ("Unbound instance of " ^ x ^ " in dimension calculation of " ^ string_of_typ (TopVecTyp d)))
+        raise (TypeException ("No concrete instance of " ^ x ^ " in dimension calculation of " ^ string_of_typ (TopVecTyp d)))
     | DimBinop (b, l, r) -> (match (reduce_dexp l s, reduce_dexp r s) with
         | (DimNum n1, DimNum n2) -> (match b with
             | Plus -> DimNum (n1 + n2)
@@ -122,7 +122,7 @@ and delta_lookup_unsafe (x: id) (pml: typ list) (dim_pm: parameterization) (d: d
     else raise (TypeException ("Unknown tag " ^ x))
 
 and vec_dim_constrain (t: typ) (d: delta) (pm: parameterization) : dexp option =
-    debug_print ">> vec_dim";
+    debug_print (">> vec_dim " ^ string_of_typ t);
     match t with
     | TopVecTyp d -> Some d
     | UntaggedVecTyp n
@@ -240,12 +240,12 @@ let rec is_typ_eq (t1: typ) (t2: typ) : bool =
     | _ -> false
 
 let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameterization) : bool =
-    debug_print (">> is_subtype " ^ (string_of_typ to_check) ^ ", " ^(string_of_typ target));
-    
+    debug_print (">> is_subtype " ^ (string_of_pair (string_of_typ to_check) (string_of_typ target)));
     let abstyp_step (s: string) : bool =
         if Assoc.mem s pm 
         then match Assoc.lookup s pm with
         | TypConstraint t -> is_subtype t target d pm
+        | GenVecTyp -> (match target with | TopVecTyp (DimVar _) -> true | _ -> false) (* Super special case for vec <= vec<n> (which is true!) *)
         | _ -> false
         else raise (TypeException ("AbsTyp " ^ s ^ " not found in parameterization"))
     in
@@ -258,7 +258,7 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameteriza
 
     | BotVecTyp n1, BotVecTyp n2 -> n1 = n2
     | UntaggedVecTyp n1, UntaggedVecTyp n2 -> n1 = n2
-    | TopVecTyp d1, TopVecTyp d2 -> dim_top d2 = dim_top d2
+    | TopVecTyp d1, TopVecTyp d2 -> dim_top d1 = dim_top d2
     | BotVecTyp n1, TopVecTyp d2 
     | UntaggedVecTyp n1, TopVecTyp d2 -> n1 = dim_top d2
     | TopVecTyp _, _ -> false
@@ -299,6 +299,7 @@ let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta
     | AnyTyp, _ -> false
     | (TypConstraint t1, TypConstraint t2) -> is_subtype t1 t2 d pm
     | (TypConstraint (AbsTyp s), _) -> is_sub_constraint (unwrap_abstyp s pm) target d pm m
+    | (GenVecTyp, TypConstraint (TopVecTyp (DimVar _))) -> true (* Super special case for vec <= vec<n> (which is true!) *)
     | (_, TypConstraint _) -> false
     | (TypConstraint (BoolTyp), GenTyp) -> false
     | (TypConstraint (TransTyp _), GenTyp) -> false
@@ -371,7 +372,7 @@ let rec greatest_common_child (t1: typ) (t2: typ) (d: delta) (pm: parameterizati
     | _ -> BotVecTyp n1 (* This works since both t1 and t2 are vectors with the same dimension and are not subtypes of each other *)
 
 let rec least_common_parent (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu): typ =
-    debug_print ">> least_common_parent";
+    debug_print (">> least_common_parent" ^ (string_of_pair (string_of_typ t1) (string_of_typ t2)));
     let fail _ = raise (TypeException ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2))) in
     let rec step_abstyp s1 s2 =
         begin
@@ -390,12 +391,13 @@ let rec least_common_parent (t1: typ) (t2: typ) (d: delta) (pm: parameterization
             least_common_parent t1 (TopVecTyp (DimNum n)) d pm m
         | VarTyp s, _ ->
             (* Just go up a step -- the end condition is the is_subtype check earlier *)
-            least_common_parent t1 (delta_lookup s [] d pm m) d pm m
-        | _, VarTyp s ->
             least_common_parent (delta_lookup s [] d pm m) t2 d pm m
-        | ParTyp (VarTyp s, tl), _
-        | _, ParTyp (VarTyp s, tl) ->
+        | _, VarTyp s ->
+            least_common_parent t1 (delta_lookup s [] d pm m) d pm m
+        | ParTyp (VarTyp s, tl), _ ->
             least_common_parent (delta_lookup s tl d pm m) t2 d pm m
+        | _, ParTyp (VarTyp s, tl) ->
+            least_common_parent t1 (delta_lookup s tl d pm m) d pm m
         | (AbsTyp s1, AbsTyp s2) -> (step_abstyp s1 s2)
         | (TransTyp (t1, t2), TransTyp(t3, t4)) -> 
             (TransTyp (greatest_common_child t1 t3 d pm, least_common_parent t2 t4 d pm m))
@@ -465,7 +467,13 @@ let check_typ_valid (ogt: typ) (d: delta) (pm: parameterization) (m: mu) : unit 
         debug_print ">> check_typ_valid";
         match t with
         | VarTyp s -> if Assoc.mem s d then () else raise (TypeException ("Unknown tag " ^ s))
-        | ParTyp (t, tl) -> check_typ_valid_rec t; List.fold_left (fun acc t' -> check_typ_valid_rec t') () tl;
+        | ParTyp (t, tl) -> check_typ_valid_rec t; 
+            let not_vec t = raise (TypeException ("Type " ^ (string_of_typ t) ^ " given to parameterization is not a vector")) in
+            let bad_untagged t = raise (TypeException ("Type " ^ (string_of_typ t) ^ " given to parameterization is an untagged vector")) in
+            List.fold_left (fun acc t' -> 
+                if is_bounded_by t' GenVecTyp d pm m then () else not_vec t'; 
+                match t' with UntaggedVecTyp _ -> bad_untagged t' | _ -> ();
+                check_typ_valid_rec t') () tl;
         | AbsTyp s -> if Assoc.mem s pm then () else raise (TypeException ("Unknown abstract type `" ^ s))
         | TransTyp (t1, t2) -> check_typ_valid_rec t1; check_typ_valid_rec t2;
             if is_bounded_by t1 GenVecTyp d pm m && is_bounded_by t2 GenVecTyp d pm m then ()
@@ -567,6 +575,7 @@ let check_comp_binop (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterizatio
     else raise (TypeException "Comparison checks must be between integers or floats")
 
 let check_as_exp (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu) : typ =
+    debug_print (">> check_as_exp " ^ string_of_typ t1 ^ " " ^ string_of_typ t2);
     least_common_parent t1 t2 d pm m |> ignore; t2
 
 (* Type checking addition operations on scalar (int, float) expressions *)
@@ -1000,6 +1009,9 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
                 | BotVecTyp _ -> raise (TypeException "Cannot infer the type of a vector literal")
                 | TransTyp (TopVecTyp _, BotVecTyp _) -> raise (TypeException "Cannot infer the type of a matrix literal")
                 | t' -> t')
+            | TopVecTyp _ -> raise (TypeException "Cannot declare a variable of the top vec type")
+            | TransTyp (TopVecTyp _, _)
+            | TransTyp (_, TopVecTyp _) -> raise (TypeException "Cannot declare a transformation matrix with the top vec type")
             | _ -> t) in
             (TypedAst.Decl (tag_erase t' d pm, s, (exp_to_texp result d pm)), 
             (check_assign t' s (snd result) d g p pm m), update_psi_matrix s t m ps))
