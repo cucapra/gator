@@ -1,8 +1,8 @@
 tag a is vec<2>;
-tag coord ac is a;
-tag coord b is a;
+tag ac is a;
+tag b is a;
 tag bnc is b;
-tag coord c is vec<2>;
+tag c is vec<2>;
 tag cnc is c;
 tag cncnc is cnc;
 
@@ -14,9 +14,8 @@ void main() {
     b bvec = [1., 1.];
     bnc bncvec = [0., 1.];
 
-    b->b __noncanon = [[1., 1.], [1., 1.]]; // This does NOT actually get loaded in psi -- identities shouldn't be redefinable
-    b->ac __bac = [[1., 1.], [1., 2.]];
-    ac->b __acb = [[2., -1.], [-1., 1.]];
+    canon b->ac __bac = [[1., 1.], [1., 2.]];
+    canon ac->b __acb = [[2., -1.], [-1., 1.]];
 
     b s1 = bvec in b; // = bvec
     a s2 = bncvec in b;
@@ -30,7 +29,7 @@ void main() {
 
     cnc cncvec = [1., 2.];
     cncnc cncncvec = [.3, .6];
-    c->b __cb = [[1., 2.], [-2., -1.]];
+    canon c->b __cb = [[1., 2.], [-2., -1.]];
 
     a s5 = cncncvec in b;
     ac s6 = cncvec in ac;

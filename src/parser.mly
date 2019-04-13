@@ -51,7 +51,6 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token COMMA
 %token DOT
 %token TAG
-%token COORD
 %token CANON
 %token IS
 %token TRUE
@@ -134,8 +133,6 @@ modificationlst:
       { [] }
   | CANON
       { [Canon] }
-  | COORD
-      { [Coord] }
 
 declarelst: 
   | DECLARE; d = decl_extern; SEMI;
@@ -268,8 +265,8 @@ comm_block:
 comm_element:
   | SKIP;                            
       { Skip }
-  | t = typ; x = ID; GETS; e1 = exp; 
-      { Decl(t, x, e1) }
+  | m = modificationlst; t = typ; x = ID; GETS; e1 = exp; 
+      { Decl(m, t, x, e1) }
   | x = ID; GETS; e1 = exp; 
       { Assign(x, e1) }
   | x = ID; PLUSEQ; e1 = exp; 
