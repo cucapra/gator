@@ -186,12 +186,11 @@ let decl_attribs (gv : global_vars) : string =
         | (x, sq, et, v)::t -> 
             (string_of_storage_qual sq) ^ " " ^ (string_of_glsl_typ et)
             ^ " " ^ x ^ string_of_option_removed (fun v -> " = " ^ string_of_value v) v ^
-            ";" ^ (decl_attribs_list t) 
+            ";\n" ^ (decl_attribs_list t) 
     in
     decl_attribs_list gv
 
 let rec compile_program (prog : prog) (global_vars : global_vars) : string =
     debug_print ">> compile_program";
-    "precision mediump float;" ^ (decl_attribs global_vars) ^ 
-     (comp_fn_lst prog)
- 
+    "#version 140\n" ^ (decl_attribs global_vars) ^ 
+        (comp_fn_lst prog)
