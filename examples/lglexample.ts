@@ -103,7 +103,7 @@ export function projection_matrix(out: mat4, width: number, height: number) {
   var aspectRatio = width / height;
   var fieldOfView = Math.PI / 4;
   var near = .1;
-  var far = 2000;
+  var far = 10000;
 
   // mat4.perspective(out, fieldOfView, aspectRatio, near, far)
   // Do the above manually for my sanity for now
@@ -290,8 +290,9 @@ export function load_texture(gl: WebGLRenderingContext, img_src: string) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
   });
-}
 
+  return texture;
+}
 
 /**
  * Given a flat array, return an array with the elements grouped into

@@ -1,6 +1,5 @@
 import * as lgl from '../lglexample';
 import { mat4 } from 'gl-matrix';
-import { debug } from 'util';
 
 function main() {
   let gl = lgl.setup(render);

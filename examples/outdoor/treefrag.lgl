@@ -1,0 +1,10 @@
+tag color is vec<3>;
+tag alpha<`t : color> is vec<4>;
+
+declare vec4 vec4<`t : vec<3>>(`t v, float f);
+
+uniform color uColor;
+
+void main() {
+  alpha<color> gl_FragColor = vec4(uColor, 1.) as alpha<color>;
+}
