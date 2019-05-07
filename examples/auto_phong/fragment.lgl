@@ -35,10 +35,10 @@ void main() {
     color diffuse = [0.4, 0.3, 0.9];
     color spec = [1.0, 1.0, 1.0];
 
-    auto lightDir = normalize(uLight - (vPosition in world));
-    float lambertian = max(dot(normalize(vNormal in world), lightDir), 0.);
+    dir<world> lightDir = normalize(uLight - (vPosition in world));
+    float lambertian = max(dot(normalize(vNormal), lightDir), 0.);
     
-    auto reflectDir = normalize(reflect(-lightDir, normalize(vNormal in world)) in view);
+    dir<view> reflectDir = normalize(reflect(-lightDir, normalize(vNormal in world)) in view);
     float specular = pow(max(dot(-(normalize(vPosition in view)), reflectDir), 0.0), 32.);
 
     alpha<color> gl_FragColor = extendColor(ambient + lambertian * diffuse + specular * spec);
