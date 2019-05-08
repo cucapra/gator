@@ -11,8 +11,6 @@ attribute model aPosition;
 uniform hom<camera>->hom<projective> uProjection;
 uniform hom<world>->hom<camera> uView;
 uniform hom<model>->hom<world> uModel;
-attribute vec2 aTexCoord;
-varying vec2 vTexCoord;
 
 canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
 canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }

@@ -9,6 +9,7 @@ tag coord hom<`t : vec<n>> is vec<n+1>;
 tag dir<`t : vec<n>> is vec<n>;
 space color is vec<3>;
 tag alpha<`t : color> is vec<4>;
+tag depth is vec<4>;
 
 declare `t texture2D<`t : vec<4>>(sampler2D<`t> texture, vec2 cor);
 declare dir<`t> normalize<`t : vec>(`t x);
@@ -21,8 +22,9 @@ declare `t reflect<`t : vec>(`t v1, `t v2);
 declare float pow(float f1, float f2);
 declare float length<`t : vec>(`t v);
 
+uniform sampler2D<depth> uShadowTexture;
 uniform sampler2D<alpha<color>> uTexture;
-uniform vec2 aTexCoord;
+varying vec2 vTexCoord;
 varying vec3 vShadowPos;
 varying model vPosition;
 uniform hom<model>->hom<world> uModel;
@@ -37,7 +39,7 @@ canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }
 canon hom<`t> homify_normal<`t : vec<3>>(dir<`t> v) { return vec4(v, 0.) as hom<`t>; }
 canon alpha<color> extendColor(color v) { return vec4(v, 1.) as alpha<color>; }
 
-float decodeFloat (alpha<color> c) {
+float decodeFloat (depth c) {
   alpha<color> bitShift = [1.0 / (256. * 256. * 256.), 1.0 / (256. * 256.), 1.0 / (256.0), 1.];
   return dot(c, bitShift);
 }
@@ -57,15 +59,11 @@ float specStrength, float linear, float quad) {
 }
 
 void main() {
-  // vec4 color = [.6, .5, .2, 1.];
-  color ambient = [.1, 0., 0.];
   float texelSize = 1. / 1024.;
-  alpha<color> v = texture2D(uTexture, vShadowPos.xy);
   float amountInLight = 0.;
   for (int x = -1; x <= 1; x++) {
     for (int y = -1; y <= 1; y++) {
-      float texelDepth = decodeFloat(texture2D(uTexture, vShadowPos.xy + [x, y] * texelSize));
-      // float texelDepth = texture2D(uTexture, vShadowPos.xy + [x, y] * texelSize).z;
+      float texelDepth = decodeFloat(texture2D(uShadowTexture, vShadowPos.xy + [x, y] * texelSize));
       if (vShadowPos.z - 0.007 <= texelDepth) {
         amountInLight += 1.0;
       }
@@ -75,5 +73,6 @@ void main() {
   // color phong_color = phong_light(uLight, vPosition in world, normalize(vNormal in world), 
   //   uBaseColor, uSpecStrength, .08, .0001);
 
-  alpha<color> gl_FragColor = texture2D(uTexture, aTexCoord) * amountInLight;
+  alpha<color> gl_FragColor = extendColor(texture2D(uTexture, vTexCoord).rgb as color * amountInLight);
+  // alpha<color> gl_FragColor = texture2D(uTexture, vTexCoord);
 }

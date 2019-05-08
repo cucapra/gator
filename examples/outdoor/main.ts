@@ -3,8 +3,10 @@ import { mat4, vec3 } from 'gl-matrix';
 
 // Texture for LPSHead
 const head_lambert : string = require('../resources/lpshead/lambertian.jpg');
-const grass : string = require('../resources/outdoor/ground/grass_01.jpg');
-const sky_day : string = require('../resources/outdoor/sky/sky_day.jpg');
+const grassTextureFile : string = require('../resources/outdoor/ground/grass_01.jpg');
+const barkTextureFile : string = require('../resources/outdoor/tree/bark2.jpg');
+const leafTextureFile : string = require('../resources/outdoor/tree/leaf.png');
+// const sky_day : string = require('../resources/outdoor/sky/sky_day.jpg');
 
 // Loads file system implementation in parcel
 // * can only call synchronous functions *
@@ -23,8 +25,8 @@ function main() {
   );
 
   let treeprogram = lgl.compileProgram(gl,
-    require('./treevert.lgl'),
-    require('./treefrag.lgl')
+    require('./skyvert.lgl'),
+    require('./skyfrag.lgl')
   );
 
   let shadowmap = lgl.compileProgram(gl,
@@ -32,58 +34,61 @@ function main() {
     require('./shadowfragment.lgl')
   );
 
-  // Uniform and attribute locations.
+  // Ubershader locations
   let loc_uProjection = lgl.uniformLoc(gl, program, 'uProjection');
   let loc_uView = lgl.uniformLoc(gl, program, 'uView');
   let loc_uModel = lgl.uniformLoc(gl, program, 'uModel');
   let loc_aPosition = lgl.attribLoc(gl, program, 'aPosition');
   let loc_uLightView = lgl.uniformLoc(gl, program, "uLightView");
   let loc_uLightProjection = lgl.uniformLoc(gl, program, "uLightProjection");
-
   // Texture things
   let loc_aTexCoord = lgl.attribLoc(gl, program, 'aTexCoord');
   let loc_uTexture = lgl.uniformLoc(gl, program, 'uTexture');
+  let loc_uShadowTexture = lgl.uniformLoc(gl, program, 'uShadowTexture');
 
-  let tree_uProjection = lgl.uniformLoc(gl, treeprogram, 'uProjection');
-  let tree_uView = lgl.uniformLoc(gl, treeprogram, 'uView');
-  let tree_uModel = lgl.uniformLoc(gl, treeprogram, 'uModel');
-  let tree_aPosition = lgl.attribLoc(gl, treeprogram, 'aPosition');
-  let tree_uColor = lgl.uniformLoc(gl, treeprogram, 'uColor');
-
+  // Shadow locations
   let shadowLocations: { [locname: string]: WebGLUniformLocation | number; } = {};
   shadowLocations["uLightProjection"] = lgl.uniformLoc(gl, shadowmap, "uLightProjection");
   shadowLocations["uLightView"] = lgl.uniformLoc(gl, shadowmap, "uLightView");
   shadowLocations["uModel"] = lgl.uniformLoc(gl, shadowmap, "uModel");
   shadowLocations["aPosition"] = lgl.attribLoc(gl, shadowmap, "aPosition");
 
+  // Sky locations
+  // let skyLocations: { [locname: string]: WebGLUniformLocation | number; } = {};
+  // shadowLocations["uProjection"] = lgl.uniformLoc(gl, shadowmap, "uProjection");
+  // shadowLocations["uView"] = lgl.uniformLoc(gl, shadowmap, "uView");
+  // shadowLocations["uModel"] = lgl.uniformLoc(gl, shadowmap, "uModel");
+  // shadowLocations["aPosition"] = lgl.attribLoc(gl, shadowmap, "aPosition");
+
   // Read in lpshead obj
   // URL must be statically analyzable other than (__dirname) and (__filename)
   // let src = fs.readFileSync(__dirname + './../resources/lpshead/head.obj', 'utf8');
   let groundObj = fs.readFileSync(__dirname + './../resources/outdoor/ground/grass_01.obj', 'utf8');
-  let treetrunk = fs.readFileSync(__dirname + './../resources/outdoor/tree/treetrunk.obj', 'utf8');
-  let treeleaves = fs.readFileSync(__dirname + './../resources/outdoor/tree/treeleaves.obj', 'utf8');
-  // let sky_sphere = fs.readFileSync(__dirname + './../resources/outdoor/sky/globe.obj', 'utf8');
+  let treeObj = fs.readFileSync(__dirname + './../resources/outdoor/tree/treetrunk.obj', 'utf8');
+  let treeleavesObj = fs.readFileSync(__dirname + './../resources/outdoor/tree/treeleaves.obj', 'utf8');
 
   let ground = lgl.load_obj (gl, groundObj);
-  let tree = lgl.load_obj (gl, treetrunk);
-  let treel = lgl.load_obj (gl, treeleaves);
+  let tree = lgl.load_obj (gl, treeObj);
+  let treeleaves = lgl.load_obj (gl, treeleavesObj);
+  // let sky = lgl.getSphere(gl, 100);
   // let plane = lgl.getCube(gl, 100, 100, 1, 1, 1);
   
   // Initialize the model positions.
   let groundModel = mat4.create();
   let treeModel = mat4.create();
-  let globeModel = mat4.create();
+  let skyModel = mat4.create();
   // mat4.translate(planeModel, planeModel, [25., -25., 0.]);
-  mat4.rotateX(groundModel, groundModel, Math.PI / 2);
-  mat4.scale(groundModel, groundModel, [200., 200., 1.]);
-  mat4.translate(treeModel, treeModel, [0., 0., 10.]);
+  mat4.translate(groundModel, groundModel, [0., 0., -50.]);
+  mat4.rotateX(groundModel, groundModel, - Math.PI / 4);
+  mat4.scale(groundModel, groundModel, [100., 100., 1.]);  
+  mat4.rotateX(treeModel, treeModel, Math.PI / 4);
+  mat4.translate(treeModel, treeModel, [0., -40., 0.]);
   mat4.scale(treeModel, treeModel, [5., 5., 5.]);
   // mat4.scale(globeModel, globeModel, [2000., 2000., 2000.]);
 
-  let textures: WebGLTexture[] = [];
-  textures.push(lgl.load_texture(gl, grass) as WebGLTexture);
-  textures.push(lgl.load_texture(gl, sky_day) as WebGLTexture);
-  console.log(textures);
+  let grassTexture = lgl.load_texture(gl, grassTextureFile) as WebGLTexture;
+  let barkTexture = lgl.load_texture(gl, barkTextureFile) as WebGLTexture;
+  let leafTexture = lgl.load_texture(gl, leafTextureFile) as WebGLTexture;
 
   let light = [-20., 30., 2.];
 
@@ -107,9 +112,23 @@ function main() {
   gl.bindRenderbuffer(gl.RENDERBUFFER, null);
 
   let lightProjectionMatrix = mat4.create();
-  mat4.ortho(lightProjectionMatrix, -80, 80, -80, 80, -80.0, 160);
+  mat4.ortho(lightProjectionMatrix, -160, 160, -160, 160, -80.0, 160);
   let lightViewMatrix = mat4.create();
   mat4.lookAt(lightViewMatrix, light, [0., 0., 0.], [0., 1., 0.]);
+
+  document.onkeypress = function (evt) {
+    evt = evt || window.event;
+    let charCode = evt.keyCode || evt.which;
+    let charStr = String.fromCharCode(charCode);
+    if (charStr == "a") {
+      light[0] = light[0] + 1.; 
+      mat4.lookAt(lightViewMatrix, light, [0., 0., 0.], [0., 1., 0.])
+    }
+    if (charStr == "d") {
+      light[0] = light[0] - 1.; 
+      mat4.lookAt(lightViewMatrix, light, [0., 0., 0.], [0., 1., 0.])
+    }
+  }
 
   function render(view: mat4, projection: mat4) {
 
@@ -125,10 +144,9 @@ function main() {
       }
     }
 
-    // Use our shader pair.
+    // Set up shadowmap
     gl.useProgram(shadowmap);
 
-    // Set the shader "uniform" parameters.
     gl.uniformMatrix4fv(shadowLocations["uLightProjection"], false, lightProjectionMatrix);
     gl.uniformMatrix4fv(shadowLocations["uLightView"], false, lightViewMatrix);
 
@@ -140,9 +158,15 @@ function main() {
     gl.bindFramebuffer(gl.FRAMEBUFFER, shadowFramebuffer);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     buildShadowBuffers(tree, treeModel);
-    buildShadowBuffers(treel, treeModel);
+    buildShadowBuffers(treeleaves, treeModel);
     buildShadowBuffers(ground, groundModel);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    // Draw the objects
+    gl.useProgram(program);
+
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, shadowDepthTexture);
 
     let width = gl.drawingBufferWidth;
     let height = gl.drawingBufferHeight;
@@ -150,15 +174,12 @@ function main() {
     gl.clearColor(0., 0., 0., 0.);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // Use our shader pair.
-    gl.useProgram(program);
-
     // Set the shader "uniform" parameters.
     gl.uniformMatrix4fv(loc_uProjection, false, projection);
     gl.uniformMatrix4fv(loc_uView, false, view);
-    gl.uniformMatrix4fv(loc_uModel, false, groundModel);
     gl.uniformMatrix4fv(loc_uLightView, false, lightViewMatrix);
     gl.uniformMatrix4fv(loc_uLightProjection, false, lightProjectionMatrix);
+    gl.uniform1i(loc_uTexture, 0);
   
     // Set the attribute arrays.
     lgl.bind_attrib_buffer(gl, loc_aPosition, ground.positions, 3);
@@ -166,20 +187,24 @@ function main() {
    
     // Draw the object.
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, textures[0]);
-    gl.uniform1i(loc_uTexture, 0);
+    gl.bindTexture(gl.TEXTURE_2D, grassTexture);
+    gl.uniformMatrix4fv(loc_uModel, false, groundModel);
+    gl.uniform1i(loc_uShadowTexture, 1);
     lgl.drawMesh(gl, ground);
 
-    gl.useProgram(treeprogram);
-    gl.uniformMatrix4fv(tree_uProjection, false, projection);
-    gl.uniformMatrix4fv(tree_uView, false, view);
-    gl.uniformMatrix4fv(tree_uModel, false, treeModel);
-    gl.uniform3fv(tree_uColor, [.3, .2, .2]);
-    lgl.bind_attrib_buffer(gl, tree_aPosition, tree.positions, 3);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, barkTexture);
+    lgl.bind_attrib_buffer(gl, loc_aPosition, tree.positions, 3);
+    lgl.bind_attrib_buffer(gl, loc_aTexCoord, tree.texcoords, 2);
+    gl.uniformMatrix4fv(loc_uModel, false, treeModel);
     lgl.drawMesh(gl, tree);
-    gl.uniform3fv(tree_uColor, [.2, .8, .1]);
-    lgl.bind_attrib_buffer(gl, tree_aPosition, treel.positions, 3);
-    lgl.drawMesh(gl, treel);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, leafTexture);
+    lgl.bind_attrib_buffer(gl, loc_aPosition, treeleaves.positions, 3);
+    lgl.bind_attrib_buffer(gl, loc_aTexCoord, treeleaves.texcoords, 2);
+    gl.uniformMatrix4fv(loc_uModel, false, treeModel);
+    lgl.drawMesh(gl, treeleaves);
   }
 }
 

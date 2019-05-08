@@ -17,7 +17,7 @@ attribute dir<model> aNormal;
 varying dir<model> vNormal;
 varying proj<light> vShadowPos;
 uniform hom<model>->hom<world> uModel;
-uniform hom<world>->hom<view<camera>> uCamera;
+uniform hom<world>->hom<view<camera>> uView;
 uniform hom<view<camera>>->hom<proj<camera>> uProjection;
 uniform hom<world>->hom<view<light>> uLightView;
 uniform hom<view<light>>->hom<proj<light>> uLightProjection;
@@ -36,8 +36,6 @@ void main() {
   vShadowPos = hom_reduce(texUnitConverter * (aPosition in hom<proj<light>>));
   vPosition = aPosition;
   vNormal = aNormal;
-  hom<proj<camera>> gl_Position = aPosition in hom<proj<camera>>;
-
   vTexCoord = aTexCoord;
-  hom<projective> gl_Position = aPosition in hom<projective>;
+  hom<proj<camera>> gl_Position = aPosition in hom<proj<camera>>;
 }

@@ -19,8 +19,5 @@ canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
 canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }
 
 void main() {
-    hom<proj<light>> gl_Position = 
-      uLightProjection * uLightView * uModel * homify(aPosition);
-
-    // auto gl_Position = aPosition in hom<proj<light>>;
+    auto gl_Position = aPosition in hom<proj<light>>;
 }
