@@ -24,7 +24,7 @@ function main() {
     require('./fragment.lgl')
   );
 
-  let treeprogram = lgl.compileProgram(gl,
+  let skyprogram = lgl.compileProgram(gl,
     require('./skyvert.lgl'),
     require('./skyfrag.lgl')
   );
@@ -70,7 +70,7 @@ function main() {
   let ground = lgl.load_obj (gl, groundObj);
   let tree = lgl.load_obj (gl, treeObj);
   let treeleaves = lgl.load_obj (gl, treeleavesObj);
-  // let sky = lgl.getSphere(gl, 100);
+  let sky = lgl.getSphere(gl, 5);
   // let plane = lgl.getCube(gl, 100, 100, 1, 1, 1);
   
   // Initialize the model positions.
