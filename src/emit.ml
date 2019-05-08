@@ -108,27 +108,27 @@ and comp_comm (c : comm list) : string =
     | h::t -> match h with
         | Skip -> comp_comm t
         | Print e -> comp_comm t
-        | Inc (x, _) -> x ^ "++;" ^ (comp_comm t)
-        | Dec (x, _) -> x ^ "--;" ^ (comp_comm t)
+        | Inc (x, _) -> x ^ "++;\n" ^ (comp_comm t)
+        | Dec (x, _) -> x ^ "--;\n" ^ (comp_comm t)
         (* Super janky, but we need to have rules for weird glsl declarations and variables *)
         | Decl (ty, x, (e, _)) -> (
-            if is_core x  then x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
-            else string_of_glsl_typ ty ^ " "^ x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t))
-        | Assign (x, (e, _)) -> x ^ " = " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
-        | AssignOp ((x, _), op, (e, _)) -> x ^ " " ^ (binop_string op) ^ "= " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
+            if is_core x  then x ^ " = " ^ (comp_exp e) ^ ";\n" ^ (comp_comm t)
+            else string_of_glsl_typ ty ^ " "^ x ^ " = " ^ (comp_exp e) ^ ";\n" ^ (comp_comm t))
+        | Assign (x, (e, _)) -> x ^ " = " ^ (comp_exp e) ^ ";\n" ^ (comp_comm t)
+        | AssignOp ((x, _), op, (e, _)) -> x ^ " " ^ (binop_string op) ^ "= " ^ (comp_exp e) ^ ";\n" ^ (comp_comm t)
         | If (((b, _), c1), el, c2) -> 
             ("if " ^ "(" ^ (comp_exp b) ^ ")"
-            ^ "{ " ^ (comp_comm c1) ^ " }"
+            ^ "\n{ " ^ (comp_comm c1) ^ "}\n"
             ^ (List.fold_left (fun acc ((b, _), c) -> "if " ^ "(" ^ (comp_exp b) ^ ")"
-                ^ "{ " ^ (comp_comm c) ^ " }" ^ acc) "" el)
-            ^ (match c2 with | Some c2 -> "{ " ^ (comp_comm c2) ^ " }" | None -> "")
+                ^ "\n{ " ^ (comp_comm c) ^ "}\n" ^ acc) "" el)
+            ^ (match c2 with | Some c2 -> "{\n " ^ (comp_comm c2) ^ "}\n" | None -> "")
             ^ (comp_comm t))
         | For (c1, (b, _), c2, cl) -> 
-            ("for (" ^ (comp_comm [c1]) ^ " " ^ (comp_exp b) ^ "; " ^ (comp_comm [c2] |> (String.split_on_char ';') |> List.hd) ^ ")"
-            ^ "{ " ^ (comp_comm cl) ^ " }" ^ (comp_comm t))
-        | Return Some (e, _) -> "return " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
-        | Return None -> "return;" ^ (comp_comm t)
-        | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ");" ^ (comp_comm t)
+            ("for (" ^ (comp_comm [c1]) ^ " " ^ (comp_exp b) ^ ";\n" ^ (comp_comm [c2] |> (String.split_on_char ';') |> List.hd) ^ ")"
+            ^ "\n{ " ^ (comp_comm cl) ^ "}\n" ^ (comp_comm t))
+        | Return Some (e, _) -> "return " ^ (comp_exp e) ^ ";\n" ^ (comp_comm t)
+        | Return None -> "return;\n" ^ (comp_comm t)
+        | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ");\n" ^ (comp_comm t)
 
 (* GenTyp - int, float, vec(2,3,4), mat(16 possibilites) *)
 let rec strings_of_constraint (c: constrain) : string list =
@@ -164,10 +164,10 @@ let comp_fn (f : fn) : string =
     debug_print ">> comp_fn";
     let ((id, (p, rt, pm)), cl) = f in
     match id with 
-    | "main" -> "void main() {" ^ (comp_comm cl) ^ "}"
+    | "main" -> "void main() {" ^ (comp_comm cl) ^ "}\n"
     | _ -> 
         let param_string = String.concat ", " (List.map (fun (i, t) -> (string_of_glsl_typ t) ^ " " ^ i) p) in
-        let fn_str = ((string_of_glsl_typ rt) ^ " " ^ id ^ "(" ^ param_string ^ "){" ^ (comp_comm cl) ^ "}") in
+        let fn_str = ((string_of_glsl_typ rt) ^ " " ^ id ^ "(" ^ param_string ^ "){" ^ (comp_comm cl) ^ "}\n") in
         generate_fn_generics fn_str f
 
 
