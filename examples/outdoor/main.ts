@@ -64,8 +64,8 @@ function main() {
   // URL must be statically analyzable other than (__dirname) and (__filename)
   // let src = fs.readFileSync(__dirname + './../resources/lpshead/head.obj', 'utf8');
   let groundObj = fs.readFileSync(__dirname + './../resources/outdoor/ground/grass_01.obj', 'utf8');
-  let treeObj = fs.readFileSync(__dirname + './../resources/outdoor/tree/treetrunk.obj', 'utf8');
-  let treeleavesObj = fs.readFileSync(__dirname + './../resources/outdoor/tree/treeleaves.obj', 'utf8');
+  let treeObj = fs.readFileSync(__dirname + './../resources/outdoor/tree/treetrunk2.obj', 'utf8');
+  let treeleavesObj = fs.readFileSync(__dirname + './../resources/outdoor/tree/treeleaves2.obj', 'utf8');
 
   let ground = lgl.load_obj (gl, groundObj);
   let tree = lgl.load_obj (gl, treeObj);
