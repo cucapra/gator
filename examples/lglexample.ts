@@ -258,9 +258,9 @@ export function load_obj(gl: WebGLRenderingContext, obj_src: string): Mesh {
 
   // .obj files can have normals, but if they don't, this parser library
   // (confusingly) fills the array with NaN.
-  if (!isNaN(mesh.vertexNormals[0])) {
-    out.normals = group_array(mesh.vertexNormals, 3) as Vec3Array;
-  }
+  // if (!isNaN(mesh.vertexNormals[0])) {
+  //   out.normals = group_array(mesh.vertexNormals, 3) as Vec3Array;
+  // }
 
   return out;
 }

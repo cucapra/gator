@@ -9,7 +9,7 @@ const leafTextureFile : string = require('../resources/outdoor/tree/leaf.png');
 const nightTextureFile : string = require('../resources/outdoor/sky/night.jpg');
 var urls2 = [
   require('../resources/outdoor/sky/night.jpg'), require('../resources/outdoor/sky/night.jpg'), 
-  require('../resources/outdoor/sky/night.jpg'), require('../resources/outdoor/sky/night_left.jpg'), 
+  require('../resources/outdoor/sky/night.jpg'), require('../resources/outdoor/sky/night.jpg'), 
   require('../resources/outdoor/sky/night.jpg'), require('../resources/outdoor/sky/night.jpg')
 ];
 var urls = [
@@ -34,11 +34,6 @@ function main() {
     require('./fragment.lgl')
   );
 
-  let skyprogram = lgl.compileProgram(gl,
-    require('./skyvert.lgl'),
-    require('./skyfrag.lgl')
-  );
-
   let shadowmap = lgl.compileProgram(gl,
     require('./shadowvertex.lgl'),
     require('./shadowfragment.lgl')
@@ -54,6 +49,10 @@ function main() {
   let loc_uView = lgl.uniformLoc(gl, uberprogram, 'uView');
   let loc_uModel = lgl.uniformLoc(gl, uberprogram, 'uModel');
   let loc_aPosition = lgl.attribLoc(gl, uberprogram, 'aPosition');
+  let loc_aNormal = lgl.attribLoc(gl, uberprogram, 'aNormal');
+  let loc_uLight = lgl.uniformLoc(gl, uberprogram, 'uLight');
+  let loc_uTime = lgl.uniformLoc(gl, uberprogram, 'uTime');
+  let loc_uSpecStrength = lgl.uniformLoc(gl, uberprogram, 'uSpecStrength');
   let loc_uLightView = lgl.uniformLoc(gl, uberprogram, "uLightView");
   let loc_uLightProjection = lgl.uniformLoc(gl, uberprogram, "uLightProjection");
 
@@ -74,6 +73,9 @@ function main() {
   let loc_uViewSB = lgl.uniformLoc(gl, programSB, 'uView');
   let loc_uModelSB = lgl.uniformLoc(gl, programSB, 'uModel');
   let loc_aPositionSB = lgl.attribLoc(gl, programSB, 'aPosition');
+  let loc_uTimeSB = lgl.uniformLoc(gl, programSB, 'uTime');
+  let loc_uLightSB = lgl.uniformLoc(gl, programSB, 'uLight');
+  // let loc_uCIEtoRGB = lgl.uniformLoc(gl, programSB, 'uCietorgb');
   
   // Read in object files
   let groundObj = fs.readFileSync(__dirname + './../resources/outdoor/ground/grass_01.obj', 'utf8');
@@ -101,6 +103,9 @@ function main() {
   let grassTexture = lgl.load_texture_clamp(gl, grassTextureFile, gl.REPEAT) as WebGLTexture;
   let barkTexture = lgl.load_texture(gl, barkTextureFile) as WebGLTexture;
   let leafTexture = lgl.load_texture(gl, leafTextureFile) as WebGLTexture;
+
+  let cietorgb = mat3.create();
+  mat3.set(cietorgb, 3.2406, -1.5372, -0.4986, -0.9689, 1.8758, 0.0415, 0.0557, -0.2040, 1.0570)
 
   // Setup the cubemap
   var ct = 0;
@@ -151,12 +156,17 @@ function main() {
   gl.bindTexture(gl.TEXTURE_2D, null);
   gl.bindRenderbuffer(gl.RENDERBUFFER, null);
 
-  let light = [0., 30., 50.];
+  let time = .5;
+  let sun = vec3.create();
+  let sunOrigin = vec3.create();
+  vec3.set(sun, 0., 30., 50.);
+  vec3.set(sunOrigin, 0., 0., 0.);
   let lightProjectionMatrix = mat4.create();
-  let range = 60;
-  mat4.ortho(lightProjectionMatrix, -range, range, -range, range, 0.1, 160.);
+  let range = 200;
+  mat4.ortho(lightProjectionMatrix, -range, range, -range, range, 0.1, 200.);
   let lightViewMatrix = mat4.create();
-  mat4.lookAt(lightViewMatrix, light, [0., 0., 0.], [0., 1., 0.]);
+  mat4.lookAt(lightViewMatrix, sun, [0., 0., 0.], [0., 1., 0.]);
+
 
   // Setup time management
   document.onkeypress = function (evt) {
@@ -164,15 +174,23 @@ function main() {
     let charCode = evt.keyCode || evt.which;
     let charStr = String.fromCharCode(charCode);
     if (charStr == "a") {
-      light[0] = light[0] + 1.;
-      light[2] = 50 - Math.abs(light[0]);
-      mat4.lookAt(lightViewMatrix, light, [0., 0., 0.], [0., 1., 0.]);
+      vec3.rotateY(sun, sun, sunOrigin, 1 / 60.);
+      mat4.lookAt(lightViewMatrix, sun, [0., 0., 0.], [0., 1., 0.]);
+      time += 1 / (2 * Math.PI * 60);
+      if (time > 1.) {
+        time -= 1.
+      }
     }
     if (charStr == "d") {
-      light[0] = light[0] - 1.;
-      light[2] = 50 - Math.abs(light[0]); 
-      mat4.lookAt(lightViewMatrix, light, [0., 0., 0.], [0., 1., 0.]);
+      vec3.rotateY(sun, sun, sunOrigin, -1 / 60.);
+      mat4.lookAt(lightViewMatrix, sun, [0., 0., 0.], [0., 1., 0.]);
+      time -= 1 / (2 * Math.PI * 60);
+      if (time < 0.) {
+        time += 1.
+      }
     }
+    mat4.ortho(lightProjectionMatrix, -range, range, -range, range, 0.1, 200 + 100 * Math.abs(.5-time));
+    console.log(time);
   }
 
   function renderSkyboxAndCubes(projection: mat4, view: mat4) {
@@ -188,6 +206,9 @@ function main() {
     gl.uniformMatrix4fv(loc_uProjectionSB, false, projection);
     gl.uniformMatrix4fv(loc_uViewSB, false, view_no_transform);
     gl.uniformMatrix4fv(loc_uModelSB, false, skyboxModel);
+    gl.uniform1f(loc_uTimeSB, time);
+    gl.uniform3fv(loc_uLightSB, sun);
+    // gl.uniformMatrix3fv(loc_uCIEtoRGB, false, cietorgb);
 
     // Set the attribute arrays.
     lgl.bind_attrib_buffer(gl, loc_aPositionSB, skybox.positions, 3);
@@ -255,20 +276,25 @@ function main() {
     gl.uniformMatrix4fv(loc_uView, false, view);
     gl.uniformMatrix4fv(loc_uLightView, false, lightViewMatrix);
     gl.uniformMatrix4fv(loc_uLightProjection, false, lightProjectionMatrix);
+    gl.uniform3fv(loc_uLight, sun);
+    gl.uniform1f(loc_uTime, time);
     gl.uniform1i(loc_uTexture, 0);
     gl.uniform1i(loc_uShadowTexture, 1);
    
     // Draw the objects
+    gl.uniform1f(loc_uSpecStrength, 0.);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, grassTexture);
     lgl.bind_attrib_buffer(gl, loc_aPosition, ground.positions, 3);
+    lgl.bind_attrib_buffer(gl, loc_aNormal, ground.normals, 3);
     lgl.bind_attrib_buffer(gl, loc_aTexCoord, ground.texcoords, 2);
     gl.uniformMatrix4fv(loc_uModel, false, groundModel);
     lgl.drawMesh(gl, ground);
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, barkTexture);
-    lgl.bind_attrib_buffer(gl, loc_aPosition, tree.positions, 3);
+    lgl.bind_attrib_buffer(gl, loc_aPosition, tree.positions, 3);  
+    lgl.bind_attrib_buffer(gl, loc_aNormal, tree.normals, 3);  
     lgl.bind_attrib_buffer(gl, loc_aTexCoord, tree.texcoords, 2);
     gl.uniformMatrix4fv(loc_uModel, false, treeModel);
     lgl.drawMesh(gl, tree);
@@ -276,6 +302,8 @@ function main() {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, leafTexture);
     lgl.bind_attrib_buffer(gl, loc_aPosition, treeleaves.positions, 3);
+    lgl.bind_attrib_buffer(gl, loc_aNormal, treeleaves.normals, 3);  
+    gl.uniform1f(loc_uSpecStrength, .2);
     lgl.bind_attrib_buffer(gl, loc_aTexCoord, treeleaves.texcoords, 2);
     gl.uniformMatrix4fv(loc_uModel, false, treeModel);
     lgl.drawMesh(gl, treeleaves);
