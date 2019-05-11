@@ -66,7 +66,7 @@ void main() {
   for (int x = -1; x <= 1; x++) {
     for (int y = -1; y <= 1; y++) {
       float texelDepth = decodeFloat(texture2D(uShadowTexture, vShadowPos.xy + [x, y] * texelSize));
-      if (vShadowPos.z - 0.007 <= texelDepth) {
+      if (vShadowPos.z - 0.007 - .05 * abs(.5 - uTime) <= texelDepth) {
         amountInLight += 1.0;
       }
     }

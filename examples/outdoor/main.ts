@@ -89,15 +89,68 @@ function main() {
     
   // Initialize the model positions.
   let skyboxModel = mat4.create();
-  // mat4.translate(skyboxModel, skyboxModel, [0., 0., 50.]);
   let groundModel = mat4.create();
-  // mat4.translate(groundModel, groundModel, [0., 0., -50.]);
-  // mat4.rotateX(groundModel, groundModel, - Math.PI / 4);
   mat4.scale(groundModel, groundModel, [200., 200., 1.]);  
+  let treeScale = 0.;
   let treeModel = mat4.create();
   mat4.rotateX(treeModel, treeModel, Math.PI / 2);
-  // mat4.translate(treeModel, treeModel, [0., -40., 0.]);
-  mat4.scale(treeModel, treeModel, [2., 2., 2.]);
+  mat4.rotateY(treeModel, treeModel, Math.random() * Math.PI * 2);
+  treeScale = Math.random() + 1.5;
+  mat4.scale(treeModel, treeModel, [treeScale, treeScale, treeScale]);
+  let treeModel2 = mat4.create();
+  mat4.rotateX(treeModel2, treeModel2, Math.PI / 2);
+  mat4.rotateY(treeModel, treeModel, Math.random() * Math.PI * 2);
+  treeScale = Math.random() + 1.5;
+  mat4.scale(treeModel2, treeModel2, [treeScale, treeScale, treeScale]);
+  mat4.translate(treeModel2, treeModel2, [0., 0., 40.]);
+  let treeModel3 = mat4.create();
+  mat4.rotateX(treeModel3, treeModel3, Math.PI / 2);
+  mat4.rotateY(treeModel, treeModel, Math.random() * Math.PI * 2);
+  treeScale = Math.random() + 1.5;
+  mat4.scale(treeModel3, treeModel3, [treeScale, treeScale, treeScale]);
+  mat4.translate(treeModel3, treeModel3, [8., 0., -17.]);
+  let treeModel4 = mat4.create();
+  mat4.rotateX(treeModel4, treeModel4, Math.PI / 2);
+  mat4.rotateY(treeModel, treeModel, Math.random() * Math.PI * 2);
+  treeScale = Math.random() + 1.5;
+  mat4.scale(treeModel4, treeModel4, [treeScale, treeScale, treeScale]);
+  mat4.translate(treeModel4, treeModel4, [0., 0., -24.]);
+  let treeModel5 = mat4.create();
+  mat4.rotateX(treeModel5, treeModel5, Math.PI / 2);
+  mat4.rotateY(treeModel, treeModel, Math.random() * Math.PI * 2);
+  treeScale = Math.random() + 1.5;
+  mat4.scale(treeModel5, treeModel5, [treeScale, treeScale, treeScale]);
+  mat4.translate(treeModel5, treeModel5, [16., 0., 15.]);
+  let treeModel6 = mat4.create();
+  mat4.rotateX(treeModel6, treeModel6, Math.PI / 2);
+  mat4.rotateY(treeModel, treeModel, Math.random() * Math.PI * 2);
+  treeScale = Math.random() + 1.5;
+  mat4.scale(treeModel6, treeModel6, [treeScale, treeScale, treeScale]);
+  mat4.translate(treeModel6, treeModel6, [-13., 0., 7.]);
+  let treeModel7 = mat4.create();
+  mat4.rotateX(treeModel7, treeModel7, Math.PI / 2);
+  mat4.rotateY(treeModel, treeModel, Math.random() * Math.PI * 2);
+  treeScale = Math.random() + 1.5;
+  mat4.scale(treeModel7, treeModel7, [treeScale, treeScale, treeScale]);
+  mat4.translate(treeModel7, treeModel7, [13., 0., -12.]);
+  let treeModel8 = mat4.create();
+  mat4.rotateX(treeModel8, treeModel8, Math.PI / 2);
+  mat4.rotateY(treeModel, treeModel, Math.random() * Math.PI * 2);
+  treeScale = Math.random() + 1.5;
+  mat4.scale(treeModel8, treeModel8, [treeScale, treeScale, treeScale]);
+  mat4.translate(treeModel8, treeModel8, [-8., 0., 12.]);
+  let treeModel9 = mat4.create();
+  mat4.rotateX(treeModel9, treeModel9, Math.PI / 2);
+  mat4.rotateY(treeModel, treeModel, Math.random() * Math.PI * 2);
+  treeScale = Math.random() + 1.5;
+  mat4.scale(treeModel9, treeModel9, [treeScale, treeScale, treeScale]);
+  mat4.translate(treeModel9, treeModel9, [-5., 0., 27.]);
+  let treeModel10 = mat4.create();
+  mat4.rotateX(treeModel10, treeModel10, Math.PI / 2);
+  mat4.rotateY(treeModel, treeModel, Math.random() * Math.PI * 2);
+  treeScale = Math.random() + 1.5;
+  mat4.scale(treeModel10, treeModel10, [treeScale, treeScale, treeScale]);
+  mat4.translate(treeModel10, treeModel10, [-8., 0., 15.]);
 
   // Load in the textures
   let grassTexture = lgl.load_texture_clamp(gl, grassTextureFile, gl.REPEAT) as WebGLTexture;
@@ -246,8 +299,20 @@ function main() {
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, shadowFramebuffer);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    buildShadowBuffers(tree, treeModel);
-    buildShadowBuffers(treeleaves, treeModel);
+    function buildTreeShadow(treeModelGiven: mat4) { 
+      buildShadowBuffers(tree, treeModelGiven);
+      buildShadowBuffers(treeleaves, treeModelGiven);
+    }
+    buildTreeShadow(treeModel);
+    buildTreeShadow(treeModel2);
+    buildTreeShadow(treeModel3);
+    buildTreeShadow(treeModel4);
+    buildTreeShadow(treeModel5);
+    buildTreeShadow(treeModel6);
+    buildTreeShadow(treeModel7);
+    buildTreeShadow(treeModel8);
+    buildTreeShadow(treeModel9);
+    buildTreeShadow(treeModel10);
     buildShadowBuffers(ground, groundModel)
 
     // Reset all the things
@@ -291,22 +356,36 @@ function main() {
     gl.uniformMatrix4fv(loc_uModel, false, groundModel);
     lgl.drawMesh(gl, ground);
 
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, barkTexture);
-    lgl.bind_attrib_buffer(gl, loc_aPosition, tree.positions, 3);  
-    lgl.bind_attrib_buffer(gl, loc_aNormal, tree.normals, 3);  
-    lgl.bind_attrib_buffer(gl, loc_aTexCoord, tree.texcoords, 2);
-    gl.uniformMatrix4fv(loc_uModel, false, treeModel);
-    lgl.drawMesh(gl, tree);
+    function drawTree(treeModelGiven : mat4) {
+      gl.uniform1f(loc_uSpecStrength, 0.);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, barkTexture);
+      lgl.bind_attrib_buffer(gl, loc_aPosition, tree.positions, 3);  
+      lgl.bind_attrib_buffer(gl, loc_aNormal, tree.normals, 3);  
+      lgl.bind_attrib_buffer(gl, loc_aTexCoord, tree.texcoords, 2);
+      gl.uniformMatrix4fv(loc_uModel, false, treeModelGiven);
+      lgl.drawMesh(gl, tree);
+  
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, leafTexture);
+      lgl.bind_attrib_buffer(gl, loc_aPosition, treeleaves.positions, 3);
+      lgl.bind_attrib_buffer(gl, loc_aNormal, treeleaves.normals, 3);  
+      gl.uniform1f(loc_uSpecStrength, .2);
+      lgl.bind_attrib_buffer(gl, loc_aTexCoord, treeleaves.texcoords, 2);
+      gl.uniformMatrix4fv(loc_uModel, false, treeModelGiven);
+      lgl.drawMesh(gl, treeleaves);
+    }
 
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, leafTexture);
-    lgl.bind_attrib_buffer(gl, loc_aPosition, treeleaves.positions, 3);
-    lgl.bind_attrib_buffer(gl, loc_aNormal, treeleaves.normals, 3);  
-    gl.uniform1f(loc_uSpecStrength, .2);
-    lgl.bind_attrib_buffer(gl, loc_aTexCoord, treeleaves.texcoords, 2);
-    gl.uniformMatrix4fv(loc_uModel, false, treeModel);
-    lgl.drawMesh(gl, treeleaves);
+    drawTree(treeModel);
+    drawTree(treeModel2);
+    drawTree(treeModel3);
+    drawTree(treeModel4);
+    drawTree(treeModel5);
+    drawTree(treeModel6);
+    drawTree(treeModel7);
+    drawTree(treeModel8);
+    drawTree(treeModel9);
+    drawTree(treeModel10);
   }
 }
 

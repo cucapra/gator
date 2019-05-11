@@ -89,6 +89,6 @@ void main() {
     // float sunAngle = 0.;
     // alpha<color> gl_FragColor = extendColor(pratheen(zenithAngle, sunAngle) in rgb);
     color skyColor = scatter(dist / (length(uLight) * 2.));
-    float amountToTexture = max(.1 - length(skyColor), 0.) / .1;
+    float amountToTexture = max(.13 - length(skyColor), 0.) / .13;
     alpha<color> gl_FragColor = amountToTexture * textureCube(uSkybox, vPosition) + extendColor(skyColor);
 }
