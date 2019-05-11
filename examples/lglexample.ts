@@ -26,7 +26,6 @@ export function compileShader(gl: WebGLRenderingContext, shaderType: number, sha
 
   // Set the shader source code.
   gl.shaderSource(shader, shaderSource);
-  console.log(shaderSource);
   // Compile the shader
   gl.compileShader(shader);
 
@@ -103,7 +102,7 @@ export function projection_matrix(out: mat4, width: number, height: number) {
   var aspectRatio = width / height;
   var fieldOfView = Math.PI / 4;
   var near = .1;
-  var far = 10000;
+  var far = 1000;
 
   // mat4.perspective(out, fieldOfView, aspectRatio, near, far)
   // Do the above manually for my sanity for now
@@ -243,7 +242,6 @@ export function load_obj(gl: WebGLRenderingContext, obj_src: string): Mesh {
 
   // // Create a WebGL buffer.
   let mesh = new obj_loader.Mesh(obj_src);
-  console.log(mesh.vertices);
   // Match the interface we're using for Mesh objects that come from
   // StackGL.
   let cell = group_array(mesh.indices, 3) as Vec3Array;
@@ -267,12 +265,15 @@ export function load_obj(gl: WebGLRenderingContext, obj_src: string): Mesh {
   return out;
 }
 
+export function load_texture(gl: WebGLRenderingContext, img_src: string) {
+  return load_texture_clamp(gl, img_src, gl.CLAMP_TO_EDGE);
+}
 
 /**
  * Load image texture.
  * @param gl rendering context
  */
-export function load_texture(gl: WebGLRenderingContext, img_src: string) {
+export function load_texture_clamp(gl: WebGLRenderingContext, img_src: string, clamp: number) {
   // Create a texture.
   // Asynchronously load an image
   var image = new Image();
@@ -286,8 +287,8 @@ export function load_texture(gl: WebGLRenderingContext, img_src: string) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     // clamp to edge gives us non-power-of-2 support
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, clamp);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, clamp);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
   });
 
