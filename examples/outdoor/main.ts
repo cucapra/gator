@@ -90,7 +90,8 @@ function main() {
   // Initialize the model positions.
   let skyboxModel = mat4.create();
   let groundModel = mat4.create();
-  mat4.scale(groundModel, groundModel, [200., 200., 1.]);  
+  mat4.scale(groundModel, groundModel, [200., 200., 4.]);  
+  mat4.translate(groundModel, groundModel, [0., 0., -1.])
   let treeScale = 0.;
   let treeModel = mat4.create();
   mat4.rotateX(treeModel, treeModel, Math.PI / 2);

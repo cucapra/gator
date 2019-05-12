@@ -71,13 +71,13 @@ float normal_distr(float x, float mu, float sigma) {
 color scatter(float brightness) {
     // Takes a brightness between 0 and 1 and generates the scattering for that brightness
     float red = normal_distr(brightness, 0., .01) 
-        + .03 * normal_distr(brightness, .3, .2) * normal_distr(uTime, .5, .1)
+        + .05 * normal_distr(brightness, .7, .2) * normal_distr(uTime, .5, .1)
         + .05 * normal_distr(brightness, 0., .2) * normal_distr(uTime, .3, .05)
         + .07 * normal_distr(brightness, 0., .2) * normal_distr(uTime, .7, .05);
     float green = normal_distr(brightness, 0., .01) 
-        + .02 * normal_distr(brightness, .4, .2) * normal_distr(uTime, .5, .1)
-        + .01 * normal_distr(brightness, .05, .15) * normal_distr(uTime, .3, .03)
-        + .01 * normal_distr(brightness, .05, .15) * normal_distr(uTime, .7, .03);
+        + .04 * normal_distr(brightness, .6, .2) * normal_distr(uTime, .5, .1)
+        + .02 * normal_distr(brightness, .05, .15) * normal_distr(uTime, .3, .04)
+        + .02 * normal_distr(brightness, .05, .15) * normal_distr(uTime, .7, .04);
     float blue = normal_distr(brightness, 0., .01)
         + normal_distr(brightness, 0., .7) * normal_distr(uTime, .5, .16);
     return [red, green, blue];
@@ -89,6 +89,6 @@ void main() {
     // float sunAngle = 0.;
     // alpha<color> gl_FragColor = extendColor(pratheen(zenithAngle, sunAngle) in rgb);
     color skyColor = scatter(dist / (length(uLight) * 2.));
-    float amountToTexture = max(.13 - length(skyColor), 0.) / .13;
+    float amountToTexture = max(.14 - length(skyColor), 0.) / .14;
     alpha<color> gl_FragColor = amountToTexture * textureCube(uSkybox, vPosition) + extendColor(skyColor);
 }
