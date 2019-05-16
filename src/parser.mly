@@ -270,18 +270,20 @@ comm_element:
       { Skip }
   | t = typ; x = ID; GETS; e1 = exp; 
       { Decl(t, x, e1) }
-  | x = exp; GETS; e1 = exp; 
-      { Assign(x, e1) }
-  | x = exp; PLUSEQ; e1 = exp; 
-      { AssignOp(x, Plus, e1) }
-  | x = exp; MINUSEQ; e1 = exp; 
-      { AssignOp(x, Minus, e1) }
-  | x = exp; TIMESEQ; e1 = exp; 
-      { AssignOp(x, Times, e1) }
-  | x = exp; DIVEQ; e1 = exp; 
-      { AssignOp(x, Div, e1) }
-  | x = exp; CTIMESEQ; e1 = exp; 
-      { AssignOp(x, CTimes, e1) }
+  | x = ID; GETS; e1 = exp; 
+      { Assign(Var x, e1) }
+  | x = ID; LBRACK; e1 = exp; RBRACK; GETS; e2 = exp; (* Ridiculous hack, but whatever *)
+      { Assign(Binop(Index,Var(x),e2), e1) } 
+  | x = ID; PLUSEQ; e1 = exp; 
+      { AssignOp(Var x, Plus, e1) }
+  | x = ID; MINUSEQ; e1 = exp; 
+      { AssignOp(Var x, Minus, e1) }
+  | x = ID; TIMESEQ; e1 = exp; 
+      { AssignOp(Var x, Times, e1) }
+  | x = ID; DIVEQ; e1 = exp; 
+      { AssignOp(Var x, Div, e1) }
+  | x = ID; CTIMESEQ; e1 = exp; 
+      { AssignOp(Var x, CTimes, e1) }
   | PRINT; e = exp; 
       { Print(e) }
   | RETURN; e = exp; 
