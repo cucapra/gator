@@ -273,7 +273,7 @@ comm_element:
   | x = ID; GETS; e1 = exp; 
       { Assign(Var x, e1) }
   | x = ID; LBRACK; e1 = exp; RBRACK; GETS; e2 = exp; (* Ridiculous hack, but whatever *)
-      { Assign(Binop(Index,Var(x),e2), e1) } 
+      { Assign(Binop(Index,Var(x),e1), e2) } 
   | x = ID; PLUSEQ; e1 = exp; 
       { AssignOp(Var x, Plus, e1) }
   | x = ID; MINUSEQ; e1 = exp; 

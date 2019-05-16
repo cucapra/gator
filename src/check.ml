@@ -1024,15 +1024,17 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
             | TransTyp (TopVecTyp _, _)
             | TransTyp (_, TopVecTyp _) -> raise (TypeException "Cannot declare a transformation matrix with the top vec type")
             | _ -> t) in
+            check_assign t' s (snd result) d g p pm m;
             (TypedAst.Decl (tag_erase t' d pm, s, (exp_to_texp result d pm)), 
-            (check_assign t' s (snd result) d g p pm m), update_psi_matrix s t m ps))
+            Assoc.update s t g, update_psi_matrix s t m ps))
     | Assign (e1, e2) ->
         (match e1 with
         | Var s
         | Binop (Index, Var s, _) ->
             let assign_to = check_exp e1 d m g pm p ps in
             let result = check_exp e2 d m g pm p ps in
-            (TypedAst.Assign ((exp_to_texp assign_to d pm), (exp_to_texp result d pm)), check_assign (snd assign_to) s (snd result) d g p pm m, ps)
+            check_assign (snd assign_to) s (snd result) d g p pm m;
+            (TypedAst.Assign ((exp_to_texp assign_to d pm), (exp_to_texp result d pm)), g, ps)
         | _ -> raise (TypeException ("Cannot assign to a non-variable expression")))
     | AssignOp (e1, b, e2) -> 
         let (c', g', ps') = check_comm (Assign (e1, Binop(b, e1, e2))) d m g pm p ps in
@@ -1088,7 +1090,7 @@ and check_comm_lst (cl : comm list) (d: delta) (m: mu) (g: gamma) (pm : paramete
         let (cl', g'', ps'') = check_comm_lst t d m g' pm p ps' in 
         (c' :: cl', g'', ps'')
 
-and check_assign (t: typ) (s: string) (etyp : typ)  (d: delta) (g: gamma) (p: phi) (pm: parameterization) (m:mu): gamma =
+and check_assign (t: typ) (s: string) (etyp : typ)  (d: delta) (g: gamma) (p: phi) (pm: parameterization) (m:mu): unit =
     debug_print (">> check_assign <<"^s^">>");
     debug_print (string_of_typ t);
     (* Check that t, if not a core type, is a registered tag *)
@@ -1112,7 +1114,7 @@ and check_assign (t: typ) (s: string) (etyp : typ)  (d: delta) (g: gamma) (p: ph
     else if Assoc.mem s p then
         raise (TypeException ("Variable " ^ s ^ " has the name of a function"))
     else
-        if is_subtype etyp t d pm then Assoc.update s t g
+        if is_subtype etyp t d pm then ()
         else raise (TypeException ("Mismatched types for var decl for " ^ s ^  ": expected " ^ (string_of_typ t) ^ ", found " ^ (string_of_typ etyp)))
 
 let check_tag (s: string) (pm: parameterization) (tm : modification list) (t: typ) (d: delta) (m: mu) : delta * mu = 
