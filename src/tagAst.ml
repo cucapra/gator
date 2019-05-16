@@ -81,8 +81,8 @@ type comm =
     | Inc of id
     | Dec of id
     | Decl of typ * string * exp
-    | Assign of string * exp
-    | AssignOp of string * binop * exp
+    | Assign of exp * exp (* Note that you can assign to x[5], which is an expression *)
+    | AssignOp of exp * binop * exp
     | If of if_block * if_block list * (comm list) option  (* if - elif list - else *)
     | For of comm * exp * comm * comm list
     | Return of exp option

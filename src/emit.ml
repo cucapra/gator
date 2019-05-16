@@ -114,8 +114,8 @@ and comp_comm (c : comm list) : string =
         | Decl (ty, x, (e, _)) -> (
             if is_core x  then x ^ " = " ^ (comp_exp e) ^ ";\n" ^ (comp_comm t)
             else string_of_glsl_typ ty ^ " "^ x ^ " = " ^ (comp_exp e) ^ ";\n" ^ (comp_comm t))
-        | Assign (x, (e, _)) -> x ^ " = " ^ (comp_exp e) ^ ";\n" ^ (comp_comm t)
-        | AssignOp ((x, _), op, (e, _)) -> x ^ " " ^ (binop_string op) ^ "= " ^ (comp_exp e) ^ ";\n" ^ (comp_comm t)
+        | Assign ((e1, _), (e2, _)) -> comp_exp e1 ^ " = " ^ comp_exp e2 ^ ";\n" ^ (comp_comm t)
+        | AssignOp ((e1, _), op, (e2, _)) -> comp_exp e1 ^ " " ^ (binop_string op) ^ "= " ^ comp_exp e2 ^ ";\n" ^ (comp_comm t)
         | If (((b, _), c1), el, c2) -> 
             ("if " ^ "(" ^ (comp_exp b) ^ ")"
             ^ "\n{ " ^ (comp_comm c1) ^ "}\n"

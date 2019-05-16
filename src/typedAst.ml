@@ -42,8 +42,8 @@ type comm =
     | Inc of id * etyp
     | Dec of id * etyp
     | Decl of etyp * id * texp
-    | Assign of id * texp
-    | AssignOp of (string * etyp) * binop * texp
+    | Assign of texp * texp
+    | AssignOp of texp * binop * texp
     | If of if_block * if_block list * (comm list) option  (* if - elif list - else *)
     | For of comm * texp * comm * comm list
     | Return of texp option

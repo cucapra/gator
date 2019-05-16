@@ -1026,16 +1026,18 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
             | _ -> t) in
             (TypedAst.Decl (tag_erase t' d pm, s, (exp_to_texp result d pm)), 
             (check_assign t' s (snd result) d g p pm m), update_psi_matrix s t m ps))
-    | Assign (s, e) ->
-        if Assoc.mem s g then
-            let t = Assoc.lookup s g in
-            let result = check_exp e d m g pm p ps in
-            (TypedAst.Assign (s, (exp_to_texp result d pm)), check_assign t s (snd result) d g p pm m, ps)
-        else raise (TypeException ("Assignment to undeclared variable: " ^ s))
-    | AssignOp (s, b, e) -> 
-        let (c', g', ps') = check_comm (Assign (s, Binop(b, Var s, e))) d m g pm p ps in
+    | Assign (e1, e2) ->
+        (match e1 with
+        | Var s
+        | Binop (Index, Var s, _) ->
+            let assign_to = check_exp e1 d m g pm p ps in
+            let result = check_exp e2 d m g pm p ps in
+            (TypedAst.Assign ((exp_to_texp assign_to d pm), (exp_to_texp result d pm)), check_assign (snd assign_to) s (snd result) d g p pm m, ps)
+        | _ -> raise (TypeException ("Cannot assign to a non-variable expression")))
+    | AssignOp (e1, b, e2) -> 
+        let (c', g', ps') = check_comm (Assign (e1, Binop(b, e1, e2))) d m g pm p ps in
         (match c' with
-        | TypedAst.Assign (_, (TypedAst.Binop (_, (_, st), e), _)) -> (TypedAst.AssignOp((s, st), b, e), g', ps')
+        | TypedAst.Assign (e1, (TypedAst.Binop (_, (_, st), e2), _)) -> (TypedAst.AssignOp(e1, b, e2), g', ps')
         | _ -> failwith "Assign must return an assign?")
     | If ((b, c1), el, c2) ->
         let check_if b c =

@@ -270,17 +270,17 @@ comm_element:
       { Skip }
   | t = typ; x = ID; GETS; e1 = exp; 
       { Decl(t, x, e1) }
-  | x = ID; GETS; e1 = exp; 
+  | x = exp; GETS; e1 = exp; 
       { Assign(x, e1) }
-  | x = ID; PLUSEQ; e1 = exp; 
+  | x = exp; PLUSEQ; e1 = exp; 
       { AssignOp(x, Plus, e1) }
-  | x = ID; MINUSEQ; e1 = exp; 
+  | x = exp; MINUSEQ; e1 = exp; 
       { AssignOp(x, Minus, e1) }
-  | x = ID; TIMESEQ; e1 = exp; 
+  | x = exp; TIMESEQ; e1 = exp; 
       { AssignOp(x, Times, e1) }
-  | x = ID; DIVEQ; e1 = exp; 
+  | x = exp; DIVEQ; e1 = exp; 
       { AssignOp(x, Div, e1) }
-  | x = ID; CTIMESEQ; e1 = exp; 
+  | x = exp; CTIMESEQ; e1 = exp; 
       { AssignOp(x, CTimes, e1) }
   | PRINT; e = exp; 
       { Print(e) }

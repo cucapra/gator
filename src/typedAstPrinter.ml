@@ -75,8 +75,8 @@ let rec string_of_comm (c: comm) : string =
     | Inc (x, _) -> x ^ "++"
     | Dec (x, _) -> x ^ "--"
     | Decl (t, s, (e, _)) -> (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_exp e) ^ ";"
-    | Assign (b, (x, _)) -> b ^ " = " ^ (string_of_exp x) ^ ";"
-    | AssignOp ((x, _), op, (e, _)) -> x ^ " " ^  binop_string op ^ "= " ^ (string_of_exp e)
+    | Assign ((e1, _), (e2, _)) -> (string_of_exp e1) ^ " = " ^ (string_of_exp e2) ^ ";"
+    | AssignOp ((e1, _), op, (e2, _)) -> (string_of_exp e1) ^ " " ^  binop_string op ^ "= " ^ (string_of_exp e2)
     | If (((b, _), c1), elif_list, c2) -> 
         let block_string c = "{\n " ^ (string_of_comm_list c) ^ "}" in
         let rec string_of_elif lst = (match lst with 

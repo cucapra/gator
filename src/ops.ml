@@ -183,13 +183,19 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) (s_g : sigma) : sigma * sig
             | (Num n, IntTyp) -> s, Assoc.update x (Num (n - 1)) s_g
             | (Float f, FloatTyp) -> s, Assoc.update x (Float (f -. 1.)) s_g
             | _ -> failwith "Typchecker error: cannot apply inc to a non-int/float type"))
-    | Decl (_, x, (e, _))
-    | Assign (x, (e, _)) -> let v, s_g' = eval_exp e fns s s_g in
+    | Decl (_, x, (e, _)) -> let v, s_g' = eval_exp e fns s s_g in
         (try let _ = Assoc.lookup x s_g in s, Assoc.update x v s_g' with
         _ -> Assoc.update x v s, s_g')
-    | AssignOp ((x, xt), op, e) -> let v, s_g' = eval_exp (TypedAst.Binop (op, ((TypedAst.Var x), xt), e)) fns s s_g in
+    | Assign ((e1, _), (e, _)) -> (match e1 with Var x -> 
+            let v, s_g' = eval_exp e fns s s_g in
+            (try let _ = Assoc.lookup x s_g in s, Assoc.update x v s_g' with
+            _ -> Assoc.update x v s, s_g')
+        | _ -> failwith "must assign to a constant variable in ops")
+    | AssignOp ((e1, xt), op, e) -> (match e1 with Var x -> 
+        let v, s_g' = eval_exp (TypedAst.Binop (op, ((TypedAst.Var x), xt), e)) fns s s_g in
         (try let _ = Assoc.lookup x s_g in s, Assoc.update x v s_g' with
         _ -> Assoc.update x v s, s_g')
+        | _ -> failwith "must assign to a constant variable in ops")
     | If (((b, _), c1), el, c2) ->
         let check_if b s_g = (match (eval_exp b fns s s_g) with
         | Bool b', s_g' -> b', s_g'
