@@ -17,9 +17,6 @@ void main() {
     mat2x2 r6 = [[1.,2.],[3.,4.]];
     print r6;
 
-    vec0 r7 = [];
+    ivec0 r7 = [];
     print r7;
-
-    mat2x0 r8 = [[],[]];
-    print r8;
 }

@@ -8,6 +8,8 @@ type etyp =
     | IntTyp
     | FloatTyp
     | VecTyp of int
+    | IVecTyp of int
+    | BVecTyp of int
     | MatTyp of int * int
     | TransTyp of etyp * etyp
     | SamplerTyp of int

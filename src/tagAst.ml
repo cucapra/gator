@@ -16,6 +16,8 @@ type typ =
     | FloatTyp
     | TopVecTyp of dexp
     | UntaggedVecTyp of int
+    | IVecTyp of int
+    | BVecTyp of int
     | BotVecTyp of int
     | VarTyp of id (* i.e. model *)
     | TransTyp of typ * typ

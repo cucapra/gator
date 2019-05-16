@@ -8,6 +8,8 @@ exception ParseException of string
 
 (* let matr = Str.regexp "mat\\([0-9]+\\)x\\([0-9]+\\)" *)
 let vec = Str.regexp "vec\\([0-9]+\\)"
+let ivec = Str.regexp "ivec\\([0-9]+\\)"
+let bvec = Str.regexp "bvec\\([0-9]+\\)"
 let mat = Str.regexp "mat\\([0-9]+\\)"
 
 %}
@@ -359,8 +361,17 @@ typ:
         let len = String.length x in 
         let dim = int_of_string (String.sub x 3 (len-3)) in
         UntaggedVecTyp dim
-        ) else
-        if (Str.string_match mat x 0) then (
+        ) else if (Str.string_match ivec x 0) then (
+        let len = String.length x in 
+        let dim = int_of_string (String.sub x 4 (len-4)) in
+        IVecTyp dim
+        )
+        else if (Str.string_match bvec x 0) then (
+        let len = String.length x in 
+        let dim = int_of_string (String.sub x 4 (len-4)) in
+        BVecTyp dim
+        )
+        else if (Str.string_match mat x 0) then (
         let len = String.length x in 
         let dim = int_of_string (String.sub x 3 (len-3)) in
         TransTyp (UntaggedVecTyp dim, UntaggedVecTyp dim)

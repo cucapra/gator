@@ -154,6 +154,8 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     | TypedAst.IntTyp -> IntTyp
     | TypedAst.FloatTyp -> FloatTyp
     | TypedAst.VecTyp n -> BotVecTyp n
+    | TypedAst.IVecTyp n -> IVecTyp n
+    | TypedAst.BVecTyp n -> BVecTyp n
     | TypedAst.MatTyp (n1, n2) -> TransTyp(BotVecTyp n1, BotVecTyp n2)
     | TypedAst.TransTyp (s1, s2) -> TransTyp(etyp_to_typ s1, etyp_to_typ s2)
     | TypedAst.SamplerTyp n -> SamplerTyp n
@@ -187,6 +189,8 @@ and tag_erase (t : typ) (d : delta) (pm: parameterization) : TypedAst.etyp =
     | BoolTyp -> TypedAst.BoolTyp
     | IntTyp -> TypedAst.IntTyp
     | FloatTyp -> TypedAst.FloatTyp
+    | IVecTyp n -> TypedAst.IVecTyp n
+    | BVecTyp n -> TypedAst.BVecTyp n
     | TopVecTyp _
     | UntaggedVecTyp _
     | BotVecTyp _
@@ -255,6 +259,9 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameteriza
     | VarTyp _, TopVecTyp (DimVar _) -> true
     | ParTyp (VarTyp _, _), TopVecTyp (DimVar _) -> true
     | TopVecTyp _, TopVecTyp (DimVar _) -> true
+    
+    | IVecTyp n1, IVecTyp n2 -> n1 = n2
+    | BVecTyp n1, BVecTyp n2 -> n1 = n2
 
     | BotVecTyp n1, BotVecTyp n2 -> n1 = n2
     | UntaggedVecTyp n1, UntaggedVecTyp n2 -> n1 = n2
@@ -480,10 +487,10 @@ let check_typ_valid (ogt: typ) (d: delta) (pm: parameterization) (m: mu) : unit 
         | VarTyp s -> if Assoc.mem s d then () else raise (TypeException ("Unknown tag " ^ s))
         | ParTyp (t, tl) -> check_typ_valid_rec t; 
             let not_vec t = raise (TypeException ("Type " ^ (string_of_typ t) ^ " given to parameterization is not a vector")) in
-            let bad_untagged t = raise (TypeException ("Type " ^ (string_of_typ t) ^ " given to parameterization is an untagged vector")) in
+            (* let bad_untagged t = raise (TypeException ("Type " ^ (string_of_typ t) ^ " given to parameterization is an untagged vector")) in *)
             List.fold_left (fun acc t' -> 
                 if is_bounded_by t' GenVecTyp d pm m then () else not_vec t'; 
-                match t' with UntaggedVecTyp _ -> bad_untagged t' | _ -> ();
+                (* match t' with UntaggedVecTyp _ -> bad_untagged t' | _ -> (); *)
                 check_typ_valid_rec t') () tl;
         | AbsTyp s -> if Assoc.mem s pm then () else raise (TypeException ("Unknown abstract type `" ^ s))
         | TransTyp (t1, t2) -> check_typ_valid_rec t1; check_typ_valid_rec t2;
@@ -521,6 +528,8 @@ let rec check_typ_exp (t: typ) (d: delta) (pm: parameterization) (m: mu) : unit 
     | TopVecTyp dx -> (if (dim_top dx > 0) then () (* Note that dim_top actually checks the correctness of the toptyp calculation in this case *)
         else raise (TypeException "Cannot declare a type with dimension less than 0"))
     | UntaggedVecTyp n
+    | IVecTyp n
+    | BVecTyp n
     | BotVecTyp n -> (if (n > 0) then ()
         else raise (TypeException "Cannot declare a type with dimension less than 0"))
     | VarTyp s -> delta_lookup s [] d pm m |> ignore; ()
@@ -898,6 +907,14 @@ let rec check_exp (e : exp) (d : delta) (m: mu) (g : gamma) (pm : parameterizati
 and check_arr (d : delta) (m: mu) (g : gamma) (p : phi) (a : exp list) (pm : parameterization) (ps: psi)
  : (TypedAst.exp * typ) =
     debug_print ">> check_arr";
+    let is_ivec (v: TypedAst.texp list) : bool =
+        List.fold_left (fun acc (_, t) -> match t with
+            | TypedAst.IntTyp -> acc | _ -> false) true v
+    in
+    let is_bvec (v: TypedAst.texp list) : bool =
+        List.fold_left (fun acc (_, t) -> match t with
+            | TypedAst.BoolTyp | _ -> false) true v
+    in
     let is_vec (v: TypedAst.texp list) : bool =
         List.fold_left (fun acc (_, t) -> match t with
             | TypedAst.IntTyp | TypedAst.FloatTyp -> acc | _ -> false) true v
@@ -906,11 +923,14 @@ and check_arr (d : delta) (m: mu) (g : gamma) (p : phi) (a : exp list) (pm : par
         match List.hd v with
         | (_, TypedAst.VecTyp size) ->
         List.fold_left (fun acc (_, t) -> match t with
-            | TypedAst.VecTyp n -> if (n == size) then acc else None | _ -> None) (Some size) v
+            | TypedAst.VecTyp n
+            | TypedAst.IVecTyp n -> if (n == size) then acc else None | _ -> None) (Some size) v
         | _ -> None
     in
     let checked_a = List.map (fun e -> (exp_to_texp (check_exp e d m g pm p ps) d pm )) a in
     let length_a = List.length a in
+    if is_ivec checked_a then (TypedAst.Arr checked_a, IVecTyp length_a) else 
+    if is_bvec checked_a then (TypedAst.Arr checked_a, BVecTyp length_a) else 
     if is_vec checked_a then (TypedAst.Arr checked_a, BotVecTyp length_a) else 
     (match is_mat checked_a with
     | Some n -> (TypedAst.Arr checked_a, trans_bot n length_a)
@@ -1015,18 +1035,19 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
         else 
         (check_typ_valid t d pm m; 
         let result = check_exp e d m g pm p ps in
-        let t' = (match t with | AutoTyp -> 
+        let (g', t') = (match t with | AutoTyp -> 
             (match (snd result) with
                 | BotVecTyp _ -> raise (TypeException "Cannot infer the type of a vector literal")
                 | TransTyp (TopVecTyp _, BotVecTyp _) -> raise (TypeException "Cannot infer the type of a matrix literal")
-                | t' -> t')
+                | AutoTyp -> raise (TypeException "Attempting to infer the type of an expression with type 'auto' somehow")
+                | t' -> Assoc.update s t' g, t')
             | TopVecTyp _ -> raise (TypeException "Cannot declare a variable of the top vec type")
             | TransTyp (TopVecTyp _, _)
             | TransTyp (_, TopVecTyp _) -> raise (TypeException "Cannot declare a transformation matrix with the top vec type")
-            | _ -> t) in
+            | _ -> Assoc.update s t g, t) in
             check_assign t' s (snd result) d g p pm m;
             (TypedAst.Decl (tag_erase t' d pm, s, (exp_to_texp result d pm)), 
-            Assoc.update s t g, update_psi_matrix s t m ps))
+            g', update_psi_matrix s t m ps))
     | Assign (e1, e2) ->
         (match e1 with
         | Var s
