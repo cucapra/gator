@@ -125,6 +125,8 @@ and vec_dim_constrain (t: typ) (d: delta) (pm: parameterization) : dexp option =
     debug_print (">> vec_dim " ^ string_of_typ t);
     match t with
     | TopVecTyp d -> Some d
+    | IVecTyp n
+    | BVecTyp n
     | UntaggedVecTyp n
     | BotVecTyp n -> Some (DimNum n)
     | ParTyp (VarTyp s, pml) -> vec_dim_constrain (delta_lookup_unsafe s pml pm d) d pm 
@@ -260,6 +262,7 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameteriza
     | ParTyp (VarTyp _, _), TopVecTyp (DimVar _) -> true
     | TopVecTyp _, TopVecTyp (DimVar _) -> true
     
+    | IVecTyp n1, TopVecTyp d2 -> n1 = dim_top d2
     | IVecTyp n1, IVecTyp n2 -> n1 = n2
     | BVecTyp n1, BVecTyp n2 -> n1 = n2
 
@@ -316,6 +319,8 @@ let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta
     | (TypConstraint (VarTyp _), GenVecTyp)
     | (TypConstraint (UntaggedVecTyp _), GenVecTyp)
     | (TypConstraint (TopVecTyp _), GenVecTyp)
+    | (TypConstraint (IVecTyp _), GenVecTyp)
+    | (TypConstraint (BVecTyp _), GenVecTyp)
     | (GenSpaceTyp, GenVecTyp)
     | (TypConstraint (ParTyp (VarTyp _, _)), GenVecTyp) -> true
     | (_, GenVecTyp) -> false
