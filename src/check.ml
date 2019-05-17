@@ -929,9 +929,8 @@ and check_arr (d : delta) (m: mu) (g : gamma) (p : phi) (a : exp list) (pm : par
         List.fold_left (fun acc (_, t) -> match t with
             | TypedAst.BoolTyp | _ -> false) true v
     in
-    let is_vec (v: TypedAst.texp list) : bool =
-        (print_endline (string_of_lst TypedAstPrinter.string_of_typ (List.map snd v)));
-        List.fold_left (fun acc e -> is_subtype t  | _ -> false) true v
+    let is_vec (v: (_ * typ) list) : bool =
+        List.fold_left (fun acc (_, t) -> is_subtype t FloatTyp d pm && acc) true v
     in
     let is_mat (v: TypedAst.texp list) : int option =
         match List.hd v with
@@ -941,11 +940,12 @@ and check_arr (d : delta) (m: mu) (g : gamma) (p : phi) (a : exp list) (pm : par
             | TypedAst.IVecTyp n -> if (n == size) then acc else None | _ -> None) (Some size) v
         | _ -> None
     in
-    let checked_a = List.map (fun e -> (exp_to_texp (check_exp e d m g pm p ps) d pm )) a in
+    let checked_exps = List.map (fun e -> check_exp e d m g pm p ps) a in
+    let checked_a = List.map (fun e -> exp_to_texp e d pm) checked_exps in
     let length_a = List.length a in
     if is_ivec checked_a then (TypedAst.Arr checked_a, IVecTyp length_a) else 
     if is_bvec checked_a then (TypedAst.Arr checked_a, BVecTyp length_a) else 
-    if is_vec checked_a then (TypedAst.Arr checked_a, BotVecTyp length_a) else 
+    if is_vec checked_exps then (TypedAst.Arr checked_a, BotVecTyp length_a) else 
     (match is_mat checked_a with
     | Some n -> (TypedAst.Arr checked_a, trans_bot n length_a)
     | None ->  raise (TypeException ("Invalid array definition for " ^ (string_of_exp (Arr a)) ^ ", must be a matrix or vector")))
