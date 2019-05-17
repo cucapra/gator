@@ -930,8 +930,8 @@ and check_arr (d : delta) (m: mu) (g : gamma) (p : phi) (a : exp list) (pm : par
             | TypedAst.BoolTyp | _ -> false) true v
     in
     let is_vec (v: TypedAst.texp list) : bool =
-        List.fold_left (fun acc (_, t) -> match t with
-            | TypedAst.IntTyp | TypedAst.FloatTyp -> acc | _ -> false) true v
+        (print_endline (string_of_lst TypedAstPrinter.string_of_typ (List.map snd v)));
+        List.fold_left (fun acc e -> is_subtype t  | _ -> false) true v
     in
     let is_mat (v: TypedAst.texp list) : int option =
         match List.hd v with
