@@ -198,7 +198,7 @@ and tag_erase (t : typ) (d : delta) (pm: parameterization) : TypedAst.etyp =
     | BotVecTyp _
     | VarTyp _
     | ParTyp (VarTyp _, _) -> (match vec_dim_constrain t d pm with
-        | Some (DimNum i) -> TypedAst.VecTyp i 
+        | Some (DimNum i) -> (if i = 1 then TypedAst.FloatTyp else TypedAst.VecTyp i )
         | Some (DimVar s) -> TypedAst.AbsTyp (s, TypedAst.GenVecTyp)
         | _ -> raise (TypeException ("No valid vector interpretation of " ^ string_of_typ t)))
     | ParTyp (t', _) -> tag_erase t' d pm
@@ -507,7 +507,8 @@ let check_typ_valid (ogt: typ) (d: delta) (pm: parameterization) (m: mu) : unit 
                 (* match t' with UntaggedVecTyp _ -> bad_untagged t' | _ -> (); *)
                 check_typ_valid_rec t') () tl;
         | AbsTyp s -> if Assoc.mem s pm then () else raise (TypeException ("Unknown abstract type `" ^ s))
-        | TransTyp (t1, t2) -> check_typ_valid_rec t1; check_typ_valid_rec t2;
+        | TransTyp (t1, t2) -> 
+            check_typ_valid_rec t1; check_typ_valid_rec t2;
             if is_bounded_by t1 GenVecTyp d pm m && is_bounded_by t2 GenVecTyp d pm m then ()
             else raise (TypeException ("Invalid matrix type " ^ (string_of_typ ogt) ^ " (must be a map from vectors to vectors)"))
         | _ -> ()

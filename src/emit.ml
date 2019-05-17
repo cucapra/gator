@@ -91,7 +91,7 @@ and comp_exp (e : exp) : string =
         | [] -> "vec0()"
         | (_, t)::_ -> if List.length a = 1 then comp_exp (fst (List.hd a)) else
             (match t with
-            | FloatTyp | IntTyp -> "vec" ^ (string_of_int (List.length a)) ^ "(" ^ (String.concat ", " (List.map (fun x -> comp_exp (fst x)) a)) ^ ")"
+            | FloatTyp | IntTyp | AbsTyp _ -> "vec" ^ (string_of_int (List.length a)) ^ "(" ^ (String.concat ", " (List.map (fun x -> comp_exp (fst x)) a)) ^ ")"
             | VecTyp n -> let as_vec_list = (fun v -> (match v with | (Arr a', _) -> (List.map fst a') | _ -> failwith "Typechecker error, a matrix must be a list of vectors")) in
                 string_of_glsl_mat (List.map as_vec_list a)
             | _ -> failwith "Typechecker error, every array must be a list of ints, floats, or vectors"))

@@ -90,10 +90,10 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 (* Precedences *)
 
 %left ID
-%left TRANS
 %left AS IN
 %left AND OR
 %left NOT EQ LEQ GEQ LBRACK 
+%left TRANS
 %left LWICK RWICK 
 %left LPAREN
 
@@ -340,10 +340,6 @@ typ:
       { FloatTyp }
   | INTTYP                          
       { IntTyp }
-  | t = typ; LBRACK; n = NUM; RBRACK; 
-      { ArrTyp(t, ConstInt n) }
-  | t = typ; LBRACK; s = ID; RBRACK; 
-      { ArrTyp(t, ConstVar s) }
   | m = MATTYP                      
       { let len = String.length m in
         let dim = String.sub m 3 (len-3) in
@@ -352,6 +348,10 @@ typ:
         (UntaggedVecTyp (int_of_string(List.nth dim_lst 0))))}
   | t1 = typ; TRANS; t2 = typ 
       { TransTyp(t1,t2) }
+  | t = typ; LBRACK; n = NUM; RBRACK; 
+      { ArrTyp(t, ConstInt n) }
+  | t = typ; LBRACK; s = ID; RBRACK; 
+      { ArrTyp(t, ConstVar s) }
   | t = typ; LWICK; tl = typlst; RWICK; 
       { ParTyp(t,tl) }
   | VEC; LWICK; d = dexp; RWICK;
