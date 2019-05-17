@@ -265,6 +265,14 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameteriza
     | IVecTyp n1, TopVecTyp d2 -> n1 = dim_top d2
     | IVecTyp n1, IVecTyp n2 -> n1 = n2
     | BVecTyp n1, BVecTyp n2 -> n1 = n2
+    (* Hack to treat vectors of dimension 1 as floats *)
+    | TopVecTyp d1, FloatTyp -> dim_top d1 = 1
+    | VarTyp _, FloatTyp
+    | ParTyp (VarTyp _, _), FloatTyp -> (vec_dim to_check d pm) = 1
+    | BotVecTyp n, FloatTyp 
+    | UntaggedVecTyp n, FloatTyp
+    | IVecTyp n, IntTyp
+    | BVecTyp n, BoolTyp -> n = 1
 
     | BotVecTyp n1, BotVecTyp n2 -> n1 = n2
     | UntaggedVecTyp n1, UntaggedVecTyp n2 -> n1 = n2
@@ -283,7 +291,7 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameteriza
         | VarTyp s -> is_subtype (delta_lookup_unsafe s tl1 pm d) target d pm
         | _ -> false)
     | ParTyp (VarTyp s, tl), VarTyp _ -> is_subtype (delta_lookup_unsafe s tl pm d) target d pm
-    | ParTyp (VarTyp s, tl), TopVecTyp dx -> (vec_dim to_check d pm) = dim_top dx
+    | ParTyp (VarTyp _, _), TopVecTyp dx -> (vec_dim to_check d pm) = dim_top dx
     | VarTyp s, ParTyp _ -> is_subtype (delta_lookup_unsafe s [] pm d) target d pm
     | VarTyp s1, VarTyp s2 -> s1 = s2 || is_subtype (delta_lookup_unsafe s1 [] pm d) target d pm
     | VarTyp _, TopVecTyp dx -> (vec_dim to_check d pm) = dim_top dx
@@ -292,6 +300,7 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameteriza
     | IntTyp, IntTyp
     | FloatTyp, FloatTyp
     | SamplerCubeTyp, SamplerCubeTyp -> true
+
     | TransTyp (t1, t2), TransTyp (t3, t4) -> 
         (is_subtype t3 t1 d pm && is_subtype t2 t4 d pm)
     | AbsTyp s1, AbsTyp s2 -> 
