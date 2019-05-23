@@ -10,14 +10,14 @@ let set_program_file (arg : string) : unit =
 
 let run_interp : bool ref = ref false
 
-let emit_js : bool ref = ref false
+let emit_ts : bool ref = ref false
 
 let usage_msg = "Linguine Help Center\n"
 let spec_list : (Arg.key * Arg.spec * Arg.doc) list =
     [
         ("-i", Arg.Set run_interp,
         "Runs the given file with the linguine interpreter (replaces standard output)");
-        ("-j", Arg.Set emit_js,
+        ("-j", Arg.Set emit_ts,
         "Emits javascript (replaces standard output)")
     ]
 
@@ -46,5 +46,5 @@ let _ =
         close_in ch;
     let (typedProg, params) = Check.check_prog prog in
     if !run_interp then Ops.eval_prog typedProg params
-    else if !emit_js then print_string (EmitJS.compile_program typedProg params)
+    else if !emit_ts then print_string (EmitTS.compile_program typedProg params)
     else print_string (EmitGL.compile_program typedProg params)
