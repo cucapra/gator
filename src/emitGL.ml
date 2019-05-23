@@ -78,9 +78,9 @@ and padded_mult (left : texp) (right : texp) : string =
                 else (op_wrap le) ^ " * " ^ (comp_exp re))
         | _ -> (op_wrap le) ^ " * " ^ (comp_exp re))
         
-and padded_args (a : exp list) : string = 
+and padded_args (a : texp list) : string = 
     debug_print ">> padded_args";
-    (String.concat ", " (List.map (op_wrap) a))
+    (String.concat ", " (List.map (fun (e,_) -> op_wrap e) a))
 
 and comp_exp (e : exp) : string =
     debug_print ">> comp_exp";
@@ -99,7 +99,7 @@ and comp_exp (e : exp) : string =
         | CTimes -> "(" ^ ((comp_exp (fst l)) ^ " * " ^(comp_exp (fst r))) ^ ")"
         | _ -> "(" ^ (string_of_binop op (comp_exp (fst l)) (comp_exp (fst r))) ^ ")")
     | Unop (op, (x, _)) -> (string_of_unop op ("(" ^ (comp_exp x) ^ ")"))
-    | FnInv (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
+    | FnInv (id, tl, args) -> id ^ "(" ^ (padded_args args) ^ ")"
  
 and comp_comm (c : comm list) : string =
     debug_print ">> comp_comm";
@@ -124,11 +124,11 @@ and comp_comm (c : comm list) : string =
             ^ (match c2 with | Some c2 -> "{ " ^ (comp_comm c2) ^ " }" | None -> "")
             ^ (comp_comm t))
         | For (c1, (b, _), c2, cl) -> 
-            ("for (" ^ (comp_comm [c1]) ^ " " ^ (comp_exp b) ^ "; " ^ (comp_comm [c2] |> (String.split_on_char ';') |> List.hd) ^ ")"
+            ("for (" ^ (comp_comm [c1]) ^ (comp_exp b) ^ ";" ^ (comp_comm [c2] |> (String.split_on_char ';') |> List.hd) ^ ")"
             ^ "{ " ^ (comp_comm cl) ^ " }" ^ (comp_comm t))
         | Return Some (e, _) -> "return " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
         | Return None -> "return;" ^ (comp_comm t)
-        | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ");" ^ (comp_comm t)
+        | FnCall (id, tl, args) -> id ^ "(" ^ (padded_args args) ^ ");" ^ (comp_comm t)
 
 (* GenTyp - int, float, vec(2,3,4), mat(16 possibilites) *)
 let rec strings_of_constraint (c: constrain) : string list =
@@ -163,12 +163,12 @@ let rec generate_fn_generics (orig : string) (((id, (p, rt, pm)), cl) : fn) : st
 let comp_fn (f : fn) : string = 
     debug_print ">> comp_fn";
     let ((id, (p, rt, pm)), cl) = f in
-    match id with 
-    | "main" -> "void main() {" ^ (comp_comm cl) ^ "}"
-    | _ -> 
-        let param_string = String.concat ", " (List.map (fun (i, t) -> (string_of_glsl_typ t) ^ " " ^ i) p) in
-        let fn_str = ((string_of_glsl_typ rt) ^ " " ^ id ^ "(" ^ param_string ^ "){" ^ (comp_comm cl) ^ "}") in
-        generate_fn_generics fn_str f
+    let param_string = String.concat ", " (List.map (fun (i, t) -> (string_of_glsl_typ t) ^ " " ^ i) p) in
+    let fn_str = let type_id_string = match id with
+        | "main" -> "void main"
+        | _ -> (string_of_glsl_typ rt) ^ " " ^ id
+    in (type_id_string ^ "(" ^ param_string ^ "){" ^ (comp_comm cl) ^ "}") in
+    generate_fn_generics fn_str f
 
 
 let rec comp_fn_lst (f : fn list) : string =
