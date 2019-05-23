@@ -6,10 +6,6 @@
     return x;
 }
 
-sampler2D<`t> st<`t : vec>(sampler2D<`t> s) {
-    return s;
-}
-
 `t mt<`t : mat, `u : mat>(`t m1, `t m2, `u m3) {
     `t first = m1 + m2;
     `u second = 3. * m3;

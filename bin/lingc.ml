@@ -17,8 +17,8 @@ let spec_list : (Arg.key * Arg.spec * Arg.doc) list =
     [
         ("-i", Arg.Set run_interp,
         "Runs the given file with the linguine interpreter (replaces standard output)");
-        ("-j", Arg.Set emit_ts,
-        "Emits javascript (replaces standard output)")
+        ("-t", Arg.Set emit_ts,
+        "Emits Typescript (replaces standard output)")
     ]
 
 let _ =

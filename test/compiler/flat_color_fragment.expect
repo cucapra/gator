@@ -1,1 +1,1 @@
-precision mediump float;void main() {vec4 color = vec4(1., 0.4, 0.25, 1.);gl_FragColor = color;}
+precision mediump float;void main(){vec4 color = vec4(1., 0.4, 0.25, 1.);gl_FragColor = color;}
