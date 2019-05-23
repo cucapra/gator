@@ -50,9 +50,9 @@ let rec string_of_exp (e: exp) : string =
         (match op with
         | _ -> (string_of_binop op ls rs))
         (* id * args *)
-    | FnInv (id, args) -> id ^ "(" ^ (string_of_args args) ^")"
-and string_of_args (a: exp list) : string = 
-    (String.concat ", " (List.map string_of_exp a))
+    | FnInv (id, tl, args) -> id ^ (if tl = [] then "" else "<" ^ String.concat "," (List.map string_of_typ tl) ^ ">") ^ "(" ^ (string_of_args args) ^")"
+and string_of_args (a: texp list) : string = 
+    (String.concat ", " (List.map (fun (e, _) -> string_of_exp e) a))
 
 let string_of_param (i, e) : string = 
     (string_of_constraint e) ^ " " ^ i
@@ -88,7 +88,7 @@ let rec string_of_comm (c: comm) : string =
     | For (d, (b, _), u, cl) -> "for (" ^ string_of_comm d ^ string_of_exp b ^ "; " ^ string_of_comm u ^ ") {\n" ^ string_of_comm_list cl ^ "}"
     | Return Some (x, _) -> "return " ^ (string_of_exp x) ^ ";"
     | Return None -> "return;"
-    | FnCall (id, args) -> id ^ "(" ^ (string_of_args args) ^")"
+    | FnCall (id, tl, args) -> id ^ (if tl = [] then "" else "<" ^ String.concat "," (List.map string_of_typ tl) ^ ">") ^ "(" ^ (string_of_args args) ^")"
  
 and string_of_comm_list (cl : comm list) : string = 
    (String.concat "\n" (List.map string_of_comm cl))

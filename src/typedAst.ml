@@ -31,9 +31,9 @@ and exp =
     | Arr of texp list
     | Unop of unop * texp
     | Binop of binop * texp * texp
-    | FnInv of id * args
+    | FnInv of id * etyp list * args
 
-and args = exp list
+and args = texp list
 
 (* commands *)
 type comm =
@@ -47,7 +47,7 @@ type comm =
     | If of if_block * if_block list * (comm list) option  (* if - elif list - else *)
     | For of comm * texp * comm * comm list
     | Return of texp option
-    | FnCall of id * args
+    | FnCall of id * etyp list * args
 and if_block = texp * comm list
 
 type parameterization = constrain Assoc.context
