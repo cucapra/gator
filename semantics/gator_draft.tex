@@ -1,0 +1,306 @@
+
+\newcount\draft\draft=1 % set to 0 for submission or publication
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amsthm,amssymb,bbm,amsfonts,syntax}
+\usepackage[ligature, inference]{semantic}
+\usepackage[T1]{fontenc}
+\usepackage{mathpartir}
+\usepackage{nccmath}
+\usepackage{xxx}
+
+\title{Geometry Aware Types For Reference Frames (Gator)}
+\author{Dietrich Geisler}
+\date{}
+
+\newcommand{\mat}{\mathsf{mat}_{n_1{\times}n_2}}
+\newcommand{\vv}[1]{\mathsf{vec}_{#1}}
+\newcommand{\env}[1]{#1,\sigma}
+\newcommand{\defas}{\mathrel{::=}}
+\newenvironment{leftalign}%
+    {\fleqn[5pt]\csname align*\endcsname}%
+    {\csname endalign*\endcsname\endfleqn}
+\newcommand{\alt}{\:|\:}
+
+\mathlig{->}{\rightarrow}
+\mathlig{|-}{\vdash}
+\mathlig{=>}{\Rightarrow}
+
+\begin{document}
+\maketitle
+
+\mathligson
+
+\section{Syntax}
+
+Literals in our language can be scalar numbers, vectors, or matrices:
+%
+\begin{leftalign}
+s &\in \mathbb{R} \\
+v_n &\defas [s_1,s_2,\dots,s_n] \\
+m_{n_1\times n_2} &\defas [[s_{11},s_{12},\dots,s_{1n_2}],\dots,[s_{n_11},s_{n_12},\dots,s_{n_1n_2}]]
+\end{leftalign}
+%
+Expressions can be variables, literals, or unary/binary operations:
+%
+\begin{leftalign}
+x &\in \text{variables} \\
+c &\defas s \alt v_n \alt m_{n_1\times n_2} \\
+e &\defas c \alt
+    \tau\;x=e \alt
+    x=e \alt
+    -e \alt
+    e_1+e_2 \alt
+    e_1-e_2 \alt
+    e_1*e_2 \alt
+\end{leftalign}
+%
+The foundation of our type system is a \emph{geometric type}, which can only be applied to n-tuples.  A geometric type is intended for describing the context needed to represent that n-tuple geometrically and to ensure that geometric representations are not inadvertently mixed.  
+
+A geometric type is built upon three components: a reference frame, a geometric object, and a coordinate system.  The reference frame of a geometric type gives the origin and orientation by which an inhabiting n-tuple can be interpreted.  The goemetric object describes what the n-tuple is, such as a point or direction.  Finally, the coordinate system describes how operations on the inhabiting n-tuple, such as rotation and translation, behave.  Each of these components is itself a type, but none cannot be inhabited by any expressions in our language.
+
+Our complete type system can be summarized as containing these geometric types, their component types, function types, and some small built-in types:
+%
+\begin{leftalign}
+n &\in \mathbb{N} &
+\nu &\defas \top_n \alt
+\bot_n \alt T \\
+T &\in \text{tags} &
+\tau &\defas \mathsf{unit} \alt
+\mathsf{scalar} \alt
+\nu \alt
+\nu_1->\nu_2
+\end{leftalign}
+%
+Function types $\nu_1 -> \nu_2$ are not ordinary functions; they are matrices used to map from one vector space to another using matrix--vector multiplication.  As a convenience (as well as to match expected GLSL behavior), the top type $\top_n$ can be written in code as $\mathsf{vec}_n$ and the $\top_{n_1}->\top_{n_2}$ type can be written in code as $\mathsf{mat}n_1\mathsf{x}n_2$.  The $\bot_n$ type is purely meant for use by the typechecker and so is not part of the surface syntax of the language.  
+
+\section{Subtype Ordering}
+We define a judgment $\tau_1 \leq \tau_2$ for subtyping on ordinary types.
+Subtyping is reflexive and transitive, as usual:
+%
+\begin{mathpar}
+\inferrule
+    { }
+    {\tau\leq\tau}
+
+\inferrule
+    {\tau_1 \leq \tau_2 \and \tau_2 \leq \tau_3}
+    {\tau_1 \leq \tau_3}
+\end{mathpar}
+%
+The null type \textsf{unit} acts as a top type for all of $\tau$:
+%
+\begin{mathpar}
+\inferrule
+    { }
+    {\tau\leq\mathsf{unit}}
+\end{mathpar}
+%
+We also introduce a partial order on tags $\nu$, of the form $\Delta |- \nu_1 \leq_\Delta \nu_2$.  This ordering refers to a context $\Delta$, which is a map from tags $T$ to matrix types $\nu$:
+%
+\begin{mathpar}
+\inferrule
+    {\Delta|-\Delta(\nu_1)=\nu_2}
+    {\Delta|-\nu_1\leq_\Delta \nu_2}
+    \quad \Delta(T)=\nu
+\end{mathpar}
+%
+This relation has the usual reflexivity and transitivity properties:
+%
+\begin{mathpar}
+\inferrule
+    { }
+    {\Delta|-\nu\leq_\Delta \nu}
+
+\inferrule
+    {\Delta|-\nu_1 \leq_\Delta \nu_2 \and \Delta|-\nu_2 \leq_\Delta \nu_3}
+    {\Delta|-\nu_1 \leq_\Delta \nu_3}
+\end{mathpar}
+%
+Members of $\nu$, namely vectors and tagged vectors, have a top type representing general vectors of dimension $n$ as $\top_n$.  Additionally, we also introduce a bottom type $\bot_n$ for each vector dimension.  We naturally have the simple rule
+%
+\begin{mathpar}
+\inferrule
+    { }
+    {\Delta|-\bot_n\leq_\Delta\top_n}
+\end{mathpar}
+%
+The map $\Delta$ should not put anything above the top types $\top_n$ and the bottom types $\bot_n$.  In particular, we require the rules
+%
+$$\Delta(\nu)\neq\bot_n
+\qquad\textnormal{or}\qquad
+\Delta(\top_n)\neq\nu$$
+%
+Additionally, we need a rule to subsume the bottom type into values correctly since $\Delta$ only 'points' towards the top type.  In particular, we require the rule:
+\begin{mathpar}
+\inferrule
+    {\Delta|-\nu\leq_\Delta\top_n}
+    {\Delta|-\bot_n\leq_\Delta\nu}
+\end{mathpar}
+%
+This rule, along with the constructions previously described, gives the standard properties of a top and bottom.  In particular, for any $\nu,\Delta$, there exists a $\top_n$ and $\bot_n$ such that
+%
+\begin{mathpar}
+\inferrule
+    {}
+    {\Delta|-\bot_n\leq_\Delta\nu\quad\textnormal{and}\quad\Delta|-\nu\leq_\Delta\top_n}
+\end{mathpar}
+%
+The function-like transformation matrix types, $\nu_1 -> \nu_2$, have the same standard subtyping relationship as ordinary function types:
+%
+\begin{mathpar}
+\inferrule
+	{\Delta|-\nu_1'\leq_\Delta \nu_1\qquad\Delta|-\nu_2\leq_\Delta \nu_2'}
+	{\Delta|-\nu_1->\nu_2\leq\nu_1'->\nu_2'}
+\end{mathpar}
+As with vectors, we can define matrix functions have a $\top_{n_1\rightarrow n_2}$ and $\bot_{n_1\rightarrow n_2}$ for any pair of dimensions $n_1,n_2$.  These constructions are just maps $\nu_1->\nu_2$, namely:
+%
+\begin{mathpar}
+\inferrule
+	{}
+	{\top_{n_1\rightarrow n_2}=\bot_{n_1}->\top_{n_2}}
+
+\inferrule
+	{}
+	{\bot_{n_1\rightarrow n_2}=\top_{n_1}->\bot_{n_2}}
+\end{mathpar}
+%
+As with vectors, these rules produce the usual property of lattices, namely that every map is 'between' a given pair top and bottom values.  In particular, for any $\nu_1,\nu_2,\Delta$, there exists a $\top_{n_1\rightarrow n_2}$ and $\bot_{n_1\rightarrow n_2}$ such that:
+%
+$$\Delta|-\bot_{n_1\rightarrow n_2}\leq\nu_1->\nu_2
+\quad\textnormal{and}\quad
+\Delta|-\nu_1->\nu_2\leq\top_{n_1\rightarrow n_2}$$
+%
+Additionally, for any $\nu_1,\nu_2,\Delta$, there is no $\top_{n_1\rightarrow n_2}$ or $\bot_{n_1\rightarrow n_2}$ such that
+%
+$$\Delta|-\top_{n_1\rightarrow n_2}\leq\nu_1->\nu_2
+\quad\textnormal{or}\quad
+\Delta|-\nu_1->\nu_2\leq\bot_{n_1\rightarrow n_2}$$
+%
+\section{Static Semantics}
+
+This typing judgement is a map from an expression to the type of that expression under some variable context $\Gamma$, from variable names to types, and some tag context $\Delta$ defined above.
+
+\subsection{Subsumption}
+Any type in a given context can be cast ``up'' at any time.
+%
+\begin{mathpar}
+\inferrule
+	{\tau_1\leq\tau_2\qquad\Gamma,\Delta|-e:\tau_1,\Gamma}
+	{\Gamma,\Delta|-e:\tau_2,\Gamma}
+
+\inferrule
+	{\Delta|-\nu_1\leq_\Delta \nu_2\qquad\Gamma,\Delta|-e:\nu_1,\Gamma}
+	{\Gamma,\Delta|-e:\nu_2,\Gamma}
+\end{mathpar}
+%
+\subsection{Constants and Variable Declarations}
+Declaring constants produce the types one would expect:
+%
+\begin{mathpar}
+\inferrule
+	{ }
+	{\Gamma,\Delta|-():\mathsf{unit},\Gamma}
+
+\inferrule
+	{ }
+	{\Gamma,\Delta|-s:\mathsf{scalar},\Gamma}
+\end{mathpar}
+
+Vector and matrix literals take on their respective bottom types of the appropriate dimension (note the swap in dimensions for the bottom type as a result of treating vectors as column vectors).
+%
+\begin{mathpar}
+\inferrule
+	{ }
+	{\Gamma,\Delta|-v_n:\bot_n,\Gamma}
+
+\inferrule
+	{ }
+	{\Gamma,\Delta|-m_{n_1\times n_2}:\bot_{n_2\times n_1},\Gamma}
+\end{mathpar}
+
+Variables can be declared and assigned.  Assignment is required at declaration time.  Note that the entire variable must be reassigned in the case of vectors and matrices:
+%
+\begin{mathpar}
+\inferrule
+	{\Gamma,\Delta|-e:\tau,\Gamma'}
+	{\Gamma,\Delta|-\tau\;x:=e:\mathsf{unit}, \Gamma', x \mapsto \tau}
+
+\inferrule
+	{\Gamma,\Delta|-\Gamma(x):\tau\qquad\Gamma,\Delta|-e:\tau,\Gamma'}
+	{\Gamma,\Delta|-x:=e:\mathsf{unit}, \Gamma'}
+\end{mathpar}
+
+\subsection{Binary Operations}
+
+All operators on scalars work as one might expect.
+
+Types are closed under addition and scalar multiplication
+%
+\begin{mathpar}
+\inferrule
+	{\Gamma,\Delta|-e_1:\tau,\Gamma'\qquad\Gamma',\Delta|-e_2:\tau,\Gamma''}
+	{\Gamma,\Delta|-e_1+e_2:\tau,\Gamma''}
+        \quad\tau\neq\mathsf{unit}
+
+\inferrule
+	{\Gamma,\Delta|-e_1:\tau,\Gamma'\qquad\Gamma',\Delta|-e_2:\mathsf{scalar},\Gamma''}
+	{\Gamma,\Delta|-e_1*e_2:\tau,\Gamma'}
+\end{mathpar}
+
+Component multiplication can be defined as a mathematical operation, but makes little formal sense.  Such operations are allowed, but don't interact with spaces and tags and result in a complete lack of information about a resulting matrix.
+%
+\begin{mathpar}
+\inferrule
+	{\Gamma,\Delta|-e_1:\top_n,\Gamma'\qquad\Gamma',\Delta|-e_2:\top_n,\Gamma''}
+	{\Gamma,\Delta|-e_1\;\mathsf{.*}\;e_2:\top_n,\Gamma''}
+
+\inferrule
+	{\Gamma,\Delta|-e_1:\top_{n_1\rightarrow n_2},\Gamma'\qquad\Gamma',\Delta|-e_2:\top_{n_1\rightarrow n_2},\Gamma''}
+	{\Gamma,\Delta|-e_1\;\mathsf{.*}\;e_2:\top_{n_1\rightarrow n_2},\Gamma''}
+\end{mathpar}
+
+Matrix multiplication is both a way of transforming from one tag to another and for composing two matrix functions together.  Note that these operations are \textit{not} commutative and vectors are treated as column vectors with regards to matching dimensions.
+%
+\begin{mathpar}
+\inferrule
+	{\Gamma,\Delta|-e_1:\nu_1->\nu_2,\Gamma'\qquad\Gamma',\Delta|-e_2:\nu_1,\Gamma''}
+	{\Gamma,\Delta|-e_1*e_2:\nu_2,\Gamma''}
+
+\inferrule
+	{\Gamma,\Delta|-e_1:\nu_2->\nu_3,\Gamma'\qquad\Gamma',\Delta|-e_2:\nu_1->\nu_2,\Gamma''}
+	{\Gamma,\Delta|-\;e_1*e_2:\nu_1->\nu_3,\Gamma''}
+\end{mathpar}
+
+\section{Dynamic Semantics}
+
+The operational semantics of this language map, in a single step, from a command to a constant and a state $\sigma$.  $\sigma$ itself is, as usual, a map from variable names to constants.
+
+\subsection{Substitution}
+Substitutions work as expected on the environment $\sigma$.
+%
+\begin{mathpar}
+\inferrule
+	{ }
+	{\env{\tau\;x:=c}->(),\sigma[c/x]}
+
+\inferrule
+	{\env{e}->\env{e'}}
+	{\env{\tau\;x:=e}->\env{\tau\;x:=e'}}
+\end{mathpar}
+
+\subsection{Mathematical Operations}
+As usual, we can reduce on either side of the mathematical operations $\odot\in\{+,*,\mathsf{.*}\}$
+%
+\begin{mathpar}
+\inferrule
+	{\env{e_1}->\env{e_1'}}
+	{\env{e_1\odot e_2}->\env{e_1'\odot e_2}}
+
+\inferrule
+	{\env{e_2}->\env{e_2'}}
+	{\env{c\odot e_2}->\env{c\odot e_2'}}
+\end{mathpar}
+
+Addition and scalar multiplication have standard mathematical meaning.  Similarly, vector and matrix multiplication have standard mathematical meaning.  Component-wise multiplication is identical to matrix addition, except using multiplication of numbers in place of addition of numbers.  For readability, formal semantics of each of these operations will be ommitted.
+\end{document}
