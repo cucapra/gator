@@ -4,6 +4,7 @@ open TypedAstPrinter
 open Assoc
 open Lin_ops
 open Util
+open EmitUtil
 
 (* type epsilon = (id, etyp) Assoc.context *)
 type delta = (etyp list) Assoc.context
@@ -78,9 +79,9 @@ and padded_mult (left : texp) (right : texp) : string =
                 else (op_wrap le) ^ " * " ^ (comp_exp re))
         | _ -> (op_wrap le) ^ " * " ^ (comp_exp re))
         
-and padded_args (a : exp list) : string = 
+and padded_args (a : texp list) : string = 
     debug_print ">> padded_args";
-    (String.concat ", " (List.map (op_wrap) a))
+    (String.concat ", " (List.map (fun (e,_) -> op_wrap e) a))
 
 and comp_exp (e : exp) : string =
     debug_print ">> comp_exp";
@@ -99,7 +100,7 @@ and comp_exp (e : exp) : string =
         | CTimes -> "(" ^ ((comp_exp (fst l)) ^ " * " ^(comp_exp (fst r))) ^ ")"
         | _ -> "(" ^ (string_of_binop op (comp_exp (fst l)) (comp_exp (fst r))) ^ ")")
     | Unop (op, (x, _)) -> (string_of_unop op ("(" ^ (comp_exp x) ^ ")"))
-    | FnInv (id, args) -> id ^ "(" ^ (padded_args args) ^ ")"
+    | FnInv (id, tl, args) -> id ^ "(" ^ (padded_args args) ^ ")"
  
 and comp_comm (c : comm list) : string =
     debug_print ">> comp_comm";
@@ -124,59 +125,27 @@ and comp_comm (c : comm list) : string =
             ^ (match c2 with | Some c2 -> "{ " ^ (comp_comm c2) ^ " }" | None -> "")
             ^ (comp_comm t))
         | For (c1, (b, _), c2, cl) -> 
-            ("for (" ^ (comp_comm [c1]) ^ " " ^ (comp_exp b) ^ "; " ^ (comp_comm [c2] |> (String.split_on_char ';') |> List.hd) ^ ")"
+            ("for (" ^ (comp_comm [c1]) ^ (comp_exp b) ^ ";" ^ (comp_comm [c2] |> (String.split_on_char ';') |> List.hd) ^ ")"
             ^ "{ " ^ (comp_comm cl) ^ " }" ^ (comp_comm t))
         | Return Some (e, _) -> "return " ^ (comp_exp e) ^ ";" ^ (comp_comm t)
         | Return None -> "return;" ^ (comp_comm t)
-        | FnCall (id, args) -> id ^ "(" ^ (padded_args args) ^ ");" ^ (comp_comm t)
-
-(* GenTyp - int, float, vec(2,3,4), mat(16 possibilites) *)
-let rec strings_of_constraint (c: constrain) : string list =
-    match c with
-    | AnyTyp -> string_of_glsl_typ BoolTyp :: strings_of_constraint GenTyp
-    | GenTyp -> List.map string_of_glsl_typ [IntTyp; FloatTyp] @ 
-        (strings_of_constraint GenVecTyp @ strings_of_constraint GenMatTyp)
-    | GenSpaceTyp
-    | GenVecTyp -> List.map string_of_glsl_typ [VecTyp 2; VecTyp 3; VecTyp 4]
-    | GenMatTyp -> List.map string_of_glsl_typ [MatTyp(2,1); MatTyp(3,1); MatTyp(4,1)]
-    | ETypConstraint t -> [string_of_glsl_typ t]
-
-
-let rec generate_fn_generics (orig : string) (((id, (p, rt, pm)), cl) : fn) : string = 
-    debug_print (">> generate_fn_generics " ^ id);
-    (* TODO: get this to work properly with trans and var generics *)
-    (* I think this will need to be rewritten to essentially run the function through emit multiple times *)
-    (* BUT LIKE, EFFORT *)
-    (* See the commented out code in test/compiler_core/generic_functions.lgl for a test case / example *)
-    let pm_list = Assoc.bindings pm in
-    let rec replace_generic (orig: string) (pml : (string * constrain) list) : string =
-        match pml with
-        | [] -> orig
-        | (s,c)::t -> 
-            let regex = (Str.regexp ("`"^s)) in
-            let str_lst = strings_of_constraint c in
-            let result = List.fold_left (fun acc r -> Str.global_replace regex r orig ^ acc) "" str_lst in
-            replace_generic result t
-    in replace_generic orig pm_list
-
+        | FnCall (id, tl, args) -> id ^ "(" ^ (padded_args args) ^ ");" ^ (comp_comm t)
 
 let comp_fn (f : fn) : string = 
     debug_print ">> comp_fn";
-    let ((id, (p, rt, pm)), cl) = f in
-    match id with 
-    | "main" -> "void main() {" ^ (comp_comm cl) ^ "}"
-    | _ -> 
-        let param_string = String.concat ", " (List.map (fun (i, t) -> (string_of_glsl_typ t) ^ " " ^ i) p) in
-        let fn_str = ((string_of_glsl_typ rt) ^ " " ^ id ^ "(" ^ param_string ^ "){" ^ (comp_comm cl) ^ "}") in
-        generate_fn_generics fn_str f
-
+    let ((id, (p, rt, _)), cl) = f in
+    let param_string = String.concat ", " (List.map (fun (i, t) -> (string_of_glsl_typ t) ^ " " ^ i) p) in
+    let type_id_string = match id with
+        | "main" -> "void main"
+        | _ -> (string_of_glsl_typ rt) ^ " " ^ id
+    in
+    type_id_string ^ "(" ^ param_string ^ "){" ^ (comp_comm cl) ^ "}"
 
 let rec comp_fn_lst (f : fn list) : string =
     debug_print ">> comp_fn_lst";
     match f with 
     | [] -> ""
     | h::t -> (comp_fn h) ^ (comp_fn_lst t)
-
 
 let decl_attribs (gv : global_vars) : string = 
     debug_print ">> decl_attribs";
@@ -192,6 +161,7 @@ let decl_attribs (gv : global_vars) : string =
 
 let rec compile_program (prog : prog) (global_vars : global_vars) : string =
     debug_print ">> compile_program";
+    let prog' = generate_generics_in_prog prog true in
     "precision mediump float;" ^ (decl_attribs global_vars) ^ 
-     (comp_fn_lst prog)
+     (comp_fn_lst prog')
  

@@ -153,8 +153,8 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) (s_g : sigma) : value * sigma
             | (MatLit m, Num i) -> VecLit (List.map (fun v -> List.nth v i) m), s_g''
             | _ -> bad_binop ())
         )
-    | FnInv (id, args) -> let (fn, p) = fn_lookup id fns in
-        let (arg_vs, s_g') = (List.fold_left (fun (vl, s_g) e -> let (v, s_g) = eval_exp e fns s s_g in vl@[v], s_g) ([], s_g) args) in
+    | FnInv (id, tl, args) -> let (fn, p) = fn_lookup id fns in
+        let (arg_vs, s_g') = (List.fold_left (fun (vl, s_g) (e, _) -> let (v, s_g) = eval_exp e fns s s_g in vl@[v], s_g) ([], s_g) args) in
         match fn with
         | None -> eval_glsl_fn id arg_vs, s_g'
         | Some f -> (match f with ((_, (names, _, _)), _) ->
@@ -215,7 +215,7 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) (s_g : sigma) : sigma * sig
         in
         loop (eval_comm c1 fns s s_g)
     | Return e -> s, s_g
-    | FnCall (id, args) -> let v, s_g' = eval_exp (FnInv (id, args)) fns s s_g  in s, s_g'
+    | FnCall (id, tl, args) -> let v, s_g' = eval_exp (FnInv (id, tl, args)) fns s s_g  in s, s_g'
 
 and eval_cl (cl : comm list) (fns : fn list) (s : sigma) (s_g : sigma) : value * sigma * sigma =
     match cl with

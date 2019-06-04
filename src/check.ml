@@ -355,7 +355,7 @@ let rec raise_to_space (d: delta) (m: mu) (pm: parameterization) (t: typ) : typ 
     | AbsTyp x ->
         if Assoc.mem ("`" ^ x) m && List.mem Space (Assoc.lookup ("`" ^ x) m) then t
         else (match Assoc.lookup x pm with
-            | GenVecTyp -> raise (TypeException ("Vectors of generic parameter type " ^ x ^ " cannot be added or multiplied by scalars"))
+            | GenVecTyp | GenTyp -> raise (TypeException ("Vectors of generic parameter type " ^ x ^ " cannot be added or multiplied by scalars"))
             | GenSpaceTyp -> t
             | TypConstraint t' -> raise_to_space d m pm t'
             | _ -> t)
@@ -892,8 +892,8 @@ let rec check_exp (e : exp) (d : delta) (m: mu) (g : gamma) (pm : parameterizati
             | CTimes -> check_ctimes_exp
             | Index -> check_index_exp
         in build_binop op e1 e2 f pm
-    | FnInv (i, args, pr) -> let ((i, args_exp), rt) = check_fn_inv d m g p args i pr pm ps in 
-        (FnInv (i, args_exp), rt)
+    | FnInv (i, args, pr) -> let ((i, tpl, args_exp), rt) = check_fn_inv d m g p args i pr pm ps in 
+        (FnInv (i, tpl, args_exp), rt)
         
 and check_arr (d : delta) (m: mu) (g : gamma) (p : phi) (a : exp list) (pm : parameterization) (ps: psi)
  : (TypedAst.exp * typ) =
@@ -918,14 +918,13 @@ and check_arr (d : delta) (m: mu) (g : gamma) (p : phi) (a : exp list) (pm : par
 
 
 and check_fn_inv (d : delta) (m: mu) (g : gamma) (p : phi) (args : args) (i : string) (pml: typ list) (pm : parameterization) (ps: psi)
- : (string * TypedAst.args) * typ = 
+ : (string * TypedAst.etyp list * TypedAst.args) * typ = 
     debug_print (">> check_fn_inv " ^ i);
     let fn_invocated = if Assoc.mem i p
         then Assoc.lookup i p
         else raise (TypeException ("Invocated function " ^ i ^ " not found")) in
     let (_, rt, _) = fn_invocated in
     let args' = List.map (fun a -> check_exp a d m g pm p ps) args in 
-    let args_exp = List.map fst args' in
     let args_typ = List.map snd args' in
     (* find definition for function in phi *)
     (* looks through all possible overloaded definitions of the function *)
@@ -987,7 +986,7 @@ and check_fn_inv (d : delta) (m: mu) (g : gamma) (p : phi) (args : args) (i : st
         else None
     in
     (match find_fn_inv fn_invocated with
-    | Some l -> ((i, args_exp), replace_abstype rt l)
+    | Some l -> ((i, List.rev (List.map (fun p -> tag_erase (snd p) d pm) (Assoc.bindings l)), List.map (fun a -> exp_to_texp a d pm) args'), replace_abstype rt l)
     | None -> raise (TypeException ("No overloaded function declaration of " ^ i
     ^ (if List.length pml > 0 then "<" ^ (String.concat "," (List.map string_of_typ pml)) ^ ">" else "")
     ^ " matching types (" ^ (String.concat "," (List.map string_of_typ args_typ)) ^ ") found"))) 
@@ -1073,9 +1072,10 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
         let (e, t) = exp_to_texp (check_exp e d m g pm p ps) d pm in
         (TypedAst.Return (Some (e, t)), g, ps)
     | Return None -> (TypedAst.Return None, g, ps)
-    | FnCall (it, args, pml) -> (match it with | VarTyp i -> 
-        let ((i, args_exp), _) = check_fn_inv d m g p args i pml pm ps in 
-        (TypedAst.FnCall (i, args_exp), g, ps)
+    | FnCall (it, args, pml) -> (match it with
+        | VarTyp i -> 
+            let ((i, tpl, args_exp), _) = check_fn_inv d m g p args i pml pm ps in 
+            (TypedAst.FnCall (i, tpl, args_exp), g, ps)
         | _ -> raise (TypeException ("Cannot treat the type " ^ string_of_typ it ^ " as a function call")))
 
 and check_comm_lst (cl : comm list) (d: delta) (m: mu) (g: gamma) (pm : parameterization) (p: phi) (ps: psi) : TypedAst.comm list * gamma * psi = 
