@@ -7,10 +7,13 @@ import filecmp
 import random
 import argparse
 import sys
+import re
 
 parser = argparse.ArgumentParser(description="Flip a switch by setting a flag")
 # Flag for CircleCI build
 parser.add_argument('-b', action='store_true')
+# Flag for typescript
+parser.add_argument('-t', action='store_true')
 
 args = parser.parse_args()
 
@@ -66,6 +69,7 @@ def test_exception(outname, expectname):
 
 
 def main():
+    use_typescript = args.t
     success_symbols, fail_symbols = get_symbols()
     any_fails = False  # Trick to avoid printing excess successes
     for path, _, files in os.walk("test/"):
@@ -77,27 +81,54 @@ def main():
             basename = filename[:-4]  # Remove the extension
             outname = basename + ".out"
             expectname = basename + ".expect"
-            ling_args = [] if path == "test/compiler" else ["-t"] if path == "test/compiler_ts" else ["-i"]
+            ling_args = [] if path == "test/compiler" else \
+                ["-t"] if path == "test/compiler_ts" or use_typescript else ["-i"]
             with open(outname, "w") as f:
-                subprocess.call(
-                    ["lingc"] + ling_args + [filename],
-                    stdout=f,
-                    stderr=f,
-                )
+                if use_typescript:
+                    # https://stackoverflow.com/questions/19020557/redirecting-output-of-pipe-to-a-file-in-python
+                    p1 = subprocess.Popen(
+                        ["lingc"] + ling_args + [filename], 
+                        stdout=subprocess.PIPE, stderr=f
+                    )
+                    p2 = subprocess.Popen(
+                        ["ts-node"], 
+                        stdin=subprocess.PIPE, stdout=f, stderr=f
+                    )
+                    p1_out = p1.communicate()[0]
+                    if (len(p1_out) > 0): # Errors go straight to the file
+                        p2.communicate(p1_out)
+                else:
+                    subprocess.call(
+                        ["lingc"] + ling_args + [filename],
+                        stdout=f, stderr=f,
+                    )
             # We write and then read to avoid memory shenanigans
             # (this might be worse actually, but I don't think it matters)
             try:
-                if not filecmp.cmp(outname, expectname) \
-                        and not test_exception(outname, expectname):
+                failed = False
+                if use_typescript:
+                    with open(outname) as outfile, open(expectname) as expectfile:
+                        for outline, expectline in zip(outfile, expectfile):
+                            # Replace floats with integers (eg 5. with 5)
+                            expectline = re.sub("([0-9]+)\.([^0-9])", "\1\2", expectline)
+                            #     
+                            expectline = re.sub("([0-9]+)\.([^0-9])", "\1\2", expectline)
+                            # print(expectline)
+                            failed = failed and not outline == expectline
+                else:
+                    failed = not filecmp.cmp(outname, expectname) \
+                        and not test_exception(outname, expectname)
+                # exit()
+                if failed:
                     any_fails = True
-                    print("\t❌  " + basename + " " +
-                          random.choice(fail_symbols))
+                    print("\t❌ " + basename + " " +
+                        random.choice(fail_symbols))
             except IOError:
                 any_fails = True
-                print("\t❌  " + expectname + " not found " +
+                print("\t❌ " + expectname + " not found " +
                       random.choice(fail_symbols))
     if not any_fails:
-        print("No 👏   Failures 👏")
+        print("No 👏 Failures 👏")
         for _ in range(SUCCESS_COUNT):
             print(random.choice(success_symbols) + "  "),
         print("")  # newline
