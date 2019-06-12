@@ -46,13 +46,13 @@ def get_symbols():
     return success_symbols, fail_symbols
 
 
-def test_exception(outname, expectname):
+def test_exception(tempname, expectname):
     # Special case for exceptions
     # Ignore the text of the exception. we just want the type of
     # exception that occurred.
     # (And, of course, that an exception occured)
     try:
-        with open(outname, "r") as outf:
+        with open(tempname, "r") as outf:
             with open(expectname, "r") as expf:
                 outval = next(outf)
                 expval = next(expf)
@@ -88,6 +88,27 @@ def js_matrix_format(mat):
     # Flatten the matrix into a list
     return [item for row in mat for item in row]
 
+def js_format(line):
+    # "Square" matrices, transpose them, and order as a list
+
+    # Ugly but fast way to convert a matrix of floats to a matrix
+    # Note that they must all be floats per Lathe's requirements on arrays
+    as_float = lambda x : list(map(float, re.findall(r"-?[0-9]+\.[0-9]*", x)))
+    as_mat = lambda exp : list(map(as_float, \
+        filter(lambda x : len(x) > 0, re.split("\[", exp))))
+    # Apply the matrix changes
+    to_js = lambda exp : "{}".format(js_matrix_format(as_mat(exp.groups()[0])))
+    # And run the whole mess on every matrix
+    line = re.sub(r"(\[\[.*\]\])", to_js, line)
+
+    # Replace floats with integers as allowed (eg 5.0 and 5. with 5)
+    line = re.sub(r"([0-9]+)\.0([^0-9])", r"\1\2", line)
+    line = re.sub(r"([0-9]+)\.([^0-9])", r"\1\2", line)
+    # Add Float32Array to precede every matrix and space out bounds
+    line = re.sub(r"(\[)", "Float32Array [ ", line)
+    line = re.sub(r"(\])", " ]", line)
+    return line
+
 def main():
     use_typescript = args.t
     success_symbols, fail_symbols = get_symbols()
@@ -99,11 +120,12 @@ def main():
         for filename in lglfiles:
             filename = path + "/" + filename
             basename = filename[:-4]  # Remove the extension
+            tempname = basename + ".temp"
             outname = basename + ".out"
             expectname = basename + ".expect"
             ling_args = [] if path == "test/compiler" else \
                 ["-t"] if path == "test/compiler_ts" or use_typescript else ["-i"]
-            with open(outname, "w") as f:
+            with open(tempname, "w") as f:
                 if use_typescript:
                     # https://stackoverflow.com/questions/19020557/redirecting-output-of-pipe-to-a-file-in-python
                     p1 = subprocess.Popen(
@@ -117,6 +139,9 @@ def main():
                     p1_out = p1.communicate()[0]
                     if (len(p1_out) > 0): # Errors go straight to the file
                         p2.communicate(p1_out)
+                    else:
+                        # Super important to avoid crashing your computer...
+                        p2.kill()
                 else:
                     subprocess.call(
                         ["lingc"] + ling_args + [filename],
@@ -125,31 +150,24 @@ def main():
             # We write and then read to avoid memory shenanigans
             # (this might be worse actually, but I don't think it matters)
             try:
+                if test_exception(tempname, expectname):
+                    continue
                 failed = False
-                with open(outname) as outfile, open(expectname) as expectfile:
-                    for outline, expectline in zip(outfile, expectfile):
+                with open(tempname) as tempfile, open(expectname) as expectfile, open(outname, "w") as outfile:
+                    for templine, expectline in zip(tempfile, expectfile):
+                        error_line = templine.startswith("Fatal")
                         # Round all decimals
                         rounder = lambda exp : "{}".format(Decimal(exp.groups()[0]).quantize(Decimal(10) ** -1))
-                        outline = re.sub(r"(-?[0-9]+[\.?][0-9]*)", rounder, outline)
-                        if use_typescript or not use_typescript:
-                            # "Square" matrices, transpose them, and order as a list
-
-                            # Ugly but fast way to convert a matrix of floats to a matrix
-                            # Note that they must all be floats per Lathe's requirements on arrays
-                            as_float = lambda x : list(map(float, re.findall(r"-?[0-9]+\.[0-9]*", x)))
-                            as_mat = lambda exp : list(map(as_float, \
-                                filter(lambda x : len(x) > 0, re.split("\[", exp))))
-                            # Apply the matrix changes
-                            to_js = lambda exp : "{}".format(js_matrix_format(as_mat(exp.groups()[0])))
-                            # And run the whole mess on every matrix
-                            expectline = re.sub(r"(\[\[.*\]\])", to_js, expectline)
+                        templine = re.sub(r"(-?[0-9]+[\.?][0-9]*)", rounder, templine)
+                        if use_typescript:
                             # It's easier to convert our expect format to typescript output, so we do that
-                            # Replace floats with integers as allowed (eg 5.0 with 5)
-                            expectline = re.sub(r"([0-9]+)\.0([^0-9])", r"\1\2", expectline)
-                            # Add Float32Array to precede every matrix
-                            expectline = re.sub(r"(\[)", "Float32Array [", expectline)
-                        failed = failed or (expectline != "" and outline != expectline)
-                exit()
+                            expectline = js_format(expectline)
+                            error_line = error_line or templine.startswith("[eval]")
+                        line_failed = (expectline != "" and templine != expectline) and not error_line
+                        failed = failed or line_failed or error_line
+                        outfile.write(templine \
+                            + (("ERROR: Expected: " + expectline) if line_failed else ""))
+                os.remove(tempname)
                 if failed:
                     any_fails = True
                     print("\t❌ " + basename + " " +
