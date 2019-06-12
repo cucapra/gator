@@ -8,6 +8,7 @@ import random
 import argparse
 import sys
 import re
+from decimal import Decimal
 
 parser = argparse.ArgumentParser(description="Flip a switch by setting a flag")
 # Flag for CircleCI build
@@ -67,6 +68,25 @@ def test_exception(outname, expectname):
     except:
         return False
 
+def js_matrix_format(mat):
+    # Given a matrix in list format, produces a js-style matrix
+
+    # Make a square matrix
+    mat_dim = max(len(mat), max(map(len, mat)))
+    pad_list = lambda l : l + [0.0 for _ in range(mat_dim - len(l))]
+    mat = list(map(pad_list, mat))
+    for _ in range(mat_dim - len(mat)):
+        mat.append([0.0 for _ in range(mat_dim)])
+
+    # Transpose the matrix
+    for i in range(mat_dim):
+        for j in range(i):
+            temp = mat[i][j]
+            mat[i][j] = mat[j][i]
+            mat[j][i] = temp
+
+    # Flatten the matrix into a list
+    return [item for row in mat for item in row]
 
 def main():
     use_typescript = args.t
@@ -106,19 +126,30 @@ def main():
             # (this might be worse actually, but I don't think it matters)
             try:
                 failed = False
-                if use_typescript:
-                    with open(outname) as outfile, open(expectname) as expectfile:
-                        for outline, expectline in zip(outfile, expectfile):
-                            # Replace floats with integers (eg 5. with 5)
-                            expectline = re.sub("([0-9]+)\.([^0-9])", "\1\2", expectline)
-                            #     
-                            expectline = re.sub("([0-9]+)\.([^0-9])", "\1\2", expectline)
-                            # print(expectline)
-                            failed = failed and not outline == expectline
-                else:
-                    failed = not filecmp.cmp(outname, expectname) \
-                        and not test_exception(outname, expectname)
-                # exit()
+                with open(outname) as outfile, open(expectname) as expectfile:
+                    for outline, expectline in zip(outfile, expectfile):
+                        # Round all decimals
+                        rounder = lambda exp : "{}".format(Decimal(exp.groups()[0]).quantize(Decimal(10) ** -1))
+                        outline = re.sub(r"(-?[0-9]+[\.?][0-9]*)", rounder, outline)
+                        if use_typescript or not use_typescript:
+                            # "Square" matrices, transpose them, and order as a list
+
+                            # Ugly but fast way to convert a matrix of floats to a matrix
+                            # Note that they must all be floats per Lathe's requirements on arrays
+                            as_float = lambda x : list(map(float, re.findall(r"-?[0-9]+\.[0-9]*", x)))
+                            as_mat = lambda exp : list(map(as_float, \
+                                filter(lambda x : len(x) > 0, re.split("\[", exp))))
+                            # Apply the matrix changes
+                            to_js = lambda exp : "{}".format(js_matrix_format(as_mat(exp.groups()[0])))
+                            # And run the whole mess on every matrix
+                            expectline = re.sub(r"(\[\[.*\]\])", to_js, expectline)
+                            # It's easier to convert our expect format to typescript output, so we do that
+                            # Replace floats with integers as allowed (eg 5.0 with 5)
+                            expectline = re.sub(r"([0-9]+)\.0([^0-9])", r"\1\2", expectline)
+                            # Add Float32Array to precede every matrix
+                            expectline = re.sub(r"(\[)", "Float32Array [", expectline)
+                        failed = failed or (expectline != "" and outline != expectline)
+                exit()
                 if failed:
                     any_fails = True
                     print("\t❌ " + basename + " " +
