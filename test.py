@@ -8,6 +8,7 @@ import random
 import argparse
 import sys
 import re
+from shutil import copyfile
 from decimal import Decimal
 
 parser = argparse.ArgumentParser(description="Flip a switch by setting a flag")
@@ -120,13 +121,13 @@ def main():
         for filename in lglfiles:
             filename = path + "/" + filename
             basename = filename[:-4]  # Remove the extension
-            tempname = basename + ".temp"
             outname = basename + ".out"
             expectname = basename + ".expect"
             ling_args = [] if path == "test/compiler" else \
                 ["-t"] if path == "test/compiler_ts" or use_typescript else ["-i"]
-            with open(tempname, "w") as f:
-                if use_typescript:
+            compiler_test = path == "test/compiler" or path == "test/compiler_ts"
+            with open(outname, "w") as f:
+                if use_typescript and not compiler_test:
                     # https://stackoverflow.com/questions/19020557/redirecting-output-of-pipe-to-a-file-in-python
                     p1 = subprocess.Popen(
                         ["lingc"] + ling_args + [filename], 
@@ -150,8 +151,12 @@ def main():
             # We write and then read to avoid memory shenanigans
             # (this might be worse actually, but I don't think it matters)
             try:
-                if test_exception(tempname, expectname):
+                if test_exception(outname, expectname):
                     continue
+                if compiler_test and filecmp.cmp(outname, expectname):
+                    continue
+                tempname = basename + ".temp"
+                copyfile(outname, tempname)
                 failed = False
                 with open(tempname) as tempfile, open(expectname) as expectfile, open(outname, "w") as outfile:
                     for templine, expectline in zip(tempfile, expectfile):
