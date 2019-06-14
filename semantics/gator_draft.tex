@@ -10,7 +10,7 @@
 \usepackage{listings}
 \usepackage{xxx}
 
-\title{Geometry Aware Types For Reference Frames (Gator)}
+\title{Geometry Aware Types Of Reference Frames (Gator)}
 \author{Dietrich Geisler}
 \date{}
 
@@ -28,6 +28,12 @@
 \mathlig{->}{\rightarrow}
 \mathlig{|-}{\vdash}
 \mathlig{=>}{\Rightarrow}
+
+\lstset{
+	literate={~} {$\sim$}{1}
+			 {-} {---}{1}
+}
+
 
 \begin{document}
 \maketitle
@@ -86,7 +92,7 @@ Function types $\gamma_1->\gamma_2$ operate the same as in Lathe.
 The bottom type $\bot$ of each geometric type component allows us to describe literals and provide a mechanism for `disregarding' select irrelevant components when declaring a geometric type.  
 The top type $\top$ for each component is only included to allow correct type declarations of matrix literals.
 Finally, we denote any member of the set of operations \textsf{ops} in Gator consisting of the binary operations $\{+,-,*\}$ as $\odot$.
-\section{Example Contexts}
+\section{Examples}
 There are two primary contexts that give meaning to the geometric objects and coordinate systems introduced by Gator:
 \begin{itemize}
 	\item $\Omega$ is a map from triples -- with elements $\gamma,\gamma,\odot$ -- to $\tau$.  $\Omega$ is assumed to only act on the geometric object $\omega$ of all non-scalar types.
@@ -122,17 +128,47 @@ These definitions are non-trivial, so it is useful to evaluate some examples of 
 		\Chi[(\mathsf{cartesian},\mathsf{scalar},*)]&=\lambda xs.x * s
 	\end{array}\]
 	
-	\item polar coordinate system (\textsf{polar})\\
+	\item homogeneous coordinate system (\textsf{hom})\\
 	\[\begin{array}{lll}%
 		\bullet&
-		\Chi[(\mathsf{polar},\mathsf{scalar},*)]&=\lambda xs.[x[0] * s, x[1]]\\
+		\Chi[(\mathsf{hom}\sim\mathsf{position},\mathsf{hom}\sim\mathsf{position},-)]&=\lambda xy.x * y[3] - y * x[3]\\
+		\bullet&
+		\Chi[(\mathsf{hom}\sim\mathsf{position},\mathsf{hom}\sim\mathsf{vector},+)]&=\lambda xy.x + y * x[3]\\
 		\bullet& 
-		\Chi[(\mathsf{polar},\mathsf{polar},+)]&=\textnormal{ommited for simplicity}\\
+		\textnormal{others ommited for simplicity}\\
 	\end{array}\]
 \end{enumerate}
 Note that we assume the usual notion of vector addition when using the $+$ symbol in a function definition.
-Note also that the definition of polar coordinate operations relies on inhabitants of polar coordinate being 2-dimensional.
-We will not be discussing this requirement as $\Chi$ is not type-checked in this formalism; however, dimension requirements are always constants or simple additive expressions in our experience.
+Note also that the definition of homogeneous coordinate operations relies on inhabitants being 4-dimensional -- this can be generalized with more work, since all we rely on is the 'last' element.
+We will not be discussing this requirement as $\Chi$ itself is not type-checked in this formalism; however, dimension requirements are always constants or simple additive expressions in our experience.
+
+Using these contexts, we can construct some useful Phong-like code, specifically code that returns the diffuse color of a Phong lighting model.  
+We will assume the existence of the \textsf{model} and \textsf{world} reference frames along with the context definitions given above.
+Variables assigned a value $\dots$ are assumed to be given a value from an external source.
+
+\begin{lstlisting}
+	// Conversion function definitions
+	hom~position~'t homify(cartesian~position~'t v) 
+	{ return [v[0], v[1], v[2], 1.] }
+	hom~vector~'t homify(cartesian~vector~'t v) 
+	{ return [v[0], v[1], v[2], 0.] }
+	
+	// External variables
+	cartesian~position~model pixel = ...;
+	hom~'t~model->hom~'t~world modelWorld = ...;
+	cartesian~vector~model normal = ...;
+	cartesian~position~world light = ...;
+	
+	hom~position~world worldPixel = modelWorld * homify(pixel);
+	// Note that the correct homify is used
+	hom~vector~world worldNormal = modelWorld * homify(normal);
+	hom~vector~world lightDir = worldPixel - light;
+	scalar lambertian = 
+	  max(dot(normalize(worldNormal), normalize(lightDir)), 0.);
+	
+\end{lstlisting}
+
+As usual, for this example we assume the existence of external functions \textsf{max}, \textsf{dot}, and \textsf{normalize}.  Note that this code is coordinate-system independent; while we do many of our operations in homogeneous coordinates
 
 \section{Subtype Ordering}
 Subtype ordering works precisely the same as in Lathe, with the following changes.
