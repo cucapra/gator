@@ -1,0 +1,225 @@
+
+\newcount\draft\draft=1 % set to 0 for submission or publication
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amsthm,amssymb,bbm,amsfonts,syntax}
+\usepackage[ligature, inference]{semantic}
+\usepackage[T1]{fontenc}
+\usepackage{mathpartir}
+\usepackage{nccmath}
+\usepackage{listings}
+\usepackage{xxx}
+
+\title{Geometry Aware Types For Reference Frames (Gator)}
+\author{Dietrich Geisler}
+\date{}
+
+\newcommand{\mat}{\mathsf{mat}_{n_1{\times}n_2}}
+\newcommand{\vv}[1]{\mathsf{vec}_{#1}}
+\newcommand{\env}[1]{#1,\sigma}
+\newcommand{\defas}{\mathrel{::=}}
+\newenvironment{leftalign}%
+    {\fleqn[5pt]\csname align*\endcsname}%
+    {\csname endalign*\endcsname\endfleqn}
+\newcommand{\alt}{\:|\:}
+\newcommand{\Chi}{\mathbf{X}}
+\newcommand{\Tau}{\mathbf{T}}
+
+\mathlig{->}{\rightarrow}
+\mathlig{|-}{\vdash}
+\mathlig{=>}{\Rightarrow}
+
+\begin{document}
+\maketitle
+
+\mathligson
+
+\section{Syntax}
+
+Literals in our language can be scalar numbers, n-tuples, or matrices:
+%
+\begin{leftalign}
+s &\in \mathbb{R} \\
+v_n &\defas [s_1,s_2,\dots,s_n] \\
+m_{n_1\times n_2} &\defas [[s_{11},s_{12},\dots,s_{1n_2}],\dots,[s_{n_11},s_{n_12},\dots,s_{n_1n_2}]]
+\end{leftalign}
+%
+Expressions can be variables, literals, or unary/binary operations:
+%
+\begin{leftalign}
+x &\in \text{variables} \\
+c &\defas s \alt v_n \alt m_{n_1\times n_2} \\
+e &\defas c \alt
+    \tau\;x=e \alt
+    x=e \alt
+    e_1+e_2 \alt
+    e_1-e_2 \alt
+    e_1*e_2 \alt
+\end{leftalign}
+%
+The foundation of our type system is a \emph{geometric type}, which can only be applied to n-tuples.  A geometric type is intended for describing the context needed to represent that n-tuple geometrically and to ensure that geometric representations are not inadvertently mixed.  
+
+A geometric type is built upon three components: a reference frame, a geometric object, and a coordinate system.  
+The reference frame of a geometric type gives the origin and orientation by which an inhabiting n-tuple can be interpreted.  A reference frame also gives the dimension of the n-tuple, which restricts the size of inhabiting members, through defining a top and bottom type of each dimension (similar to how Lathe defined tag types).
+The geometric object describes what the n-tuple is, such as a point or direction.
+Finally, the coordinate system describes how operations on the inhabiting n-tuple, such as rotation and translation, behave.  Each of these components is itself a type, but they generally cannot be inhabited by any expressions in our language.
+The one exception to this is the $\mathsf{scalar}$ type, which can be inhabited by exactly real numbers.
+
+The complete type system can be summarized as containing these geometric types, their component types, function types, and built-in scalar and unit types:
+%
+\begin{leftalign}
+F &\in \text{frames} \\
+O &\in \text{objects} \\
+C &\in \text{coordinates} \\
+n &\in \mathbb{N} \\
+\phi &\defas F \alt \bot_{\phi,n} \alt \top_{\phi,n} \\
+\omega &\defas O \alt \bot_\omega \alt \top_\omega\\
+\chi &\defas C \alt \bot_\chi \alt \top_\chi\\
+\gamma &\defas \chi\sim\omega\sim\phi \alt \bot_n \alt \top_n \alt \alt \mathsf{scalar}\\
+\tau &\defas \mathsf{unit} \alt
+\gamma \alt
+\gamma_1->\gamma_2
+\end{leftalign}
+%
+Scalars are special geometric types that are the only geometric type not represented by n-tuples. 
+Function types $\gamma_1->\gamma_2$ operate the same as in Lathe.  
+The bottom type $\bot$ of each geometric type component allows us to describe literals and provide a mechanism for `disregarding' select irrelevant components when declaring a geometric type.  
+The top type $\top$ for each component is only included to allow correct type declarations of matrix literals.
+Finally, we denote any member of the set of operations \textsf{ops} in Gator consisting of the binary operations $\{+,-,*\}$ as $\odot$.
+\section{Example Contexts}
+There are two primary contexts that give meaning to the geometric objects and coordinate systems introduced by Gator:
+\begin{itemize}
+	\item $\Omega$ is a map from triples -- with elements $\gamma,\gamma,\odot$ -- to $\tau$.  $\Omega$ is assumed to only act on the geometric object $\omega$ of all non-scalar types.
+	
+	\item $\Chi$ is a map from triples of elements $\gamma, \gamma,\odot$ to functions, providing definitions for actual operation behavior under that coordinate system.
+	How functions are defined is omitted from this formalism, but it is worth noting that functions mapped to by $\Chi$ are expected to take in two arguments of the correct type for unary and binary operations respectively.
+\end{itemize}
+These definitions are non-trivial, so it is useful to evaluate some examples of how defining a type in each context gives useful geometric behavior.  While each of these examples act on geometric types, we will only specify one component, assuming that the other components are unified in the return value (potentially to the top type) via subsumption described in section~\ref{ssec:subsumption}.
+\begin{enumerate}
+	\item \textsf{vector} geometric object
+	 \[\begin{array}{lll}%
+		\bullet& \Omega[(\mathsf{vector},\mathsf{vector},+)]&=\mathsf{vector}\\
+		\bullet&
+		\Omega[(\mathsf{vector},\mathsf{vector})]&=\mathsf{vector}\\
+		\bullet&
+		\Omega[(\mathsf{vector},\mathsf{scalar},*)]&=\mathsf{vector}
+	\end{array}\]
+	
+	\item \textsf{position} geometric object
+	\[\begin{array}{lll}%
+		\bullet& \Omega[(\mathsf{position},\mathsf{position},-)]&=\mathsf{vector}\\
+		\bullet&
+		\Omega[(\mathsf{position},\mathsf{vector},+)]&=\mathsf{position}	
+	\end{array}\]
+	
+	\item \textsf{cartesian} coordinate system\\
+	\[\begin{array}{lll}%
+		\bullet& 
+		\Chi[(\mathsf{cartesian},\mathsf{cartesian},+)]&=\lambda xy.x + y\\
+		\bullet&
+		\Chi[(\mathsf{cartesian},\mathsf{cartesian},-)]&=\lambda xy.x - y\\
+		\bullet&
+		\Chi[(\mathsf{cartesian},\mathsf{scalar},*)]&=\lambda xs.x * s
+	\end{array}\]
+	
+	\item polar coordinate system (\textsf{polar})\\
+	\[\begin{array}{lll}%
+		\bullet&
+		\Chi[(\mathsf{polar},\mathsf{scalar},*)]&=\lambda xs.[x[0] * s, x[1]]\\
+		\bullet& 
+		\Chi[(\mathsf{polar},\mathsf{polar},+)]&=\textnormal{ommited for simplicity}\\
+	\end{array}\]
+\end{enumerate}
+Note that we assume the usual notion of vector addition when using the $+$ symbol in a function definition.
+Note also that the definition of polar coordinate operations relies on inhabitants of polar coordinate being 2-dimensional.
+We will not be discussing this requirement as $\Chi$ is not type-checked in this formalism; however, dimension requirements are always constants or simple additive expressions in our experience.
+
+\section{Subtype Ordering}
+Subtype ordering works precisely the same as in Lathe, with the following changes.
+
+First, the context $\Delta$ becomes a map from reference frames to reference frames.
+
+Second, we define the following rules for ordering geometric types $\gamma_1,\gamma_2$ on each component:
+\begin{mathpar}
+	\inferrule
+	{\gamma_1=\chi_1,\omega,\phi
+		\qquad\gamma_2=\chi_2,\omega,\phi
+		\qquad\chi_1\leq\chi_2}
+	{\gamma_1\leq\gamma_2}
+	
+	\inferrule
+	{\gamma_1=\chi,\omega_1,\phi
+		\qquad\gamma_2=\chi,\omega_2,\phi
+		\qquad\omega_1\leq\omega_2}
+	{\gamma_1\leq\gamma_2}
+	
+	\inferrule
+	{\gamma_1=\chi,\omega,\phi_1
+		\qquad\gamma_2=\chi,\omega,\phi_2
+		\qquad\phi_1\leq\phi_2}
+	{\gamma_1\leq\gamma_2}
+\end{mathpar}
+Note that this rule, along with our Lathe construction of delta ordering on reference frames, implies that geometric types form lattices under a fixed coordinate system, geometric object, and dimension.
+We can use this lattice construction to recover n-tuple dimension from the type in exactly the same method as Lathe, noting that both coordinate system and geometric object can be erased when recovering dimension.
+
+Third, we require that each component bottom and top type works as such:
+\begin{align*}
+	\forall c\in\chi&,\bot_\chi\leq c,c\leq \top_\chi\\
+	\forall o\in\omega&,\bot_\omega\leq o,o\leq \top_\omega
+\end{align*}
+
+\section{Static Semantics}
+Our typing judgment is a map from an expression under the contexts $\Gamma$, $\Omega$ to the type of that expression and updated variable context $\Gamma'$.
+
+\subsection{Subsumption}\label{ssec:subsumption}
+Subsumption works as in Lathe
+\subsection{Constants and Variable Declarations}
+Declaring variables and literals works the same as in Lathe.
+Note that vector and matrix literal types remain the same despite the changes to $\bot_n$ and $\top_n$, as the ordering behavior of these types is ultimately unchanged in Gator.
+\subsection{Binary Operations}
+Binary operation typechecking differs primarily from Lathe in that for some operations we need to verify with $\Omega$ that the operation should typecheck.  We also provide some special rules for matrix reasoning.
+
+For core operations $\odot$, we have the following rule:
+\begin{mathpar}
+	\inferrule*
+	{\Gamma,\Omega|-e_1:\tau_1,\Gamma'\qquad\Gamma',\Omega|-e_2:\tau_2,\Gamma''}
+	{\inferrule* 
+		{\tau_1=\gamma_1\qquad\tau_2=\gamma_2\qquad\Omega[(\gamma_1, \gamma_2,\odot)]=\tau}
+		{\Gamma,\Omega|-e_1\odot e_2:\tau_3,\Gamma''}}
+\end{mathpar}
+Note that scalar operations are assumed be included in $\Omega$.
+
+Matrix operations work a bit differently.  Since matrices are just functions, we allow matrix multiplication to still apply to any vector of the appropriate type.  Additionally, the linear properties of a matrix only apply when they apply to the \emph{domain} of the matrix function.
+%
+\begin{mathpar}
+	\inferrule
+	{\Gamma,\Omega|-e_1:\gamma_1->\gamma_2,\Gamma'\qquad\Gamma',\Omega|-e_2:\gamma_1,\Gamma''}
+	{\Gamma,\Omega|-e_1*e_2:\gamma_2,\Gamma''}
+	
+	\inferrule
+	{\Gamma,\Omega|-e_1:\gamma_1->\gamma_2,\Gamma'\qquad\Gamma',\Omega|-e_2:\gamma_1->\gamma_2,\Gamma''\qquad\Omega[(\gamma_2, \gamma_2,+)]=\gamma_3}
+	{\Gamma,\Omega|-e_1+e_2:\gamma_1->\gamma_3,\Gamma''}
+	
+	\inferrule
+	{\Gamma,\Omega|-e_1:\gamma_1->\gamma_2,\Gamma'\qquad\Gamma',\Omega|-e_2:\gamma_1->\gamma_2,\Gamma''\qquad\Omega[(\gamma_2, \gamma_2,-)]=\gamma_3}
+	{\Gamma,\Omega|-e_1-e_2:\gamma_1->\gamma_3,\Gamma''}
+	
+	\inferrule
+	{\Gamma,\Omega|-e_1:\gamma_1->\gamma_2,\Gamma'\qquad\Gamma',\Omega|-e_2:\mathsf{scalar},\Gamma''\qquad\Omega[(\gamma_2, \mathsf{scalar},*)]=\gamma_3}
+	{\Gamma,\Omega|-e_1*e_2:\gamma_1->\gamma_3,\Gamma''}
+\end{mathpar}
+
+
+\section{Dynamic Semantics}
+
+Operational semantics (or, rather, compilation semantics) require additional structure beyond that provided by Lathe.
+We start by defining a context to reason about operation behavior.
+
+To recover the correct operational semantics, we now need to know the type of an expression during compilation.
+To do this, we introduce the context $\Tau$, which provides the type of an expression; the mechanism for $\Tau$ can be built-in to our typing judgment, a step which we will omit for simplicity.
+
+The operational semantics of Gator map, in a single step, from an expression and contexts $\Chi$ and $\Tau$ to a constant and a state $\sigma$.  $\sigma$ itself is, as usual, a map from variable names to constants.
+The only semantics of interest in this language are the translation of vector and matrix operations.
+\subsection{Mathematical Operations}
+I'm going to pass on formalizing this for now -- I'm not sure whether I want to define semantics directly or by compilation yet, so I'll come back to this once I have a better sense of when replacing operations matters.
+\end{document}
