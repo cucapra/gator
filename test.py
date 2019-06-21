@@ -164,14 +164,20 @@ def main():
                         # Round all decimals
                         rounder = lambda exp : "{}".format(Decimal(exp.groups()[0]).quantize(Decimal(10) ** -1))
                         templine = re.sub(r"(-?[0-9]+[\.?][0-9]*)", rounder, templine)
+                        expectline = re.sub(r"(-?[0-9]+[\.?][0-9]*)", rounder, expectline)
                         if use_typescript:
                             # It's easier to convert our expect format to typescript output, so we do that
                             expectline = js_format(expectline)
                             error_line = error_line or templine.startswith("[eval]")
-                        line_failed = (expectline != "" and templine != expectline) and not error_line
+                        line_failed = templine != expectline and not error_line
                         failed = failed or line_failed or error_line
                         outfile.write(templine \
                             + (("ERROR: Expected: " + expectline) if line_failed else ""))
+                    nextline = next(expectfile, None)
+                    # Check to make sure we finished writing the file
+                    if nextline is not None:
+                        failed = True
+                        outfile.write("ERROR: Expected: " + nextline)
                 os.remove(tempname)
                 if failed:
                     any_fails = True

@@ -8,6 +8,12 @@ open Util
 
 type sigma = (value) Assoc.context
 
+let interp_string_of_vec (v: vec) : string = 
+    "[" ^ (String.concat ", " (List.map string_of_float v)) ^ "]"
+  
+let interp_string_of_mat (m: mat) : string = 
+    "[" ^ (String.concat ", " (List.map interp_string_of_vec m)) ^ "]"
+
 let rec fn_lookup (name : id) (fns : fn list) : (fn option * id list) =
     match fns with
     | [] -> (None, [])
@@ -165,7 +171,11 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) (s_g : sigma) : sigma * sig
     match c with
     | Skip -> s, s_g
     | Print (e, _) -> let v, s_g = eval_exp e fns s s_g in
-        print_string (string_of_value v ^ "\n");
+        (print_string ((match v with 
+            | VecLit v -> interp_string_of_vec v
+            | MatLit m -> interp_string_of_mat m
+            | _ -> (string_of_value v)
+            ) ^ "\n"));
         s, s_g
     | Inc (x, t) -> (try let x_val = Assoc.lookup x s in (match (x_val, t) with
             | (Num n, IntTyp) -> Assoc.update x (Num (n + 1)) s, s_g

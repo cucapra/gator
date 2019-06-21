@@ -43,12 +43,6 @@ let get_mat_square_dim (m : mat) =
     let c = (if r = 0 then 0 else List.length (List.hd tm)) in
     max r c
 
-let string_of_vec (v: vec) : string = 
-  "("^(String.concat ", " (List.map string_of_float v))^")"
-
-let string_of_mat (m: mat) : string = 
-  "("^(String.concat ", " (List.map string_of_vec m))^")"
-
 let string_of_constvar (c : constvar) : string =
   match c with
   | ConstInt i -> string_of_int i

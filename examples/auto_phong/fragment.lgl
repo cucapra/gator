@@ -36,7 +36,7 @@ void main() {
     color spec = [1.0, 1.0, 1.0];
 
     dir<world> lightDir = normalize(uLight - (vPosition in world));
-    float lambertian = max(dot(normalize(vNormal), lightDir), 0.);
+    float lambertian = max(dot(normalize(vNormal in world), lightDir), 0.);
     
     dir<view> reflectDir = normalize(reflect(-lightDir, normalize(vNormal in world)) in view);
     float specular = pow(max(dot(-(normalize(vPosition in view)), reflectDir), 0.0), 32.);
