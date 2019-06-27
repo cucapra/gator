@@ -93,6 +93,9 @@ The bottom type $\bot$ of each geometric type component allows us to describe li
 The top type $\top$ for each component is only included to allow correct type declarations of matrix literals.
 Finally, we denote any member of the set of operations \textsf{ops} in Gator consisting of the binary operations $\{+,-,*\}$ as $\odot$.
 \section{Examples}
+Gator has several complicated features, between new contexts, types, and operation definitions. To understand these features, we will start by examine some concrete examples of each.  These examples will assume reasonable familiarity with Lathe and geometric graphics code.
+
+\subsection{Contexts}
 There are two primary contexts that give meaning to the geometric objects and coordinate systems introduced by Gator:
 \begin{itemize}
 	\item $\Omega$ is a map from triples -- with elements $\gamma,\gamma,\odot$ -- to $\tau$.  $\Omega$ is assumed to only act on the geometric object $\omega$ of all non-scalar types.
@@ -142,6 +145,39 @@ Note that we assume the usual notion of vector addition when using the $+$ symbo
 Note also that the definition of homogeneous coordinate operations relies on inhabitants being 4-dimensional -- this can be generalized with more work, since all we rely on is the 'last' element.
 We will not be discussing this requirement as $\Chi$ itself is not type-checked in this formalism; however, dimension requirements are always constants or simple additive expressions in our experience.
 
+\subsection{Type Declarations}
+Declaring the types used by these contexts requires a bit of additional notation.  Gator does not formally include semantics for type  declaration, but it is helpful to examine a potential mechanism for untangling type declaration dependencies.
+
+Since Gator supports three kinds of types (geometric objects, coordinate systems, and reference frames), we require three forms of type constructors: \textsf{object}, \textsf{coord}, and \textsf{frame}, which have the following kinds:
+
+\begin{align*}
+\mathsf{object}&:\mathsf{string}->\omega\\
+\mathsf{coord}&:\mathsf{string}->e->\chi\\
+\mathsf{frame}&:\mathsf{string}->\mathsf{frame}->\phi
+\end{align*}
+
+Each of these constructors takes the name of the type being built, potentially along with some additional information about that type.  \textsf{object}s require nothing beyond a name -- they are simply used as bindings when defining the type of operations for $\Omega$.  \textsf{coord}s require an expression describing how that coordinate system selects the dimensions of inhabiting n-tuples.  Finally, \textsf{frame}s must provide their parent in the structure of reference frames (which may be $\top_n$, written as $vec<n>$) -- this allows us to account for both subframes and dimension.
+
+With these definitions in hand, we can declare some standard types in graphics programming:
+
+\begin{lstlisting}
+object point;
+object vector;
+object direction;
+
+coord cartesian n;
+coord homogeneous n+1;
+coord spherical n;
+
+frame model vec<3>;
+frame world vec<3>;
+frame offset_plane model;
+\end{lstlisting}
+
+\subsection{Context Declarations}
+With types declared, we must also have a mechanism for filling in the contexts $\Omega$ and $\Chi$.  Note that $\Delta$ as a frame ordering is filled as part of our \textsf{frame} type declarations.
+
+\subsection{Code Application}
 Using these contexts, we can construct some useful Phong-like code, specifically code that returns the diffuse color of a Phong lighting model.  
 We will assume the existence of the \textsf{model} and \textsf{world} reference frames along with the context definitions given above.
 Variables assigned a value $\dots$ are assumed to be given a value from an external source.
