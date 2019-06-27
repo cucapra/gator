@@ -109,7 +109,7 @@ These definitions are non-trivial, so it is useful to evaluate some examples of 
 	 \[\begin{array}{lll}%
 		\bullet& \Omega[(\mathsf{vector},\mathsf{vector},+)]&=\mathsf{vector}\\
 		\bullet&
-		\Omega[(\mathsf{vector},\mathsf{vector})]&=\mathsf{vector}\\
+		\Omega[(\mathsf{vector},\mathsf{vector},-)]&=\mathsf{vector}\\
 		\bullet&
 		\Omega[(\mathsf{vector},\mathsf{scalar},*)]&=\mathsf{vector}
 	\end{array}\]
@@ -161,21 +161,67 @@ Each of these constructors takes the name of the type being built, potentially a
 With these definitions in hand, we can declare some standard types in graphics programming:
 
 \begin{lstlisting}
-object point;
-object vector;
-object direction;
-
-coord cartesian n;
-coord homogeneous n+1;
-coord spherical n;
-
-frame model vec<3>;
-frame world vec<3>;
-frame offset_plane model;
+	object point;
+	object vector;
+	object direction;
+	
+	coord cartesian n;
+	coord homogeneous n+1;
+	coord spherical n;
+	
+	frame model vec<3>;
+	frame world vec<3>;
+	frame offset_plane model;
 \end{lstlisting}
 
 \subsection{Context Declarations}
 With types declared, we must also have a mechanism for filling in the contexts $\Omega$ and $\Chi$.  Note that $\Delta$ as a frame ordering is filled as part of our \textsf{frame} type declarations.
+
+$\Omega$ consists of object type signatures for functions.  We can introduce new type signatures for a given function using the regular \textsf{declare} notation.  For example, we have the following declarations for \textsf{positions} and \textsf{vectors}:
+
+\begin{lstlisting}
+	declare vector +(vector, vector)
+	declare vector -(vector, vector)
+	declare vector *(vector, scalar)
+	declare vector *(scalar, vector)
+	
+	declare vector -(position, position)
+	declare position +(position, vector)
+	declare position +(vector, position)
+\end{lstlisting}
+
+Note that operations can have overloaded type definitions.  Since these are only type signatures (the actual function behavior depends on the choice of coordinate system), we need not worry about overloading translation issues from Gator.
+
+$\Chi$ function definitions are more complicated, as we are required to actually provide the behavior of these operations using the \textsf{define} keyword.  For these examples, the metavariable $n$ will be used to refer to the dimension of the coordinate system.
+
+\begin{lstlisting}
+	define cartesian +(cartesian x, cartesian y) {
+		return x + y;
+	}
+	
+	define cartesian -(cartesian x, cartesian y) {
+		return x - y;
+	}
+	
+	define cartesian *(cartesian x, scalar s) {
+		return x * s;
+	}
+
+	define cartesian *(scalar s, cartesian x) {
+		return s * x;
+	}
+	
+	define hom~vector -(hom~position x, hom~position y) {
+		// We use n rather than n-1 since hom has dimension n+1
+		return x * y[n] - y * x[n]
+	}
+	
+	define hom~position +(hom~position x, hom~vector y) {
+		return x + y * x[n]
+	}
+\end{lstlisting}
+
+A few things to note about these definitions.  First, we do allow overloading which must be resolved at compile-time.  This should be possible since each of these types are concrete (cannot have children besides $\bot$), but this could become a problem if this changes.  Second, the type must be specified as operations could change the coordinate system or object being operated on (such as with homogeneous addition and subtraction).
 
 \subsection{Code Application}
 Using these contexts, we can construct some useful Phong-like code, specifically code that returns the diffuse color of a Phong lighting model.  
