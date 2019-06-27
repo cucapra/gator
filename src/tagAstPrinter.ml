@@ -43,6 +43,7 @@ let string_of_constraint (c: constrain) : string =
 
 let string_of_modification (m: modification) : string =
     match m with
+    | Coord -> "coord"
     | Canon -> "canon"
     | Space -> "space"
 
@@ -97,7 +98,7 @@ let rec string_of_comm (c: comm) : string =
     | Print e -> "print " ^ (string_of_exp e) ^ ";"
     | Inc x -> x ^ "++"
     | Dec x -> x ^ "--"
-    | Decl (m, t, s, e) -> (string_of_mod_list m) ^ " " ^ (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_exp e) ^ ";"
+    | Decl (t, s, e) -> (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_exp e) ^ ";"
     | Assign (b, x) -> b ^ " = " ^ (string_of_exp x) ^ ";"
     | AssignOp (x, op, e) -> x ^ " " ^  binop_string op ^ "= " ^ (string_of_exp e)
     | If ((b, c1), elif_list, c2) -> 

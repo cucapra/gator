@@ -1,5 +1,8 @@
 declare vec4 texture2D(sampler2D txt, vec2 texCoord);
 
-void main(sampler2D uTexture, vec2 vTexCoord) {
+uniform sampler2D uTexture;
+varying vec2 vTexCoord;
+
+void main() {
   vec4 gl_FragColor = texture2D(uTexture, vTexCoord);
 }

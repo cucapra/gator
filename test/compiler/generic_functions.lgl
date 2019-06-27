@@ -6,14 +6,9 @@
     return x;
 }
 
-`t general<`t : genType>(`t x, `t y) {
-    return x + y;
+sampler2D<`t> st<`t : vec>(sampler2D<`t> s) {
+    return s;
 }
-
-//`u vt<`t : vec, `u : vec>(`t->`u m, `t v) {
-//    `u result = m * v;
-//    return result;
-//}
 
 `t mt<`t : mat, `u : mat>(`t m1, `t m2, `u m3) {
     `t first = m1 + m2;

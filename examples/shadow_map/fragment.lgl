@@ -44,10 +44,10 @@ float decodeFloat (alpha<color> c) {
 color phong_light<`t: vec<3>>(`t lightPos, `t fragPos, dir<`t> normalDir, color baseColor,
 float specStrength, float linear, float quad) {
     float lambertian = max(0., dot(normalDir, normalize<`t>(lightPos)));
-    dir<`t> reflectDir = reflect(-lightPos in dir<`t>, normalDir);
+    dir<`t> reflectDir = reflect(-normalize(lightPos in `t), normalDir);
     float specular = 0.;
     if (0. <= lambertian) {
-        specular = pow(max(0., dot(-fragPos in dir<`t>, reflectDir)), 32.);
+        specular = pow(max(0., dot(-normalize(fragPos in `t), reflectDir)), 32.);
     }
 
     float distance = length(lightPos - fragPos);
@@ -71,7 +71,7 @@ void main() {
     }
   }
   amountInLight /= 9.;
-  color phong_color = phong_light(uLight, vPosition in world, vNormal in dir<world>, 
+  color phong_color = phong_light(uLight, vPosition in world, normalize(vNormal in world), 
     uBaseColor, uSpecStrength, .08, .0001);
 
   alpha<color> gl_FragColor = extendColor(ambient + phong_color * amountInLight);

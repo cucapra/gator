@@ -11,7 +11,6 @@ declare vec4 vec4<`t : vec<3>>(`t v, float f);
 declare vec3 vec3<`t : vec<4>>(`t v);
 
 attribute model aPosition;
-varying proj<light> vPosition;
 uniform hom<model>->hom<world> uModel;
 uniform hom<world>->hom<view<light>> uLightView;
 uniform hom<view<light>>->hom<proj<light>> uLightProjection;
@@ -20,6 +19,8 @@ canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
 canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }
 
 void main() {
-    vPosition = aPosition in proj<light>;
-    hom<proj<light>> gl_Position = aPosition in hom<proj<light>>;
+    hom<proj<light>> gl_Position = 
+      uLightProjection * uLightView * uModel * homify(aPosition);
+
+    // auto gl_Position = aPosition in hom<proj<light>>;
 }

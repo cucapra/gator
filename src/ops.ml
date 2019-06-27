@@ -8,6 +8,12 @@ open Util
 
 type sigma = (value) Assoc.context
 
+let interp_string_of_vec (v: vec) : string = 
+    "[" ^ (String.concat ", " (List.map string_of_float v)) ^ "]"
+  
+let interp_string_of_mat (m: mat) : string = 
+    "[" ^ (String.concat ", " (List.map interp_string_of_vec m)) ^ "]"
+
 let rec fn_lookup (name : id) (fns : fn list) : (fn option * id list) =
     match fns with
     | [] -> (None, [])
@@ -153,8 +159,8 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) (s_g : sigma) : value * sigma
             | (MatLit m, Num i) -> VecLit (List.map (fun v -> List.nth v i) m), s_g''
             | _ -> bad_binop ())
         )
-    | FnInv (id, args) -> let (fn, p) = fn_lookup id fns in
-        let (arg_vs, s_g') = (List.fold_left (fun (vl, s_g) e -> let (v, s_g) = eval_exp e fns s s_g in vl@[v], s_g) ([], s_g) args) in
+    | FnInv (id, tl, args) -> let (fn, p) = fn_lookup id fns in
+        let (arg_vs, s_g') = (List.fold_left (fun (vl, s_g) (e, _) -> let (v, s_g) = eval_exp e fns s s_g in vl@[v], s_g) ([], s_g) args) in
         match fn with
         | None -> eval_glsl_fn id arg_vs, s_g'
         | Some f -> (match f with ((_, (names, _, _)), _) ->
@@ -165,7 +171,11 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) (s_g : sigma) : sigma * sig
     match c with
     | Skip -> s, s_g
     | Print (e, _) -> let v, s_g = eval_exp e fns s s_g in
-        print_string (string_of_value v ^ "\n");
+        (print_string ((match v with 
+            | VecLit v -> interp_string_of_vec v
+            | MatLit m -> interp_string_of_mat m
+            | _ -> (string_of_value v)
+            ) ^ "\n"));
         s, s_g
     | Inc (x, t) -> (try let x_val = Assoc.lookup x s in (match (x_val, t) with
             | (Num n, IntTyp) -> Assoc.update x (Num (n + 1)) s, s_g
@@ -215,7 +225,7 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) (s_g : sigma) : sigma * sig
         in
         loop (eval_comm c1 fns s s_g)
     | Return e -> s, s_g
-    | FnCall (id, args) -> let v, s_g' = eval_exp (FnInv (id, args)) fns s s_g  in s, s_g'
+    | FnCall (id, tl, args) -> let v, s_g' = eval_exp (FnInv (id, tl, args)) fns s s_g  in s, s_g'
 
 and eval_cl (cl : comm list) (fns : fn list) (s : sigma) (s_g : sigma) : value * sigma * sigma =
     match cl with

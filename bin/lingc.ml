@@ -9,12 +9,17 @@ let set_program_file (arg : string) : unit =
     | Some _ -> ()  (* Don't overwrite program_file *)
 
 let run_interp : bool ref = ref false
-let set_interp () : unit = run_interp := true
+
+let emit_ts : bool ref = ref false
 
 let usage_msg = "Linguine Help Center\n"
 let spec_list : (Arg.key * Arg.spec * Arg.doc) list =
-    [("-i", Arg.Set run_interp, 
-    "Runs the given file with the linguine interpreter (replaces standard output)")]
+    [
+        ("-i", Arg.Set run_interp,
+        "Runs the given file with the linguine interpreter (replaces standard output)");
+        ("-t", Arg.Set emit_ts,
+        "Emits Typescript (replaces standard output)")
+    ]
 
 let _ =
     Arg.parse spec_list set_program_file usage_msg;
@@ -41,4 +46,5 @@ let _ =
         close_in ch;
     let (typedProg, params) = Check.check_prog prog in
     if !run_interp then Ops.eval_prog typedProg params
-    else print_string (Emit.compile_program typedProg params)
+    else if !emit_ts then print_string (EmitTS.compile_program typedProg params)
+    else print_string (EmitGL.compile_program typedProg params)

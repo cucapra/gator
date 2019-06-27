@@ -9,6 +9,7 @@ _build/
 
 # Testing files.
 *.out
+*.temp
 
 # Node.
 yarn.lock

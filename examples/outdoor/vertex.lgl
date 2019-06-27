@@ -1,0 +1,47 @@
+space coord model is vec<3>;
+space coord world is vec<3>;
+tag viewport is vec<3>;
+tag camera is viewport;
+tag light is viewport;
+space coord view<`t : viewport> is `t;
+tag coord proj<`t : viewport> is `t;
+tag coord hom<`t : vec<n>> is vec<n+1>;
+tag dir<`t : vec<n>> is vec<n>;
+space color is vec<3>;
+tag alpha<`t : color> is vec<4>;
+
+declare vec4 vec4<`t : vec<3>>(`t v, float f);
+declare vec3 vec3<`t : vec<4>>(`t v);
+
+declare `t texture2D<`t : vec<4>>(sampler2D<`t> texture, vec2 cor);
+
+uniform sampler2D<alpha<color>> uTexture;
+attribute model aPosition;
+varying model vPosition;
+attribute dir<model> aNormal;
+varying dir<model> vNormal;
+varying proj<light> vShadowPos;
+uniform hom<model>->hom<world> uModel;
+uniform hom<world>->hom<view<camera>> uView;
+uniform hom<view<camera>>->hom<proj<camera>> uProjection;
+uniform hom<world>->hom<view<light>> uLightView;
+uniform hom<view<light>>->hom<proj<light>> uLightProjection;
+attribute vec2 aTexCoord;
+varying vec2 vTexCoord;
+uniform float uHackyBumpmap;
+
+canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
+canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }
+
+void main() {
+  hom<proj<light>>->hom<proj<light>> texUnitConverter = [[0.5, 0.0, 0.0, 0.5], 
+                                                         [0.0, 0.5, 0.0, 0.5], 
+                                                         [0.0, 0.0, 0.5, 0.5], 
+                                                         [0.0, 0.0, 0.0, 1.0]];
+
+  vShadowPos = hom_reduce(texUnitConverter * (aPosition in hom<proj<light>>));
+  vPosition = aPosition;
+  vNormal = aNormal;
+  vTexCoord = aTexCoord;
+  hom<proj<camera>> gl_Position = aPosition in hom<proj<camera>>;
+}

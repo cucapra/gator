@@ -1,0 +1,94 @@
+space coord model is vec<3>;
+space coord world is vec<3>;
+tag viewport is vec<3>;
+tag camera is viewport;
+tag light is viewport;
+space coord view<`t : viewport> is `t;
+tag coord proj<`t : viewport> is `t;
+tag coord hom<`t : vec<n>> is vec<n+1>;
+space dir<`t : vec<n>> is vec<n>;
+space color is vec<3>;
+tag coord rgb is color;
+space ciexyy is color;
+space coord ciexyz is color;
+space alpha<`t : color> is vec<4>;
+tag depth is vec<4>;
+
+declare `t textureCube<`t : vec<4>, `u : vec<3>>(samplerCube<`t> sc, `u m);
+declare `t texture2D<`t : vec<4>>(sampler2D<`t> texture, vec2 cor);
+declare dir<`t> normalize<`t : vec>(`t x);
+declare float dot<`t: vec>(`t v1, `t v2);
+declare vec4 vec4<`t : vec<3>>(`t v, float f);
+declare vec3 vec3<`t : vec<4>>(`t v);
+declare float min(float f1, float f2);
+declare float max(float f1, float f2);
+declare `t reflect<`t : vec>(`t v1, `t v2);
+declare float pow(float f1, float f2);
+declare float length<`t : vec>(`t v);
+declare float distance<`t : vec>(`t v1, `t v2);
+declare float cos(float f);
+declare float sqrt(float f);
+
+canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
+canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }
+canon hom<`t> homify_normal<`t : vec<3>>(dir<`t> v) { return vec4(v, 0.) as hom<`t>; }
+canon alpha<color> extendColor(color v) { return vec4(v, 1.) as alpha<color>; }
+
+varying model vPosition;
+uniform samplerCube<alpha<color>> uSkybox;
+uniform float uTime;
+uniform world uLight;
+uniform float uTurbidity;
+uniform hom<world>->hom<camera> uView;
+uniform hom<model>->hom<world> uModel;
+uniform ciexyz->rgb uCietorgb;
+
+// Perez from http://timothykol.com/pub/sky.pdf
+
+// canon ciexyz ytoz(ciexyy c) {
+//     return c as ciexyz;
+// }
+
+// float luminance(float zenithAngle, float sunAngle, float A, float B, float C, float D, float E) {
+//     float mathe = 2.718281828459;
+//     return (1. + A * pow(mathe, B / cos(zenithAngle) * (1. + C * pow(mathe, D * sunAngle) + E * pow(cos(sunAngle), 2.))));
+// }
+
+// ciexyy pratheen(float zenithAngle, float sunAngle) {
+//     float T = uTurbidity;
+//     float x = luminance(zenithAngle, sunAngle, -.0193 * T - 0.2592, -0.0665 * T + 0.0008, -.00004 * T + 0.2125, -0.0641 * T + .8989, -0.0033 * T + .0452);
+//     float y = luminance(zenithAngle, sunAngle, -0.0167 * T -0.2608, -0.0950 * T + 0.0092, -0.0079 * T + 0.2102, -0.0441 * T - 1.6537, -0.0109 * T + 0.0529);
+//     float bY = luminance(zenithAngle, sunAngle, -0.1787 * T -1.4630, -0.3554 * T + 0.4275, -0.0227 * T + 5.3251, 0.1206 * T - 2.5771, -0.0670 * T + 0.3703);
+//     return [x, y, bY];
+// }
+
+float normal_distr(float x, float mu, float sigma) {
+    float mathe = 2.718281828459;
+    float pi = 3.141592653589;
+    return 1. / sqrt(sigma * sigma * 2. * pi) * pow(mathe, -(pow(x - mu, 2.)) / (2. * sigma * sigma));
+}
+
+color scatter(float brightness) {
+    // Takes a brightness between 0 and 1 and generates the scattering for that brightness
+    float red = normal_distr(brightness, 0., .01) 
+        + .05 * normal_distr(brightness, .7, .2) * normal_distr(uTime, .5, .1)
+        + .05 * normal_distr(brightness, 0., .2) * normal_distr(uTime, .3, .05)
+        + .07 * normal_distr(brightness, 0., .2) * normal_distr(uTime, .7, .05);
+    float green = normal_distr(brightness, 0., .01) 
+        + .04 * normal_distr(brightness, .6, .2) * normal_distr(uTime, .5, .1)
+        + .02 * normal_distr(brightness, .05, .15) * normal_distr(uTime, .3, .04)
+        + .02 * normal_distr(brightness, .05, .15) * normal_distr(uTime, .7, .04);
+    float blue = normal_distr(brightness, 0., .01)
+        + normal_distr(brightness, 0., .7) * normal_distr(uTime, .5, .16);
+    return [red, green, blue];
+}
+
+void main() {
+    float dist = distance(normalize(vPosition in world) * length(uLight), uLight);
+    // float zenithAngle = 0.;
+    // float sunAngle = 0.;
+    // alpha<color> gl_FragColor = extendColor(pratheen(zenithAngle, sunAngle) in rgb);
+    color skyColor = scatter(dist / (length(uLight) * 2.));
+    float amountToTexture = max(.14 - length(skyColor), 0.) / .14;
+    alpha<color> gl_FragColor = amountToTexture * textureCube(uSkybox, vPosition) + extendColor(skyColor);
+}
