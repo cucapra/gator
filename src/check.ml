@@ -690,15 +690,6 @@ let update_psi (start: typ) (target: typ) ((f, pml) : string * typ list) (m: mu)
             else false)
         | _ -> false
     in
-    let are_coord (t1: typ) (t2: typ) : bool =
-        (* Note that t1, t2 must be VarTyp based on the usecase below *)
-        match t1, t2 with
-        | VarTyp s1, VarTyp s2 ->
-            (if Assoc.mem s1 m && Assoc.mem s2 m
-            then List.mem Coord (Assoc.lookup s1 m) && List.mem Coord (Assoc.lookup s2 m)
-            else failwith ("Expected to find " ^ s1 ^ " and " ^ s2 ^ " in mu"))
-        | _ -> failwith ("Unexpected lookup of " ^ string_of_typ t1 ^ " or " ^ string_of_typ t2 ^ " to mu")
-    in
 	let (s1, stl) = as_par_typ start in
 	let (s2, ttl) = as_par_typ target in
     let start_index = string_of_typ start in

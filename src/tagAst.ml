@@ -51,7 +51,6 @@ type exp =
 and args = exp list
 
 type modification =
-    | Coord
     | Canon
     | Space
 
@@ -80,7 +79,7 @@ type comm =
     | Print of exp
     | Inc of id
     | Dec of id
-    | Decl of typ * string * exp
+    | Decl of modification list * typ * string * exp
     | Assign of string * exp
     | AssignOp of string * binop * exp
     | If of if_block * if_block list * (comm list) option  (* if - elif list - else *)

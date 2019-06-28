@@ -51,7 +51,6 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token COMMA
 %token DOT
 %token TAG
-%token COORD
 %token CANON
 %token IS
 %token TRUE
@@ -134,8 +133,6 @@ modificationlst:
       { [] }
   | CANON
       { [Canon] }
-  | COORD
-      { [Coord] }
 
 declarelst: 
   | DECLARE; d = decl_extern; SEMI;

@@ -98,7 +98,7 @@ let rec string_of_comm (c: comm) : string =
     | Print e -> "print " ^ (string_of_exp e) ^ ";"
     | Inc x -> x ^ "++"
     | Dec x -> x ^ "--"
-    | Decl (t, s, e) -> (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_exp e) ^ ";"
+    | Decl (ml, t, s, e) -> (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_exp e) ^ ";"
     | Assign (b, x) -> b ^ " = " ^ (string_of_exp x) ^ ";"
     | AssignOp (x, op, e) -> x ^ " " ^  binop_string op ^ "= " ^ (string_of_exp e)
     | If ((b, c1), elif_list, c2) -> 
