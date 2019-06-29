@@ -24,7 +24,7 @@ type delta = (parameterization * typ) Assoc.context
 type phi = fn_type Assoc.context
 
 (* Tag and function modifiers *)
-(* Specifically the coord, canonical, and space keywords *)
+(* Specifically the canonical and space keywords *)
 (* Is currently only modified during tag and function declaration steps *)
 type mu = (modification list) Assoc.context
 
@@ -694,20 +694,18 @@ let update_psi (start: typ) (target: typ) ((f, pml) : string * typ list) (m: mu)
 	let (s2, ttl) = as_par_typ target in
     let start_index = string_of_typ start in
     let to_add = (target, (f, pml)) in
-    if  are_coord (VarTyp s1) (VarTyp s2) then
-        if Assoc.mem start_index ps then 
-        (let start_lst = Assoc.lookup start_index ps in
-            if (List.fold_left (fun acc (lt, (_, _)) -> acc ||
-                    (let (s2, tl2) = as_par_typ lt in
-					if (List.length ttl = List.length tl2) 
-                    then List.fold_left2 (fun acc' t1 t2 -> acc' || (check_var_typ_eq t1 t2)) false ttl tl2
-                    else false))
-                false start_lst)
-            then raise (TypeException ("Duplicate transformation for " ^ start_index ^ "->" ^ string_of_typ (ParTyp(VarTyp s1, ttl)) ^ " in the declaration of " ^ f))
-            else Assoc.update start_index (to_add :: start_lst) ps
-        )
-        else Assoc.update start_index [to_add] ps 
-    else ps
+    if Assoc.mem start_index ps then 
+    (let start_lst = Assoc.lookup start_index ps in
+        if (List.fold_left (fun acc (lt, (_, _)) -> acc ||
+                (let (s2, tl2) = as_par_typ lt in
+                if (List.length ttl = List.length tl2) 
+                then List.fold_left2 (fun acc' t1 t2 -> acc' || (check_var_typ_eq t1 t2)) false ttl tl2
+                else false))
+            false start_lst)
+        then raise (TypeException ("Duplicate transformation for " ^ start_index ^ "->" ^ string_of_typ (ParTyp(VarTyp s1, ttl)) ^ " in the declaration of " ^ f))
+        else Assoc.update start_index (to_add :: start_lst) ps
+    )
+    else Assoc.update start_index [to_add] ps 
 
 let update_psi_matrix (f: string) (t: typ) (m: mu) (ps: psi) : psi =
     match t with
@@ -716,7 +714,7 @@ let update_psi_matrix (f: string) (t: typ) (m: mu) (ps: psi) : psi =
 
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
 (* TODO : parametrized types *)
-let check_param ((id, t): (string * typ)) (g: gamma) (d: delta) (m: mu) 
+let check_param ((ml, id, t): (modification list * string * typ)) (g: gamma) (d: delta) (m: mu) 
     (pm : parameterization) (ps: psi) : gamma * psi = 
     debug_print ">> check_param";
     if Assoc.mem id g 
@@ -724,7 +722,7 @@ let check_param ((id, t): (string * typ)) (g: gamma) (d: delta) (m: mu)
     else check_typ_valid t d pm m; (Assoc.update id t g, update_psi_matrix id t m ps)
     
 (* Get list of parameters from param list *)
-let check_params (pl : (string * typ) list) (g: gamma) (d : delta) (m: mu) 
+let check_params (pl : (modification list * string * typ) list) (g: gamma) (d : delta) (m: mu) 
 (pm : parameterization) (ps: psi) : TypedAst.params * gamma * psi = 
     debug_print ">> check_params";
     let (g', ps') = List.fold_left (fun (g', ps') p -> check_param p g' d m pm ps') (g, ps) pl in 
@@ -732,12 +730,14 @@ let check_params (pl : (string * typ) list) (g: gamma) (d : delta) (m: mu)
     (p, g', ps')
 
 (* Type check global variable *)
-let check_global_variable ((id, sq, t, v): (string * storage_qual * typ * value option)) (g: gamma)
-    (d: delta) (m:mu) (ps: psi) : (string * storage_qual * TypedAst.etyp * value option) * gamma * psi =
+let check_global_variable ((ml, id, sq, t, v): (modification list * string * storage_qual * typ * value option)) 
+    (g: gamma) (d: delta) (m:mu) (ps: psi) : 
+    (string * storage_qual * TypedAst.etyp * value option) * gamma * psi =
     debug_print ">> check_global_variable";
     if Assoc.mem id g
     then raise (TypeException ("Duplicate global variable: " ^ id))
-    else check_typ_valid t d Assoc.empty m; ((id, sq, tag_erase t d Assoc.empty, v), Assoc.update id t g, update_psi_matrix id t m ps)
+    else check_typ_valid t d Assoc.empty m; 
+        ((id, sq, tag_erase t d Assoc.empty, v), Assoc.update id t g, update_psi_matrix id t m ps)
     
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parameterization) : TypedAst.texp = 
     debug_print ">> exp_to_texp";
@@ -1129,22 +1129,10 @@ let check_tag (s: string) (pm: parameterization) (tm : modification list) (t: ty
         | h::t -> if is_sub_constraint h GenVecTyp d pm m then check_param_vec_bounds t
             else raise (TypeException ("Invalid declaration of " ^ s ^ " -- must parameterize on vectors only"))
     in
-    let rec check_coord (t : typ) : unit =
-        match t with
-        | VarTyp s ->
-            let ml = Assoc.lookup s m in
-            if List.mem Coord ml then raise (TypeException "Cannot declare a coord as a subtype of another coord")
-            else check_coord (delta_lookup s [] d pm m)
-        | ParTyp (VarTyp s, pml) ->
-            let ml = Assoc.lookup s m in
-            if List.mem Coord ml then raise (TypeException "Cannot declare a coord as a subtype of another coord")
-            else check_coord (delta_lookup s pml d pm m)
-        | _ -> ()
-    in
     check_valid_supertype t |> ignore;
     check_param_vec_bounds (List.map snd (Assoc.bindings pm));
     if Assoc.mem s d then raise (TypeException "Cannot redeclare tag")
-    else if List.mem Coord tm then check_coord t else ();
+    else ();
     (Assoc.update s (pm, t) d, Assoc.update s tm m)
 
 let rec check_tags (t: tag_decl list) (d: delta) (m: mu): delta * mu =

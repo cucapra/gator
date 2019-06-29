@@ -266,7 +266,7 @@ comm_element:
   | SKIP;                            
       { Skip }
   | t = typ; x = ID; GETS; e1 = exp; 
-      { Decl(t, x, e1) }
+      { Decl([], t, x, e1) }
   | x = ID; GETS; e1 = exp; 
       { Assign(x, e1) }
   | x = ID; PLUSEQ; e1 = exp; 

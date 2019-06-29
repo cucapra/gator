@@ -43,7 +43,6 @@ let string_of_constraint (c: constrain) : string =
 
 let string_of_modification (m: modification) : string =
     match m with
-    | Coord -> "coord"
     | Canon -> "canon"
     | Space -> "space"
 
