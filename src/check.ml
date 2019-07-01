@@ -416,7 +416,7 @@ let least_common_parent_safe (t1: typ) (t2: typ) (d: delta) (pm: parameterizatio
     | t -> raise t
 
 let collapse_parameterization_decl (pmd: parameterization_decl) : parameterization =
-    Assoc.gen_context (List.map (fun (x, y, z) -> (x, z)) pmd)
+    Assoc.gen_context pmd
 
 let infer_pml (d : delta) ((params, rt, pr) : fn_type) (args_typ : typ list) 
 (pm : parameterization) (m : mu): (typ list) option =
@@ -646,19 +646,19 @@ let check_index_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization
         end
     else fail ()
 
-let check_parameterization (d: delta) (m: mu) (pmd: parameterization_decl) : mu =
-    let rec check_para_list param found : mu = 
-    match param with
-    | [] -> m
-    | (s, mo, c)::t -> if Assoc.mem s found then raise (TypeException ("Duplicate parameter `" ^ s)) 
-        else 
-        let updated_found = (Assoc.update s c found) in
-        (match c with
-        | TypConstraint t' -> check_typ_valid t' d found m; 
-            Assoc.update ("`" ^ s) mo (check_para_list t updated_found)
-        | _ -> Assoc.update ("`" ^ s) mo (check_para_list t updated_found))
-    in
-    check_para_list pmd Assoc.empty
+let check_parameterization_decl (d: delta) (m: mu) (pmd: parameterization_decl) : unit =
+    let rec check_para_list param found : unit = 
+        match param with
+        | [] -> ()
+        | (s, c)::t -> if Assoc.mem s found then raise (TypeException ("Duplicate parameter `" ^ s)) 
+            else 
+            let updated_found = (Assoc.update s c found) in
+            (match c with
+            | TypConstraint t' -> check_typ_valid t' d found m; ()
+            | _ -> ());
+            (check_para_list t updated_found);
+        in
+    check_para_list pmd Assoc.empty |> ignore; ()
 
 let as_par_typ (t: typ) : string * typ list =
     match t with
@@ -749,7 +749,7 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
     debug_print ">> check_in_exp";
     let rec psi_path_rec (to_search: (typ * exp) Queue.t) (found: typ list) : exp =
         let search_phi (tl: typ) (ps_lst : (typ * fn_inv) list) : (typ * fn_inv) list =
-            (* This function searches phi for anonical abstract functions that map from the given type *)
+            (* This function searches phi for canonical abstract functions that map from the given type *)
             (* A list of the types these functions map with the inferred type parameters is returned *)
             (* If multiple functions are possible, then ambiguities are resolved with the following priorities *)
             (* 1. Minimize upcasting requirements (actually handled by use of this function) *)
@@ -1147,14 +1147,14 @@ let rec check_tags (t: tag_decl list) (d: delta) (m: mu): delta * mu =
 let check_fn_decl (g: gamma) (d: delta) (m: mu) ((fm, id, (pl, rt, pmd)): fn_decl) (p: phi) (ps: psi) : 
 (TypedAst.params * gamma * psi) * TypedAst.parameterization * mu * phi =
     debug_print (">> check_fn_decl : " ^ id);
+    check_parameterization_decl d m pmd;
     let pm = collapse_parameterization_decl pmd in
-    let m' = check_parameterization d m pmd in
-    let pr = check_params pl g d m' pm ps in 
+    let pr = check_params pl g d m pm ps in 
     check_typ_valid rt d pm m;
     let pme = Assoc.gen_context (List.map (fun (s, c) -> (s, constrain_erase c d pm)) (Assoc.bindings pm)) in
     if Assoc.mem id p 
     then raise (TypeException ("Function of duplicate name has been found: " ^ id))
-    else (pr, pme, m', Assoc.update id (pl, rt, pm) p)
+    else (pr, pme, m, Assoc.update id (pl, rt, pm) p)
 
 (* Helper function for type checking void functions. 
  * Functions that return void can have any number of void return statements 

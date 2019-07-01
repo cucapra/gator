@@ -57,7 +57,7 @@ type global_var = modification list * string * storage_qual * typ * value option
 (* function parameterization,
  * which may extend another type. *)
 type parameterization = constrain Assoc.context
-type parameterization_decl = (string * modification list * constrain) list
+type parameterization_decl = (string * constrain) list
 
 (* function parameters *)
 (* arguments may have an optional parameterization type *)

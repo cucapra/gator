@@ -205,9 +205,9 @@ params:
 
 parameterization:
   | BACKTICK; t = ID;
-      { (t, [], AnyTyp) }
-  | BACKTICK; t = ID; COLON; m = modificationlst; c = constrain;
-      { (t, m, c) }
+      { (t, AnyTyp) }
+  | BACKTICK; t = ID; COLON; c = constrain;
+      { (t, c) }
 
 paramet_decl:
   | p = parameterization;
