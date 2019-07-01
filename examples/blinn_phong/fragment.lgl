@@ -5,20 +5,26 @@
 // Thus we sometimes use Braid example as a reference
 // https://capra.cs.cornell.edu/braid/dingus/#example=phong
 
-tag model is vec3;
-tag modelHom is vec4;
-tag world is vec3;
-tag worldHom is vec4;
-tag camera is vec3;
-tag cameraHom is vec4;
-tag color is vec3;
-tag alphaColor is vec4;
+space model is vec<3>;
+space modelHom is vec<4>;
+space world is vec<3>;
+space worldHom is vec<4>;
+space camera is vec<3>;
+space cameraHom is vec<4>;
+space color is vec<3>;
+space alphaColor is vec<4>;
 
 declare float dot<`t: genType>(`t v1, `t v2);
 declare `t normalize<`t : genType>(`t x);
 
+varying model vPosition;
+uniform modelHom->worldHom uModel;
+uniform worldHom->cameraHom uView;
+varying model vNormal;
+uniform world uLight;
+
 // parsing error : allow empty mains
-void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView, model vNormal, world uLight) {
+void main() {
 
     model->modelHom extendModel = [
         [1., 0., 0.],
