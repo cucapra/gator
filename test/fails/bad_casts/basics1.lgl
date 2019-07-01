@@ -1,5 +1,5 @@
-tag coord a is vec<2>;
-tag coord b is vec<2>;
+tag a is vec<2>;
+tag b is vec<2>;
 
 void main() {
     a avec = [1., 2.];

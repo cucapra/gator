@@ -49,8 +49,8 @@ let string_of_modification (m: modification) : string =
 let string_of_mod_list (m: modification list) : string =
     String.concat " " (List.map string_of_modification m)
 
-let string_of_param ((s, t): string * typ) : string =
-    (string_of_typ t) ^ " " ^ s
+let string_of_param ((ml, s, t): modification list * string * typ) : string =
+    string_of_mod_list ml ^ " " ^ (string_of_typ t) ^ " " ^ s
     
 let string_of_params (p: params) : string =
     "(" ^ (String.concat ", " (List.map string_of_param p)) ^ ")"
@@ -132,8 +132,8 @@ let string_of_declare (f: fn) : string =
 let string_of_declare_lst (fl : fn list) : string = 
     string_of_lst string_of_declare fl
 
-let string_of_global_var ((x, sq, t, v) : global_var) : string =
-    string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ x 
+let string_of_global_var ((ml, x, sq, t, v) : global_var) : string =
+    string_of_mod_list ml ^ " " ^ string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ x 
     ^ string_of_option_removed (fun x -> "= " ^ string_of_value x) v
 
 let string_of_global_var_or_fn (u : global_var_or_fn) : string =

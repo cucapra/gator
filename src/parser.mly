@@ -92,7 +92,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %left AND OR
 %left NOT EQ LEQ GEQ LBRACK 
 %left LWICK RWICK 
-%left LPAREN
+%left LPAREN 
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
@@ -154,14 +154,14 @@ taglst:
 ; 
 
 tag:
-  | TAG; m = modificationlst; x = ID; IS; t = typ; SEMI; 
-      { (m, x, [], t) }
-  | TAG; m = modificationlst; x = ID; LWICK; pt = paramet_decl; RWICK; IS; t = typ; SEMI; 
-      { (m, x, pt, t) }
-  | SPACE; m = modificationlst; x = ID; IS; t = typ; SEMI; 
-      { (Space::m, x, [], t) }
-  | SPACE; m = modificationlst; x = ID; LWICK; pt = paramet_decl; RWICK; IS; t = typ; SEMI; 
-      { (Space::m, x, pt, t) }
+  | TAG; x = ID; IS; t = typ; SEMI; 
+      { ([], x, [], t) }
+  | TAG; x = ID; LWICK; pt = paramet_decl; RWICK; IS; t = typ; SEMI; 
+      { ([], x, pt, t) }
+  | SPACE; x = ID; IS; t = typ; SEMI; 
+      { ([Space], x, [], t) }
+  | SPACE; x = ID; LWICK; pt = paramet_decl; RWICK; IS; t = typ; SEMI; 
+      { ([Space], x, pt, t) }
 ;
 
 globalvarfnlst:
@@ -189,18 +189,18 @@ commlst:
 ;
 
 globalvar:
-  | sq = storagequal; t = typ; x = ID; SEMI 
-      { (x, sq, t, None) }
-  | sq = storagequal; t = typ; x = ID; GETS; v = value; SEMI 
-      { (x, sq, t, Some v) }
+  | m = modificationlst; sq = storagequal; t = typ; x = ID; SEMI 
+      { (m, x, sq, t, None) }
+  | m = modificationlst; sq = storagequal; t = typ; x = ID; GETS; v = value; SEMI 
+      { (m, x, sq, t, Some v) }
 ;
 
 
 params: 
-  | t = typ; x = ID
-      { (x, t)::[] }
-  | t = typ; x = ID; COMMA; p = params
-      { (x, t)::p }
+  | m = modificationlst; t = typ; x = ID
+      { (m, x, t)::[] }
+  | m = modificationlst; t = typ; x = ID; COMMA; p = params
+      { (m, x, t)::p }
 ;
 
 parameterization:
@@ -267,6 +267,8 @@ comm_element:
       { Skip }
   | t = typ; x = ID; GETS; e1 = exp; 
       { Decl([], t, x, e1) }
+  | CANON; t = typ; x = ID; GETS; e1 = exp; 
+      { Decl([Canon], t, x, e1) }
   | x = ID; GETS; e1 = exp; 
       { Assign(x, e1) }
   | x = ID; PLUSEQ; e1 = exp; 

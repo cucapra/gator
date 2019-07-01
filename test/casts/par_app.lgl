@@ -3,7 +3,7 @@ tag world is vec<3>;
 tag camera is vec<3>;
 tag rot<`t : vec<n>> is vec<n>; // Rotated by 90 degrees counterclockwise around the z-axis as an example
 tag dir<`t : vec<n>> is vec<n>;
-tag coord hom<`t : vec<n>> is vec<n + 1>;
+tag hom<`t : vec<n>> is vec<n + 1>;
 
 declare dir<`t> normalize<`t : vec>(`t v);
 declare vec4 vec4(vec<3> v, float f);

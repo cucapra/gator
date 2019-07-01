@@ -1,9 +1,9 @@
-tag coord a is vec<2>;
-tag coord b is vec<2>;
+tag a is vec<2>;
+tag b is vec<2>;
 tag c is vec<2>;
 tag d is vec<3>;
 
-`u app<`t : coord vec<2>, `u : coord vec<2>>(`t v, `t->`u m) {
+`u app<`t : vec<2>, `u : vec<2>>(`t v, `t->`u m) {
     return v in `u;
 }
 

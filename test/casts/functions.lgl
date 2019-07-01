@@ -1,8 +1,8 @@
-tag coord a is vec<2>;
-tag coord b is vec<2>;
-tag coord c is vec<2>;
-space coord d is vec<3>;
-tag coord e is vec<2>;
+tag a is vec<2>;
+tag b is vec<2>;
+tag c is vec<2>;
+space d is vec<3>;
+tag e is vec<2>;
 
 canon b _ab(a v) {
     a->b _ab = [[1., 2.], [1., 2.]]; // not a duplicate cause no recursion
@@ -22,14 +22,14 @@ canon d _asd<`t : vec<2>>(`t v) {
     return m * v + [0., 0., 1.];
 }
 
-canon `t _collapse_e<`t : coord e>(d v) {
-    d->`t m = [[1., 0., 0.], [0., 1., 0.]];
-    return v in `t; // we can use 'in' since `t must be a coord (see abstract.lgl)
+canon `t _collapse_e<`t : e>(d v) {
+    canon d->`t m = [[1., 0., 0.], [0., 1., 0.]];
+    return v in `t;
 }
 
-canon `t _collapse_a<`t : coord a>(d v) {
-    d->`t m = [[1., 0., 0.], [0., 1., 0.]];
-    return v in `t; // we can use 'in' since `t must be a coord (see abstract.lgl)
+canon `t _collapse_a<`t : a>(d v) {
+    canon d->`t m = [[1., 0., 0.], [0., 1., 0.]];
+    return v in `t;
 } 
 
 void main() {

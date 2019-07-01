@@ -1,6 +1,6 @@
-tag coord a is vec<2>;
-tag coord b is vec<2>;
-tag coord c is vec<2>;
+tag a is vec<2>;
+tag b is vec<2>;
+tag c is vec<2>;
 
 canon b _ab(a v) {
     a->b _ab = [[1., 2.], [1., 2.]]; // not a duplicate cause no recursion
@@ -17,7 +17,7 @@ canon c _ac<`t : a>(`t v) {
 
 void main() {
     a avec = [1., 1.];
-    c->b __cb = [[2., -1.], [-1., 1.]];
+    canon c->b __cb = [[2., -1.], [-1., 1.]];
 
     a fail = avec in c in a;  // no path should be findable
     print fail;

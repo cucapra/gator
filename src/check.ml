@@ -461,7 +461,7 @@ let infer_pml (d : delta) ((params, rt, pr) : fn_type) (args_typ : typ list)
                 | _ -> None))
             (Some Assoc.empty) (Assoc.bindings pr))
     in
-    gen_pml (List.fold_left2 (fun fpm arg_typ (_, par_typ) -> unify_param arg_typ par_typ fpm) 
+    gen_pml (List.fold_left2 (fun fpm arg_typ (_, _, par_typ) -> unify_param arg_typ par_typ fpm) 
                 (Some Assoc.empty) args_typ params)
     
 
@@ -726,7 +726,7 @@ let check_params (pl : (modification list * string * typ) list) (g: gamma) (d : 
 (pm : parameterization) (ps: psi) : TypedAst.params * gamma * psi = 
     debug_print ">> check_params";
     let (g', ps') = List.fold_left (fun (g', ps') p -> check_param p g' d m pm ps') (g, ps) pl in 
-    let p = (List.map (fun (i, t) -> (i, tag_erase t d pm)) pl) in 
+    let p = (List.map (fun (_, i, t) -> (i, tag_erase t d pm)) pl) in 
     (p, g', ps')
 
 (* Type check global variable *)
@@ -761,7 +761,7 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
                 | [] -> List.map (fun (t, (x, y)) -> (t, (x, y, []))) ps_lst 
                 | (id, (params, rt, pr)) :: t -> 
                     if List.mem Canon (Assoc.lookup id m) then
-                        let pt = match params with | [(_, pt)] -> pt | _ -> failwith ("function " ^ id ^ " with non-one argument made canonical") in
+                        let pt = match params with | [(_,_, pt)] -> pt | _ -> failwith ("function " ^ id ^ " with non-one argument made canonical") in
                         match infer_pml d (params, rt, pr) [tl] pm m with | None -> search_phi_rec t | Some pml ->
                         let pr1 = List.map snd (Assoc.bindings pr) in
                         let rtr = replace_abstype rt (fst (match_parameterization_unsafe d pr pm pml)) in
@@ -961,7 +961,7 @@ and check_fn_inv (d : delta) (m: mu) (g : gamma) (p : phi) (args : args) (i : st
         in
         match param_check with | None -> None | Some pm_map ->
         (* Get the parameters types and replace them in params_typ *)
-        let params_typ = List.map (fun (_,a) -> a) params in
+        let params_typ = List.map (fun (_,_,a) -> a) params in
         let rec read_pm (t : typ) : typ =
             match t with
             | AbsTyp s -> Assoc.lookup s pm_map
@@ -1000,7 +1000,7 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
         | IntTyp -> (TypedAst.Dec (x, TypedAst.IntTyp), g, ps)
         | FloatTyp -> (TypedAst.Dec (x, TypedAst.FloatTyp), g, ps)
         | _ -> raise (TypeException "decrement must be applied to an integer or float"))
-    | Decl (t, s, e) -> (* TODO: code insertion *)
+    | Decl (_, t, s, e) -> 
         if Assoc.mem s g then raise (TypeException "variable name shadowing is illegal")        
         else 
         (check_typ_valid t d pm m; 
@@ -1184,7 +1184,7 @@ let update_mu_with_function (((fm, id, (pr, r, pmd))): fn_decl) (d: delta) (m: m
         match pr with
         (* Only update if it is a canon function with exactly one argument *)
         (* TODO: add to phi, not to psi unless it is concrete *)
-        | [(_, t)] ->
+        | [(_,_, t)] ->
         begin
             if is_typ_eq t r then raise (TypeException ("Canonical function " ^ id ^ " cannot be a map from a type to itself")) else
             let fail _ = raise (TypeException "Canonical functions must be between tag or abstract types") in
