@@ -29,7 +29,8 @@ type phi = fn_type Assoc.context
 type mu = (modification list) Assoc.context
 
 (* Transformation context *)
-(* Effectively has the type 'start->(target, f<pml>) list' for types start and target (both restricted implicitely to var types), function/matrix name f, and function parameter list pml *)
+(* Effectively has the type 'start->(target, f<pml>) list' for types start and target (both restricted implicitely to var types), *)
+(* function/matrix name f, and function parameter list pml *)
 (* Note that the resulting thing could be a call with a concrete parameterization, hence the typ list (which is empty for matrices) *)
 type psi = ((typ * fn_inv) list) Assoc.context
 
@@ -647,6 +648,7 @@ let check_index_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization
     else fail ()
 
 let check_parameterization_decl (d: delta) (m: mu) (pmd: parameterization_decl) : unit =
+    debug_print ">> check_parameterization_decl";
     let rec check_para_list param found : unit = 
         match param with
         | [] -> ()
@@ -747,6 +749,8 @@ let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parameteriz
 let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) (d: delta) 
 (pm: parameterization) (p: phi) (ps: psi) : exp = 
     debug_print ">> check_in_exp";
+    print_endline (Assoc.to_string string_of_mod_list m);
+    print_endline (string_of_psi ps);
     let rec psi_path_rec (to_search: (typ * exp) Queue.t) (found: typ list) : exp =
         let search_phi (tl: typ) (ps_lst : (typ * fn_inv) list) : (typ * fn_inv) list =
             (* This function searches phi for canonical abstract functions that map from the given type *)
