@@ -1,19 +1,19 @@
-space coord model is vec<3>;
-space coord world is vec<3>;
+space model is vec<3>;
+space world is vec<3>;
 tag viewport is vec<3>;
 tag camera is viewport;
 tag light is viewport;
-space coord view<`t : viewport> is `t;
-tag coord proj<`t : viewport> is `t;
-space coord hom<`t : vec<n>> is vec<n+1>;
+space view<`t : viewport> is `t;
+tag proj<`t : viewport> is `t;
+space hom<`t : vec<n>> is vec<n+1>;
 
 declare vec4 vec4<`t : vec<3>>(`t v, float f);
 declare vec3 vec3<`t : vec<4>>(`t v);
 
 attribute model aPosition;
-uniform hom<model>->hom<world> uModel;
-uniform hom<world>->hom<view<light>> uLightView;
-uniform hom<view<light>>->hom<proj<light>> uLightProjection;
+canon uniform hom<model>->hom<world> uModel;
+canon uniform hom<world>->hom<view<light>> uLightView;
+canon uniform hom<view<light>>->hom<proj<light>> uLightProjection;
 
 canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
 canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }

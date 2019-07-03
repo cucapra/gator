@@ -1,16 +1,16 @@
-space coord model is vec<3>;
-space coord world is vec<3>;
+space model is vec<3>;
+space world is vec<3>;
 tag viewport is vec<3>;
 tag camera is viewport;
 tag light is viewport;
-space coord view<`t : viewport> is `t;
-tag coord proj<`t : viewport> is `t;
-tag coord hom<`t : vec<n>> is vec<n+1>;
+space view<`t : viewport> is `t;
+tag proj<`t : viewport> is `t;
+tag hom<`t : vec<n>> is vec<n+1>;
 space dir<`t : vec<n>> is vec<n>;
 space color is vec<3>;
-tag coord rgb is color;
+tag rgb is color;
 space ciexyy is color;
-space coord ciexyz is color;
+space ciexyz is color;
 space alpha<`t : color> is vec<4>;
 tag depth is vec<4>;
 
@@ -39,9 +39,9 @@ uniform samplerCube<alpha<color>> uSkybox;
 uniform float uTime;
 uniform world uLight;
 uniform float uTurbidity;
-uniform hom<world>->hom<camera> uView;
-uniform hom<model>->hom<world> uModel;
-uniform ciexyz->rgb uCietorgb;
+canon uniform hom<world>->hom<camera> uView;
+canon uniform hom<model>->hom<world> uModel;
+canon uniform ciexyz->rgb uCietorgb;
 
 // Perez from http://timothykol.com/pub/sky.pdf
 

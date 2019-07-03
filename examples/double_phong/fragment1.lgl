@@ -1,7 +1,7 @@
-tag coord model is vec3;
-tag coord world is vec3;
-tag coord camera is vec3;
-tag coord hom<`t : vec3> is vec4;
+tag model is vec3;
+tag world is vec3;
+tag camera is vec3;
+tag hom<`t : vec3> is vec4;
 tag norm<`t : vec> is `t;
 tag color is vec3;
 tag alpha<`t : color> is vec4;
@@ -16,8 +16,8 @@ declare `t reflect<`t : vec>(`t v1, `t v2);
 declare float pow(float f1, float f2);
 
 varying model vPosition;
-uniform hom<model>->hom<world> uModel;
-uniform hom<world>->hom<camera> uView;
+canon uniform hom<model>->hom<world> uModel;
+canon uniform hom<world>->hom<camera> uView;
 varying norm<model> vNormal;
 uniform world uLight;
 
