@@ -3,7 +3,7 @@ tag b is vec<2>;
 tag c is vec<2>;
 tag d is vec<3>;
 
-`u app<`t : vec<2>, `u : vec<2>>(`t v, `t->`u m) {
+`u app<`t : vec<2>, `u : vec<2>>(`t v, canon `t->`u m) {
     return v in `u;
 }
 

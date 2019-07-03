@@ -45,8 +45,8 @@ canon `t rot_reduce<`t : vec<3>>(rot<rot<rot<rot<`t>>>> v) {
 void main() {
     model uPosition = [1., 1., 1.];
     dir<model> uNorm = [0., 0., 1.];
-    hom<model>->hom<world> uModel = [[1., .5, 0., 0.], [0., 1., 0., 0.], [1., 0., 1., 0.], [0., 0., .5, 1.]];
-    hom<world>->hom<camera> uWorld = [[1., .5, 0., 0.], [0., 1., 0., 0.], [1., 0., 1., 0.], [0., 0., .5, 1.]];
+    canon hom<model>->hom<world> uModel = [[1., .5, 0., 0.], [0., 1., 0., 0.], [1., 0., 1., 0.], [0., 0., .5, 1.]];
+    canon hom<world>->hom<camera> uWorld = [[1., .5, 0., 0.], [0., 1., 0., 0.], [1., 0., 1., 0.], [0., 0., .5, 1.]];
     world lightPos = [0., 1., 0.];
     
     float angle = dot(normalize(uPosition in model), uNorm);

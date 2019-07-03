@@ -9,7 +9,7 @@ canon b _ab(a v) {
     return _ab * v;
 }
 
-c ac(a v, b->c m) {
+c ac(a v, canon b->c m) {
     return v in c; // = m * _ab(v)
 }
 

@@ -669,7 +669,7 @@ let as_par_typ (t: typ) : string * typ list =
 	| AbsTyp s -> ("`" ^ s, [])
 	| _ -> failwith ("Unexpected type " ^ string_of_typ t ^ " provided to manipulating psi")
 	
-let update_psi (start: typ) (target: typ) ((f, pml) : string * typ list) (m: mu) (ps: psi) : psi =
+let update_psi (start: typ) (target: typ) (ml: modification list) ((f, pml) : string * typ list) (m: mu) (ps: psi) : psi =
     (* Update psi, raising errors in case of a duplicate *)
     (* If the given type is not valid in psi, psi is returned unmodified *)
     (* Will raise a failure if a non-concrete vartyp is used *)
@@ -696,22 +696,24 @@ let update_psi (start: typ) (target: typ) ((f, pml) : string * typ list) (m: mu)
 	let (s2, ttl) = as_par_typ target in
     let start_index = string_of_typ start in
     let to_add = (target, (f, pml)) in
-    if Assoc.mem start_index ps then 
-    (let start_lst = Assoc.lookup start_index ps in
-        if (List.fold_left (fun acc (lt, (_, _)) -> acc ||
-                (let (s2, tl2) = as_par_typ lt in
-                if (List.length ttl = List.length tl2) 
-                then List.fold_left2 (fun acc' t1 t2 -> acc' || (check_var_typ_eq t1 t2)) false ttl tl2
-                else false))
-            false start_lst)
-        then raise (TypeException ("Duplicate transformation for " ^ start_index ^ "->" ^ string_of_typ (ParTyp(VarTyp s1, ttl)) ^ " in the declaration of " ^ f))
-        else Assoc.update start_index (to_add :: start_lst) ps
-    )
-    else Assoc.update start_index [to_add] ps 
+    if List.mem Canon ml then
+        if Assoc.mem start_index ps then 
+        (let start_lst = Assoc.lookup start_index ps in
+            if (List.fold_left (fun acc (lt, (_, _)) -> acc ||
+                    (let (s2, tl2) = as_par_typ lt in
+                    if (List.length ttl = List.length tl2) 
+                    then List.fold_left2 (fun acc' t1 t2 -> acc' || (check_var_typ_eq t1 t2)) false ttl tl2
+                    else false))
+                false start_lst)
+            then raise (TypeException ("Duplicate transformation for " ^ start_index ^ "->" ^ string_of_typ (ParTyp(VarTyp s1, ttl)) ^ " in the declaration of " ^ f))
+            else Assoc.update start_index (to_add :: start_lst) ps
+        )
+        else Assoc.update start_index [to_add] ps 
+    else ps
 
-let update_psi_matrix (f: string) (t: typ) (m: mu) (ps: psi) : psi =
+let update_psi_matrix (f: string) (t: typ) (ml: modification list) (m: mu) (ps: psi) : psi =
     match t with
-    | TransTyp (t1, t2) -> update_psi t1 t2 (f, []) m ps
+    | TransTyp (t1, t2) -> update_psi t1 t2 ml (f, []) m ps
     | _ -> ps
 
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
@@ -721,7 +723,7 @@ let check_param ((ml, id, t): (modification list * string * typ)) (g: gamma) (d:
     debug_print ">> check_param";
     if Assoc.mem id g 
     then raise (TypeException ("Duplicate parameter name in function declaration: " ^ id))
-    else check_typ_valid t d pm m; (Assoc.update id t g, update_psi_matrix id t m ps)
+    else check_typ_valid t d pm m; (Assoc.update id t g, update_psi_matrix id t ml m ps)
     
 (* Get list of parameters from param list *)
 let check_params (pl : (modification list * string * typ) list) (g: gamma) (d : delta) (m: mu) 
@@ -739,7 +741,7 @@ let check_global_variable ((ml, id, sq, t, v): (modification list * string * sto
     if Assoc.mem id g
     then raise (TypeException ("Duplicate global variable: " ^ id))
     else check_typ_valid t d Assoc.empty m; 
-        ((id, sq, tag_erase t d Assoc.empty, v), Assoc.update id t g, update_psi_matrix id t m ps)
+        ((id, sq, tag_erase t d Assoc.empty, v), Assoc.update id t g, update_psi_matrix id t ml m ps)
     
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parameterization) : TypedAst.texp = 
     debug_print ">> exp_to_texp";
@@ -749,8 +751,6 @@ let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parameteriz
 let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) (d: delta) 
 (pm: parameterization) (p: phi) (ps: psi) : exp = 
     debug_print ">> check_in_exp";
-    print_endline (Assoc.to_string string_of_mod_list m);
-    print_endline (string_of_psi ps);
     let rec psi_path_rec (to_search: (typ * exp) Queue.t) (found: typ list) : exp =
         let search_phi (tl: typ) (ps_lst : (typ * fn_inv) list) : (typ * fn_inv) list =
             (* This function searches phi for canonical abstract functions that map from the given type *)
@@ -1004,7 +1004,7 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
         | IntTyp -> (TypedAst.Dec (x, TypedAst.IntTyp), g, ps)
         | FloatTyp -> (TypedAst.Dec (x, TypedAst.FloatTyp), g, ps)
         | _ -> raise (TypeException "decrement must be applied to an integer or float"))
-    | Decl (_, t, s, e) -> 
+    | Decl (ml, t, s, e) -> 
         if Assoc.mem s g then raise (TypeException "variable name shadowing is illegal")        
         else 
         (check_typ_valid t d pm m; 
@@ -1019,7 +1019,7 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
             | TransTyp (_, TopVecTyp _) -> raise (TypeException "Cannot declare a transformation matrix with the top vec type")
             | _ -> t) in
             (TypedAst.Decl (tag_erase t' d pm, s, (exp_to_texp result d pm)), 
-            (check_assign t' s (snd result) d g p pm m), update_psi_matrix s t m ps))
+            (check_assign t' s (snd result) d g p pm m), update_psi_matrix s t ml m ps))
     | Assign (s, e) ->
         if Assoc.mem s g then
             let t = Assoc.lookup s g in
