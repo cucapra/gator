@@ -81,7 +81,7 @@ n &\in \mathbb{N} \\
 \phi &\defas F \alt \bot_{\phi,n} \alt \top_{\phi,n} \\
 \omega &\defas O \alt \bot_\omega \alt \top_\omega\\
 \chi &\defas C \alt \bot_\chi \alt \top_\chi\\
-\gamma &\defas \chi\sim\omega\sim\phi \alt \bot_n \alt \top_n \alt \alt \mathsf{scalar}\\
+\gamma &\defas \chi<\omega>.\phi \alt \bot_n \alt \top_n \alt \mathsf{scalar}\\
 \tau &\defas \mathsf{unit} \alt
 \gamma \alt
 \gamma_1->\gamma_2
@@ -134,9 +134,9 @@ These definitions are non-trivial, so it is useful to evaluate some examples of 
 	\item homogeneous coordinate system (\textsf{hom})\\
 	\[\begin{array}{lll}%
 		\bullet&
-		\Chi[(\mathsf{hom}\sim\mathsf{position},\mathsf{hom}\sim\mathsf{position},-)]&=\lambda xy.x * y[3] - y * x[3]\\
+		\Chi[(\mathsf{hom}<\mathsf{position}>,\mathsf{hom}<\mathsf{position}>,-)]&=\lambda xy.x * y[3] - y * x[3]\\
 		\bullet&
-		\Chi[(\mathsf{hom}\sim\mathsf{position},\mathsf{hom}\sim\mathsf{vector},+)]&=\lambda xy.x + y * x[3]\\
+		\Chi[(\mathsf{hom}<\mathsf{position}>,\mathsf{hom}<\mathsf{vector}>,+)]&=\lambda xy.x + y * x[3]\\
 		\bullet& 
 		\textnormal{others ommited for simplicity}\\
 	\end{array}\]
@@ -175,7 +175,7 @@ With these definitions in hand, we can declare some standard types in graphics p
 \end{lstlisting}
 
 \subsection{Context Declarations}
-With types declared, we must also have a mechanism for filling in the contexts $\Omega$ and $\Chi$.  Note that $\Delta$ as a frame ordering is filled as part of our \textsf{frame} type declarations.
+With types declared, we must also have a mechanism for filling in the contexts $\Omega$ and $\Chi$.  Note that $\Delta$ provides the usual partial ordering on types as part of our \textsf{frame} type declarations.
 
 $\Omega$ consists of object type signatures for functions.  We can introduce new type signatures for a given function using the regular \textsf{declare} notation.  For example, we have the following declarations for \textsf{positions} and \textsf{vectors}:
 
@@ -211,12 +211,12 @@ $\Chi$ function definitions are more complicated, as we are required to actually
 		return s * x;
 	}
 	
-	define hom~vector -(hom~position x, hom~position y) {
+	define hom<vector> -(hom<position> x, hom<position> y) {
 		// We use n rather than n-1 since hom has dimension n+1
 		return x * y[n] - y * x[n]
 	}
 	
-	define hom~position +(hom~position x, hom~vector y) {
+	define hom<position> +(hom<position> x, hom<vector> y) {
 		return x + y * x[n]
 	}
 \end{lstlisting}
@@ -230,21 +230,21 @@ Variables assigned a value $\dots$ are assumed to be given a value from an exter
 
 \begin{lstlisting}
 	// Conversion function definitions
-	hom~position~'t homify(cartesian~position~'t v) 
+	hom<'t>.position homify(cartesian<'t>.position v) 
 	{ return [v[0], v[1], v[2], 1.] }
-	hom~vector~'t homify(cartesian~vector~'t v) 
+	hom<'t>.vector homify(hom<'t>.vector v) 
 	{ return [v[0], v[1], v[2], 0.] }
 	
 	// External variables
-	cartesian~position~model pixel = ...;
-	hom~'t~model->hom~'t~world modelWorld = ...;
-	cartesian~vector~model normal = ...;
-	cartesian~position~world light = ...;
+	cartesian<model>.position pixel = ...;
+	hom<model->world>.transform modelWorld = ...;
+	cartesian<model>.direction normal = ...;
+	cartesian<world>.position light = ...;
 	
-	hom~position~world worldPixel = modelWorld * homify(pixel);
+	hom<world>.position worldPixel = modelWorld * homify(pixel);
 	// Note that the correct homify is used
-	hom~vector~world worldNormal = modelWorld * homify(normal);
-	hom~vector~world lightDir = worldPixel - light;
+	hom<world>.vector worldNormal = modelWorld * homify(normal);
+	hom<world>.vector lightDir = worldPixel - light;
 	scalar lambertian = 
 	  max(dot(normalize(worldNormal), normalize(lightDir)), 0.);
 	
