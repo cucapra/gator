@@ -3,7 +3,7 @@ tag world is vec<3>;
 tag camera is vec<3>;
 tag rot<`t : vec<n>> is vec<n>; // Rotated by 90 degrees counterclockwise around the z-axis as an example
 tag dir<`t : vec<n>> is vec<n>;
-tag coord hom<`t : vec<n>> is vec<n + 1>;
+tag hom<`t : vec<n>> is vec<n + 1>;
 
 declare dir<`t> normalize<`t : vec>(`t v);
 declare vec4 vec4(vec<3> v, float f);
@@ -45,8 +45,8 @@ canon `t rot_reduce<`t : vec<3>>(rot<rot<rot<rot<`t>>>> v) {
 void main() {
     model uPosition = [1., 1., 1.];
     dir<model> uNorm = [0., 0., 1.];
-    hom<model>->hom<world> uModel = [[1., .5, 0., 0.], [0., 1., 0., 0.], [1., 0., 1., 0.], [0., 0., .5, 1.]];
-    hom<world>->hom<camera> uWorld = [[1., .5, 0., 0.], [0., 1., 0., 0.], [1., 0., 1., 0.], [0., 0., .5, 1.]];
+    canon hom<model>->hom<world> uModel = [[1., .5, 0., 0.], [0., 1., 0., 0.], [1., 0., 1., 0.], [0., 0., .5, 1.]];
+    canon hom<world>->hom<camera> uWorld = [[1., .5, 0., 0.], [0., 1., 0., 0.], [1., 0., 1., 0.], [0., 0., .5, 1.]];
     world lightPos = [0., 1., 0.];
     
     float angle = dot(normalize(uPosition in model), uNorm);

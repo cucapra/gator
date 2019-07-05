@@ -1,4 +1,4 @@
-tag coord a is vec<2>;
+tag a is vec<2>;
 
 canon a f(a x) { // cannot canonicalize a map to the identity type
     return x + [1., 1.];

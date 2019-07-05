@@ -1,8 +1,8 @@
-tag coord a is vec2;
-tag coord b is vec2;
+tag a is vec2;
+tag b is vec2;
 
 void main() {
-    a->b a_b = [[1., 2.], [2., 1.]];
+    canon a->b a_b = [[1., 2.], [2., 1.]];
     a avec = [1., 2.];
     a fail = avec in b in a; // multiple in expressions shouldn't give super powers (and should be parenthesized automatically)
 }

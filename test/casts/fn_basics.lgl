@@ -1,6 +1,6 @@
-tag coord a is vec<2>;
-tag coord b is vec<2>;
-tag coord c is vec<2>;
+tag a is vec<2>;
+tag b is vec<2>;
+tag c is vec<2>;
 
 canon b _ab(a v) {
     return (v + [1., 1.]) as b;
@@ -14,8 +14,8 @@ void main() {
     a avec = [1., 2.];
     b bvec = [2., 3.];
 
-    b->c _bc = [[1., 1.], [2., 1.]];
-    c->b _cb = [[-1., 1.], [2., -1.]];
+    canon b->c _bc = [[1., 1.], [2., 1.]];
+    canon c->b _cb = [[-1., 1.], [2., -1.]];
 
     b s1 = avec in b; // = _ab(avec)
     a s2 = bvec in a; // = _ba(_ab(avec))

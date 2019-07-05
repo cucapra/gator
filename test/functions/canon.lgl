@@ -1,5 +1,5 @@
 tag model is vec<3>;
-tag coord hom<`t : vec<n>> is vec<n + 1>;
+tag hom<`t : vec<n>> is vec<n + 1>;
 
 declare vec4 vec4(vec<3> v, float f);
 declare vec3 vec3(vec<4> v);

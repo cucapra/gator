@@ -1,7 +1,7 @@
-space coord model is vec<3>;
-space coord world is vec<3>;
-space coord view is vec<3>;
-tag coord hom<`t : vec<n>> is vec<n+1>;
+space model is vec<3>;
+space world is vec<3>;
+space view is vec<3>;
+tag hom<`t : vec<n>> is vec<n+1>;
 tag dir<`t : vec<n>> is vec<n>;
 space color is vec<3>;
 tag alpha<`t : color> is vec<4>;
@@ -19,9 +19,9 @@ declare float pow(float f1, float f2);
 varying model vPosition;
 varying dir<model> vNormal;
 uniform samplerCube<alpha<color>> uSkybox;
-uniform hom<world>->hom<view> uView;
-uniform hom<model>->hom<world> uModel;
-uniform dir<model>->view uNormalMatrix;
+canon uniform hom<world>->hom<view> uView;
+canon uniform hom<model>->hom<world> uModel;
+canon uniform dir<model>->view uNormalMatrix;
 uniform view->model uInverseViewTransform;
 
 canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }

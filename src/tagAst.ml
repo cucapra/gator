@@ -34,9 +34,6 @@ type constrain =
     | GenSpaceTyp
     | TypConstraint of typ
 
-(* Global variables *)
-type global_var = string * storage_qual * typ * value option
-
 (* expressions *)
 type exp =
     | Val of value
@@ -51,18 +48,20 @@ type exp =
 and args = exp list
 
 type modification =
-    | Coord
     | Canon
     | Space
+
+(* Global variables *)
+type global_var = modification list * string * storage_qual * typ * value option
 
 (* function parameterization,
  * which may extend another type. *)
 type parameterization = constrain Assoc.context
-type parameterization_decl = (string * modification list * constrain) list
+type parameterization_decl = (string * constrain) list
 
 (* function parameters *)
 (* arguments may have an optional parameterization type *)
-type params = (string * typ) list
+type params = (modification list * string * typ) list
 type ret_type = typ
 (* our functions are not first-order! *)
 type fn_type = params * ret_type * parameterization
@@ -80,7 +79,7 @@ type comm =
     | Print of exp
     | Inc of id
     | Dec of id
-    | Decl of typ * string * exp
+    | Decl of modification list * typ * string * exp
     | Assign of string * exp
     | AssignOp of string * binop * exp
     | If of if_block * if_block list * (comm list) option  (* if - elif list - else *)

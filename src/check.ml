@@ -24,12 +24,13 @@ type delta = (parameterization * typ) Assoc.context
 type phi = fn_type Assoc.context
 
 (* Tag and function modifiers *)
-(* Specifically the coord, canonical, and space keywords *)
+(* Specifically the canonical and space keywords *)
 (* Is currently only modified during tag and function declaration steps *)
 type mu = (modification list) Assoc.context
 
 (* Transformation context *)
-(* Effectively has the type 'start->(target, f<pml>) list' for types start and target (both restricted implicitely to var types), function/matrix name f, and function parameter list pml *)
+(* Effectively has the type 'start->(target, f<pml>) list' for types start and target (both restricted implicitely to var types), *)
+(* function/matrix name f, and function parameter list pml *)
 (* Note that the resulting thing could be a call with a concrete parameterization, hence the typ list (which is empty for matrices) *)
 type psi = ((typ * fn_inv) list) Assoc.context
 
@@ -416,7 +417,7 @@ let least_common_parent_safe (t1: typ) (t2: typ) (d: delta) (pm: parameterizatio
     | t -> raise t
 
 let collapse_parameterization_decl (pmd: parameterization_decl) : parameterization =
-    Assoc.gen_context (List.map (fun (x, y, z) -> (x, z)) pmd)
+    Assoc.gen_context pmd
 
 let infer_pml (d : delta) ((params, rt, pr) : fn_type) (args_typ : typ list) 
 (pm : parameterization) (m : mu): (typ list) option =
@@ -461,7 +462,7 @@ let infer_pml (d : delta) ((params, rt, pr) : fn_type) (args_typ : typ list)
                 | _ -> None))
             (Some Assoc.empty) (Assoc.bindings pr))
     in
-    gen_pml (List.fold_left2 (fun fpm arg_typ (_, par_typ) -> unify_param arg_typ par_typ fpm) 
+    gen_pml (List.fold_left2 (fun fpm arg_typ (_, _, par_typ) -> unify_param arg_typ par_typ fpm) 
                 (Some Assoc.empty) args_typ params)
     
 
@@ -646,19 +647,20 @@ let check_index_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization
         end
     else fail ()
 
-let check_parameterization (d: delta) (m: mu) (pmd: parameterization_decl) : mu =
-    let rec check_para_list param found : mu = 
-    match param with
-    | [] -> m
-    | (s, mo, c)::t -> if Assoc.mem s found then raise (TypeException ("Duplicate parameter `" ^ s)) 
-        else 
-        let updated_found = (Assoc.update s c found) in
-        (match c with
-        | TypConstraint t' -> check_typ_valid t' d found m; 
-            Assoc.update ("`" ^ s) mo (check_para_list t updated_found)
-        | _ -> Assoc.update ("`" ^ s) mo (check_para_list t updated_found))
-    in
-    check_para_list pmd Assoc.empty
+let check_parameterization_decl (d: delta) (m: mu) (pmd: parameterization_decl) : unit =
+    debug_print ">> check_parameterization_decl";
+    let rec check_para_list param found : unit = 
+        match param with
+        | [] -> ()
+        | (s, c)::t -> if Assoc.mem s found then raise (TypeException ("Duplicate parameter `" ^ s)) 
+            else 
+            let updated_found = (Assoc.update s c found) in
+            (match c with
+            | TypConstraint t' -> check_typ_valid t' d found m; ()
+            | _ -> ());
+            (check_para_list t updated_found);
+        in
+    check_para_list pmd Assoc.empty |> ignore; ()
 
 let as_par_typ (t: typ) : string * typ list =
     match t with
@@ -667,7 +669,7 @@ let as_par_typ (t: typ) : string * typ list =
 	| AbsTyp s -> ("`" ^ s, [])
 	| _ -> failwith ("Unexpected type " ^ string_of_typ t ^ " provided to manipulating psi")
 	
-let update_psi (start: typ) (target: typ) ((f, pml) : string * typ list) (m: mu) (ps: psi) : psi =
+let update_psi (start: typ) (target: typ) (ml: modification list) ((f, pml) : string * typ list) (m: mu) (ps: psi) : psi =
     (* Update psi, raising errors in case of a duplicate *)
     (* If the given type is not valid in psi, psi is returned unmodified *)
     (* Will raise a failure if a non-concrete vartyp is used *)
@@ -690,25 +692,16 @@ let update_psi (start: typ) (target: typ) ((f, pml) : string * typ list) (m: mu)
             else false)
         | _ -> false
     in
-    let are_coord (t1: typ) (t2: typ) : bool =
-        (* Note that t1, t2 must be VarTyp based on the usecase below *)
-        match t1, t2 with
-        | VarTyp s1, VarTyp s2 ->
-            (if Assoc.mem s1 m && Assoc.mem s2 m
-            then List.mem Coord (Assoc.lookup s1 m) && List.mem Coord (Assoc.lookup s2 m)
-            else failwith ("Expected to find " ^ s1 ^ " and " ^ s2 ^ " in mu"))
-        | _ -> failwith ("Unexpected lookup of " ^ string_of_typ t1 ^ " or " ^ string_of_typ t2 ^ " to mu")
-    in
 	let (s1, stl) = as_par_typ start in
 	let (s2, ttl) = as_par_typ target in
     let start_index = string_of_typ start in
     let to_add = (target, (f, pml)) in
-    if  are_coord (VarTyp s1) (VarTyp s2) then
+    if List.mem Canon ml then
         if Assoc.mem start_index ps then 
         (let start_lst = Assoc.lookup start_index ps in
             if (List.fold_left (fun acc (lt, (_, _)) -> acc ||
                     (let (s2, tl2) = as_par_typ lt in
-					if (List.length ttl = List.length tl2) 
+                    if (List.length ttl = List.length tl2) 
                     then List.fold_left2 (fun acc' t1 t2 -> acc' || (check_var_typ_eq t1 t2)) false ttl tl2
                     else false))
                 false start_lst)
@@ -718,35 +711,37 @@ let update_psi (start: typ) (target: typ) ((f, pml) : string * typ list) (m: mu)
         else Assoc.update start_index [to_add] ps 
     else ps
 
-let update_psi_matrix (f: string) (t: typ) (m: mu) (ps: psi) : psi =
+let update_psi_matrix (f: string) (t: typ) (ml: modification list) (m: mu) (ps: psi) : psi =
     match t with
-    | TransTyp (t1, t2) -> update_psi t1 t2 (f, []) m ps
+    | TransTyp (t1, t2) -> update_psi t1 t2 ml (f, []) m ps
     | _ -> ps
 
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
 (* TODO : parametrized types *)
-let check_param ((id, t): (string * typ)) (g: gamma) (d: delta) (m: mu) 
+let check_param ((ml, id, t): (modification list * string * typ)) (g: gamma) (d: delta) (m: mu) 
     (pm : parameterization) (ps: psi) : gamma * psi = 
     debug_print ">> check_param";
     if Assoc.mem id g 
     then raise (TypeException ("Duplicate parameter name in function declaration: " ^ id))
-    else check_typ_valid t d pm m; (Assoc.update id t g, update_psi_matrix id t m ps)
+    else check_typ_valid t d pm m; (Assoc.update id t g, update_psi_matrix id t ml m ps)
     
 (* Get list of parameters from param list *)
-let check_params (pl : (string * typ) list) (g: gamma) (d : delta) (m: mu) 
+let check_params (pl : (modification list * string * typ) list) (g: gamma) (d : delta) (m: mu) 
 (pm : parameterization) (ps: psi) : TypedAst.params * gamma * psi = 
     debug_print ">> check_params";
     let (g', ps') = List.fold_left (fun (g', ps') p -> check_param p g' d m pm ps') (g, ps) pl in 
-    let p = (List.map (fun (i, t) -> (i, tag_erase t d pm)) pl) in 
+    let p = (List.map (fun (_, i, t) -> (i, tag_erase t d pm)) pl) in 
     (p, g', ps')
 
 (* Type check global variable *)
-let check_global_variable ((id, sq, t, v): (string * storage_qual * typ * value option)) (g: gamma)
-    (d: delta) (m:mu) (ps: psi) : (string * storage_qual * TypedAst.etyp * value option) * gamma * psi =
+let check_global_variable ((ml, id, sq, t, v): (modification list * string * storage_qual * typ * value option)) 
+    (g: gamma) (d: delta) (m:mu) (ps: psi) : 
+    (string * storage_qual * TypedAst.etyp * value option) * gamma * psi =
     debug_print ">> check_global_variable";
     if Assoc.mem id g
     then raise (TypeException ("Duplicate global variable: " ^ id))
-    else check_typ_valid t d Assoc.empty m; ((id, sq, tag_erase t d Assoc.empty, v), Assoc.update id t g, update_psi_matrix id t m ps)
+    else check_typ_valid t d Assoc.empty m; 
+        ((id, sq, tag_erase t d Assoc.empty, v), Assoc.update id t g, update_psi_matrix id t ml m ps)
     
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parameterization) : TypedAst.texp = 
     debug_print ">> exp_to_texp";
@@ -758,7 +753,7 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
     debug_print ">> check_in_exp";
     let rec psi_path_rec (to_search: (typ * exp) Queue.t) (found: typ list) : exp =
         let search_phi (tl: typ) (ps_lst : (typ * fn_inv) list) : (typ * fn_inv) list =
-            (* This function searches phi for anonical abstract functions that map from the given type *)
+            (* This function searches phi for canonical abstract functions that map from the given type *)
             (* A list of the types these functions map with the inferred type parameters is returned *)
             (* If multiple functions are possible, then ambiguities are resolved with the following priorities *)
             (* 1. Minimize upcasting requirements (actually handled by use of this function) *)
@@ -770,7 +765,7 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
                 | [] -> List.map (fun (t, (x, y)) -> (t, (x, y, []))) ps_lst 
                 | (id, (params, rt, pr)) :: t -> 
                     if List.mem Canon (Assoc.lookup id m) then
-                        let pt = match params with | [(_, pt)] -> pt | _ -> failwith ("function " ^ id ^ " with non-one argument made canonical") in
+                        let pt = match params with | [(_,_, pt)] -> pt | _ -> failwith ("function " ^ id ^ " with non-one argument made canonical") in
                         match infer_pml d (params, rt, pr) [tl] pm m with | None -> search_phi_rec t | Some pml ->
                         let pr1 = List.map snd (Assoc.bindings pr) in
                         let rtr = replace_abstype rt (fst (match_parameterization_unsafe d pr pm pml)) in
@@ -970,7 +965,7 @@ and check_fn_inv (d : delta) (m: mu) (g : gamma) (p : phi) (args : args) (i : st
         in
         match param_check with | None -> None | Some pm_map ->
         (* Get the parameters types and replace them in params_typ *)
-        let params_typ = List.map (fun (_,a) -> a) params in
+        let params_typ = List.map (fun (_,_,a) -> a) params in
         let rec read_pm (t : typ) : typ =
             match t with
             | AbsTyp s -> Assoc.lookup s pm_map
@@ -1009,7 +1004,7 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
         | IntTyp -> (TypedAst.Dec (x, TypedAst.IntTyp), g, ps)
         | FloatTyp -> (TypedAst.Dec (x, TypedAst.FloatTyp), g, ps)
         | _ -> raise (TypeException "decrement must be applied to an integer or float"))
-    | Decl (t, s, e) -> (* TODO: code insertion *)
+    | Decl (ml, t, s, e) -> 
         if Assoc.mem s g then raise (TypeException "variable name shadowing is illegal")        
         else 
         (check_typ_valid t d pm m; 
@@ -1024,7 +1019,7 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
             | TransTyp (_, TopVecTyp _) -> raise (TypeException "Cannot declare a transformation matrix with the top vec type")
             | _ -> t) in
             (TypedAst.Decl (tag_erase t' d pm, s, (exp_to_texp result d pm)), 
-            (check_assign t' s (snd result) d g p pm m), update_psi_matrix s t m ps))
+            (check_assign t' s (snd result) d g p pm m), update_psi_matrix s t ml m ps))
     | Assign (s, e) ->
         if Assoc.mem s g then
             let t = Assoc.lookup s g in
@@ -1138,22 +1133,10 @@ let check_tag (s: string) (pm: parameterization) (tm : modification list) (t: ty
         | h::t -> if is_sub_constraint h GenVecTyp d pm m then check_param_vec_bounds t
             else raise (TypeException ("Invalid declaration of " ^ s ^ " -- must parameterize on vectors only"))
     in
-    let rec check_coord (t : typ) : unit =
-        match t with
-        | VarTyp s ->
-            let ml = Assoc.lookup s m in
-            if List.mem Coord ml then raise (TypeException "Cannot declare a coord as a subtype of another coord")
-            else check_coord (delta_lookup s [] d pm m)
-        | ParTyp (VarTyp s, pml) ->
-            let ml = Assoc.lookup s m in
-            if List.mem Coord ml then raise (TypeException "Cannot declare a coord as a subtype of another coord")
-            else check_coord (delta_lookup s pml d pm m)
-        | _ -> ()
-    in
     check_valid_supertype t |> ignore;
     check_param_vec_bounds (List.map snd (Assoc.bindings pm));
     if Assoc.mem s d then raise (TypeException "Cannot redeclare tag")
-    else if List.mem Coord tm then check_coord t else ();
+    else ();
     (Assoc.update s (pm, t) d, Assoc.update s tm m)
 
 let rec check_tags (t: tag_decl list) (d: delta) (m: mu): delta * mu =
@@ -1168,14 +1151,14 @@ let rec check_tags (t: tag_decl list) (d: delta) (m: mu): delta * mu =
 let check_fn_decl (g: gamma) (d: delta) (m: mu) ((fm, id, (pl, rt, pmd)): fn_decl) (p: phi) (ps: psi) : 
 (TypedAst.params * gamma * psi) * TypedAst.parameterization * mu * phi =
     debug_print (">> check_fn_decl : " ^ id);
+    check_parameterization_decl d m pmd;
     let pm = collapse_parameterization_decl pmd in
-    let m' = check_parameterization d m pmd in
-    let pr = check_params pl g d m' pm ps in 
+    let pr = check_params pl g d m pm ps in 
     check_typ_valid rt d pm m;
     let pme = Assoc.gen_context (List.map (fun (s, c) -> (s, constrain_erase c d pm)) (Assoc.bindings pm)) in
     if Assoc.mem id p 
     then raise (TypeException ("Function of duplicate name has been found: " ^ id))
-    else (pr, pme, m', Assoc.update id (pl, rt, pm) p)
+    else (pr, pme, m, Assoc.update id (pl, rt, pm) p)
 
 (* Helper function for type checking void functions. 
  * Functions that return void can have any number of void return statements 
@@ -1205,7 +1188,7 @@ let update_mu_with_function (((fm, id, (pr, r, pmd))): fn_decl) (d: delta) (m: m
         match pr with
         (* Only update if it is a canon function with exactly one argument *)
         (* TODO: add to phi, not to psi unless it is concrete *)
-        | [(_, t)] ->
+        | [(_,_, t)] ->
         begin
             if is_typ_eq t r then raise (TypeException ("Canonical function " ^ id ^ " cannot be a map from a type to itself")) else
             let fail _ = raise (TypeException "Canonical functions must be between tag or abstract types") in

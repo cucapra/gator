@@ -1,6 +1,10 @@
-tag coord a is vec<2>;
-tag coord b is a; // Can't have a coord be a subtype of another coord
+tag a is vec<2>;
+tag b is a;
+tag c is vec<2>;
+tag cnc is c;
 
 void main() {
-    print 1;
+    canon b->c __bc = [[1., 2.], [2., 1.]];
+    b bvec = [1., 0.];
+    cnc fail = bvec in cnc; // can't go 'down' with in expressions
 }

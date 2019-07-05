@@ -1,4 +1,4 @@
-tag coord model is vec<3>;
+tag model is vec<3>;
 tag dir<`t : vec> is `t;
 
 declare canon dir<`t> normalize<`t : vec>(`t x);
