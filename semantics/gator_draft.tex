@@ -195,28 +195,28 @@ Note that operations can have overloaded type definitions.  Since these are only
 $\Chi$ function definitions are more complicated, as we are required to actually provide the behavior of these operations using the \textsf{define} keyword.  For these examples, the metavariable $n$ will be used to refer to the dimension of the coordinate system.
 
 \begin{lstlisting}
-	define cartesian +(cartesian x, cartesian y) {
+	cartesian +(cartesian x, cartesian y) {
 		return x + y;
 	}
 	
-	define cartesian -(cartesian x, cartesian y) {
+	cartesian -(cartesian x, cartesian y) {
 		return x - y;
 	}
 	
-	define cartesian *(cartesian x, scalar s) {
+	cartesian *(cartesian x, scalar s) {
 		return x * s;
 	}
 
-	define cartesian *(scalar s, cartesian x) {
+	cartesian *(scalar s, cartesian x) {
 		return s * x;
 	}
 	
-	define hom<vector> -(hom<position> x, hom<position> y) {
+	hom<vector> -(hom<position> x, hom<position> y) {
 		// We use n rather than n-1 since hom has dimension n+1
 		return x * y[n] - y * x[n]
 	}
 	
-	define hom<position> +(hom<position> x, hom<vector> y) {
+	hom<position> +(hom<position> x, hom<vector> y) {
 		return x + y * x[n]
 	}
 \end{lstlisting}
@@ -300,10 +300,9 @@ Binary operation typechecking differs primarily from Lathe in that for some oper
 For core operations $\odot$, we have the following rule:
 \begin{mathpar}
 	\inferrule*
-	{\Gamma,\Omega|-e_1:\tau_1,\Gamma'\qquad\Gamma',\Omega|-e_2:\tau_2,\Gamma''}
-	{\inferrule* 
-		{\tau_1=\gamma_1\qquad\tau_2=\gamma_2\qquad\Omega[(\gamma_1, \gamma_2,\odot)]=\tau}
-		{\Gamma,\Omega|-e_1\odot e_2:\tau_3,\Gamma''}}
+	{\Gamma,\Omega|-e_1:\tau_1,\Gamma'\qquad\Gamma',\Omega|-e_2:\tau_2,\Gamma'' \\
+		\tau_1=\gamma_1\qquad\tau_2=\gamma_2\qquad\Omega[(\gamma_1, \gamma_2,\odot)]=\tau}
+	{\Gamma,\Omega|-e_1\odot e_2:\tau_3,\Gamma''}
 \end{mathpar}
 Note that scalar operations are assumed be included in $\Omega$.
 
