@@ -1,5 +1,5 @@
-space a is vec<2>;
-space b is vec<3>;
+space a is float[2];
+space b is float[3];
 tag c is b;
 tag d is b;
 

@@ -1,7 +1,0 @@
-tag a is vec<2>;
-tag b is vec<2>;
-tag c is b;
-
-void main() {
-    print 1;
-}

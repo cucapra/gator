@@ -1,7 +1,7 @@
-tag a is vec<2>;
-space b is vec<3>;
-tag c is b;
-space d is b;
+frame a is float[2];
+frame b is float[3];
+frame c is b;
+frame d is b;
 
 void main() {
     auto s11 = 5;

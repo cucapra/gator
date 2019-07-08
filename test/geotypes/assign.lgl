@@ -1,7 +1,7 @@
-tag a is vec<2>;
-tag b is vec<3>;
-tag c is b;
-tag d is b;
+frame a is float[2];
+frame b is float[3];
+frame c is b;
+frame d is b;
 
 void main() {
     a x = [1., 2.];

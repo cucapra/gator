@@ -1,6 +1,6 @@
-tag a is vec<2>;
-tag b is vec<2>;
-tag par<`t : vec<2>> is vec<3>;
+tag a is float[2];
+tag b is float[3];
+tag par<`t : vec<2>> is float[3];
 
 void main() {
     par<vec<2>> p = [1., 1., 1.];
