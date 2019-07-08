@@ -1,0 +1,125 @@
+declare float cos(float f);
+declare float sqrt(float f);
+declare float acos(float f);
+
+prototype {
+    object point<r>;
+    object vector<r>;
+
+    vector<r> +(vector<r> x, vector<r> y);
+    vector -(vector x, vector y);
+    vector *(vector v, scalar s);
+    vector *(scalar s, vector v);
+    vector -(vector v);
+    position +(position p, vector v);
+    vector -(position x, position y);
+}
+coord cart2 {
+    dimension 2; // i.e. all frame parameters implicitly require dimension 2
+    point<r> = float[2];
+    vector<r> = float[2];
+
+    vector<r> +(vector<r> x, vector<r> y) {
+        return x + y;
+    }
+    vector -(vector x, vector y) {
+        return x - y;
+    }
+    vector *(vector v, scalar s) {
+        return v * s;
+    }
+    vector *(scalar s, vector v) {
+        return s * v;
+    }
+    vector -(vector v) {
+        return -v;
+    }
+    position +(position p, vector v) {
+        return p + v;
+    }
+    vector -(position x, position y) {
+        return x - y;
+    }
+}
+coord cart3 {
+    point = float[3];
+    vector = float[3];
+    vector +(vector x, vector y) {
+        return x + y;
+    }
+    vector -(vector x, vector y) {
+        return x - y;
+    }
+    vector *(vector v, scalar s) {
+        return v * s;
+    }
+    vector *(scalar s, vector v) {
+        return s * v;
+    }
+    vector -(vector v) {
+        return -v;
+    }
+    position +(position p, vector v) {
+        return p + v;
+    }
+    vector -(position x, position y) {
+        return x - y;
+    }
+}
+coord polar {
+    point = float[2];
+    vector = float[2];
+    float[2]% translate(float[2]% x, float[2]% y) {
+        // https://pritschet.me/wiki/physics/linear-translation-polar-coordinates/
+        float r1 = x[0];
+        float r2 = y[0];
+        float theta1 = x[1];
+        float theta2 = x[2];
+        float r = sqrt(r1 * r1 + r2 * r2 + 2 * r1 * r2 * cos(theta1 - theta2));
+        float theta = acos((r1 * cos(theta1) + r2 * cos(theta2)) / r);
+        return [r, theta];
+    }
+    vector +(vector x, vector y) {
+        return translate(x, y);
+    }
+    vector -(vector x, vector y) {
+        return translate(x, [-y[0], y[1]]);
+    }
+    vector *(vector v, scalar s) {
+        return [v[0] * s, v[1]];
+    }
+    vector *(scalar s, vector v) {
+        return [s * v[0], v[1]];
+    }
+    vector -(vector v) {
+        return [-v[0], v[1]];
+    }
+    position +(position p, vector v) {
+        return translate(p, v);
+    }
+    vector -(position x, position y) {
+        return translate(x, [-y[0], y[1]]);
+    }
+}
+coord hom {
+    object point = float[4];
+    object vector = float[4];
+
+    hom *(scalar s, hom x) {
+        float[n+1] y = x * s;
+        y[n] = 1.;
+        return y;
+    }
+}
+
+frame model is float[3];
+frame world is float[3];
+
+void main() {
+    cart<model>.point pos = [1., 2., 3.];
+    cart<model>.vector offset = [2., 2., 2.];
+
+    print pos + offset;
+    print 
+    
+}

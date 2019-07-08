@@ -1,7 +1,0 @@
-frame a is float[2];
-frame b is float[2];
-frame c is b;
-
-void main() {
-    print 1;
-}

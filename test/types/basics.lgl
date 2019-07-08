@@ -1,0 +1,12 @@
+type a is float[2];
+type b is float[3];
+type c is b;
+type d is b;
+
+void main() {
+    a x = [1., 2.];
+    b y = [2., 1., 1.];
+    c z = [3., 3., 3.];
+
+    print z;
+}
