@@ -1,0 +1,125 @@
+declare float cos(float f);
+declare float sqrt(float f);
+declare float acos(float f);
+
+prototype {
+    object point<r>;
+    object vector<r>;
+    object direction<r>;
+    object matrix<r1, r2>;
+
+    vector<r> +(vector<r> x, vector<r> y);
+    vector -(vector x, vector y);
+    vector *(vector v, scalar s);
+    vector *(scalar s, vector v);
+    vector -(vector v);
+    position translate(position p, vector v);
+    position +(position p, vector v);
+    vector -(position x, position y);
+    vector<r2> *(matrix<r1, r2>, vector<r1>);
+    vector<r2> *(matrix<r1, r2>, direction<r1>);
+    point<r2> *(matrix<r1, r2>, point<r1>);
+    matrix<r1, r2> +(matrix<r1, r2>, matrix<r1, r2>);
+    matrix<r1, r3> *(matrix<r1, r2>, matrix<r2, r3>);
+}
+
+coord cart3 {
+    dimension 3;
+
+    point<r> = float[3];
+    vector<r> = float[3];
+    direction<r> = float[3];
+    matrix<r1, r2> = float[3][3];
+
+    position translate(position p, vector v) {
+        return p + v;
+    }
+
+    vector<r2> *(matrix<r1, r2> m, vector<r1> v) {
+        return m * v;
+    }
+    vector<r2> *(matrix<r1, r2> m, direction<r1> d) {
+        return m * d;
+    }
+    point<r2> *(matrix<r1, r2> m, point<r1> p) {
+        return m * p;
+    }
+    matrix<r1, r2> +(matrix<r1, r2> m1, matrix<r1, r2> m2) {
+        return m1 + m2;
+    }
+    matrix<r1, r3> *(matrix<r1, r2> m1, matrix<r2, r3> m2) {
+        return m1 * m2;
+    }
+}
+
+coord hom {
+    dimension 3;
+
+    point<r> = float[4];
+    vector<r> = float[4];
+    direction<r> = float[4];
+    matrix<r1, r2> = float[4][4];
+
+    vector<r2> *(matrix<r1, r2> m, vector<r1> v) {
+        return m * v;
+    }
+    vector<r2> *(matrix<r1, r2> m, direction<r1> d) {
+        return m * d;
+    }
+    point<r2> *(matrix<r1, r2> m, point<r1> p) {
+        return m * p;
+    }
+    matrix<r1, r2> +(matrix<r1, r2> m1, matrix<r1, r2> m2) {
+        return m1 + m2;
+    }
+    matrix<r1, r3> *(matrix<r1, r2> m1, matrix<r2, r3> m2) {
+        return m1 * m2;
+    }
+}
+
+frame model is float[3];
+frame world is float[3];
+
+// TODO: Make this more general across frames
+declare cart3.direction<model>(cart3.vector<model>);
+declare cart3.direction<world>(cart3.vector<world>);
+declare float[4] vec4(float[3] v, float f);
+
+hom.point<`t> homify<`t : float[3]>(cart3.point<`t> v) {
+    return vec4(v, 1.) as hom.point<`t>;
+}
+hom.vector<`t> homify<`t : float[3]>(cart3.vector<`t> v) {
+    return vec4(v, 1.) as hom.point<`t>;
+}
+cart3.point<`t> reduce_hom<`t : float[3]>(hom.point<`t> v) {
+    return vec3(v) / v[3] as cart3.point<`t>;
+}
+cart3.vector<`t> reduce_hom<`t : float[3]>(hom.vector<`t> v) {
+    return vec3(v) as cart3.vector<`t>;
+}
+
+void main() {
+    cart3.point<model> pos = [1., 2., 3.];
+    cart3.point<world> light = [-1., -1., 0.];
+    cart3.vector<world> offset = [2., 2., 2.];
+
+    // Pure translation matrix
+    hom.matrix<model, world> mtrans = 
+        [[1., 0., 0., 1.], 
+         [0., 1., 0., -1.],
+         [0., 0., 1., 1.],
+         [0., 0., 0., 1.]];
+
+    hom.matrix<world, model> minv = 
+        [[1., 0., 0., -1.], 
+         [0., 1., 0., 1.],
+         [0., 0., 1., -1.],
+         [0., 0., 0., 1.]];
+
+
+    hom.point<model> hpos = homify<model>(pos);
+    hom.vector<world> hoff = homify<world>(offset);
+
+    print hpos;
+    print hoff;
+}
