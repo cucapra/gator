@@ -7,12 +7,14 @@ prototype {
     object vector<r>;
 
     vector<r> +(vector<r> x, vector<r> y);
-    vector -(vector x, vector y);
-    vector *(vector v, scalar s);
-    vector *(scalar s, vector v);
-    vector -(vector v);
-    position +(position p, vector v);
-    vector -(position x, position y);
+    vector<r> -(vector<r> x, vector<r> y);
+    vector<r> *(vector<r> v, scalar<r> s);
+    vector<r> *(scalar<r> s, vector<r> v);
+    vector<r> -(vector<r> v);
+    point<r> +(point<r> p, vector<r> v);
+    point<r> -(point<r> p, vector<r> v);
+    vector<r> -(point<r> x, point<r> y);
+    vector<r> -(point<r> x);
 }
 coord cart2 {
     dimension 2; // i.e. all frame parameters implicitly require dimension 2
@@ -22,51 +24,67 @@ coord cart2 {
     vector<r> +(vector<r> x, vector<r> y) {
         return x + y;
     }
-    vector -(vector x, vector y) {
+    vector<r> -(vector<r> x, vector<r> y) {
         return x - y;
     }
-    vector *(vector v, scalar s) {
+    vector<r> *(vector<r> v, scalar s) {
         return v * s;
     }
-    vector *(scalar s, vector v) {
+    vector<r> *(scalar s, vector<r> v) {
         return s * v;
     }
-    vector -(vector v) {
+    vector<r> -(vector<r> v) {
         return -v;
     }
-    position +(position p, vector v) {
+    point<r> +(point<r> p, vector<r> v) {
         return p + v;
     }
-    vector -(position x, position y) {
+    point<r> +(point<r> p, vector<r> v) {
+        return p - v;
+    }
+    vector<r> -(point<r> x, point<r> y) {
         return x - y;
+    }
+    vector<r> -(point<r> v) {
+        return -v;
     }
 }
 coord cart3 {
-    point = float[3];
-    vector = float[3];
-    vector +(vector x, vector y) {
+    dimension 3; // i.e. all frame parameters implicitly require dimension 2
+    point<r> = float[3];
+    vector<r> = float[3];
+
+    vector<r> +(vector<r> x, vector<r> y) {
         return x + y;
     }
-    vector -(vector x, vector y) {
+    vector<r> -(vector<r> x, vector<r> y) {
         return x - y;
     }
-    vector *(vector v, scalar s) {
+    vector<r> *(vector<r> v, scalar<r> s) {
         return v * s;
     }
-    vector *(scalar s, vector v) {
+    vector<r> *(scalar<r> s, vector<r> v) {
         return s * v;
     }
-    vector -(vector v) {
+    vector<r> -(vector<r> v) {
         return -v;
     }
-    position +(position p, vector v) {
+    point<r> +(point<r> p, vector<r> v) {
         return p + v;
     }
-    vector -(position x, position y) {
+    point<r> +(point<r> p, vector<r> v) {
+        return p - v;
+    }
+    vector<r> -(point<r> x, point<r> y) {
         return x - y;
+    }
+    vector<r> -(point<r> v) {
+        return -v;
     }
 }
 coord polar {
+    dimension 2;
+
     point = float[2];
     vector = float[2];
     float[2]% translate(float[2]% x, float[2]% y) {
@@ -79,47 +97,85 @@ coord polar {
         float theta = acos((r1 * cos(theta1) + r2 * cos(theta2)) / r);
         return [r, theta];
     }
-    vector +(vector x, vector y) {
+    vector<r> +(vector<r> x, vector<r> y) {
         return translate(x, y);
     }
-    vector -(vector x, vector y) {
+    vector<r> -(vector<r> x, vector<r> y) {
         return translate(x, [-y[0], y[1]]);
     }
-    vector *(vector v, scalar s) {
+    vector<r> *(vector<r> v, scalar s) {
         return [v[0] * s, v[1]];
     }
-    vector *(scalar s, vector v) {
+    vector<r> *(scalar s, vector v) {
         return [s * v[0], v[1]];
     }
-    vector -(vector v) {
+    vector<r> -(vector<r> v) {
         return [-v[0], v[1]];
     }
-    position +(position p, vector v) {
+    point<r> +(point<r> p, vector<r> v) {
         return translate(p, v);
     }
-    vector -(position x, position y) {
+    point<r> +(point<r> p, vector<r> v) {
+        return p - v;
+    }
+    vector<r> -(point<r> x, point<r> y) {
         return translate(x, [-y[0], y[1]]);
+    }
+    vector<r> -(point<r> v) {
+        return [-v[0], v[1]];
     }
 }
 coord hom {
+    dimension 3;
     object point = float[4];
     object vector = float[4];
 
-    hom *(scalar s, hom x) {
-        float[n+1] y = x * s;
-        y[n] = 1.;
-        return y;
+    vector<r> +(vector<r> x, vector<r> y) {
+        return [x[0] + y[0], x[1] + y[1], x[2] + y[2], 0.];
+    }
+    vector<r> -(vector<r> x, vector<r> y) {
+        return [x[0] - y[0], x[1] - y[1], x[2] - y[2], 0.];
+    }
+    vector<r> *(vector<r> v, scalar<r> s) {
+        return [x[0] * s, x[1] * s, x[2] * s, 0.];
+    }
+    vector<r> *(scalar<r> s, vector<r> v) {
+        return [s * x[0], s * x[1], s * x[2], 0.];
+    }
+    vector<r> -(vector<r> v) {
+        return [s * x[0], s * x[1], s * x[2], 0.];
+    }
+    point<r> +(point<r> p, vector<r> v) {
+        return p + v * p[3];
+    }
+    vector<r> -(point<r> x, point<r> y) {
+        return x * y[3] + y * x[3];
     }
 }
 
-frame model is float[3];
 frame world is float[3];
+frame plane is float[2];
 
 void main() {
-    cart<model>.point pos = [1., 2., 3.];
-    cart<model>.vector offset = [2., 2., 2.];
+    cart2.point<plane> ppos = [1., 1.];
+    cart2.vector<plane> poffset = [1., 2.];
 
     print pos + offset;
-    print 
+    print 2. * (pos - (pos + offset));
     
+    cart3.vector<world> mpos = [1., 2., 3.];
+    
+    print mpos - mpos * 2.;
+
+    polar.vector<plane> ppo = [1., 3.14159265];
+    polar.vector<plane> ppo2 = [1., 0.];
+    
+    print 3. * ppo * 2.;
+    print ppo + ppo2;
+
+    hom.point<world> hpos = [1., 2., 3., 2.];
+    hom.vector<world> hvec = [1., 1., 1., 0.];
+
+    print hpos + hvec * 2;
+    print hpos - (hpos + hvec);
 }
