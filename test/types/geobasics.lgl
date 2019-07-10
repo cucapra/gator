@@ -1,19 +1,42 @@
-object point;
-object vector;
+prototype {
+    object point<r>;
+    object vector<r>;
+}
 
-coord cart<n> [n] {}
-coord polar<2> [2] {}
-coord hom<n> [n+1] {}
+coord cart2 {
+    dimension 2;
+
+    point<r> = float[2];
+    vector<r> = float[2];
+}
+coord cart3 {
+    dimension 3;
+
+    point<r> = float[3];
+    vector<r> = float[3];
+}
+coord polar {
+    dimension 2;
+    
+    point<r> = float[2];
+    vector<r> = float[2];
+}
+coord hom {
+    dimension 3;
+
+    point<r> = float[4];
+    vector<r> = float[4];
+}
 
 frame world is float[3];
 frame plane is float[2];
 
 void main() {
-    cart<world>.point pos = [1., 2., 3.];
-    cart<plane>.vector offset = [2., 2.];
-    polar<plane>.point ppos = [1., 0.];
-    hom<world>.point extended = [1., 2., 3., 1.];
-    hom<plane>.vector poffset = [1., 3., 5.];
+    cart3.point<world> pos = [1., 2., 3.];
+    cart2.vector<plane> offset = [2., 2.];
+    polar.point<plane> ppos = [1., 0.];
+    hom.point<world> extended = [1., 2., 3., 1.];
+    hom.vector<world> poffset = [1., 3., 5.];
 
     print 1;
 }
