@@ -31,12 +31,37 @@ coord cart3 {
     direction<r> = float[3];
     matrix<r1, r2> = float[3][3];
 
-    with frame(3) r
+    vector<r> +(vector<r> x, vector<r> y) {
+        return x + y;
+    }
+    vector<r> -(vector<r> x, vector<r> y) {
+        return x - y;
+    }
+    vector<r> *(vector<r> v, scalar<r> s) {
+        return v * s;
+    }
+    vector<r> *(scalar<r> s, vector<r> v) {
+        return s * v;
+    }
+    vector<r> -(vector<r> v) {
+        return -v;
+    }
     position<r> translate(position<r> p, vector<r> v) {
         return p + v;
     }
+    point<r> +(point<r> p, vector<r> v) {
+        return p + v;
+    }
+    point<r> +(point<r> p, vector<r> v) {
+        return p - v;
+    }
+    vector<r> -(point<r> x, point<r> y) {
+        return x - y;
+    }
+    vector<r> -(point<r> v) {
+        return -v;
+    }
 
-    with frame(3) r1, r2,
     vector<r2> *(matrix<r1, r2> m, vector<r1> v) {
         return m * v;
     }
@@ -80,7 +105,9 @@ coord hom {
 frame model is float[3];
 frame world is float[3];
 
-declare with(r : frame<3>) cart3.direction<r> normalize(cart3.vector<r> v);
+with frame(3) r,
+declare cart3.direction<r> normalize(cart3.vector<r> v);
+with frame(3) r,
 declare float dot(cart3.direction<r> v1, cart3.direction<r> v2);
 declare float[4] vec4(float[3] v, float f);
 
@@ -123,4 +150,8 @@ void main() {
 
     print hpos;
     print hoff;
+
+    print (mtrans * hpos) + hoff;
+    print mtrans * (hpos + (minv * hoff));  // Should be the same!
+    print reduce_hom<world>(hpos - homify<world>(light) + offet);
 }

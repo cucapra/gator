@@ -11,6 +11,7 @@ prototype {
     vector<r> *(vector<r> v, scalar<r> s);
     vector<r> *(scalar<r> s, vector<r> v);
     vector<r> -(vector<r> v);
+    position<r> translate(position<r> p, vector<r> v);
     point<r> +(point<r> p, vector<r> v);
     point<r> -(point<r> p, vector<r> v);
     vector<r> -(point<r> x, point<r> y);
@@ -36,10 +37,13 @@ coord cart2 {
     vector<r> -(vector<r> v) {
         return -v;
     }
-    point<r> +(point<r> p, vector<r> v) {
+    point<r> translate(point<r> p, vector<r> v) {
         return p + v;
     }
     point<r> +(point<r> p, vector<r> v) {
+        return p + v;
+    }
+    point<r> -(point<r> p, vector<r> v) {
         return p - v;
     }
     vector<r> -(point<r> x, point<r> y) {
@@ -50,7 +54,7 @@ coord cart2 {
     }
 }
 coord cart3 {
-    dimension 3; // i.e. all frame parameters implicitly require dimension 2
+    dimension 3;
     point<r> = float[3];
     vector<r> = float[3];
 
@@ -69,10 +73,13 @@ coord cart3 {
     vector<r> -(vector<r> v) {
         return -v;
     }
-    point<r> +(point<r> p, vector<r> v) {
+    position<r> translate(position<r> p, vector<r> v) {
         return p + v;
     }
     point<r> +(point<r> p, vector<r> v) {
+        return p + v;
+    }
+    point<r> -(point<r> p, vector<r> v) {
         return p - v;
     }
     vector<r> -(point<r> x, point<r> y) {
@@ -87,7 +94,7 @@ coord polar {
 
     point = float[2];
     vector = float[2];
-    float[2]% translate(float[2]% x, float[2]% y) {
+    float[2]% __trans(float[2]% x, float[2]% y) {
         // https://pritschet.me/wiki/physics/linear-translation-polar-coordinates/
         float r1 = x[0];
         float r2 = y[0];
@@ -98,10 +105,10 @@ coord polar {
         return [r, theta];
     }
     vector<r> +(vector<r> x, vector<r> y) {
-        return translate(x, y);
+        return __trans(x, y);
     }
     vector<r> -(vector<r> x, vector<r> y) {
-        return translate(x, [-y[0], y[1]]);
+        return __trans(x, [-y[0], y[1]]);
     }
     vector<r> *(vector<r> v, scalar s) {
         return [v[0] * s, v[1]];
@@ -112,14 +119,17 @@ coord polar {
     vector<r> -(vector<r> v) {
         return [-v[0], v[1]];
     }
+    point<r> translate(point<r> p, vector<r> v) {
+        return __trans(p, v);
+    }
     point<r> +(point<r> p, vector<r> v) {
-        return translate(p, v);
+        return __trans(p, v);
     }
     point<r> +(point<r> p, vector<r> v) {
         return p - v;
     }
     vector<r> -(point<r> x, point<r> y) {
-        return translate(x, [-y[0], y[1]]);
+        return __trans(x, [-y[0], y[1]]);
     }
     vector<r> -(point<r> v) {
         return [-v[0], v[1]];
@@ -145,11 +155,20 @@ coord hom {
     vector<r> -(vector<r> v) {
         return [s * x[0], s * x[1], s * x[2], 0.];
     }
+    point<r> translate(point<r> p, vector<r> v) {
+        return p + v * p[3];
+    }
     point<r> +(point<r> p, vector<r> v) {
         return p + v * p[3];
     }
+    point<r> -(point<r> p, vector<r> v) {
+        return p - v * p[3];
+    }
     vector<r> -(point<r> x, point<r> y) {
         return x * y[3] + y * x[3];
+    }
+    vector<r> -(point<r> v) {
+        return [-v[0], -v[1], -v[2], 0.];
     }
 }
 
