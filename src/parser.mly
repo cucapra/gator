@@ -14,7 +14,8 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 
 (* Tokens *)
 
-%token EOL  
+%token EOL
+%token EOF
 %token <int> NUM
 %token <float> FLOAT
 %token <string> MATTYP
@@ -112,19 +113,19 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %%
 
 main:
-  | t = taglst; d = declarelst; gf = globalvarfnlst; EOL 
+  | t = taglst; d = declarelst; gf = globalvarfnlst; EOF 
       { (d, t, gf) }
-  | t = taglst; d = declarelst; EOL 
+  | t = taglst; d = declarelst; EOF 
       { (d, t, []) }
-  | d = declarelst; gf = globalvarfnlst; EOL 
+  | d = declarelst; gf = globalvarfnlst; EOF 
       { (d, [], gf) }
-  | t = taglst; gf = globalvarfnlst; EOL 
+  | t = taglst; gf = globalvarfnlst; EOF 
       { ([], t, gf) }
-  | d = declarelst; EOL
+  | d = declarelst; EOF
       { (d, [], [])}
-  | gf = globalvarfnlst; EOL
+  | gf = globalvarfnlst; EOF
       { ([], [], gf)}
-  | t = taglst; EOL 
+  | t = taglst; EOF 
       { ([], t, []) }
 ;
 

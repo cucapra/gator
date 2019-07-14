@@ -51,9 +51,6 @@ type modification =
     | Canon
     | Space
 
-(* Global variables *)
-type global_var = modification list * string * storage_qual * typ * value option
-
 (* function parameterization,
  * which may extend another type. *)
 type parameterization = constrain Assoc.context
@@ -88,17 +85,18 @@ type comm =
     | FnCall of typ * args * typ list (* e.g. f<model>(position) -- note that 'f' must be a string, but we treat it as a type to allow parsing of parametrized types *)
 and if_block = exp * comm list
 
-type fn = fn_decl * comm list
-
-(* tag declaration statements *)
-type tag_decl = modification list * string * parameterization_decl * typ
-
-type global_var_or_fn =
-    | GlobalVar of global_var
-    | Fn of fn
+(* Terms that make up a program *)
+(* In any order, we have:
+ * Tag Declarations of user types
+ * External function declarations without bodies
+ * Global variable declarations
+ * Function declarations with bodies
+ *)
+type term =
+    | TagDecl of (modification list) * string * parameterization_decl * typ
+    | ExternDecl of extern_decl
+    | GlobalVar of modification list * string * storage_qual * typ * value option
+    | Fn of fn_decl * comm list
 
 (* program *)
-(* Consists of list of (external) declare functions,
- * list of vector space tags,
- * and list of functions with at least one void main() function. *)
-type prog = extern_decl list * tag_decl list * global_var_or_fn list
+type prog = term list
