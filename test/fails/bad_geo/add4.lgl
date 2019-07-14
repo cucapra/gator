@@ -1,9 +1,0 @@
-tag a is vec<2>;
-tag b is vec<2>;
-tag c is vec<2>;
-
-void main() {
-    a->b x = [[1., 2.], [1., 2.]];
-    b->c y = [[1., 2.], [1., 2.]];
-    a->c bad = x + y; // Addition cannot generate new maps
-}

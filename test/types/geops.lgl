@@ -94,7 +94,7 @@ coord polar {
 
     point = float[2];
     vector = float[2];
-    float[2]% __trans(float[2]% x, float[2]% y) {
+    float%[2] __trans(float%[2] x, float[2]% y) {
         // https://pritschet.me/wiki/physics/linear-translation-polar-coordinates/
         float r1 = x[0];
         float r2 = y[0];
@@ -167,9 +167,7 @@ coord hom {
     vector<r> -(point<r> x, point<r> y) {
         return x * y[3] + y * x[3];
     }
-    vector<r> -(point<r> v) {
-        return [-v[0], -v[1], -v[2], 0.];
-    }
+    // We don't actually need to define every function, it will just fail if we try and call an undefined function
 }
 
 frame world is float[3];

@@ -1,0 +1,38 @@
+prototype {
+    object point<r>;
+    object vector<r>;
+}
+
+coord cart2 {
+    dimension 2;
+
+    point<r> = float[2];
+    vector<r> = float[2];
+}
+coord cart3 {
+    dimension 3;
+
+    point<r> = float[3];
+    vector<r> = float[3];
+}
+coord polar {
+    dimension 2;
+    
+    point<r> = float[2];
+    vector<r> = float[2];
+}
+coord hom {
+    dimension 3;
+
+    point<r> = float[4];
+    vector<r> = float[4];
+}
+
+frame world is float[3];
+frame plane is float[2];
+
+void main() {
+    cart3.point<world> pos = [1., 2.]; // Bad dimension for vector
+
+    print 1;
+}

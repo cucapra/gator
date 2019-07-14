@@ -1,0 +1,61 @@
+declare float cos(float f);
+declare float sqrt(float f);
+declare float acos(float f);
+
+prototype {
+    object point<r>;
+    object vector<r>;
+
+    vector<r> +(vector<r> x, vector<r> y);
+    vector<r> -(vector<r> x, vector<r> y);
+    vector<r> *(vector<r> v, scalar<r> s);
+    vector<r> *(scalar<r> s, vector<r> v);
+    vector<r> -(vector<r> v);
+    position<r> translate(position<r> p, vector<r> v);
+    point<r> +(point<r> p, vector<r> v);
+    point<r> -(point<r> p, vector<r> v);
+    vector<r> -(point<r> x, point<r> y);
+    vector<r> -(point<r> x);
+}
+coord cart2 {
+    dimension 2; // i.e. all frame parameters implicitly require dimension 2
+    point<r> = float[2];
+    vector<r> = float[3];
+
+    vector<r> +(vector<r> x, vector<r> y) {
+        return x + y;
+    }
+    vector<r> -(vector<r> x, vector<r> y) {
+        return x - y;
+    }
+    vector<r> *(vector<r> v, scalar s) {
+        return v * s;
+    }
+    vector<r> *(scalar s, vector<r> v) {
+        return s * v;
+    }
+    vector<r> -(vector<r> v) {
+        return -v;
+    }
+    point<r> translate(point<r> p, vector<r> v) {
+        return p + v;
+    }
+    point<r> +(point<r> p, vector<r> v) {
+        return p + v; // This should fail due to differing dimension representations
+    }
+    point<r> -(point<r> p, vector<r> v) {
+        return p - v;
+    }
+    vector<r> -(point<r> x, point<r> y) {
+        return x - y;
+    }
+    vector<r> -(point<r> v) {
+        return -v;
+    }
+}
+
+frame world is float[3];
+frame plane is float[2];
+
+void main() {
+}

@@ -1,8 +1,0 @@
-tag a is vec<2>;
-tag b is vec<2>;
-
-void main() {
-    a->a a_a = [[1., 1.], [1., 1.]];
-    a->b a_b = [[1., 1.], [1., 1.]];
-    a->b bad = a_a + a_a * a_b; // Order of operations in tags
-}
