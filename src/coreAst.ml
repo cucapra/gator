@@ -37,7 +37,7 @@ type binop =
 
 (* Storage qualifiers *)
 type storage_qual =
-  | In
+  | InQual
   | Out
   | Const
   | Attribute

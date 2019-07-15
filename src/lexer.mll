@@ -23,7 +23,8 @@ let comment = "//" [^ '\r' '\n']*
 rule read = parse
   | comment         { read lexbuf }
   | white           { read lexbuf }
-  | newline         { Lexing.new_line lexbuf; EOL }
+  (* | newline         { Lexing.new_line lexbuf; EOL } *)
+  | newline         { Lexing.new_line lexbuf; read lexbuf }
   | num as num      { NUM (int_of_string num) }
   | "vec"           { VEC }
   | "mat"           { MAT }
