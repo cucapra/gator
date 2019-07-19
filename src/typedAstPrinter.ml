@@ -62,7 +62,7 @@ let rec string_of_params (p: params) : string =
 
 let rec string_of_global_vars (gv: global_vars) : string =
   String.concat "\n" (List.map 
-  (fun (i, s, t, v) -> (string_of_storage_qual s) ^ " " ^ (string_of_typ t) ^ " " ^ i 
+  (fun (s, t, i, v) -> (string_of_storage_qual s) ^ " " ^ (string_of_typ t) ^ " " ^ i 
   ^ string_of_option_removed (fun x -> "= " ^ string_of_value x) v ^ ";") gv)
 
 let string_of_parameterization (pm : parameterization) : string = 

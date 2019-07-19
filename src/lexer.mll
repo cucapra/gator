@@ -23,6 +23,7 @@ let comment = "//" [^ '\r' '\n']*
 rule read = parse
   | comment         { read lexbuf }
   | white           { read lexbuf }
+  (* | newline         { Lexing.new_line lexbuf; EOL } *)
   | newline         { Lexing.new_line lexbuf; read lexbuf }
   | num as num      { NUM (int_of_string num) }
   | "vec"           { VEC }
@@ -160,7 +161,7 @@ rule read = parse
   | "struct"        { raise (SyntaxError ("Cannot use reserved GLSL keyword " ^ Lexing.lexeme lexbuf)) }
   | id as id        { ID id }
   | floatval as fl  { FLOAT (float_of_string fl) }
-  | eof             { EOL }
+  | eof             { EOF }
   | _ as c  {
             let pos = lexbuf.Lexing.lex_curr_p in
             printf "Error at line %d\n" pos.Lexing.pos_lnum;

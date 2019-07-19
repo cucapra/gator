@@ -258,7 +258,7 @@ let rec default_value (t : etyp) =
     | ArrTyp _ -> Unit
     
 let start_eval (fns : fn list) (gv : global_vars) : unit =
-    let add_arg = (fun acc (name, _, t, _) -> Assoc.update name (default_value t) acc) in
+    let add_arg = (fun acc (_, t, name, _) -> Assoc.update name (default_value t) acc) in
     let s_g = (List.fold_left (add_arg) Assoc.empty gv) in
     match fst (fn_lookup "main" fns) with
     | None -> failwith "Typechecker failed to find lack of main"

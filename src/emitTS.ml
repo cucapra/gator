@@ -206,11 +206,11 @@ let rec decl_attribs (gv : global_vars) : string =
     debug_print ">> decl_attribs";
     match gv with
     | [] -> ""
-    | (x, sq, et, None)::t -> (match et with
+    | (sq, et, x, None)::t -> (match et with
         | VecTyp n -> "var " ^ x ^ "=vec" ^ (string_of_int n) ^ ".create();" ^ (decl_attribs t)
         | MatTyp (m,n) -> "var " ^ x ^ "=mat" ^ (string_of_int (max m n)) ^ ".create();" ^ (decl_attribs t)
         | _ -> "var " ^ x ^ ";" ^ (decl_attribs t))
-    | (x, sq, et, Some v)::t -> match et with
+    | (sq, et, x, Some v)::t -> match et with
         | VecTyp n -> "var " ^ x ^ "=vec" ^ (string_of_int n) ^ ".create();" ^ x ^ "=" ^ (comp_value v) ^ (decl_attribs t)
         | MatTyp (m,n) -> "var " ^ x ^ "=mat" ^ (string_of_int (max m n)) ^ ".create();" ^ x ^ "=" ^ (comp_value v) ^ (decl_attribs t)
         | _ -> "var " ^ x ^ "=" ^ (comp_value v) ^ ";" ^ (decl_attribs t)
