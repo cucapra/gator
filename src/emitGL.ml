@@ -149,10 +149,10 @@ let rec comp_fn_lst (f : fn list) : string =
 
 let decl_attribs (gv : global_vars) : string = 
     debug_print ">> decl_attribs";
-    let rec decl_attribs_list (gv : (string * storage_qual * etyp * value option) list) : string =
+    let rec decl_attribs_list (gv : global_vars) : string =
         match gv with
         | [] -> ""
-        | (x, sq, et, v)::t -> 
+        | (sq, et, x, v)::t -> 
             (string_of_storage_qual sq) ^ " " ^ (string_of_glsl_typ et)
             ^ " " ^ x ^ string_of_option_removed (fun v -> " = " ^ string_of_value v) v ^
             ";" ^ (decl_attribs_list t) 

@@ -462,7 +462,7 @@ let infer_pml (d : delta) ((params, rt, pr) : fn_type) (args_typ : typ list)
                 | _ -> None))
             (Some Assoc.empty) (Assoc.bindings pr))
     in
-    gen_pml (List.fold_left2 (fun fpm arg_typ (_, _, par_typ) -> unify_param arg_typ par_typ fpm) 
+    gen_pml (List.fold_left2 (fun fpm arg_typ (_, par_typ, _) -> unify_param arg_typ par_typ fpm) 
                 (Some Assoc.empty) args_typ params)
     
 
@@ -718,7 +718,7 @@ let update_psi_matrix (f: string) (t: typ) (ml: modification list) (m: mu) (ps: 
 
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
 (* TODO : parametrized types *)
-let check_param ((ml, id, t): (modification list * string * typ)) (g: gamma) (d: delta) (m: mu) 
+let check_param ((ml, t, id): (modification list * typ * string)) (g: gamma) (d: delta) (m: mu) 
     (pm : parameterization) (ps: psi) : gamma * psi = 
     debug_print ">> check_param";
     if Assoc.mem id g 
@@ -726,22 +726,12 @@ let check_param ((ml, id, t): (modification list * string * typ)) (g: gamma) (d:
     else check_typ_valid t d pm m; (Assoc.update id t g, update_psi_matrix id t ml m ps)
     
 (* Get list of parameters from param list *)
-let check_params (pl : (modification list * string * typ) list) (g: gamma) (d : delta) (m: mu) 
+let check_params (pl : params) (g: gamma) (d : delta) (m: mu) 
 (pm : parameterization) (ps: psi) : TypedAst.params * gamma * psi = 
     debug_print ">> check_params";
     let (g', ps') = List.fold_left (fun (g', ps') p -> check_param p g' d m pm ps') (g, ps) pl in 
-    let p = (List.map (fun (_, i, t) -> (i, tag_erase t d pm)) pl) in 
+    let p = (List.map (fun (_, t, i) -> (i, tag_erase t d pm)) pl) in 
     (p, g', ps')
-
-(* Type check global variable *)
-let check_global_variable ((ml, id, sq, t, v): (modification list * string * storage_qual * typ * value option)) 
-    (g: gamma) (d: delta) (m:mu) (ps: psi) : 
-    (string * storage_qual * TypedAst.etyp * value option) * gamma * psi =
-    debug_print ">> check_global_variable";
-    if Assoc.mem id g
-    then raise (TypeException ("Duplicate global variable: " ^ id))
-    else check_typ_valid t d Assoc.empty m; 
-        ((id, sq, tag_erase t d Assoc.empty, v), Assoc.update id t g, update_psi_matrix id t ml m ps)
     
 let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parameterization) : TypedAst.texp = 
     debug_print ">> exp_to_texp";
@@ -765,7 +755,7 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
                 | [] -> List.map (fun (t, (x, y)) -> (t, (x, y, []))) ps_lst 
                 | (id, (params, rt, pr)) :: t -> 
                     if List.mem Canon (Assoc.lookup id m) then
-                        let pt = match params with | [(_,_, pt)] -> pt | _ -> failwith ("function " ^ id ^ " with non-one argument made canonical") in
+                        let pt = match params with | [(_,pt,_)] -> pt | _ -> failwith ("function " ^ id ^ " with non-one argument made canonical") in
                         match infer_pml d (params, rt, pr) [tl] pm m with | None -> search_phi_rec t | Some pml ->
                         let pr1 = List.map snd (Assoc.bindings pr) in
                         let rtr = replace_abstype rt (fst (match_parameterization_unsafe d pr pm pml)) in
@@ -831,7 +821,7 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
                 else 
                 let e' = 
                     if Assoc.mem v g then (Binop (Times, Var v, e))
-                    else if Assoc.mem v p then (FnInv (v, [e], pml))
+                    else if Assoc.mem v p then (FnInv (v, pml, [e]))
                     else failwith ("Typechecker error: unknown value " ^ v ^ " loaded into psi") in
                 (* Note the update to the stateful queue *)
                 (Queue.push (t1, e') to_search;  t1 :: update_search_and_found t e)
@@ -912,7 +902,7 @@ and check_arr (d : delta) (m: mu) (g : gamma) (p : phi) (a : exp list) (pm : par
     | None ->  raise (TypeException ("Invalid array definition for " ^ (string_of_exp (Arr a)) ^ ", must be a matrix or vector")))
 
 
-and check_fn_inv (d : delta) (m: mu) (g : gamma) (p : phi) (args : args) (i : string) (pml: typ list) (pm : parameterization) (ps: psi)
+and check_fn_inv (d : delta) (m: mu) (g : gamma) (p : phi) (pml: typ list) (i : string) (args : args) (pm : parameterization) (ps: psi)
  : (string * TypedAst.etyp list * TypedAst.args) * typ = 
     debug_print (">> check_fn_inv " ^ i);
     let fn_invocated = if Assoc.mem i p
@@ -965,7 +955,7 @@ and check_fn_inv (d : delta) (m: mu) (g : gamma) (p : phi) (args : args) (i : st
         in
         match param_check with | None -> None | Some pm_map ->
         (* Get the parameters types and replace them in params_typ *)
-        let params_typ = List.map (fun (_,_,a) -> a) params in
+        let params_typ = List.map (fun (_,a,_) -> a) params in
         let rec read_pm (t : typ) : typ =
             match t with
             | AbsTyp s -> Assoc.lookup s pm_map
@@ -1108,47 +1098,7 @@ and check_assign (t: typ) (s: string) (etyp : typ)  (d: delta) (g: gamma) (p: ph
         if is_subtype etyp t d pm then Assoc.update s t g
         else raise (TypeException ("Mismatched types for var decl for " ^ s ^  ": expected " ^ (string_of_typ t) ^ ", found " ^ (string_of_typ etyp)))
 
-let check_tag (s: string) (pm: parameterization) (tm : modification list) (t: typ) (d: delta) (m: mu) : delta * mu = 
-    debug_print ">> check_tag";
-    let rec check_valid_supertype (t: typ) : constrain =
-        match t with
-        | TopVecTyp _ -> TypConstraint t
-        | VarTyp s -> 
-            if not (Assoc.mem s d) then raise (TypeException ("Unknown tag " ^ s)) else TypConstraint t
-        | ParTyp (VarTyp s, pml) -> 
-            if not (Assoc.mem s d) then raise (TypeException ("Unknown tag " ^ s))
-            else let (tpm, _) = Assoc.lookup s d in
-            let pmb = Assoc.bindings tpm in
-            if List.length pmb == List.length pml
-            then (List.fold_left2 (fun acc (s, c) t -> if is_sub_constraint t c d pm m then () else
-                raise (TypeException ("Invalid constraint used for parameterization of " ^ s)))
-                () (Assoc.bindings tpm) (List.map check_valid_supertype pml); TypConstraint t)
-            else raise (TypeException ("Invalid number of parameters provided to parameterized type " ^ s))
-        | AbsTyp s -> if Assoc.mem s pm then Assoc.lookup s pm else raise (TypeException ("Unknown type " ^ (string_of_typ t)))
-        | _ -> raise (TypeException ("Invalid type for tag declaration " ^ (string_of_typ t) ^ ", expected vector (not an untagged vector)"))
-    in
-    let rec check_param_vec_bounds (cl : constrain list) : unit =
-        match cl with
-        | [] -> ()
-        | h::t -> if is_sub_constraint h GenVecTyp d pm m then check_param_vec_bounds t
-            else raise (TypeException ("Invalid declaration of " ^ s ^ " -- must parameterize on vectors only"))
-    in
-    check_valid_supertype t |> ignore;
-    check_param_vec_bounds (List.map snd (Assoc.bindings pm));
-    if Assoc.mem s d then raise (TypeException "Cannot redeclare tag")
-    else ();
-    (Assoc.update s (pm, t) d, Assoc.update s tm m)
-
-let rec check_tags (t: tag_decl list) (d: delta) (m: mu): delta * mu =
-    debug_print ">> check_tags";
-    match t with 
-    | [] -> (d, m)
-    | (tm, s, pmd, a)::t ->
-        check_typ_exp a |> ignore;
-        let (d', m') = check_tag s (collapse_parameterization_decl pmd) tm a d m in
-        check_tags t d' m'
-
-let check_fn_decl (g: gamma) (d: delta) (m: mu) ((fm, id, (pl, rt, pmd)): fn_decl) (p: phi) (ps: psi) : 
+let check_fn_decl (g: gamma) (d: delta) (m: mu) ((fm, id, (pmd, rt, pl)): fn_decl) (p: phi) (ps: psi) : 
 (TypedAst.params * gamma * psi) * TypedAst.parameterization * mu * phi =
     debug_print (">> check_fn_decl : " ^ id);
     check_parameterization_decl d m pmd;
@@ -1182,13 +1132,13 @@ let check_return (t: typ) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (
         )
     | _ -> ()
 
-let update_mu_with_function (((fm, id, (pr, r, pmd))): fn_decl) (d: delta) (m: mu) (ps: psi) : mu =
+let update_mu_with_function (((fm, id, (pmd, r, pr))): fn_decl) (d: delta) (m: mu) (ps: psi) : mu =
     let m' = Assoc.update id fm m in
     if List.mem Canon fm then
         match pr with
         (* Only update if it is a canon function with exactly one argument *)
         (* TODO: add to phi, not to psi unless it is concrete *)
-        | [(_,_, t)] ->
+        | [(_,t,_)] ->
         begin
             if is_typ_eq t r then raise (TypeException ("Canonical function " ^ id ^ " cannot be a map from a type to itself")) else
             let fail _ = raise (TypeException "Canonical functions must be between tag or abstract types") in
@@ -1208,30 +1158,93 @@ let update_mu_with_function (((fm, id, (pr, r, pmd))): fn_decl) (d: delta) (m: m
         | _ -> raise (TypeException "Cannot have a canonical function with zero or more than one arguments")
     else m'
 
-let check_fn (((fm, id, (pr, r, pmd)), cl): fn) (g: gamma) (d: delta) (m: mu) (p: phi) (ps: psi) : psi * mu * TypedAst.fn * phi = 
+let check_tag_decl ((ml, s, pmd, t) : tag_decl) (d: delta) (m: mu) : delta * mu = 
+    debug_print ">> check_tag_decl";
+    let pm = collapse_parameterization_decl pmd in
+    let rec check_valid_supertype (t: typ) : constrain =
+        match t with
+        | TopVecTyp _ -> TypConstraint t
+        | VarTyp s -> 
+            if not (Assoc.mem s d) then raise (TypeException ("Unknown tag " ^ s)) else TypConstraint t
+        | ParTyp (VarTyp s, pml) -> 
+            if not (Assoc.mem s d) then raise (TypeException ("Unknown tag " ^ s))
+            else let (tpm, _) = Assoc.lookup s d in
+            let pmb = Assoc.bindings tpm in
+            if List.length pmb == List.length pml
+            then (List.fold_left2 (fun acc (s, c) t -> if is_sub_constraint t c d pm m then () else
+                raise (TypeException ("Invalid constraint used for parameterization of " ^ s)))
+                () (Assoc.bindings tpm) (List.map check_valid_supertype pml); TypConstraint t)
+            else raise (TypeException ("Invalid number of parameters provided to parameterized type " ^ s))
+        | AbsTyp s -> if Assoc.mem s pm then Assoc.lookup s pm else raise (TypeException ("Unknown type " ^ (string_of_typ t)))
+        | _ -> raise (TypeException ("Invalid type for tag declaration " ^ (string_of_typ t) ^ ", expected vector (not an untagged vector)"))
+    in
+    let rec check_param_vec_bounds (cl : constrain list) : unit =
+        match cl with
+        | [] -> ()
+        | h::t -> if is_sub_constraint h GenVecTyp d pm m then check_param_vec_bounds t
+            else raise (TypeException ("Invalid declaration of " ^ s ^ " -- must parameterize on vectors only"))
+    in
+    check_valid_supertype t |> ignore;
+    check_param_vec_bounds (List.map snd (Assoc.bindings pm));
+    if Assoc.mem s d then raise (TypeException "Cannot redeclare tag")
+    else ();
+    Assoc.update s (pm, t) d, Assoc.update s ml m
+
+let check_decls (ed : extern_decl) (g: gamma) (d: delta) (m: mu) (p: phi) (ps: psi) : (gamma * mu * phi) =
+    match ed with
+    | ExternFn f -> let (_, _, _, p') = (check_fn_decl g d m f p ps) in 
+        let m' = update_mu_with_function f d m ps in
+        (g, m', p')
+    | ExternVar (ml, t, Var x) -> (Assoc.update x t g, Assoc.update x ml m, p)
+    | _ -> raise (TypeException ("Invalid declaration, must be a function or variable"))
+
+(* Type check global variable *)
+let check_global_variable ((ml, sq, t, id, v): global_var) 
+    (g: gamma) (d: delta) (m:mu) (ps: psi) : 
+    TypedAst.global_var * gamma * psi =
+    debug_print ">> check_global_variable";
+    if Assoc.mem id g
+    then raise (TypeException ("Duplicate global variable: " ^ id))
+    else check_typ_valid t d Assoc.empty m; 
+        ((sq, tag_erase t d Assoc.empty, id, v), Assoc.update id t g, update_psi_matrix id t ml m ps)
+
+let check_fn (((fm, id, (pmd, r, pr)), cl): fn) (g: gamma) (d: delta) (m: mu) (p: phi) (ps: psi)
+        : TypedAst.fn * mu * phi * psi = 
     debug_print (">> check_fn : " ^ id);
     (* update phi with function declaration *)
     let pm = collapse_parameterization_decl pmd in
-    let ((pl', g', ps'), pm', m', p') = check_fn_decl g d m (fm, id, (pr, r, pmd)) p ps in 
+    let ((pl', g', ps'), pm', m', p') = check_fn_decl g d m (fm, id, (pmd, r, pr)) p ps in 
     let (cl', g'', ps'') = check_comm_lst cl d m' g' pm p ps' in 
-    let m_ret = update_mu_with_function (fm, id, (pr, r, pmd)) d m ps in
+    let m'' = update_mu_with_function (fm, id, (pmd, r, pr)) d m ps in
     (* check that the last command is a return statement *)
     match r with
-    | UnitTyp -> List.iter check_void_return cl; (ps, m_ret, (((id, (pl', TypedAst.UnitTyp, pm')), cl')), p')
+    | UnitTyp -> List.iter check_void_return cl; 
+        (((id, (pl', TypedAst.UnitTyp, pm')), cl')), m'', p', ps'
     (* TODO: might want to check that there is exactly one return statement at the end *)
-    | t -> List.iter (check_return t d m g'' pm p ps'') cl; (ps, m_ret, (((id, (pl', tag_erase t d pm, pm')), cl')), p')
+    | t -> List.iter (check_return t d m g'' pm p ps'') cl; 
+        (((id, (pl', tag_erase t d pm, pm')), cl')), m'', p', ps'
 
-let rec check_global_var_or_fn_lst (l: global_var_or_fn list) (g: gamma) (d: delta) (m: mu) (p:phi) (ps: psi) :
-TypedAst.prog * TypedAst.global_vars * gamma * phi * psi =
+let check_term (t: term) (g, d, m, p, ps : gamma * delta * mu * phi * psi) :
+    TypedAst.fn option * TypedAst.global_var option * (gamma * delta * mu * phi * psi) =
+    match t with
+    | TagDecl t -> let (d', m') = check_tag_decl t d m in
+        None, None, (g, d', m', p, ps)
+    | ExternDecl ed -> let (g', m', p') = check_decls ed g d m p ps in
+        None, None, (g', d, m', p', ps)
+    | GlobalVar gv -> let (gv', g', ps') = check_global_variable gv g d m ps in
+        None, Some gv', (g', d, m, p, ps')
+    | Fn f -> let (f', m', p', ps') = check_fn f g d m p ps in
+        Some f', None, (g, d, m', p', ps')
+    
+
+let rec check_term_list (tl: term list) :
+    TypedAst.prog * TypedAst.global_vars * phi =
     debug_print ">> check_global_var_or_fn_lst";
-    match l with
-    | [] -> [], [], g, p, ps
-    | GlobalVar gv::t -> let (gv', g', ps') = check_global_variable gv g d m ps in
-        let (pr, gvs, g'', p', ps'') = check_global_var_or_fn_lst t g' d m p ps' in
-        pr, gv'::gvs, g'', p', ps''
-    | Fn f::t -> let (ps', m', f', p') = check_fn f g d m p ps in
-        let (pr, gvs, g', p'', ps'') = check_global_var_or_fn_lst t g d m' p' ps' in
-        f'::pr, gvs, g', p'', ps''
+    let app_maybe o l = match o with | Some v -> v::l | None -> l in
+    let (f, gv, ctxs) = List.fold_left (fun acc t -> let (f', gv', contexts) = check_term t (tr_thd acc) in
+        (app_maybe f' (tr_fst acc), app_maybe gv' (tr_snd acc), contexts))
+        ([], [], (Assoc.empty, Assoc.empty, Assoc.empty, Assoc.empty, Assoc.empty)) tl in
+    List.rev f, List.rev gv, match ctxs with (_, _, _, p, _) -> p
 
 (* Check that there is a void main() defined *)
 let check_main_fn (p: phi) : unit =
@@ -1243,28 +1256,15 @@ let check_main_fn (p: phi) : unit =
         | UnitTyp -> ()
         | _ -> raise (TypeException ("Expected main function to return void"))
 
-let check_decls (g: gamma) (d: delta) (m: mu) (dl : extern_decl) (p: phi) (ps: psi) : (gamma * mu * phi)=
-    match dl with
-    | ExternFn f -> let (_, _, _, p') = (check_fn_decl g d m f p ps) in 
-        let m' = update_mu_with_function f d m ps in
-        (g, m', p')
-    | ExternVar (ml, t, Var x) -> (Assoc.update x t g, Assoc.update x ml m, p)
-    | _ -> raise (TypeException ("Invalid declaration, must be a function or variable"))
-
 (* Returns the list of fn's which represent the program 
  * and params of the void main() fn *)
-let check_prog ((dl, t, gf): prog) : TypedAst.prog * TypedAst.global_vars =
+let check_prog (tl: prog) : TypedAst.prog * TypedAst.global_vars =
     debug_print ">> check_prog";
     (*(d: delta) ((id, t): fn_decl) (p: phi) *)
     (* delta from tag declarations *)
-    let (d, m) = check_tags t Assoc.empty Assoc.empty in 
-    (* TODO: Why is gamma getting carried over here?  I'm a bit suspicious *)
-    let (g, m', p) = List.fold_left 
-        (fun (g', m', p') (dl': extern_decl) -> check_decls g' d m' dl' p' Assoc.empty) 
-        (Assoc.empty, m, Assoc.empty) dl in
-    let (e, gvr, g', p', ps) = check_global_var_or_fn_lst gf g d m' p Assoc.empty in
+    let (typed_prog, typed_gvs, p') = check_term_list tl in
     check_main_fn p';
     debug_print "===================";
     debug_print "Type Check Complete";
     debug_print "===================\n";
-    (e, gvr)
+    (typed_prog, typed_gvs)

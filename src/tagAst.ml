@@ -43,16 +43,13 @@ type exp =
     | Binop of binop * exp * exp
     | As of exp * typ
     | In of exp * typ
-    | FnInv of string * args * typ list (* function invocation *)
+    | FnInv of string * typ list * args (* function invocation *)
 
 and args = exp list
 
 type modification =
     | Canon
     | Space
-
-(* Global variables *)
-type global_var = modification list * string * storage_qual * typ * value option
 
 (* function parameterization,
  * which may extend another type. *)
@@ -61,17 +58,14 @@ type parameterization_decl = (string * constrain) list
 
 (* function parameters *)
 (* arguments may have an optional parameterization type *)
-type params = (modification list * string * typ) list
+type params = (modification list * typ * string) list
 type ret_type = typ
 (* our functions are not first-order! *)
 type fn_type = params * ret_type * parameterization
 (* Note that the parameterization declaration is only useful when checking the function, not calling it *)
-type fn_type_decl = params * ret_type * parameterization_decl
+type fn_type_decl = parameterization_decl * ret_type * params
 (* function declaration *)
 type fn_decl = modification list * string * fn_type_decl
-type extern_decl =
-    | ExternFn of fn_decl
-    | ExternVar of (modification list * typ * exp)
 
 (* commands *)
 type comm =
@@ -85,20 +79,28 @@ type comm =
     | If of if_block * if_block list * (comm list) option  (* if - elif list - else *)
     | For of comm * exp * comm * comm list
     | Return of exp option
-    | FnCall of typ * args * typ list (* e.g. f<model>(position) -- note that 'f' must be a string, but we treat it as a type to allow parsing of parametrized types *)
+    | FnCall of typ * typ list * args (* e.g. f<model>(position) -- note that 'f' must be a string, but we treat it as a type to allow parsing of parametrized types *)
 and if_block = exp * comm list
 
-type fn = fn_decl * comm list
-
-(* tag declaration statements *)
 type tag_decl = modification list * string * parameterization_decl * typ
+type fn = fn_decl * comm list
+type global_var = modification list * storage_qual * typ * string * value option
+type extern_decl =
+    | ExternFn of fn_decl
+    | ExternVar of (modification list * typ * exp)
 
-type global_var_or_fn =
+(* Terms that make up a program *)
+(* In any order, we have:
+ * Tag Declarations of user types
+ * External function declarations without bodies
+ * Global variable declarations
+ * Function declarations with bodies
+ *)
+type term =
+    | TagDecl of tag_decl
+    | ExternDecl of extern_decl
     | GlobalVar of global_var
     | Fn of fn
 
 (* program *)
-(* Consists of list of (external) declare functions,
- * list of vector space tags,
- * and list of functions with at least one void main() function. *)
-type prog = extern_decl list * tag_decl list * global_var_or_fn list
+type prog = term list
