@@ -462,7 +462,7 @@ let infer_pml (d : delta) ((params, rt, pr) : fn_type) (args_typ : typ list)
                 | _ -> None))
             (Some Assoc.empty) (Assoc.bindings pr))
     in
-    gen_pml (List.fold_left2 (fun fpm arg_typ (_, _, par_typ) -> unify_param arg_typ par_typ fpm) 
+    gen_pml (List.fold_left2 (fun fpm arg_typ (_, par_typ, _) -> unify_param arg_typ par_typ fpm) 
                 (Some Assoc.empty) args_typ params)
     
 
@@ -765,7 +765,7 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
                 | [] -> List.map (fun (t, (x, y)) -> (t, (x, y, []))) ps_lst 
                 | (id, (params, rt, pr)) :: t -> 
                     if List.mem Canon (Assoc.lookup id m) then
-                        let pt = match params with | [(_,_, pt)] -> pt | _ -> failwith ("function " ^ id ^ " with non-one argument made canonical") in
+                        let pt = match params with | [(_,pt,_)] -> pt | _ -> failwith ("function " ^ id ^ " with non-one argument made canonical") in
                         match infer_pml d (params, rt, pr) [tl] pm m with | None -> search_phi_rec t | Some pml ->
                         let pr1 = List.map snd (Assoc.bindings pr) in
                         let rtr = replace_abstype rt (fst (match_parameterization_unsafe d pr pm pml)) in
@@ -831,7 +831,7 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
                 else 
                 let e' = 
                     if Assoc.mem v g then (Binop (Times, Var v, e))
-                    else if Assoc.mem v p then (FnInv (v, [e], pml))
+                    else if Assoc.mem v p then (FnInv (v, pml, [e]))
                     else failwith ("Typechecker error: unknown value " ^ v ^ " loaded into psi") in
                 (* Note the update to the stateful queue *)
                 (Queue.push (t1, e') to_search;  t1 :: update_search_and_found t e)
@@ -912,7 +912,7 @@ and check_arr (d : delta) (m: mu) (g : gamma) (p : phi) (a : exp list) (pm : par
     | None ->  raise (TypeException ("Invalid array definition for " ^ (string_of_exp (Arr a)) ^ ", must be a matrix or vector")))
 
 
-and check_fn_inv (d : delta) (m: mu) (g : gamma) (p : phi) (args : args) (i : string) (pml: typ list) (pm : parameterization) (ps: psi)
+and check_fn_inv (d : delta) (m: mu) (g : gamma) (p : phi) (pml: typ list) (i : string) (args : args) (pm : parameterization) (ps: psi)
  : (string * TypedAst.etyp list * TypedAst.args) * typ = 
     debug_print (">> check_fn_inv " ^ i);
     let fn_invocated = if Assoc.mem i p
@@ -965,7 +965,7 @@ and check_fn_inv (d : delta) (m: mu) (g : gamma) (p : phi) (args : args) (i : st
         in
         match param_check with | None -> None | Some pm_map ->
         (* Get the parameters types and replace them in params_typ *)
-        let params_typ = List.map (fun (_,_,a) -> a) params in
+        let params_typ = List.map (fun (_,a,_) -> a) params in
         let rec read_pm (t : typ) : typ =
             match t with
             | AbsTyp s -> Assoc.lookup s pm_map
@@ -1188,7 +1188,7 @@ let update_mu_with_function (((fm, id, (pr, r, pmd))): fn_decl) (d: delta) (m: m
         match pr with
         (* Only update if it is a canon function with exactly one argument *)
         (* TODO: add to phi, not to psi unless it is concrete *)
-        | [(_,_, t)] ->
+        | [(_,_,t)] ->
         begin
             if is_typ_eq t r then raise (TypeException ("Canonical function " ^ id ^ " cannot be a map from a type to itself")) else
             let fail _ = raise (TypeException "Canonical functions must be between tag or abstract types") in

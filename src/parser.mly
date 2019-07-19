@@ -224,7 +224,7 @@ let constrain ==
   | t = typ;
     <TypConstraint>
 
-let dexp := 
+dexp: 
   | d1 = dexp; PLUS; d2 = dexp;
     { DimBinop(Plus, d1, d2) }
   | d1 = dexp; MINUS; d2 = dexp; 
@@ -235,7 +235,7 @@ let dexp :=
     { DimVar x }
   
 
-let typ :=
+typ:
   | AUTOTYP;
     { AutoTyp }
   | BACKTICK; e = ID;
@@ -259,7 +259,7 @@ let typ :=
   | t1 = typ; TRANS; t2 = typ;
     { TransTyp(t1,t2) }
   | t = typ; LWICK; tl = separated_list(COMMA, typ); RWICK;
-    <ParTyp>
+    { ParTyp(t, tl) }
   | VEC; LWICK; d = dexp; RWICK;
     { TopVecTyp d } 
   | x = ID;
@@ -312,7 +312,7 @@ let bool ==
   | FALSE;
     { false }
 
-let exp :=
+exp:
   | LPAREN; a = exp; RPAREN;
     { a }
   | v = value;
@@ -327,9 +327,9 @@ let exp :=
     { Binop(Gt,e1,e2) }
   | x = ID; LWICK; t = separated_list(COMMA, typ); RWICK; 
     LPAREN; a = separated_list(COMMA, exp); RPAREN;
-    <FnInv>
+    { FnInv(x, t, a) }
   | LBRACK; e = separated_list(COMMA, exp); RBRACK;
-    <Arr>
+    { Arr(e) }
   | e1 = exp; PLUS; e2 = exp;
     { Binop(Plus,e1,e2) }
   | e1 = exp; TIMES; e2 = exp;
@@ -341,9 +341,9 @@ let exp :=
   | e1 = exp; CTIMES; e2 = exp;
     { Binop(CTimes,e1,e2) }
   | e = exp; AS; t = typ;
-    <As>
+    { As(e, t) }
   | e = exp; IN; t = typ;
-    <In>
+    { In(e, t) }
   | MINUS; e1 = exp;
     { Unop(Neg,e1) }
   | NOT; e1 = exp;
