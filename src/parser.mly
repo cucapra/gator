@@ -224,7 +224,7 @@ let constrain ==
   | t = typ;
     <TypConstraint>
 
-let dexp := 
+dexp: 
   | d1 = dexp; PLUS; d2 = dexp;
     { DimBinop(Plus, d1, d2) }
   | d1 = dexp; MINUS; d2 = dexp; 
@@ -235,7 +235,7 @@ let dexp :=
     { DimVar x }
   
 
-let typ :=
+typ:
   | AUTOTYP;
     { AutoTyp }
   | BACKTICK; e = ID;
@@ -259,7 +259,7 @@ let typ :=
   | t1 = typ; TRANS; t2 = typ;
     { TransTyp(t1,t2) }
   | t = typ; LWICK; tl = separated_list(COMMA, typ); RWICK;
-    <ParTyp>
+    { ParTyp(t, tl) }
   | VEC; LWICK; d = dexp; RWICK;
     { TopVecTyp d } 
   | x = ID;

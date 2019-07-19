@@ -49,7 +49,7 @@ let string_of_modification (m: modification) : string =
 let string_of_mod_list (m: modification list) : string =
     String.concat " " (List.map string_of_modification m)
 
-let string_of_param ((ml, s, t): modification list * string * typ) : string =
+let string_of_param ((ml, t, s): modification list * typ * string) : string =
     string_of_mod_list ml ^ " " ^ (string_of_typ t) ^ " " ^ s
     
 let string_of_params (p: params) : string =
@@ -66,7 +66,7 @@ let string_of_fn_type ((p, r, pm): fn_type) : string =
     (string_of_typ r) ^ " <" ^ (string_of_parameterization pm) ^ ">" 
     ^ "(" ^ (string_of_params p) ^ ")"
 
-let string_of_fn_type_decl ((p, r, pmd): fn_type_decl) : string = 
+let string_of_fn_type_decl ((pmd, r, p): fn_type_decl) : string = 
     (string_of_typ r) ^ " <" ^ (string_of_parameterization_decl pmd) ^ ">" 
     ^ "(" ^ (string_of_params p) ^ ")"
 
@@ -89,7 +89,7 @@ let rec string_of_exp (e:exp) : string =
         | _ -> (string_of_binop op ls rs))
     | As (e, t) -> (string_of_exp e) ^ " as " ^ (string_of_typ t)
     | In (e, t) -> (string_of_exp e) ^ " in " ^ (string_of_typ t)
-    | FnInv (i, args, pr) -> i ^ "<" ^ (string_of_lst string_of_typ pr) ^ ">" ^ "(" ^ (string_of_lst string_of_exp args) ^ ")"
+    | FnInv (i, pr, args) -> i ^ "<" ^ (string_of_lst string_of_typ pr) ^ ">" ^ "(" ^ (string_of_lst string_of_exp args) ^ ")"
 
 let rec string_of_comm (c: comm) : string =
     match c with
@@ -111,38 +111,36 @@ let rec string_of_comm (c: comm) : string =
     | For (d, b, u, cl) -> "for (" ^ string_of_comm d ^ string_of_exp b ^ "; " ^ string_of_comm u ^ ") {\n" ^ string_of_comm_list cl ^ "}"
     | Return None -> "return;"
     | Return Some e -> "return" ^ (string_of_exp e) ^ ";"
-    | FnCall (n, e, _) -> string_of_typ n ^ "(" ^ (String.concat "," (List.map string_of_exp e)) ^ "^" (* TODO *)
-    
-
+    | FnCall (n, _, e) -> string_of_typ n ^ "(" ^ (String.concat "," (List.map string_of_exp e)) ^ "^" (* TODO *)
 and 
 string_of_comm_list (cl : comm list) : string = 
     string_of_lst string_of_comm cl
 
-let rec string_of_tags (t : tag_decl list) : string =
-    match t with | [] -> "" | (m, s, pm, a)::t -> 
-    "tag " ^ string_of_mod_list m ^ s ^ "<" ^ (string_of_parameterization_decl pm) ^ ">"
-    ^ " is " ^ (string_of_typ a) ^ ";\n" ^ (string_of_tags t)
+let rec string_of_tag_decl ((s, pmd, t) : tag_decl) : string =
+    "tag " ^ s ^ "<" ^ (string_of_parameterization_decl pmd) ^ ">"
+    ^ " is " ^ (string_of_typ t) ^ ";"
 
-let string_of_fn ((d, c1) : fn) : string = 
+let string_of_fn ((d, c1) : fn_decl * comm list) : string = 
     string_of_fn_decl d ^ "{" ^ (string_of_comm_list c1) ^"}"
 
-let string_of_declare (f: fn) : string = 
-    "declare " ^ string_of_fn f
+let string_of_declare (f: fn_decl) : string = 
+    "declare " ^ string_of_fn_decl f
 
-let string_of_declare_lst (fl : fn list) : string = 
-    string_of_lst string_of_declare fl
-
-let string_of_global_var ((ml, x, sq, t, v) : global_var) : string =
+let string_of_global_var ((ml, sq, t, x, v) : global_var) : string =
     string_of_mod_list ml ^ " " ^ string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ x 
     ^ string_of_option_removed (fun x -> "= " ^ string_of_value x) v
 
-let string_of_global_var_or_fn (u : global_var_or_fn) : string =
-    match u with
-    | GlobalVar gv -> string_of_global_var gv
+let string_of_extern (e : extern_decl) : string = 
+    match e with
+    | ExternFn f -> string_of_declare f
+    | ExternVar (m, t, e) -> string_of_mod_list m ^ " " ^ string_of_typ t ^ " " ^ (string_of_exp e)
+
+let string_of_term(t : term) : string = 
+    match t with
+    | TagDecl d -> string_of_tag_decl d
+    | ExternDecl e -> string_of_extern e
+    | GlobalVar g -> string_of_global_var g
     | Fn f -> string_of_fn f
 
-let string_of_global_var_or_fn_lst (l : global_var_or_fn list) : string =
-    string_of_lst string_of_global_var_or_fn l
-
-let string_of_prog ((d, t, gf) : prog) : string =
-    (string_of_tags t) ^ (string_of_global_var_or_fn_lst gf) 
+let string_of_prog (tl : prog) : string =
+    string_of_lst (fun t -> string_of_term t ^ "\n") tl; 

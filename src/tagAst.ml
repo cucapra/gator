@@ -66,9 +66,6 @@ type fn_type = params * ret_type * parameterization
 type fn_type_decl = parameterization_decl * ret_type * params
 (* function declaration *)
 type fn_decl = modification list * string * fn_type_decl
-type extern_decl =
-    | ExternFn of fn_decl
-    | ExternVar of (modification list * typ * exp)
 
 (* commands *)
 type comm =
@@ -85,6 +82,13 @@ type comm =
     | FnCall of typ * typ list * args (* e.g. f<model>(position) -- note that 'f' must be a string, but we treat it as a type to allow parsing of parametrized types *)
 and if_block = exp * comm list
 
+type tag_decl = string * parameterization_decl * typ
+type fn = fn_decl * comm list
+type global_var = modification list * storage_qual * typ * string * value option
+type extern_decl =
+    | ExternFn of fn_decl
+    | ExternVar of (modification list * typ * exp)
+
 (* Terms that make up a program *)
 (* In any order, we have:
  * Tag Declarations of user types
@@ -93,10 +97,10 @@ and if_block = exp * comm list
  * Function declarations with bodies
  *)
 type term =
-    | TagDecl of string * parameterization_decl * typ
+    | TagDecl of tag_decl
     | ExternDecl of extern_decl
-    | GlobalVar of modification list * storage_qual * typ * string * value option
-    | Fn of fn_decl * comm list
+    | GlobalVar of global_var
+    | Fn of fn
 
 (* program *)
 type prog = term list

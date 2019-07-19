@@ -76,7 +76,7 @@ let binop_string (op: binop) : string =
 let string_of_storage_qual (s: storage_qual) : string =
   match s with
   | Const -> "const"
-  | In -> "in"
+  | InQual -> "in"
   | Out -> "out"
   | Attribute -> "attribute"
   | Uniform -> "uniform"
