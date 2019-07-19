@@ -116,8 +116,8 @@ and
 string_of_comm_list (cl : comm list) : string = 
     string_of_lst string_of_comm cl
 
-let rec string_of_tag_decl ((s, pmd, t) : tag_decl) : string =
-    "tag " ^ s ^ "<" ^ (string_of_parameterization_decl pmd) ^ ">"
+let rec string_of_tag_decl ((ml, s, pmd, t) : tag_decl) : string =
+    string_of_mod_list ml ^ "tag " ^ s ^ "<" ^ (string_of_parameterization_decl pmd) ^ ">"
     ^ " is " ^ (string_of_typ t) ^ ";"
 
 let string_of_fn ((d, c1) : fn_decl * comm list) : string = 

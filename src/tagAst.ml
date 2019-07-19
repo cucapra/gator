@@ -82,7 +82,7 @@ type comm =
     | FnCall of typ * typ list * args (* e.g. f<model>(position) -- note that 'f' must be a string, but we treat it as a type to allow parsing of parametrized types *)
 and if_block = exp * comm list
 
-type tag_decl = string * parameterization_decl * typ
+type tag_decl = modification list * string * parameterization_decl * typ
 type fn = fn_decl * comm list
 type global_var = modification list * storage_qual * typ * string * value option
 type extern_decl =

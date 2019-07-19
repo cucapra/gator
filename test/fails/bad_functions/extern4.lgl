@@ -1,7 +1,0 @@
-declare color f();
-tag color is vec3; //Out of order
-
-void main() {
-    print f();
-    return;
-}

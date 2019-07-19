@@ -14,7 +14,6 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 
 (* Tokens *)
 
-%token EOL
 %token EOF
 %token <int> NUM
 %token <float> FLOAT
@@ -113,34 +112,38 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %%
 
 main:
-  | t = nonempty_list(term); EOF;
+  | t = term+; EOF;
     { t }
 
 let term == 
   | TAG; x = ID; IS; t = typ; SEMI; 
-    { TagDecl(x, [], t) }
+    { TagDecl([], x, [], t) }
   | TAG; x = ID; pt = par_decl; IS; t = typ; SEMI; 
-    <TagDecl>
+    { TagDecl([], x, pt, t) }
+  | SPACE; x = ID; IS; t = typ; SEMI; 
+    { TagDecl([Space], x, [], t) }
+  | SPACE; x = ID; pt = par_decl; IS; t = typ; SEMI; 
+    { TagDecl([Space], x, pt, t) }
   | DECLARE; d = decl_extern; SEMI; 
     <ExternDecl>
-  | m = list(modification); sq = storage_qual; t = typ;
-    x = ID; v = option(preceded(GETS, value)); SEMI; 
+  | m = modification*; sq = storage_qual; t = typ;
+    x = ID; v = preceded(GETS, value)?; SEMI; 
     <GlobalVar>
   | f = fn_decl; LBRACE; cl = list(comm); RBRACE;
     <Fn>
 
-let modification == 
+let modification ==
   | CANON;
     { Canon } 
 
 let decl_extern == 
-  | m = list(modification); t = typ; x = ID;
+  | m = modification*; t = typ; x = ID;
     { ExternVar(m, t, Var x) }
-  | m = list(modification); t = typ; x = ID; p = fn_params; 
+  | m = modification*; t = typ; x = ID; p = fn_params; 
     { ExternFn((m, x, (fst p, t, snd p))) }
 
 let params == 
-  | m = list(modification); t = typ; x = ID;
+  | m = modification*; t = typ; x = ID;
     <>
 
 let parameterization ==
@@ -150,11 +153,11 @@ let parameterization ==
     <>
 
 let par_decl == 
-  | LBRACE; pt = separated_list(COMMA, parameterization); RBRACE;
+  | LWICK; pt = separated_list(COMMA, parameterization); RWICK;
     <>
 
 let fn_decl ==
-  | m = list(modification); t = typ; x = ID; p = fn_params;
+  | m = modification*; t = typ; x = ID; p = fn_params;
     { (m, x, (fst p, t, snd p)) }
 
 let fn_params ==
@@ -170,22 +173,26 @@ let comm ==
     <>
 
 let if_block(delim) ==
-  | delim; LPAREN; b = exp; RPAREN; LBRACE; c = list(comm); RBRACE;
+  | delim; LPAREN; b = exp; RPAREN; LBRACE; c = comm*; RBRACE;
     <>
 
 let comm_block ==
-  | i = if_block(IF); el = list(if_block(ELIF)); 
+  | i = if_block(IF); el = if_block(ELIF)*; 
     e = option(preceded(ELSE, delimited(LBRACE, list(comm), RBRACE)));
     <If>
   | FOR; LPAREN; c1 = comm_element; SEMI; b = exp; SEMI; c2 = comm_element; RPAREN;
-    LBRACE; cl = list(comm); RBRACE; 
+    LBRACE; cl = comm*; RBRACE; 
     <For>
 
 let comm_element == 
   | SKIP;
     { Skip }
-  | m = list(modification); t = typ; x = ID; GETS; e1 = exp; 
-    < Decl >
+  /* | m = modification*; t = typ; x = ID; GETS; e1 = exp; 
+    < Decl > */
+  | t = typ; x = ID; GETS; e = exp;
+    { Decl([], t, x, e) }
+  | m = modification+; t = typ; x = ID; GETS; e = exp;
+    { Decl(m, t, x, e) }
   | x = ID; GETS; e1 = exp; 
     < Assign >
   | x = ID; PLUSEQ; e1 = exp; 
@@ -200,7 +207,7 @@ let comm_element ==
     { AssignOp(x, CTimes, e1) }
   | PRINT; e = exp; 
     < Print >
-  | RETURN; e = option(exp); 
+  | RETURN; e = exp?;
     < Return >
   | x = ID; INC; 
     < Inc >
