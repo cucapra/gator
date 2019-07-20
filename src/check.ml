@@ -55,7 +55,7 @@ let rec unwrap_abstyp (s: string) (pm : parameterization) : constrain =
 let as_matrix_pair (t: typ) (d: delta) (pm: parameterization) : typ * typ =
     debug_print ">> as_matrix_pair";
     (* Checks whether the given abstract type is a vector *)
-    let fail _ = failwith ("Cannot treat " ^ (string_of_typ t) ^ " as a matrix") in
+    let fail _ = failwith ("Cannot treat " ^ (string_of_typ t) ^ " as a mtrix") in
     match t with
     | TransTyp (t1, t2) -> (t1, t2)
     | AbsTyp s -> (match unwrap_abstyp s pm with
@@ -738,10 +738,10 @@ let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parameteriz
     ((fst checked_exp), (tag_erase (snd checked_exp) d pm))
 
 (* Super expensive.  We're essentially relying on small contexts *)
-let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) (d: delta) 
-(pm: parameterization) (p: phi) (ps: psi) : exp = 
+let check_in_exp (start_exp: aexp) (start: typ) (target: typ) (m: mu) (g: gamma) (d: delta) 
+(pm: parameterization) (p: phi) (ps: psi) : aexp = 
     debug_print ">> check_in_exp";
-    let rec psi_path_rec (to_search: (typ * exp) Queue.t) (found: typ list) : exp =
+    let rec psi_path_rec (to_search: (typ * aexp) Queue.t) (found: typ list) : aexp =
         let search_phi (tl: typ) (ps_lst : (typ * fn_inv) list) : (typ * fn_inv) list =
             (* This function searches phi for canonical abstract functions that map from the given type *)
             (* A list of the types these functions map with the inferred type parameters is returned *)
@@ -812,7 +812,7 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
                 to_return @ psi_lookup_rec next_step
             | _ -> to_return)
         in 
-        let rec update_search_and_found (vals: (typ * fn_inv) list) (e: exp) : typ list =
+        let rec update_search_and_found (vals: (typ * fn_inv) list) (e: aexp) : typ list =
             match vals with
             | [] -> found
             | (t1, (v, pml))::t -> 
@@ -820,8 +820,8 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
                 then update_search_and_found t e 
                 else 
                 let e' = 
-                    if Assoc.mem v g then (Binop (Times, Var v, e))
-                    else if Assoc.mem v p then (FnInv (v, pml, [e]))
+                    if Assoc.mem v g then (Binop (Times, (Var v, snd e), e), snd e)
+                    else if Assoc.mem v p then (FnInv (v, pml, [e]), snd e)
                     else failwith ("Typechecker error: unknown value " ^ v ^ " loaded into psi") in
                 (* Note the update to the stateful queue *)
                 (Queue.push (t1, e') to_search;  t1 :: update_search_and_found t e)
@@ -839,18 +839,23 @@ let check_in_exp (start_exp: exp) (start: typ) (target: typ) (m: mu) (g: gamma) 
 	let q = Queue.create () in Queue.push (start, start_exp) q;
 	psi_path_rec q []
 
-let rec check_exp (e : exp) (d : delta) (m: mu) (g : gamma) (pm : parameterization) (p : phi) (ps: psi)
- : TypedAst.exp * typ = 
+let rec check_aexp ((e, meta) : aexp) (d : delta) (m: mu) (g : gamma) 
+    (pm : parameterization) (p : phi) (ps: psi) : TypedAst.exp * typ =
+    check_exp e d m g pm p ps meta
+
+and check_exp (e : exp) (d : delta) (m: mu) (g : gamma) (pm : parameterization) 
+    (p : phi) (ps: psi) (meta: metadata) : TypedAst.exp * typ = 
     debug_print ">> check_exp";
-    let build_unop (op : unop) (e': exp) (check_fun: typ->delta->mu->parameterization->typ) (pm: parameterization)
+    let check_aexpf to_check = check_aexp to_check d m g pm p ps in
+    let build_unop (op : unop) (e': aexp) (check_fun: typ->delta->mu->parameterization->typ) (pm: parameterization)
         : TypedAst.exp * typ =
-        let result = check_exp e' d m g pm p ps in
+        let result = check_aexpf e' in
             (TypedAst.Unop(op, exp_to_texp result d pm), check_fun (snd result) d m pm)
     in
-    let build_binop (op : binop) (e1: exp) (e2: exp) (check_fun: typ->typ->delta->mu->parameterization->typ) (pm: parameterization)
+    let build_binop (op : binop) (e1: aexp) (e2: aexp) (check_fun: typ->typ->delta->mu->parameterization->typ) (pm: parameterization)
         : TypedAst.exp * typ =
-        let e1r = check_exp e1 d m g pm p ps in
-        let e2r = check_exp e2 d m g pm p ps in
+        let e1r = check_aexpf e1 in
+        let e2r = check_aexpf e2 in
             (TypedAst.Binop(op, exp_to_texp e1r d pm, exp_to_texp e2r d pm), check_fun (snd e1r) (snd e2r) d m pm)
     in
     match e with
@@ -859,9 +864,9 @@ let rec check_exp (e : exp) (d : delta) (m: mu) (g : gamma) (pm : parameterizati
         if Assoc.mem v g then (TypedAst.Var v, Assoc.lookup v g) else
         raise (TypeException ("Unknown variable " ^ v))
     | Arr a -> check_arr d m g p a pm ps
-    | As (e, t) -> let (er, tr) = check_exp e d m g pm p ps in (er, check_as_exp tr t d pm m)
-    | In (e, t) -> let (_, tr) = check_exp e d m g pm p ps in 
-        (check_exp (check_in_exp e tr t m g d pm p ps) d m g pm p ps)
+    | As (e', t) -> let (er, tr) = check_aexpf e' in (er, check_as_exp tr t d pm m)
+    | In (e', t) -> let (_, tr) = check_aexpf e' in 
+        check_aexpf (check_in_exp e' tr t m g d pm p ps)
     | Unop (op, e') -> let f = match op with
             | Neg -> check_num_unop
             | Not -> check_bool_unop
@@ -880,7 +885,7 @@ let rec check_exp (e : exp) (d : delta) (m: mu) (g : gamma) (pm : parameterizati
     | FnInv (i, args, pr) -> let ((i, tpl, args_exp), rt) = check_fn_inv d m g p args i pr pm ps in 
         (FnInv (i, tpl, args_exp), rt)
         
-and check_arr (d : delta) (m: mu) (g : gamma) (p : phi) (a : exp list) (pm : parameterization) (ps: psi)
+and check_arr (d : delta) (m: mu) (g : gamma) (p : phi) (a : aexp list) (pm : parameterization) (ps: psi)
  : (TypedAst.exp * typ) =
     debug_print ">> check_arr";
     let is_vec (v: TypedAst.texp list) : bool =
@@ -894,7 +899,7 @@ and check_arr (d : delta) (m: mu) (g : gamma) (p : phi) (a : exp list) (pm : par
             | TypedAst.VecTyp n -> if (n == size) then acc else None | _ -> None) (Some size) v
         | _ -> None
     in
-    let checked_a = List.map (fun e -> (exp_to_texp (check_exp e d m g pm p ps) d pm )) a in
+    let checked_a = List.map (fun e -> (exp_to_texp (check_aexp e d m g pm p ps) d pm )) a in
     let length_a = List.length a in
     if is_vec checked_a then (TypedAst.Arr checked_a, BotVecTyp length_a) else 
     (match is_mat checked_a with
@@ -909,7 +914,7 @@ and check_fn_inv (d : delta) (m: mu) (g : gamma) (p : phi) (pml: typ list) (i : 
         then Assoc.lookup i p
         else raise (TypeException ("Invocated function " ^ i ^ " not found")) in
     let (_, rt, _) = fn_invocated in
-    let args' = List.map (fun a -> check_exp a d m g pm p ps) args in 
+    let args' = List.map (fun a -> check_aexp a d m g pm p ps) args in 
     let args_typ = List.map snd args' in
     (* find definition for function in phi *)
     (* looks through all possible overloaded definitions of the function *)
@@ -976,12 +981,18 @@ and check_fn_inv (d : delta) (m: mu) (g : gamma) (p : phi) (pml: typ list) (i : 
     ^ (if List.length pml > 0 then "<" ^ (String.concat "," (List.map string_of_typ pml)) ^ ">" else "")
     ^ " matching types (" ^ (String.concat "," (List.map string_of_typ args_typ)) ^ ") found"))) 
 
-and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p: phi) (ps: psi) : TypedAst.comm * gamma * psi = 
+and check_acomm ((c, meta): acomm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p: phi) (ps: psi)
+    : TypedAst.comm * gamma * psi =
+    check_comm c d m g pm p ps meta
+
+and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p: phi) (ps: psi) (meta: metadata)
+    : TypedAst.comm * gamma * psi = 
     debug_print ">> check_comm";
+    let check_acommf to_check = check_acomm to_check d m g pm p ps in
     match c with
     | Skip -> (TypedAst.Skip, g, ps)
     | Print e -> (
-        let (e, t) = exp_to_texp (check_exp e d m g pm p ps) d pm in 
+        let (e, t) = exp_to_texp (check_aexp e d m g pm p ps) d pm in 
         match t with
         | UnitTyp -> raise (TypeException "Print function cannot print void types")
         | _ -> (TypedAst.Print (e, t), g, ps)
@@ -998,7 +1009,7 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
         if Assoc.mem s g then raise (TypeException "variable name shadowing is illegal")        
         else 
         (check_typ_valid t d pm m; 
-        let result = check_exp e d m g pm p ps in
+        let result = check_aexp e d m g pm p ps in
         let t' = (match t with | AutoTyp -> 
             (match (snd result) with
                 | BotVecTyp _ -> raise (TypeException "Cannot infer the type of a vector literal")
@@ -1013,17 +1024,17 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
     | Assign (s, e) ->
         if Assoc.mem s g then
             let t = Assoc.lookup s g in
-            let result = check_exp e d m g pm p ps in
+            let result = check_aexp e d m g pm p ps in
             (TypedAst.Assign (s, (exp_to_texp result d pm)), check_assign t s (snd result) d g p pm m, ps)
         else raise (TypeException ("Assignment to undeclared variable: " ^ s))
     | AssignOp (s, b, e) -> 
-        let (c', g', ps') = check_comm (Assign (s, Binop(b, Var s, e))) d m g pm p ps in
+        let (c', g', ps') = check_acommf (Assign (s, (Binop(b, (Var s, snd e), e), meta)), meta) in
         (match c' with
         | TypedAst.Assign (_, (TypedAst.Binop (_, (_, st), e), _)) -> (TypedAst.AssignOp((s, st), b, e), g', ps')
         | _ -> failwith "Assign must return an assign?")
     | If ((b, c1), el, c2) ->
         let check_if b c =
-            let er = (check_exp b d m g pm p ps) in
+            let er = (check_aexp b d m g pm p ps) in
             let (cr, _, _) = check_comm_lst c d m g pm p ps in
             (match (snd er) with 
             | BoolTyp -> ((exp_to_texp er d pm), cr)
@@ -1032,10 +1043,10 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
         let c2r = (match c2 with | Some e -> Some (tr_fst (check_comm_lst e d m g pm p ps)) | None -> None) in
         (TypedAst.If (check_if b c1, List.map (fun (b, c) -> check_if b c) el, c2r), g, ps)
     | For (c1, b, c2, cl) ->
-        let (c1r, g', ps') = check_comm c1 d m g pm p ps in
-        let (br, brt) = check_exp b d m g' pm p ps in
+        let (c1r, g', ps') = check_acomm c1 d m g pm p ps in
+        let (br, brt) = check_aexp b d m g' pm p ps in
         let btexp = exp_to_texp (br, brt) d pm in
-        let (c2r, _, _) = check_comm c2 d m g' pm p ps' in
+        let (c2r, _, _) = check_acomm c2 d m g' pm p ps' in
         (TypedAst.For (c1r, btexp, c2r, (tr_fst (check_comm_lst cl d m g' pm p ps'))), g, ps)
         (* (match c1r with
         | Skip
@@ -1054,7 +1065,7 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
             | _ -> raise (TypeException "For loop must progress toward termination with a comparative expression between an id and constant using precisely the increment or decrement operator"))
         | _ -> raise (TypeException "First statement in for loop must be a skip, declaration, or assignment")) *)
     | Return Some e ->
-        let (e, t) = exp_to_texp (check_exp e d m g pm p ps) d pm in
+        let (e, t) = exp_to_texp (check_aexp e d m g pm p ps) d pm in
         (TypedAst.Return (Some (e, t)), g, ps)
     | Return None -> (TypedAst.Return None, g, ps)
     | FnCall (it, args, pml) -> (match it with
@@ -1063,11 +1074,11 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
             (TypedAst.FnCall (i, tpl, args_exp), g, ps)
         | _ -> raise (TypeException ("Cannot treat the type " ^ string_of_typ it ^ " as a function call")))
 
-and check_comm_lst (cl : comm list) (d: delta) (m: mu) (g: gamma) (pm : parameterization) (p: phi) (ps: psi) : TypedAst.comm list * gamma * psi = 
+and check_comm_lst (cl : acomm list) (d: delta) (m: mu) (g: gamma) (pm : parameterization) (p: phi) (ps: psi) : TypedAst.comm list * gamma * psi = 
     debug_print ">> check_comm_lst";
     match cl with
     | [] -> ([], g, ps)
-    | h::t -> let (c', g', ps') = check_comm h d m g pm p ps in
+    | h::t -> let (c', g', ps') = check_acomm h d m g pm p ps in
         let (cl', g'', ps'') = check_comm_lst t d m g' pm p ps' in 
         (c' :: cl', g'', ps'')
 
@@ -1113,18 +1124,18 @@ let check_fn_decl (g: gamma) (d: delta) (m: mu) ((fm, id, (pmd, rt, pl)): fn_dec
 (* Helper function for type checking void functions. 
  * Functions that return void can have any number of void return statements 
  * anywhere. *)
-let check_void_return (c: comm) =
+let check_void_return (c: acomm) =
     debug_print ">> check_void_return";
     match c with
-    | Return Some _ -> raise (TypeException ("Void functions cannot return a value"))
+    | (Return Some _, _) -> raise (TypeException ("Void functions cannot return a value"))
     | _ -> ()
 
-let check_return (t: typ) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p: phi) (ps: psi) (c: comm) = 
+let check_return (t: typ) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p: phi) (ps: psi) (c: acomm) = 
     debug_print ">> check_return";
     match c with
-    | Return None -> raise (TypeException ("Expected a return value instead of void"))
-    | Return Some r -> (
-        let (_, rt) = check_exp r d m g pm p ps in
+    | (Return None, meta) -> raise (TypeException ("Expected a return value instead of void"))
+    | (Return Some r, meta) -> (
+        let (_, rt) = check_aexp r d m g pm p ps in
         (* raises return exception of given boolean exp is false *)
         if is_subtype rt t d pm then () 
         else raise (TypeException ("Mismatched return types, expected: " ^ 
@@ -1190,12 +1201,13 @@ let check_tag_decl ((ml, s, pmd, t) : tag_decl) (d: delta) (m: mu) : delta * mu 
     else ();
     Assoc.update s (pm, t) d, Assoc.update s ml m
 
-let check_decls (ed : extern_decl) (g: gamma) (d: delta) (m: mu) (p: phi) (ps: psi) : (gamma * mu * phi) =
+let check_decls (ed : extern_decl) (g: gamma) (d: delta) (m: mu) (p: phi) (ps: psi) (meta: metadata) 
+    : (gamma * mu * phi) =
     match ed with
     | ExternFn f -> let (_, _, _, p') = (check_fn_decl g d m f p ps) in 
         let m' = update_mu_with_function f d m ps in
         (g, m', p')
-    | ExternVar (ml, t, Var x) -> (Assoc.update x t g, Assoc.update x ml m, p)
+    | ExternVar (ml, t, (Var x, meta)) -> (Assoc.update x t g, Assoc.update x ml m, p)
     | _ -> raise (TypeException ("Invalid declaration, must be a function or variable"))
 
 (* Type check global variable *)
@@ -1208,7 +1220,7 @@ let check_global_variable ((ml, sq, t, id, v): global_var)
     else check_typ_valid t d Assoc.empty m; 
         ((sq, tag_erase t d Assoc.empty, id, v), Assoc.update id t g, update_psi_matrix id t ml m ps)
 
-let check_fn (((fm, id, (pmd, r, pr)), cl): fn) (g: gamma) (d: delta) (m: mu) (p: phi) (ps: psi)
+let check_fn (((fm, id, (pmd, r, pr)), cl): fn) (g: gamma) (d: delta) (m: mu) (p: phi) (ps: psi) (meta: metadata)
         : TypedAst.fn * mu * phi * psi = 
     debug_print (">> check_fn : " ^ id);
     (* update phi with function declaration *)
@@ -1224,24 +1236,26 @@ let check_fn (((fm, id, (pmd, r, pr)), cl): fn) (g: gamma) (d: delta) (m: mu) (p
     | t -> List.iter (check_return t d m g'' pm p ps'') cl; 
         (((id, (pl', tag_erase t d pm, pm')), cl')), m'', p', ps'
 
-let check_term (t: term) (g, d, m, p, ps : gamma * delta * mu * phi * psi) :
+let check_term (t: term) (g, d, m, p, ps : gamma * delta * mu * phi * psi) (meta: metadata) :
     TypedAst.fn option * TypedAst.global_var option * (gamma * delta * mu * phi * psi) =
     match t with
     | TagDecl t -> let (d', m') = check_tag_decl t d m in
         None, None, (g, d', m', p, ps)
-    | ExternDecl ed -> let (g', m', p') = check_decls ed g d m p ps in
+    | ExternDecl ed -> let (g', m', p') = check_decls ed g d m p ps meta in
         None, None, (g', d, m', p', ps)
     | GlobalVar gv -> let (gv', g', ps') = check_global_variable gv g d m ps in
         None, Some gv', (g', d, m, p, ps')
-    | Fn f -> let (f', m', p', ps') = check_fn f g d m p ps in
+    | Fn f -> let (f', m', p', ps') = check_fn f g d m p ps meta in
         Some f', None, (g, d, m', p', ps')
     
+let check_aterm ((t, meta): aterm) (c : gamma * delta * mu * phi * psi) =
+    check_term t c meta
 
-let rec check_term_list (tl: term list) :
+let rec check_term_list (tl: aterm list) :
     TypedAst.prog * TypedAst.global_vars * phi =
     debug_print ">> check_global_var_or_fn_lst";
     let app_maybe o l = match o with | Some v -> v::l | None -> l in
-    let (f, gv, ctxs) = List.fold_left (fun acc t -> let (f', gv', contexts) = check_term t (tr_thd acc) in
+    let (f, gv, ctxs) = List.fold_left (fun acc t -> let (f', gv', contexts) = check_aterm t (tr_thd acc) in
         (app_maybe f' (tr_fst acc), app_maybe gv' (tr_snd acc), contexts))
         ([], [], (Assoc.empty, Assoc.empty, Assoc.empty, Assoc.empty, Assoc.empty)) tl in
     List.rev f, List.rev gv, match ctxs with (_, _, _, p, _) -> p

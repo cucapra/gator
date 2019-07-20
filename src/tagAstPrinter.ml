@@ -73,55 +73,56 @@ let string_of_fn_type_decl ((pmd, r, p): fn_type_decl) : string =
 let string_of_fn_decl ((fm, id, ft): fn_decl) : string = 
     string_of_mod_list fm ^ id ^ " " ^ string_of_fn_type_decl ft
 
-let rec string_of_exp (e:exp) : string =
-    let string_of_arr (a: exp list) : string = 
-        "["^(String.concat ", " (List.map string_of_exp a))^"]"
+let rec string_of_aexp ((e, m): aexp) : string =
+    string_of_exp e
+and string_of_exp (e: exp) : string = 
+    let string_of_arr (a: aexp list) : string = 
+        "["^(String.concat ", " (List.map string_of_aexp a))^"]"
     in
     match e with
     | Val v -> string_of_value v
     | Var v -> v
     | Arr a -> string_of_arr a
-    | Unop (op, x) -> (string_of_unop op (string_of_exp x))
+    | Unop (op, x) -> (string_of_unop op (string_of_aexp x))
     | Binop (op, l, r) -> 
-        let ls = (string_of_exp l) in
-        let rs = (string_of_exp r) in
+        let ls = (string_of_aexp l) in
+        let rs = (string_of_aexp r) in
         (match op with
         | _ -> (string_of_binop op ls rs))
-    | As (e, t) -> (string_of_exp e) ^ " as " ^ (string_of_typ t)
-    | In (e, t) -> (string_of_exp e) ^ " in " ^ (string_of_typ t)
-    | FnInv (i, pr, args) -> i ^ "<" ^ (string_of_lst string_of_typ pr) ^ ">" ^ "(" ^ (string_of_lst string_of_exp args) ^ ")"
+    | As (e, t) -> (string_of_aexp e) ^ " as " ^ (string_of_typ t)
+    | In (e, t) -> (string_of_aexp e) ^ " in " ^ (string_of_typ t)
+    | FnInv (i, pr, args) -> i ^ "<" ^ (string_of_lst string_of_typ pr) ^ ">" ^ "(" ^ (string_of_lst string_of_aexp args) ^ ")"
 
-let rec string_of_comm (c: comm) : string =
+let rec string_of_acomm ((c, m) : acomm) : string = 
+    string_of_comm c
+and string_of_comm (c: comm) : string =
     match c with
     | Skip -> "skip;"
-    | Print e -> "print " ^ (string_of_exp e) ^ ";"
+    | Print e -> "print " ^ (string_of_aexp e) ^ ";"
     | Inc x -> x ^ "++"
     | Dec x -> x ^ "--"
-    | Decl (ml, t, s, e) -> (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_exp e) ^ ";"
-    | Assign (b, x) -> b ^ " = " ^ (string_of_exp x) ^ ";"
-    | AssignOp (x, op, e) -> x ^ " " ^  binop_string op ^ "= " ^ (string_of_exp e)
+    | Decl (ml, t, s, e) -> (string_of_typ t)^" " ^ s ^ " = " ^ (string_of_aexp e) ^ ";"
+    | Assign (b, x) -> b ^ " = " ^ (string_of_aexp x) ^ ";"
+    | AssignOp (x, op, e) -> x ^ " " ^  binop_string op ^ "= " ^ (string_of_aexp e)
     | If ((b, c1), elif_list, c2) -> 
-        let block_string c = "{\n " ^ (string_of_comm_list c) ^ "}" in
+        let block_string c = "{\n " ^ string_of_lst string_of_acomm c ^ "}" in
         let rec string_of_elif lst = (match lst with 
         | [] -> "" 
-        | (b, c)::t -> "elif (" ^ (string_of_exp b) ^ ")" ^ block_string c ^ (string_of_elif t))
+        | (b, c)::t -> "elif (" ^ (string_of_aexp b) ^ ")" ^ block_string c ^ (string_of_elif t))
         in
-        "if (" ^ (string_of_exp b) ^ ") {\n" ^ (string_of_comm_list c1) ^ "} " 
-        ^ string_of_elif elif_list ^ (match c2 with | None -> "" | Some c2 -> "else {\n" ^ (string_of_comm_list c2) ^ "}")
-    | For (d, b, u, cl) -> "for (" ^ string_of_comm d ^ string_of_exp b ^ "; " ^ string_of_comm u ^ ") {\n" ^ string_of_comm_list cl ^ "}"
+        "if (" ^ (string_of_aexp b) ^ ") {\n" ^ string_of_lst string_of_acomm c1 ^ "} " 
+        ^ string_of_elif elif_list ^ (match c2 with | None -> "" | Some c2 -> "else {\n" ^ string_of_lst string_of_acomm c2 ^ "}")
+    | For (d, b, u, cl) -> "for (" ^ string_of_acomm d ^ string_of_aexp b ^ "; " ^ string_of_acomm u ^ ") {\n" ^ string_of_lst string_of_acomm cl ^ "}"
     | Return None -> "return;"
-    | Return Some e -> "return" ^ (string_of_exp e) ^ ";"
-    | FnCall (n, _, e) -> string_of_typ n ^ "(" ^ (String.concat "," (List.map string_of_exp e)) ^ "^" (* TODO *)
-and 
-string_of_comm_list (cl : comm list) : string = 
-    string_of_lst string_of_comm cl
+    | Return Some e -> "return" ^ (string_of_aexp e) ^ ";"
+    | FnCall (n, _, e) -> string_of_typ n ^ "(" ^ (String.concat "," (List.map string_of_aexp e)) ^ "^" (* TODO *)
 
 let rec string_of_tag_decl ((ml, s, pmd, t) : tag_decl) : string =
     string_of_mod_list ml ^ "tag " ^ s ^ "<" ^ (string_of_parameterization_decl pmd) ^ ">"
     ^ " is " ^ (string_of_typ t) ^ ";"
 
-let string_of_fn ((d, c1) : fn_decl * comm list) : string = 
-    string_of_fn_decl d ^ "{" ^ (string_of_comm_list c1) ^"}"
+let string_of_fn ((d, c1) : fn_decl * acomm list) : string = 
+    string_of_fn_decl d ^ "{" ^  string_of_lst string_of_acomm c1 ^"}"
 
 let string_of_declare (f: fn_decl) : string = 
     "declare " ^ string_of_fn_decl f
@@ -133,14 +134,16 @@ let string_of_global_var ((ml, sq, t, x, v) : global_var) : string =
 let string_of_extern (e : extern_decl) : string = 
     match e with
     | ExternFn f -> string_of_declare f
-    | ExternVar (m, t, e) -> string_of_mod_list m ^ " " ^ string_of_typ t ^ " " ^ (string_of_exp e)
-
+    | ExternVar (m, t, e) -> string_of_mod_list m ^ " " ^ string_of_typ t ^ " " ^ (string_of_aexp e)
+    
 let string_of_term(t : term) : string = 
     match t with
     | TagDecl d -> string_of_tag_decl d
     | ExternDecl e -> string_of_extern e
     | GlobalVar g -> string_of_global_var g
     | Fn f -> string_of_fn f
+let string_of_aterm((t, m) : aterm) : string = 
+    string_of_term t
 
 let string_of_prog (tl : prog) : string =
-    string_of_lst (fun t -> string_of_term t ^ "\n") tl; 
+    string_of_lst (fun t -> string_of_aterm t ^ "\n") tl; 

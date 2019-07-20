@@ -44,7 +44,7 @@ and exp =
     | Var of string
     | Arr of aexp list
     | Unop of unop * aexp
-    | Binop of binop * aexp astNode * aexp
+    | Binop of binop * aexp * aexp
     | As of aexp * typ
     | In of aexp * typ
     | FnInv of string * typ list * args (* function invocation *)
@@ -81,7 +81,7 @@ and comm =
     | Assign of string * aexp
     | AssignOp of string * binop * aexp
     | If of if_block * if_block list * (acomm list) option  (* if - elif list - else *)
-    | For of acomm * exp * acomm * acomm list
+    | For of acomm * aexp * acomm * acomm list
     | Return of aexp option
     | FnCall of typ * typ list * args (* e.g. f<model>(position) -- note that 'f' must be a string, but we treat it as a type to allow parsing of parametrized types *)
 and if_block = aexp * acomm list

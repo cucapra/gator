@@ -105,15 +105,23 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
    value of type [TagAst.expr]. *)
 
 %start main
+(* The explicit types of some key parser expressions to help with debugging *)
 %type <TagAst.prog> main
+%type <TagAst.exp> exp
+%type <TagAst.comm> comm  
+%type <TagAst.term> term 
 
 (* The following %% ends the declarations section of the grammar definition. *)
 
 %%
 
 main:
-  | t = term+; EOF;
+  | t = aterm+; EOF;
     { t }
+
+let aterm ==
+  | t = term;
+    { (t, $startpos) }
 
 let term == 
   | TAG; x = ID; IS; t = typ; SEMI; 
@@ -129,7 +137,7 @@ let term ==
   | m = modification*; sq = storage_qual; t = typ;
     x = ID; v = preceded(GETS, value)?; SEMI; 
     <GlobalVar>
-  | f = fn_decl; LBRACE; cl = list(comm); RBRACE;
+  | f = fn_decl; LBRACE; cl = list(acomm); RBRACE;
     <Fn>
 
 let modification ==
@@ -138,7 +146,7 @@ let modification ==
 
 let decl_extern == 
   | m = modification*; t = typ; x = ID;
-    { ExternVar(m, t, Var x) }
+    { ExternVar(m, t, (Var x, $startpos)) }
   | m = modification*; t = typ; x = ID; p = fn_params; 
     { ExternFn((m, x, (fst p, t, snd p))) }
 
@@ -166,6 +174,10 @@ let fn_params ==
   | pt = par_decl; LPAREN; p = separated_list(COMMA, params); RPAREN;
     <>
 
+let acomm ==
+  | c = comm;
+    { (c, $startpos) }
+
 let comm ==
   | c = comm_block;
     <>
@@ -173,50 +185,54 @@ let comm ==
     <>
 
 let if_block(delim) ==
-  | delim; LPAREN; b = exp; RPAREN; LBRACE; c = comm*; RBRACE;
+  | delim; LPAREN; b = aexp; RPAREN; LBRACE; c = acomm*; RBRACE;
     <>
 
 let comm_block ==
   | i = if_block(IF); el = if_block(ELIF)*; 
-    e = option(preceded(ELSE, delimited(LBRACE, list(comm), RBRACE)));
+    e = option(preceded(ELSE, delimited(LBRACE, list(acomm), RBRACE)));
     <If>
-  | FOR; LPAREN; c1 = comm_element; SEMI; b = exp; SEMI; c2 = comm_element; RPAREN;
-    LBRACE; cl = comm*; RBRACE; 
+  | FOR; LPAREN; c1 = acomm_element; SEMI; b = aexp; SEMI; c2 = acomm_element; RPAREN;
+    LBRACE; cl = acomm*; RBRACE; 
     <For>
+
+let acomm_element ==
+  | ce = comm_element;
+    { (ce, $startpos) }
 
 let comm_element == 
   | SKIP;
     { Skip }
   /* | m = modification*; t = typ; x = ID; GETS; e1 = exp; 
     < Decl > */
-  | t = typ; x = ID; GETS; e = exp;
+  | t = typ; x = ID; GETS; e = aexp;
     { Decl([], t, x, e) }
-  | m = modification+; t = typ; x = ID; GETS; e = exp;
+  | m = modification+; t = typ; x = ID; GETS; e = aexp;
     { Decl(m, t, x, e) }
-  | x = ID; GETS; e1 = exp; 
+  | x = ID; GETS; e1 = aexp; 
     < Assign >
-  | x = ID; PLUSEQ; e1 = exp; 
+  | x = ID; PLUSEQ; e1 = aexp; 
     { AssignOp(x, Plus, e1) }
-  | x = ID; MINUSEQ; e1 = exp; 
+  | x = ID; MINUSEQ; e1 = aexp; 
     { AssignOp(x, Minus, e1) }
-  | x = ID; TIMESEQ; e1 = exp; 
+  | x = ID; TIMESEQ; e1 = aexp; 
     { AssignOp(x, Times, e1) }
-  | x = ID; DIVEQ; e1 = exp; 
+  | x = ID; DIVEQ; e1 = aexp; 
     { AssignOp(x, Div, e1) }
-  | x = ID; CTIMESEQ; e1 = exp; 
+  | x = ID; CTIMESEQ; e1 = aexp; 
     { AssignOp(x, CTimes, e1) }
-  | PRINT; e = exp; 
+  | PRINT; e = aexp; 
     < Print >
-  | RETURN; e = exp?;
+  | RETURN; e = aexp?;
     < Return >
   | x = ID; INC; 
     < Inc >
   | x = ID; DEC; 
     < Dec >
-  | t = typ; LPAREN; a = separated_list(COMMA, exp); RPAREN; 
+  | t = typ; LPAREN; a = separated_list(COMMA, aexp); RPAREN; 
     { FnCall(t, [], a) }
   | t = typ; LWICK; p = separated_list(COMMA, typ); RWICK; 
-    LPAREN; a = separated_list(COMMA, exp); RPAREN; 
+    LPAREN; a = separated_list(COMMA, aexp); RPAREN; 
     <FnCall>
 
 let constrain == 
@@ -241,7 +257,6 @@ dexp:
   | x = ID;
     { DimVar x }
   
-
 typ:
   | AUTOTYP;
     { AutoTyp }
@@ -319,6 +334,10 @@ let bool ==
   | FALSE;
     { false }
 
+let aexp ==
+  | e = exp;
+    { (e, $startpos) }
+
 exp:
   | LPAREN; a = exp; RPAREN;
     { a }
@@ -326,48 +345,48 @@ exp:
     { Val v }
   | x = ID;
     { Var x }
-  | x = ID; LPAREN; a = separated_list(COMMA, exp); RPAREN;
+  | x = ID; LPAREN; a = separated_list(COMMA, aexp); RPAREN;
     { FnInv(x, [], a) }
-  | e1 = exp; LWICK; e2 = exp;
+  | e1 = aexp; LWICK; e2 = aexp;
     { Binop(Lt,e1,e2) }
-  | e1 = exp; RWICK; e2 = exp;
+  | e1 = aexp; RWICK; e2 = aexp;
     { Binop(Gt,e1,e2) }
   | x = ID; LWICK; t = separated_list(COMMA, typ); RWICK; 
-    LPAREN; a = separated_list(COMMA, exp); RPAREN;
+    LPAREN; a = separated_list(COMMA, aexp); RPAREN;
     { FnInv(x, t, a) }
-  | LBRACK; e = separated_list(COMMA, exp); RBRACK;
+  | LBRACK; e = separated_list(COMMA, aexp); RBRACK;
     { Arr(e) }
-  | e1 = exp; PLUS; e2 = exp;
+  | e1 = aexp; PLUS; e2 = aexp;
     { Binop(Plus,e1,e2) }
-  | e1 = exp; TIMES; e2 = exp;
+  | e1 = aexp; TIMES; e2 = aexp;
     { Binop(Times,e1,e2) }
-  | e1 = exp; MINUS; e2 = exp;
+  | e1 = aexp; MINUS; e2 = aexp;
     { Binop(Minus,e1,e2) }
-  | e1 = exp; DIV; e2 = exp;
+  | e1 = aexp; DIV; e2 = aexp;
     { Binop(Div,e1,e2) }
-  | e1 = exp; CTIMES; e2 = exp;
+  | e1 = aexp; CTIMES; e2 = aexp;
     { Binop(CTimes,e1,e2) }
-  | e = exp; AS; t = typ;
+  | e = aexp; AS; t = typ;
     { As(e, t) }
-  | e = exp; IN; t = typ;
+  | e = aexp; IN; t = typ;
     { In(e, t) }
-  | MINUS; e1 = exp;
+  | MINUS; e1 = aexp;
     { Unop(Neg,e1) }
-  | NOT; e1 = exp;
+  | NOT; e1 = aexp;
     { Unop(Not,e1) }
-  | e1 = exp; EQ; e2 = exp;
+  | e1 = aexp; EQ; e2 = aexp;
     { Binop(Eq,e1,e2) }
-  | e1 = exp; LEQ; e2 = exp;
+  | e1 = aexp; LEQ; e2 = aexp;
     { Binop(Leq,e1,e2) }
-  | e1 = exp; GEQ; e2 = exp;
+  | e1 = aexp; GEQ; e2 = aexp;
     { Binop(Geq,e1,e2) }
-  | e1 = exp; OR; e2 = exp;
+  | e1 = aexp; OR; e2 = aexp;
     { Binop(Or,e1,e2) }
-  | e1 = exp; AND; e2 = exp;
+  | e1 = aexp; AND; e2 = aexp;
     { Binop(And,e1,e2) }
-  | e1 = exp; DOT; s = ID;
+  | e1 = aexp; DOT; s = ID;
     { Unop(Swizzle s,e1) }
-  | x = ID; LBRACK; e2 = exp; RBRACK;
-    { Binop(Index,Var(x),e2) }
+  | x = ID; LBRACK; e2 = aexp; RBRACK;
+    { Binop(Index, (Var(x), $startpos), e2) }
 
 %%
