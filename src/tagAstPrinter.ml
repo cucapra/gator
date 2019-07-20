@@ -62,7 +62,7 @@ let string_of_parameterization_decl (pm : parameterization_decl) : string =
     String.concat "," 
 	(List.map (fun (s, c) -> s ^ " : " ^ string_of_constraint c) pm)
 
-let string_of_fn_type ((p, r, pm): fn_type) : string = 
+let string_of_fn_type ((p, r, pm, _): fn_type) : string = 
     (string_of_typ r) ^ " <" ^ (string_of_parameterization pm) ^ ">" 
     ^ "(" ^ (string_of_params p) ^ ")"
 

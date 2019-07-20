@@ -147,8 +147,8 @@ let modification ==
 let decl_extern == 
   | m = modification*; t = typ; x = ID;
     { ExternVar(m, t, (Var x, $startpos)) }
-  | m = modification*; t = typ; x = ID; p = fn_params; 
-    { ExternFn((m, x, (fst p, t, snd p))) }
+  | m = modification*; t = typ; x = ID; (p1, p2, _) = fn_params; 
+    { ExternFn((m, x, (p1, t, p2))) }
 
 let params == 
   | m = modification*; t = typ; x = ID;
@@ -165,14 +165,14 @@ let par_decl ==
     <>
 
 let fn_decl ==
-  | m = modification*; t = typ; x = ID; p = fn_params;
-    { (m, x, (fst p, t, snd p)) }
+  | m = modification*; t = typ; x = ID; (p1, p2, _) = fn_params;
+    { (m, x, (p1, t, p2)) }
 
 let fn_params ==
   | LPAREN; p = separated_list(COMMA, params); RPAREN;
-    { ([], p) }
+    { ([], p, $startpos) }
   | pt = par_decl; LPAREN; p = separated_list(COMMA, params); RPAREN;
-    <>
+    { (pt, p, $startpos) }
 
 let acomm ==
   | c = comm;

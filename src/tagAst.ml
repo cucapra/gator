@@ -64,7 +64,7 @@ type parameterization_decl = (string * constrain) list
 type params = (modification list * typ * string) list
 type ret_type = typ
 (* our functions are not first-order! *)
-type fn_type = params * ret_type * parameterization
+type fn_type = params * ret_type * parameterization * metadata
 (* Note that the parameterization declaration is only useful when checking the function, not calling it *)
 type fn_type_decl = parameterization_decl * ret_type * params
 (* function declaration *)
