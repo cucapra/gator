@@ -34,18 +34,21 @@ type constrain =
     | GenSpaceTyp
     | TypConstraint of typ
 
+type metadata = Lexing.position
+type 'a astNode = 'a * metadata
+
 (* expressions *)
-type exp =
+type aexp = exp astNode
+and exp =
     | Val of value
     | Var of string
-    | Arr of exp list
-    | Unop of unop * exp
-    | Binop of binop * exp * exp
-    | As of exp * typ
-    | In of exp * typ
+    | Arr of aexp list
+    | Unop of unop * aexp
+    | Binop of binop * aexp astNode * aexp
+    | As of aexp * typ
+    | In of aexp * typ
     | FnInv of string * typ list * args (* function invocation *)
-
-and args = exp list
+and args = aexp list
 
 type modification =
     | Canon
@@ -68,26 +71,27 @@ type fn_type_decl = parameterization_decl * ret_type * params
 type fn_decl = modification list * string * fn_type_decl
 
 (* commands *)
-type comm =
+type acomm = comm astNode
+and comm =
     | Skip
-    | Print of exp
+    | Print of aexp
     | Inc of id
     | Dec of id
-    | Decl of modification list * typ * string * exp
-    | Assign of string * exp
-    | AssignOp of string * binop * exp
-    | If of if_block * if_block list * (comm list) option  (* if - elif list - else *)
-    | For of comm * exp * comm * comm list
-    | Return of exp option
+    | Decl of modification list * typ * string * aexp
+    | Assign of string * aexp
+    | AssignOp of string * binop * aexp
+    | If of if_block * if_block list * (acomm list) option  (* if - elif list - else *)
+    | For of acomm * exp * acomm * acomm list
+    | Return of aexp option
     | FnCall of typ * typ list * args (* e.g. f<model>(position) -- note that 'f' must be a string, but we treat it as a type to allow parsing of parametrized types *)
-and if_block = exp * comm list
+and if_block = aexp * acomm list
 
 type tag_decl = modification list * string * parameterization_decl * typ
-type fn = fn_decl * comm list
+type fn = fn_decl * acomm list
 type global_var = modification list * storage_qual * typ * string * value option
 type extern_decl =
     | ExternFn of fn_decl
-    | ExternVar of (modification list * typ * exp)
+    | ExternVar of (modification list * typ * aexp)
 
 (* Terms that make up a program *)
 (* In any order, we have:
@@ -96,11 +100,12 @@ type extern_decl =
  * Global variable declarations
  * Function declarations with bodies
  *)
-type term =
+type aterm = term astNode
+and term =
     | TagDecl of tag_decl
     | ExternDecl of extern_decl
     | GlobalVar of global_var
     | Fn of fn
 
 (* program *)
-type prog = term list
+type prog = aterm list
