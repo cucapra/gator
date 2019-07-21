@@ -1,4 +1,5 @@
 void main() {
     float f = 0.;
     bool fail = f as bool; // Not a subtype
+    print 1;
 }

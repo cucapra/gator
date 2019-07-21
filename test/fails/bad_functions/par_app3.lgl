@@ -38,7 +38,7 @@ rot<`t> rotate<`t : vec<3>>(`t v) {
 
 void main() {
     model uPosition = [1., 1., 1.];
-    norm<model> uNorm = [0., 0., 1.];
+    dir<model> uNorm = [0., 0., 1.];
     hom<model>->hom<world> uModel = [[1., .5, 0., 0.], [0., 1., 0., 0.], [1., 0., 1., 0.], [0., 0., .5, 1.]];
     hom<world>->hom<camera> uWorld = [[1., .5, 0., 0.], [0., 1., 0., 0.], [1., 0., 1., 0.], [0., 0., .5, 1.]];
     world lightPos = [0., 1., 0.];
