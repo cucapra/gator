@@ -1,0 +1,64 @@
+space model is vec<3>;
+space world is vec<3>;
+space view is vec<3>;
+space hom<`t : vec<n>> is vec<n+1>;
+space dir<`t : vec<n>> is vec<n>;
+space color is vec<3>;
+space alpha<`t : color> is vec<4>;//+opacity
+
+// External Function Declarations
+declare dir<`t> normalize<`t : vec>(`t x);
+declare float dot<`t: vec>(dir<`t> v1, dir<`t> v2);
+declare vec4 vec4<`t : vec<3>>(`t v, float f);
+declare vec3 vec3<`t : vec<4>>(`t v);
+declare float min(float f1, float f2);
+declare float max(float f1, float f2);
+declare `t reflect<`t : vec>(`t v1, `t v2);
+declare float pow(float f1, float f2);
+
+varying dir<model> vNormal;//is a direction
+varying model vPosition;
+canon uniform hom<model>->hom<world> uModel;
+canon uniform hom<world>->hom<view> uView; //View world or world view?
+uniform world uLight;
+
+canon `t undir<`t : vec<3>>(dir<`t> v){
+    return v as `t;
+}
+
+canon hom<`t> homify<`t : vec<3>>(`t v) { 
+    return vec4(v, 1.) as hom<`t>;
+}
+
+canon hom<`t> homdir<`t : vec<3>> (dir<`t> v) { //Returning dir<hom<t>> would make more sense?
+    return vec4(v, 0.) as hom<`t>;
+}
+
+canon `t unhomify<`t : vec<3>>(hom<`t> v){
+    return vec3(v) as `t;
+}
+
+
+void main() {
+
+    color ambient = [0., 0., .1];
+    color diffcolor = [0.1, .4, .9];
+    color speccolor = [1., 1., 1.];
+
+
+    dir<world> normalWorld = normalize(vNormal in world);
+    dir<world> lightDir = normalize((vPosition in world) - uLight); //A vector pointing FROM light TOWARDS model : pos m - pos l = vec l->m
+    float diff = max(dot(normalWorld, -lightDir), 0.0); //NEGATIVE of lightDir, to get vec FROM model TO light. Also switched order.
+    color diffuse = diff*diffcolor;
+
+
+    dir<view> lightRefl = normalize(reflect(lightDir, normalWorld) in view);
+    dir<view> viewDir = normalize([0.,0.,0.] - (vPosition in view));//0-m gives a vector pointing FROM model TOWARD view
+    float spec = pow(max(dot(viewDir, lightRefl), 0.0), 32.0);
+    color specvec = spec*speccolor;
+
+    color result = ambient+specvec+diffuse;
+
+
+    alpha<color> gl_FragColor = vec4(result, 1.) as alpha<color>;
+}

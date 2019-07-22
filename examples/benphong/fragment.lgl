@@ -1,0 +1,37 @@
+declare float dot<`t: genType>(`t v1, `t v2);
+declare `t normalize<`t : genType>(`t x);
+declare vec4 vec4(vec3 v, float f);
+declare vec3 vec3(vec4 v);
+declare float max(float f1, float f2);
+declare `t reflect<`t : vec>(`t v1, `t v2);
+declare float pow(float f1, float f2);
+
+varying vec3 vNormal;
+varying vec3 vPosition;
+uniform vec4->vec4 uModel;
+uniform vec4->vec4 uView;
+uniform vec3 uLight;
+
+
+void main() {
+
+    vec3 ambient = [0., 0., .1];
+    vec3 diffcolor = [0.1, .4, .9];
+    vec3 speccolor = [1., 1., 1.];
+
+    vec3 fragPosWorld = vec3(uModel * vec4(vPosition, 1.0));
+    vec3 normalWorld = vec3(uModel * vec4(vNormal, 0.0));
+    vec3 lightDir = normalize(uLight - fragPosWorld);
+
+    float diff = max(dot(normalWorld, lightDir), 0.0);
+    vec3 diffuse = diff*diffcolor;
+
+    vec3 viewDir = normalize(vec3(uView*vec4(fragPosWorld, 1.0)));
+    vec3 reflectDir = reflect(lightDir, normalWorld);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+    vec3 specVec = spec*speccolor;
+
+    vec3 result = diffuse+ambient+specVec;
+
+    vec4 gl_FragColor = vec4(result, 1.0);
+}
