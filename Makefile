@@ -1,7 +1,7 @@
 .PHONY: all clean repl run build
 
 all:
-	dune exec bin/lingc.bc
+	dune exec bin/gatorc.bc
 
 repl:
 	dune utop src
@@ -13,7 +13,7 @@ run:
 	cd examples/; SRC=$(src) yarn run start
 
 build:
-	dune build bin/lingc.bc
+	dune build bin/gatorc.bc
 	dune build && dune install
 
 clean:

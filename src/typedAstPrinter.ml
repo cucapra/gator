@@ -2,7 +2,7 @@
 
 open CoreAst
 open Util
-open TagAstPrinter
+open GatorAstPrinter
 open TypedAst
 
 let string_of_vec (v: vec) : string = 

@@ -2,7 +2,7 @@
 
 open CoreAst
 open Util
-open TagAst
+open GatorAst
 
 let rec string_of_dexp (d : dexp) : string = 
     match d with

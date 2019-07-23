@@ -1,6 +1,6 @@
 open CoreAst
-open TagAst
-open TagAstPrinter
+open GatorAst
+open GatorAstPrinter
 open Util
 open Printf
 open Str

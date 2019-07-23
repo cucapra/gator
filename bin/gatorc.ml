@@ -1,4 +1,4 @@
-open Lingl
+open Gatorl
 
 let program : TagAst.prog option ref = ref None
 
@@ -12,11 +12,11 @@ let run_interp : bool ref = ref false
 
 let emit_ts : bool ref = ref false
 
-let usage_msg = "Linguine Help Center\n"
+let usage_msg = "Gator Help Center\n"
 let spec_list : (Arg.key * Arg.spec * Arg.doc) list =
     [
         ("-i", Arg.Set run_interp,
-        "Runs the given file with the linguine interpreter (replaces standard output)");
+        "Runs the given file with the gator interpreter (replaces standard output)");
         ("-t", Arg.Set emit_ts,
         "Emits Typescript (replaces standard output)")
     ]

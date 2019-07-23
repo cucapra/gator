@@ -1,7 +1,7 @@
 
 %{
 open CoreAst
-open TagAst
+open GatorAst
 open Str
 
 exception ParseException of string
@@ -102,14 +102,14 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
    the starting point is for parsing the language.  The following
    declaration says to start with a rule (defined below) named [prog].
    The declaration also says that parsing a [prog] will return an OCaml
-   value of type [TagAst.expr]. *)
+   value of type [GatorAst.expr]. *)
 
 %start main
 (* The explicit types of some key parser expressions to help with debugging *)
-%type <TagAst.prog> main
-%type <TagAst.exp> exp
-%type <TagAst.comm> comm  
-%type <TagAst.term> term 
+%type <GatorAst.prog> main
+%type <GatorAst.exp> exp
+%type <GatorAst.comm> comm  
+%type <GatorAst.term> term 
 
 (* The following %% ends the declarations section of the grammar definition. *)
 
