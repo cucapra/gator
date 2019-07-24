@@ -83,6 +83,9 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token UNIFORM
 %token VARYING
 %token SPACE
+%token PROTOTYPE
+%token DIMENSION
+%token 
 
 (* Precedences *)
 
@@ -119,19 +122,19 @@ main:
   | t = aterm+; EOF;
     { t }
 
+/* https://stackoverflow.com/questions/57172318/ambiguity-when-parsing-preceding-list/ */
+terminated_list(X, Y):
+  | y = Y;
+    { ( [], y ) }
+  | x = X; xsy = terminated_list(X, Y);
+    { ( x :: (fst xsy), (snd xsy) ) }
+
 let aterm ==
   | t = term;
     { (t, $startpos) }
 
 let term == 
-  | TAG; x = ID; IS; t = typ; SEMI; 
-    { TagDecl([], x, [], t) }
-  | TAG; x = ID; pt = par_decl; IS; t = typ; SEMI; 
-    { TagDecl([], x, pt, t) }
-  | SPACE; x = ID; IS; t = typ; SEMI; 
-    { TagDecl([Space], x, [], t) }
-  | SPACE; x = ID; pt = par_decl; IS; t = typ; SEMI; 
-    { TagDecl([Space], x, pt, t) }
+  | Prototype
   | DECLARE; d = decl_extern; SEMI; 
     <ExternDecl>
   | m = modification*; sq = storage_qual; t = typ;
