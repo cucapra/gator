@@ -2,6 +2,9 @@
 
 open CoreAst
 
+type metadata = Lexing.position
+type 'a astNode = 'a * metadata
+
 type dexp =
     | DimVar of string
     | DimNum of int
@@ -34,9 +37,6 @@ type constrain =
     | GenSpaceTyp
     | TypConstraint of typ
 
-type metadata = Lexing.position
-type 'a astNode = 'a * metadata
-
 (* expressions *)
 type aexp = exp astNode
 and exp =
@@ -51,8 +51,8 @@ and exp =
 and args = aexp list
 
 type modification =
+    | With of (int * (string list)) list
     | Canon
-    | Space
 
 (* function parameterization,
  * which may extend another type. *)
@@ -67,8 +67,10 @@ type ret_type = typ
 type fn_type = params * ret_type * parameterization * metadata
 (* Note that the parameterization declaration is only useful when checking the function, not calling it *)
 type fn_type_decl = parameterization_decl * ret_type * params
+(* General function declarations (includes operation declarations) *)
+type 'a gen_fn_decl = modification list * 'a * fn_type_decl
 (* function declaration *)
-type fn_decl = modification list * string * fn_type_decl
+type fn_decl = string gen_fn_decl
 
 (* commands *)
 type acomm = comm astNode
@@ -86,23 +88,43 @@ and comm =
     | FnCall of typ * typ list * args (* e.g. f<model>(position) -- note that 'f' must be a string, but we treat it as a type to allow parsing of parametrized types *)
 and if_block = aexp * acomm list
 
-type tag_decl = modification list * string * parameterization_decl * typ
+(* General function declarations *)
+type 'a gen_fn = 'a gen_fn_decl * acomm list
+(* General function declarations *)
 type fn = fn_decl * acomm list
-type global_var = modification list * storage_qual * typ * string * value option
+
+type prototype_element =
+    | ObjectDecl of string * parameterization_decl
+    | ProtoFnDecl of fn_decl
+    | UnopDecl of unop gen_fn_decl
+    | BinopDecl of binop gen_fn_decl
+type prototype = prototype_element list
+
+type coordinate_element =
+    | ObjectAssign of string * parameterization_decl * typ
+    | CoordFnDecl of fn_decl
+    | CoordUnopDecl of unop gen_fn
+    | CoordBinopDecl of binop gen_fn
+type coordinate = string * int * coordinate_element list
+
+type frame_decl = string * parameterization_decl * typ
+type global_var = modification list * storage_qual * typ * string * aexp option
 type extern_decl =
     | ExternFn of fn_decl
     | ExternVar of (modification list * typ * aexp)
 
 (* Terms that make up a program *)
 (* In any order, we have:
- * Tag Declarations of user types
+ * Frame Declarations of user types
  * External function declarations without bodies
  * Global variable declarations
  * Function declarations with bodies
  *)
 type aterm = term astNode
 and term =
-    | TagDecl of tag_decl
+    | Prototype of prototype
+    | Coordinate of coordinate
+    | FrameDecl of frame_decl
     | ExternDecl of extern_decl
     | GlobalVar of global_var
     | Fn of fn

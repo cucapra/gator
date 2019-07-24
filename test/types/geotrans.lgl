@@ -105,10 +105,10 @@ coord hom {
 frame model is float[3];
 frame world is float[3];
 
-with frame(3) r,
-declare cart3.direction<r> normalize(cart3.vector<r> v);
-with frame(3) r,
-declare float dot(cart3.direction<r> v1, cart3.direction<r> v2);
+declare with frame(3) r,
+cart3.direction<r> normalize(cart3.vector<r> v);
+declare with frame(3) r,
+float dot(cart3.direction<r> v1, cart3.direction<r> v2);
 declare float[4] vec4(float[3] v, float f);
 
 with frame(3) r,
