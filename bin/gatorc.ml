@@ -1,6 +1,6 @@
 open Gatorl
 
-let program : TagAst.prog option ref = ref None
+let program : GatorAst.prog option ref = ref None
 
 let program_file : string option ref = ref None
 let set_program_file (arg : string) : unit = 
@@ -28,7 +28,7 @@ let _ =
     let ch =
         try open_in f
         with Sys_error s -> failwith ("Cannot open file: " ^ s) in
-    let prog : TagAst.prog =
+    let prog : GatorAst.prog =
         let lexbuf = Lexing.from_channel ch in
         try
             Parser.main Lexer.read lexbuf
