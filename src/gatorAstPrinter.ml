@@ -18,16 +18,16 @@ let rec string_of_typ (t: typ) : string =
     | BoolTyp -> "bool"
     | IntTyp -> "int"
     | FloatTyp -> "float"
-    | TopVecTyp d -> "vec<" ^ (string_of_dexp d) ^ ">"
-    | UntaggedVecTyp n -> "vec"^(string_of_int n)
-    | BotVecTyp n -> "vec"^(string_of_int n)^"lit"
+    | ArrTyp (t, d) -> string_of_typ t ^ "[" ^ string_of_list string_of_dexp d ^ "]"
+    | VecTyp n -> "vec"^(string_of_int n)
+    | ArrLit (t, n) -> string_of_typ t ^ "[" ^ string_of_list string_of_int n ^ "]%lit"
     | VarTyp s -> s
+    | CoordTyp (t1, t2) -> string_of_typ t1 ^ "." ^ string_of_typ t2
     | ParTyp (t, tl) -> string_of_typ t ^ "<" ^ (string_of_list string_of_typ tl) ^ ">"
-    | TransTyp (s1, s2) -> (string_of_typ s1) ^ "->" ^ (string_of_typ s2)
+    | TransTyp (t1, t2) -> string_of_typ t1 ^ "->" ^ string_of_typ t2
     | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D "
     | SamplerCubeTyp -> "samplerCube"
     | AbsTyp s -> "`" ^ s
-    | ArrTyp (t, c) -> string_of_typ t ^ "[" ^ string_of_constvar c ^ "]"
 
 let string_of_constraint (c: constrain) : string =
     match c with

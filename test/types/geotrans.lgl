@@ -79,7 +79,7 @@ coordinate hom {
     point<r> = float[4];
     vector<r> = float[4];
     direction<r> = float[4];
-    matrix<r1, r2> = float[4][4];
+    matrix<r1, r2> = float[4, 4];
 
     vector<r2> *(matrix<r1, r2> m, vector<r1> v) {
         return m * v;

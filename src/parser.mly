@@ -296,32 +296,30 @@ let typ :=
     { FloatTyp }
   | INTTYP;
     { IntTyp }
-  | t = typ; LBRACK; n = NUM; RBRACK;
-    { ArrTyp(t, ConstInt n) }
-  | t = typ; LBRACK; s = ID; RBRACK;
-    { ArrTyp(t, ConstVar s) }
+  | t = typ; d = delimited(LBRACK, separated_nonempty_list(COMMA, dexp), RBRACK);
+    <ArrTyp>
   | m = MATTYP;
     { let len = String.length m in
       let dim = String.sub m 3 (len-3) in
       let dim_lst = Str.split_delim (regexp "x") dim in
-      TransTyp (UntaggedVecTyp (int_of_string(List.nth dim_lst 1)),
-      (UntaggedVecTyp (int_of_string(List.nth dim_lst 0))))}
+      TransTyp (VecTyp (int_of_string(List.nth dim_lst 1)),
+      (VecTyp (int_of_string(List.nth dim_lst 0))))}
   | t1 = typ; TRANS; t2 = typ;
     <TransTyp>
+  | t1 = typ; DOT; t2 = typ;
+    <CoordTyp>
   | t = typ; pt = delimited(LWICK, separated_list(COMMA, typ), RWICK);
     <ParTyp>
-  | VEC; LWICK; d = dexp; RWICK;
-    <TopVecTyp>
   | x = ID;
     { if (Str.string_match vec x 0) then (
       let len = String.length x in 
       let dim = int_of_string (String.sub x 3 (len-3)) in
-      UntaggedVecTyp dim
+      VecTyp dim
       ) else
       if (Str.string_match mat x 0) then (
       let len = String.length x in 
       let dim = int_of_string (String.sub x 3 (len-3)) in
-      TransTyp (UntaggedVecTyp dim, UntaggedVecTyp dim)
+      TransTyp (VecTyp dim, VecTyp dim)
       ) 
       else (VarTyp x) }
   | SAMPLERCUBE;

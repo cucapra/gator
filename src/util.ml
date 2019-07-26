@@ -3,9 +3,11 @@ open CoreAst
 
 exception ElementNotFoundException of string
 
-let flip (f : 'a -> 'b -> 'c) (x : 'b) (y : 'a) : 'c = f y x
-let compose (f : 'b -> 'c) (g : 'a -> 'b) : 'a -> 'c = fun x -> f (g x)
+let flip f x y = f y x
+let compose f g = fun x -> f (g x)
 let (|-) = compose
+let curry f x y = f (x, y)
+let uncurry f (x, y) = f x y
 
 (* Cause for some reason Option.map doesn't exist? *)
 let option_map (f: ('a -> 'b)) (o: 'a option) : 'b option =
@@ -60,8 +62,9 @@ let rec string_of_value (v: value) : string =
   | Bool b -> string_of_bool b
   | Num n -> string_of_int n
   | Float f -> string_of_float f
-  | VecLit v -> "vec" ^ (string_of_int (List.length v)) ^ string_of_vec v
+  | VecLit v -> string_of_vec v
   | MatLit m -> string_of_mat m
+  | Arr a -> "[" ^ string_of_list string_of_value a ^ "]"
 
 let string_of_unop (op : unop) : string =
   match op with

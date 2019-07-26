@@ -17,16 +17,16 @@ type typ =
     | BoolTyp
     | IntTyp
     | FloatTyp
-    | TopVecTyp of dexp
-    | UntaggedVecTyp of int
-    | BotVecTyp of int
-    | VarTyp of id (* i.e. model *)
+    | ArrTyp of typ * (dexp list) (* i.e. float[5] or bool[2][3] *)
+    | VecTyp of int
+    | ArrLit of typ * (int list) (* Literals such as [0., 1.] or [true, false] -- constant length *)
+    | VarTyp of id (* i.e. color *)
+    | CoordTyp of typ * typ (* i.e. cart.point *)
     | TransTyp of typ * typ
-    | ParTyp of typ * typ list (* i.e. hom<model> or sampler2D<model, world> *)
+    | ParTyp of typ * typ list (* i.e. point<model> or matrix<model, world> *)
     | SamplerTyp of int
     | SamplerCubeTyp
     | AbsTyp of id (* i.e. `t *)
-    | ArrTyp of typ * constvar (* i.e. vec3[5] *)
 
 type constrain =
     (* Special constraint types *)

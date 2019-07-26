@@ -13,7 +13,7 @@ type etyp =
     | SamplerTyp of int
     | SamplerCubeTyp
     | AbsTyp of string * constrain
-    | ArrTyp of etyp * constvar (* i.e. vec3[5] *)
+    | ArrTyp of etyp * constvar list (* i.e. vec3[5] *)
 
 and constrain =
     | AnyTyp
