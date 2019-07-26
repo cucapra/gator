@@ -11,7 +11,7 @@ let merge c1 c2 = c1 @ c2
 
 (* Look up a variable by name and return the associated letue. *)
 (* Raises Not_found if no binding *)
-let lookup (x: string) c = try List.assoc x c with _ -> failwith ("Undefined association member: " ^ x)
+let lookup x c = try List.assoc x c with _ -> failwith ("Undefined association member: " ^ x)
 
 (* Rebind var to value in context. *)
 let update x v c = let c' = (if List.mem_assoc x c then List.remove_assoc x c else c) in (x, v) :: c'

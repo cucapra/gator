@@ -61,13 +61,13 @@ type parameterization_decl = (string * constrain) list
 (* function parameters *)
 (* arguments may have an optional parameterization type *)
 type params = (modification list * typ * string) list
-type ret_type = typ
+type ret_typ = typ
 (* our functions are not first-order! *)
-type fn_type = params * ret_type * parameterization * metadata
+type fn_typ = params * ret_typ * parameterization * metadata
 (* Note that the parameterization declaration is only useful when checking the function, not calling it *)
-type fn_type_decl = parameterization_decl * ret_type * params
+type fn_typ_decl = parameterization_decl * ret_typ * params
 (* General function declarations (includes operation declarations) *)
-type 'a gen_fn_decl = modification list * 'a * fn_type_decl
+type 'a gen_fn_decl = modification list * 'a * fn_typ_decl
 (* function declaration *)
 type fn_decl = string gen_fn_decl
 

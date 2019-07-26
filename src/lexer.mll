@@ -32,7 +32,7 @@ rule read = parse
   | "object"        { OBJECT }
   | "coordinate"    { COORDINATE }
   | "dimension"     { DIMENSION }  
-  | "frame"         { FRAME }
+  | "tag"         { FRAME }
   | "type"          { TYP }
   | "is"            { IS }
   | "with"          { WITH }

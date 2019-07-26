@@ -53,9 +53,9 @@ type parameterization = constrain Assoc.context
 type params = (etyp * string) list
 type global_var = storage_qual * etyp * string * texp option
 type global_vars = global_var list
-type ret_type = etyp
-type fn_type = params * ret_type * parameterization
-type fn_decl = string * fn_type
+type ret_typ = etyp
+type fn_typ = params * ret_typ * parameterization
+type fn_decl = string * fn_typ
 type fn = fn_decl * comm list
 
 type prog = fn list

@@ -57,16 +57,16 @@ let string_of_parameterization_decl (pm : parameterization_decl) : string =
     let string_of_pm = string_of_list (fun (s, c) -> s ^ " : " ^ string_of_constraint c) pm in
     string_if_true nonempty (fun p -> "<" ^ string_of_pm ^ ">") pm
 
-let string_of_fn_type ((p, r, pm, _): fn_type) : string = 
+let string_of_fn_typ ((p, r, pm, _): fn_typ) : string = 
     (string_of_typ r) ^ string_of_parameterization pm
     ^ "(" ^ string_of_list string_of_param p ^ ")"
 
-let string_of_fn_type_decl ((pm, r, p): fn_type_decl) : string = 
+let string_of_fn_typ_decl ((pm, r, p): fn_typ_decl) : string = 
     (string_of_typ r) ^ " <" ^ string_of_parameterization_decl pm ^ ">" 
     ^ "(" ^ string_of_list string_of_param p ^ ")"
 
 let string_of_gen_fn_decl (f : 'a -> string) ((fm, t, ft): 'a gen_fn_decl) =
-    string_of_mod_list fm ^ f t ^ " " ^ string_of_fn_type_decl ft
+    string_of_mod_list fm ^ f t ^ " " ^ string_of_fn_typ_decl ft
 
 let string_of_fn_decl (fd: fn_decl) : string = string_of_gen_fn_decl (fun x -> x) fd
 
