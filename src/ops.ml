@@ -18,7 +18,7 @@ let rec fn_lookup (name : id) (fns : fn list) : (fn option * id list) =
     match fns with
     | [] -> (None, [])
     | h::t -> match h with ((id, (p, _, _)), _) -> 
-        (if name = id then (Some h, List.map fst p) else fn_lookup name t)
+        (if name = id then (Some h, List.map snd p) else fn_lookup name t)
 
 let rec eval_glsl_fn (name : id) (args : value list) : value =
         let as_vec (v : value) : vec =
@@ -34,6 +34,8 @@ let rec eval_glsl_fn (name : id) (args : value list) : value =
             MatLit (matn (int_of_string (Str.string_after name 3)) args) else
         failwith ("Unimplemented function " ^ name ^ " -- is this a GLSL function?")
 
+and eval_texp ((e, _) : texp) (fns : fn list) (s : sigma) (s_g : sigma) : value * sigma =
+    eval_exp e fns s s_g
 and eval_exp (e : exp) (fns : fn list) (s : sigma) (s_g : sigma) : value * sigma =
     match e with
     | Val v -> v, s_g
@@ -57,10 +59,10 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) (s_g : sigma) : value * sigma
         | None -> (match as_mat result with
             | Some m -> MatLit m, s_g'
             | None -> failwith ("Typechecker failure, bad arr " ^ (string_of_exp e))))
-    | Unop (op, (e', _)) ->
-        let (v, s_g') = eval_exp e' fns s s_g in
+    | Unop (op, e') ->
+        let (v, s_g') = eval_texp e' fns s s_g in
         let bad_unop _ =
-            failwith ("No rule to apply " ^ (string_of_unop op (string_of_value v)))
+            failwith ("No rule to apply " ^ (string_of_unop_exp op (string_of_value v)))
         in
         (match op with
         | Neg -> (match v with
@@ -77,12 +79,12 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) (s_g : sigma) : value * sigma
                 if List.length res == 1 then Float (List.hd res), s_g' else VecLit res, s_g'
             | _ -> bad_unop ()))
 
-    | Binop (op, (l, _), (r, _)) -> 
-        let (left, s_g') = eval_exp l fns s s_g in
-        let (right, s_g'') = eval_exp r fns s s_g' in
+    | Binop (l, op, r) -> 
+        let (left, s_g') = eval_texp l fns s s_g in
+        let (right, s_g'') = eval_texp r fns s s_g' in
         let bad_binop _ =
             failwith ("No rule to apply " ^ 
-            (string_of_binop op (string_of_value left) (string_of_value right)))
+            (string_of_binop_exp (string_of_value left) op (string_of_value right)))
         in
         (match op with
         | Eq -> (match (left, right) with
@@ -164,8 +166,8 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) (s_g : sigma) : value * sigma
         match fn with
         | None -> eval_glsl_fn id arg_vs, s_g'
         | Some f -> (match f with ((_, (names, _, _)), _) ->
-            let add_arg = (fun acc (name, _) v -> Assoc.update name v acc) in
-            eval_funct f fns (List.fold_left2 (add_arg) Assoc.empty names arg_vs)) s_g'
+            let add_arg = (fun acc (_, name) v -> Assoc.update name v acc) in
+            eval_funct f fns (List.fold_left2 add_arg Assoc.empty names arg_vs)) s_g'
 
 and eval_comm (c : comm) (fns : fn list) (s : sigma) (s_g : sigma) : sigma * sigma =
     match c with
@@ -197,7 +199,7 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) (s_g : sigma) : sigma * sig
     | Assign (x, (e, _)) -> let v, s_g' = eval_exp e fns s s_g in
         (try let _ = Assoc.lookup x s_g in s, Assoc.update x v s_g' with
         _ -> Assoc.update x v s, s_g')
-    | AssignOp ((x, xt), op, e) -> let v, s_g' = eval_exp (TypedAst.Binop (op, ((TypedAst.Var x), xt), e)) fns s s_g in
+    | AssignOp ((x, xt), op, e) -> let v, s_g' = eval_exp (TypedAst.Binop (((TypedAst.Var x), xt), op, e)) fns s s_g in
         (try let _ = Assoc.lookup x s_g in s, Assoc.update x v s_g' with
         _ -> Assoc.update x v s, s_g')
     | If (((b, _), c1), el, c2) ->

@@ -30,7 +30,7 @@ and exp =
     | Var of id
     | Arr of texp list
     | Unop of unop * texp
-    | Binop of binop * texp * texp
+    | Binop of texp * binop * texp
     | FnInv of id * etyp list * args
 
 and args = texp list
@@ -51,7 +51,7 @@ type comm =
 and if_block = texp * comm list
 
 type parameterization = constrain Assoc.context
-type params = (string * etyp) list
+type params = (etyp * string) list
 type global_var = storage_qual * etyp * string * value option
 type global_vars = global_var list
 type ret_type = etyp

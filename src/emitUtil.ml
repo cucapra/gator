@@ -33,7 +33,7 @@ let rec replace_type_in_texp ((e, et) : texp) (t : etyp) (r : etyp) : texp =
     let e' = match e with
         | Arr a -> Arr(replace_type_in_args a t r)
         | Unop(o, te) -> Unop(o, replace_type_in_texp te t r)
-        | Binop(o, te1, te2) -> Binop(o, replace_type_in_texp te1 t r, replace_type_in_texp te2 t r)
+        | Binop(te1, o, te2) -> Binop(replace_type_in_texp te1 t r, o, replace_type_in_texp te2 t r)
         | FnInv(x, tl, a) -> FnInv(x, List.map (fun pt -> replace_type pt t r) tl, replace_type_in_args a t r)
         | _ -> e
     in
@@ -82,7 +82,7 @@ and replace_type_in_comm_list (cl : comm list) (t : etyp) (r : etyp) : comm list
 let rec replace_type_in_params (p : params) (t : etyp) (r : etyp) : params =
     match p with
     | [] -> []
-    | (x, et) :: tl -> (x, replace_type et t r) :: replace_type_in_params tl t r
+    | (et, x) :: tl -> (replace_type et t r, x) :: replace_type_in_params tl t r
 
 let rec replace_type_in_parameterization (pm : parameterization) (t : etyp) (r : etyp) : parameterization =
     let pm_list = Assoc.bindings pm in

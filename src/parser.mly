@@ -50,9 +50,15 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token NOT
 %token COMMA
 %token DOT
-%token TAG
+%token PROTOTYPE
+%token OBJECT
+%token COORDINATE
+%token DIMENSION
+%token FRAME
+%token TYP
 %token CANON
 %token IS
+%token WITH
 %token TRUE
 %token FALSE
 %token IF
@@ -82,10 +88,6 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token ATTRIBUTE
 %token UNIFORM
 %token VARYING
-%token SPACE
-%token PROTOTYPE
-%token DIMENSION
-%token 
 
 (* Precedences *)
 
@@ -95,7 +97,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %left AND OR
 %left NOT EQ LEQ GEQ LBRACK 
 %left LWICK RWICK 
-%left LPAREN 
+%left LPAREN
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
@@ -122,60 +124,94 @@ main:
   | t = aterm+; EOF;
     { t }
 
-/* https://stackoverflow.com/questions/57172318/ambiguity-when-parsing-preceding-list/ */
-terminated_list(X, Y):
+let terminated_list(X, Y) ==
   | y = Y;
-    { ( [], y ) }
-  | x = X; xsy = terminated_list(X, Y);
-    { ( x :: (fst xsy), (snd xsy) ) }
+    { ([], y) }
+  | x = X+; y = Y;
+    <>
 
 let aterm ==
   | t = term;
     { (t, $startpos) }
 
 let term == 
-  | Prototype
+  | PROTOTYPE; LBRACE; p = list(prototype_element); RBRACE;
+    <Prototype> 
+  | COORDINATE; x = ID; LBRACE; d = dimension; c = list(coordinate_element); RBRACE;
+    <Coordinate>
+  | FRAME; x = ID; pm = parameterization(constrained); IS; t = typ; SEMI;
+    { FrameDecl(x, pm, t) }
+  | TYP; x = ID; pm = parameterization(constrained); IS; t = typ; SEMI;
+    { TypDecl(x, pm, t) }
   | DECLARE; d = decl_extern; SEMI; 
     <ExternDecl>
   | m = modification*; sq = storage_qual; t = typ;
-    x = ID; v = preceded(GETS, value)?; SEMI; 
+    x = ID; v = preceded(GETS, aexp)?; SEMI; 
     <GlobalVar>
-  | f = fn_decl; LBRACE; cl = list(acomm); RBRACE;
+  | f = gen_fn(ID);
     <Fn>
 
+let prototype_element ==
+  | OBJECT; x = ID; p = parameterization(constrained); SEMI;
+    <ProtoObjectDecl>
+  | f = gen_fn_decl(ID);
+    <ProtoFnDecl>
+  | f = gen_fn_decl(binop);
+    <ProtoBinopDecl>
+
 let modification ==
+  | WITH; w = with_statement+;
+    <With>
   | CANON;
-    { Canon } 
+    { Canon }
+
+let with_statement ==
+  | FRAME; d = delimited(LPAREN, NUM, RPAREN); r = separated_list(COMMA, ID); COLON;
+    <>
+
+let dimension ==
+  | DIMENSION; n = NUM; SEMI;
+    <>
+
+let coordinate_element ==
+  | x = ID; p = parameterization(constrained); GETS; t = typ;
+    <CoordObjectAssign>
+  | f = gen_fn(ID);
+    <CoordFnDecl>
+  | f = gen_fn(binop);
+    <CoordBinopDecl>
 
 let decl_extern == 
-  | m = modification*; t = typ; x = ID;
+  | (m, t) = terminated_list(modification, typ); x = ID;
     { ExternVar(m, t, (Var x, $startpos)) }
-  | m = modification*; t = typ; x = ID; (p1, p2, _) = fn_params; 
-    { ExternFn((m, x, (p1, t, p2))) }
+  | f = gen_fn_decl(ID);
+    <ExternFn>
 
-let params == 
+let constrained ==
+  | t = ID;
+    { (t, AnyTyp) }
+  | t = ID; COLON; c = constrain; <>
+
+let parameterization(T) ==
+  | { [] }
+  | pt = delimited(LWICK, separated_list(COMMA, T), RWICK); <>
+
+let parameter == 
   | m = modification*; t = typ; x = ID;
     <>
 
-let parameterization ==
-  | BACKTICK; t = ID;
-    { (t, AnyTyp) }
-  | BACKTICK; t = ID; COLON; c = constrain;
-    <>
+let parameters ==
+  | x = delimited(LPAREN, separated_list(COMMA, parameter), RPAREN); <>
 
-let par_decl == 
-  | LWICK; pt = separated_list(COMMA, parameterization); RWICK;
-    <>
+let arguments ==
+  | x = delimited(LPAREN, separated_list(COMMA, aexp), RPAREN); <>
 
-let fn_decl ==
-  | m = modification*; t = typ; x = ID; (p1, p2, _) = fn_params;
-    { (m, x, (p1, t, p2)) }
+let gen_fn_decl(A) ==
+  | (m, t) = terminated_list(modification, typ); a = A; pm = parameterization(constrained); args = parameters;
+    { (m, a, (pm, t, args)) }
 
-let fn_params ==
-  | LPAREN; p = separated_list(COMMA, params); RPAREN;
-    { ([], p, $startpos) }
-  | pt = par_decl; LPAREN; p = separated_list(COMMA, params); RPAREN;
-    { (pt, p, $startpos) }
+let gen_fn(A) ==
+  | f = gen_fn_decl(A); LBRACE; cl = list(acomm); RBRACE; <>
 
 let acomm ==
   | c = comm;
@@ -206,12 +242,8 @@ let acomm_element ==
 let comm_element == 
   | SKIP;
     { Skip }
-  /* | m = modification*; t = typ; x = ID; GETS; e1 = exp; 
-    < Decl > */
-  | t = typ; x = ID; GETS; e = aexp;
-    { Decl([], t, x, e) }
-  | m = modification+; t = typ; x = ID; GETS; e = aexp;
-    { Decl(m, t, x, e) }
+  | (m, t) = terminated_list(modification, typ); x = ID; GETS; e1 = aexp; 
+    < Decl >
   | x = ID; GETS; e1 = aexp; 
     < Assign >
   | x = ID; PLUSEQ; e1 = aexp; 
@@ -232,15 +264,10 @@ let comm_element ==
     < Inc >
   | x = ID; DEC; 
     < Dec >
-  | t = typ; LPAREN; a = separated_list(COMMA, aexp); RPAREN; 
-    { FnCall(t, [], a) }
-  | t = typ; LWICK; p = separated_list(COMMA, typ); RWICK; 
-    LPAREN; a = separated_list(COMMA, aexp); RPAREN; 
+  | t = typ; p = parameterization(typ); a = arguments;
     <FnCall>
 
 let constrain == 
-  | SPACE;
-    { GenSpaceTyp }
   | VEC;
     { GenVecTyp }
   | MAT;
@@ -250,21 +277,19 @@ let constrain ==
   | t = typ;
     <TypConstraint>
 
-dexp: 
-  | d1 = dexp; PLUS; d2 = dexp;
-    { DimBinop(Plus, d1, d2) }
-  | d1 = dexp; MINUS; d2 = dexp; 
-    { DimBinop(Plus, d1, d2) }
+let dexp :=
+  | d1 = dexp; b = binop; d2 = dexp;
+    <DimBinop>
   | n = NUM;
-    { DimNum n }
+    <DimNum>
   | x = ID;
-    { DimVar x }
+    <DimVar>
   
-typ:
+let typ :=
   | AUTOTYP;
     { AutoTyp }
   | BACKTICK; e = ID;
-    { AbsTyp(e) }
+    <AbsTyp>
   | BOOLTYP;
     { BoolTyp }
   | FLOATTYP;
@@ -282,11 +307,11 @@ typ:
       TransTyp (UntaggedVecTyp (int_of_string(List.nth dim_lst 1)),
       (UntaggedVecTyp (int_of_string(List.nth dim_lst 0))))}
   | t1 = typ; TRANS; t2 = typ;
-    { TransTyp(t1,t2) }
-  | t = typ; LWICK; tl = separated_list(COMMA, typ); RWICK;
-    { ParTyp(t, tl) }
+    <TransTyp>
+  | t = typ; pt = delimited(LWICK, separated_list(COMMA, typ), RWICK);
+    <ParTyp>
   | VEC; LWICK; d = dexp; RWICK;
-    { TopVecTyp d } 
+    <TopVecTyp>
   | x = ID;
     { if (Str.string_match vec x 0) then (
       let len = String.length x in 
@@ -325,11 +350,11 @@ let storage_qual ==
 
 let value ==
   | b = bool;
-    { Bool b }
+    <Bool>
   | i = NUM;
-    { Num i }
+    <Num>
   | f = FLOAT;
-    { Float f }
+    <Float>
 
 let bool ==
   | TRUE;
@@ -341,55 +366,46 @@ let aexp ==
   | e = exp;
     { (e, $startpos) }
 
-exp:
+let exp:=
   | LPAREN; a = exp; RPAREN;
     { a }
   | v = value;
     { Val v }
   | x = ID;
     { Var x }
-  | x = ID; LPAREN; a = separated_list(COMMA, aexp); RPAREN;
-    { FnInv(x, [], a) }
-  | e1 = aexp; LWICK; e2 = aexp;
-    { Binop(Lt,e1,e2) }
-  | e1 = aexp; RWICK; e2 = aexp;
-    { Binop(Gt,e1,e2) }
-  | x = ID; LWICK; t = separated_list(COMMA, typ); RWICK; 
-    LPAREN; a = separated_list(COMMA, aexp); RPAREN;
-    { FnInv(x, t, a) }
-  | LBRACK; e = separated_list(COMMA, aexp); RBRACK;
-    { Arr(e) }
-  | e1 = aexp; PLUS; e2 = aexp;
-    { Binop(Plus,e1,e2) }
-  | e1 = aexp; TIMES; e2 = aexp;
-    { Binop(Times,e1,e2) }
-  | e1 = aexp; MINUS; e2 = aexp;
-    { Binop(Minus,e1,e2) }
-  | e1 = aexp; DIV; e2 = aexp;
-    { Binop(Div,e1,e2) }
-  | e1 = aexp; CTIMES; e2 = aexp;
-    { Binop(CTimes,e1,e2) }
+  | e1 = aexp; op = binop; e2 = aexp;
+    <Binop>
+  | u = unop; e = aexp;
+    <Unop>
+  | x = ID; p = parameterization(typ); a = arguments; 
+    <FnInv>
+  | LBRACK; e = separated_list(COMMA, aexp); RBRACK; 
+    <Arr>
   | e = aexp; AS; t = typ;
     { As(e, t) }
   | e = aexp; IN; t = typ;
     { In(e, t) }
-  | MINUS; e1 = aexp;
-    { Unop(Neg,e1) }
-  | NOT; e1 = aexp;
-    { Unop(Not,e1) }
-  | e1 = aexp; EQ; e2 = aexp;
-    { Binop(Eq,e1,e2) }
-  | e1 = aexp; LEQ; e2 = aexp;
-    { Binop(Leq,e1,e2) }
-  | e1 = aexp; GEQ; e2 = aexp;
-    { Binop(Geq,e1,e2) }
-  | e1 = aexp; OR; e2 = aexp;
-    { Binop(Or,e1,e2) }
-  | e1 = aexp; AND; e2 = aexp;
-    { Binop(And,e1,e2) }
-  | e1 = aexp; DOT; s = ID;
-    { Unop(Swizzle s,e1) }
-  | x = ID; LBRACK; e2 = aexp; RBRACK;
-    { Binop(Index, (Var(x), $startpos), e2) }
+  | e = aexp; DOT; s = ID;
+    { Unop(Swizzle s,e) }
+  | x = ID; LBRACK; e = aexp; RBRACK;
+    { Binop((Var(x), $startpos), Index, e) }
+
+let unop ==
+  | MINUS; { Neg }
+  | NOT; { Not }
+
+let binop ==
+  | PLUS; { Plus }
+  | TIMES; { Times }
+  | MINUS; { Minus }
+  | DIV; { Div }
+  | LWICK; { Lt }
+  | RWICK; { Gt }
+  | CTIMES; { CTimes }
+  | EQ; { Eq }
+  | LEQ; { Leq }
+  | GEQ; { Geq }
+  | OR; { Or }
+  | AND; { And }
 
 %%

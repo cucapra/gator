@@ -12,7 +12,6 @@ prototype {
     vector<r> -(vector<r> x, vector<r> y);
     vector<r> *(vector<r> v, scalar s);
     vector<r> *(scalar s, vector<r> v);
-    vector<r> -(vector<r> v);
     position<r> translate(position<r> p, vector<r> v);
     position<r> +(position<r> p, vector<r> v);
     vector<r> -(position<r> x, position<r> y);
@@ -23,7 +22,7 @@ prototype {
     matrix<r1, r3> *(matrix<r1, r2>, matrix<r2, r3>);
 }
 
-coord cart3 {
+coordinate cart3 {
     dimension 3;
 
     point<r> = float[3];
@@ -42,9 +41,6 @@ coord cart3 {
     }
     vector<r> *(scalar<r> s, vector<r> v) {
         return s * v;
-    }
-    vector<r> -(vector<r> v) {
-        return -v;
     }
     position<r> translate(position<r> p, vector<r> v) {
         return p + v;
@@ -79,7 +75,7 @@ coord cart3 {
     }
 }
 
-coord hom {
+coordinate hom {
     point<r> = float[4];
     vector<r> = float[4];
     direction<r> = float[4];
@@ -105,25 +101,25 @@ coord hom {
 frame model is float[3];
 frame world is float[3];
 
-declare with frame(3) r,
+declare with dimension(3) r,
 cart3.direction<r> normalize(cart3.vector<r> v);
-declare with frame(3) r,
+declare with dimension(3) r,
 float dot(cart3.direction<r> v1, cart3.direction<r> v2);
 declare float[4] vec4(float[3] v, float f);
 
-with frame(3) r,
+with dimension(3) r,
 hom.point<r> homify(cart3.point<r> v) {
     return vec4(v, 1.) as hom.point<r>;
 }
-with frame(3) r,
+with dimension(3) r,
 hom.vector<r> homify(cart3.vector<r> v) {
     return vec4(v, 1.) as hom.point<r>;
 }
-with frame(3) r,
+with dimension(3) r,
 cart3.point<r> reduce_hom(hom.point<r> v) {
     return vec3(v) / v[3] as cart3.point<r>;
 }
-with frame(2) r,
+with dimension(2) r,
 cart3.vector<r> reduce_hom(hom.vector<r> v) {
     return vec3(v) as cart3.vector<r>;
 }

@@ -8,7 +8,7 @@ type 'a astNode = 'a * metadata
 type dexp =
     | DimVar of string
     | DimNum of int
-    | DimBinop of binop * dexp * dexp
+    | DimBinop of dexp * binop * dexp
 
 (* types *)
 type typ =
@@ -34,7 +34,6 @@ type constrain =
     | GenTyp
     | GenMatTyp
     | GenVecTyp
-    | GenSpaceTyp
     | TypConstraint of typ
 
 (* expressions *)
@@ -44,7 +43,7 @@ and exp =
     | Var of string
     | Arr of aexp list
     | Unop of unop * aexp
-    | Binop of binop * aexp * aexp
+    | Binop of aexp * binop * aexp
     | As of aexp * typ
     | In of aexp * typ
     | FnInv of string * typ list * args (* function invocation *)
@@ -94,20 +93,18 @@ type 'a gen_fn = 'a gen_fn_decl * acomm list
 type fn = fn_decl * acomm list
 
 type prototype_element =
-    | ObjectDecl of string * parameterization_decl
+    | ProtoObjectDecl of string * parameterization_decl
     | ProtoFnDecl of fn_decl
-    | UnopDecl of unop gen_fn_decl
-    | BinopDecl of binop gen_fn_decl
+    | ProtoBinopDecl of binop gen_fn_decl
 type prototype = prototype_element list
 
 type coordinate_element =
-    | ObjectAssign of string * parameterization_decl * typ
-    | CoordFnDecl of fn_decl
-    | CoordUnopDecl of unop gen_fn
+    | CoordObjectAssign of string * parameterization_decl * typ
+    | CoordFnDecl of fn
     | CoordBinopDecl of binop gen_fn
 type coordinate = string * int * coordinate_element list
 
-type frame_decl = string * parameterization_decl * typ
+type typ_decl = string * parameterization_decl * typ
 type global_var = modification list * storage_qual * typ * string * aexp option
 type extern_decl =
     | ExternFn of fn_decl
@@ -124,7 +121,8 @@ type aterm = term astNode
 and term =
     | Prototype of prototype
     | Coordinate of coordinate
-    | FrameDecl of frame_decl
+    | FrameDecl of typ_decl
+    | TypDecl of typ_decl
     | ExternDecl of extern_decl
     | GlobalVar of global_var
     | Fn of fn

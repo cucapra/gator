@@ -28,8 +28,14 @@ rule read = parse
   | num as num      { NUM (int_of_string num) }
   | "vec"           { VEC }
   | "mat"           { MAT }
-  | "tag"           { TAG }
+  | "prototype"     { PROTOTYPE }
+  | "object"        { OBJECT }
+  | "coordinate"    { COORDINATE }
+  | "dimension"     { DIMENSION }  
+  | "frame"         { FRAME }
+  | "type"          { TYP }
   | "is"            { IS }
+  | "with"          { WITH }
   | "canon"         { CANON }
   | "true"          { TRUE }
   | "false"         { FALSE }
@@ -90,7 +96,6 @@ rule read = parse
   | "attribute"     { ATTRIBUTE }
   | "uniform"       { UNIFORM }
   | "varying"       { VARYING }
-  | "space"         { SPACE }
   | "break"
   | "continue"
   | "do"

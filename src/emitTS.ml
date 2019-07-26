@@ -18,7 +18,7 @@ let rec comp_type (t : etyp) : string =
     | TransTyp (t1, t2) -> ("Cannot represent TransTyp " ^ comp_type t1 ^ comp_type t2 ^ " in Javascript")
     | SamplerTyp n -> failwith "Cannot represent SamplerTyp in Javascript"
     | SamplerCubeTyp -> failwith "Cannot represent SamplerCubeTyp in Javascript"
-    | AbsTyp (x, _) -> ("Cannot represent AbsTyp " ^ x ^ " in Javascript")
+    | AbsTyp (x, _) -> "Cannot represent AbsTyp " ^ x ^ " in Javascript"
     | ArrTyp _ -> failwith "Cannot represent ArrTyp in Javascript"
 
 let comp_fn_arg_type (t : etyp) : string =
@@ -75,12 +75,12 @@ and comp_exp (e : exp) (s : SS.t) : string =
             | MatTyp (m, n) ->
                 begin
                     match op with
-                    | Neg -> comp_exp (Binop (Times, (Val (Num (-1)), IntTyp), (e,t))) s
+                    | Neg -> comp_exp (Binop ((Val (Num (-1)), IntTyp), Times, (e,t))) s
                     | _ -> failwith "Cannot apply this operator to matrix"
                 end
-            | _ -> string_of_unop op (comp_exp e s)
+            | _ -> string_of_unop_exp op (comp_exp e s)
         end
-    | Binop (op, (e1, t1), (e2, t2)) ->
+    | Binop ((e1, t1), op, (e2, t2)) ->
         begin
             let vec_and_vec (typ_string : string) : string =
                 if op = Eq then typ_string ^ ".equals(" ^ (comp_exp e1 s) ^ "," ^ (comp_exp e2 s) ^ ")"
@@ -90,15 +90,15 @@ and comp_exp (e : exp) (s : SS.t) : string =
                             | Minus -> "sub"
                             | Div -> "div"
                             | CTimes  -> "mul"
-                            | _ -> failwith ("Cannot apply " ^ (binop_string op) ^ " to vectors")
+                            | _ -> failwith ("Cannot apply " ^ (string_of_binop op) ^ " to vectors")
                         in
                         call_lib_func typ_string op_string [e1;e2] s
             in
             let vec_and_num (typ_string : string) (vec_exp : exp) ((scalar_exp, scalar_typ) : texp) : string =
                 let scalar = match op with
                     | Times -> scalar_exp
-                    | Div -> Binop (Div, ((Val (Num 1)), IntTyp), (scalar_exp, scalar_typ))
-                    | _ -> failwith ("Cannot apply " ^ (binop_string op) ^ " to vector and scalar")
+                    | Div -> Binop (((Val (Num 1)), IntTyp), Div, (scalar_exp, scalar_typ))
+                    | _ -> failwith ("Cannot apply " ^ (string_of_binop op) ^ " to vector and scalar")
                 in
                 call_lib_func typ_string "scale" [vec_exp;scalar] s
             in
@@ -133,9 +133,9 @@ and comp_exp (e : exp) (s : SS.t) : string =
                         else if ldim > rdim then "__" ^ typ_string ^ "mul(" ^ (comp_exp e1 s) ^ ",__mat" ^ (string_of_int (max idim rdim)) ^ "to" ^ (string_of_int ldim) ^ "(" ^ (comp_exp e2 s) ^ "))"
                         else if rdim > ldim then "__" ^ typ_string ^ "mul(" ^ "__mat" ^ (string_of_int (max idim ldim)) ^ "to" ^ (string_of_int rdim) ^ "(" ^ (comp_exp e1 s) ^ ")," ^ (comp_exp e2 s) ^ ")"
                         else failwith "Impossible condition"
-                    | _ -> failwith ("Cannot apply " ^ (binop_string op) ^ " to matrices")
+                    | _ -> failwith ("Cannot apply " ^ (string_of_binop op) ^ " to matrices")
                 end
-            | _ -> "(" ^ string_of_binop op (comp_exp e1 s) (comp_exp e2 s) ^ ")"
+            | _ -> "(" ^ string_of_binop_exp (comp_exp e1 s) op (comp_exp e2 s) ^ ")"
         end
     | FnInv (f, tpl, args) ->
         let fn_name =
@@ -168,7 +168,7 @@ let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
             in
             create_str ^ (comp_assign x e s) ^ (comp_comm_lst tl s)
         | Assign (x, e) -> (comp_assign x e s) ^ (comp_comm_lst tl s)
-        | AssignOp ((x, t), op, e) -> (comp_assign x ((Binop (op, (Var x, t), e)), t) s) ^ (comp_comm_lst tl s)
+        | AssignOp ((x, t), op, e) -> (comp_assign x ((Binop ((Var x, t), op, e)), t) s) ^ (comp_comm_lst tl s)
         | If (((b, _), c1), el, c2) -> 
             ("if " ^ "(" ^ (comp_exp b s) ^ ")"
             ^ "{" ^ (comp_comm_lst c1 s) ^ "}"
@@ -191,8 +191,10 @@ let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
 let comp_fn (f : fn) (s : SS.t) : string =
     let ((id, (p, rt, pm)), cl) = f in
     debug_print (">> comp_fn" ^ id);
-    let param_string = String.concat ", " (List.map (fun (i, t) -> i ^ ":" ^ (comp_type t)) p) in
-    let fn_name = id ^ "__" ^ (String.concat "__" (List.map (fun (_, c) -> match c with ETypConstraint t -> comp_fn_arg_type t | _ -> failwith ("Function cannot have resolved type parameter " ^ string_of_constraint c)) (Assoc.bindings pm))) in
+    let param_string = string_of_list (fun (t, i) -> i ^ ":" ^ comp_type t) p in
+    let fn_name = id ^ "__" ^ (String.concat "__" (List.map (fun (_, c) -> 
+        match c with ETypConstraint t -> comp_fn_arg_type t 
+        | _ -> failwith ("Function cannot have resolved type parameter " ^ string_of_constraint c)) (Assoc.bindings pm))) in
     let fn_str = "function " ^ fn_name ^ "(" ^ param_string ^ "):" ^ (comp_type rt) ^ "{" ^ (comp_comm_lst cl s) ^ "}" in
     fn_str
 
