@@ -144,9 +144,9 @@ let decl_attribs (gv : global_vars) : string =
     let rec decl_attribs_list (gv : global_vars) : string =
         match gv with
         | [] -> ""
-        | (sq, et, x, v)::t -> 
+        | (sq, et, x, e)::t -> 
             (string_of_storage_qual sq) ^ " " ^ (string_of_typ et)
-            ^ " " ^ x ^ string_of_option_removed (fun v -> " = " ^ string_of_value v) v ^
+            ^ " " ^ x ^ string_of_option_removed (fun x -> " = " ^ string_of_texp x) e ^
             ";" ^ (decl_attribs_list t) 
     in
     decl_attribs_list gv

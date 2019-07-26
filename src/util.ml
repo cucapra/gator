@@ -3,6 +3,7 @@ open CoreAst
 
 exception ElementNotFoundException of string
 
+let flip (f : 'a -> 'b -> 'c) (x : 'b) (y : 'a) : 'c = f y x
 let compose (f : 'b -> 'c) (g : 'a -> 'b) : 'a -> 'c = fun x -> f (g x)
 let (|-) = compose
 

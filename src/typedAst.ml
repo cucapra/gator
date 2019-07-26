@@ -20,7 +20,6 @@ and constrain =
     | GenTyp
     | GenMatTyp
     | GenVecTyp
-    | GenSpaceTyp
     | ETypConstraint of etyp
 
 (* expressions *)
@@ -52,7 +51,7 @@ and if_block = texp * comm list
 
 type parameterization = constrain Assoc.context
 type params = (etyp * string) list
-type global_var = storage_qual * etyp * string * value option
+type global_var = storage_qual * etyp * string * texp option
 type global_vars = global_var list
 type ret_type = etyp
 type fn_type = params * ret_type * parameterization

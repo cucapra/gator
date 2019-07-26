@@ -104,7 +104,6 @@ let rec list_of_constraint (c : constrain) (int_and_float : bool) : etyp list =
     match c with
     | AnyTyp -> BoolTyp :: list_of_constraint GenTyp int_and_float
     | GenTyp -> if int_and_float then [IntTyp; FloatTyp] else [IntTyp] @ (list_of_constraint GenVecTyp int_and_float @ list_of_constraint GenMatTyp int_and_float)
-    | GenSpaceTyp
     | GenVecTyp -> List.map (fun n -> VecTyp n) [2; 3; 4]
     | GenMatTyp -> let l = [2; 3; 4] in List.fold_left (fun a m -> (List.fold_left (fun a n -> MatTyp(m, n)::a) [] l) @ a) [] l
     | ETypConstraint t -> [t]

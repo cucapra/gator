@@ -24,7 +24,6 @@ let rec string_of_constraint (t: constrain) : string =
     | GenTyp -> "genType"
     | GenMatTyp -> "mat"
     | GenVecTyp -> "vec"
-    | GenSpaceTyp -> "space"
     | ETypConstraint t -> string_of_typ t
 
     let string_of_parameterization (p : parameterization) : string =
@@ -56,7 +55,7 @@ let rec string_of_params (p: params) : string =
 
 let string_of_global_var ((s, t, i, v) : global_var) =
   (string_of_storage_qual s) ^ " " ^ (string_of_typ t) ^ " " ^ i 
-  ^ string_of_option_removed (fun x -> "= " ^ string_of_value x) v ^ ";"
+  ^ string_of_option_removed (fun x -> "= " ^ string_of_texp x) v ^ ";"
 
 let string_of_parameterization (pm : parameterization) : string = 
   Assoc.to_string string_of_constraint pm

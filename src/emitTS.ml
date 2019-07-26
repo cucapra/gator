@@ -52,6 +52,8 @@ and string_of_mat (m: exp list list) (s : SS.t) : string =
 and call_lib_func (t : string) (f : string) (args : exp list) (s : SS.t) : string =
     "__" ^ t ^ f ^ "(" ^ (String.concat "," (List.map (fun e -> comp_exp e s) args)) ^ ")"
 
+and comp_texp ((e, _) : texp) (s : SS.t) : string =
+    comp_exp e s
 and comp_exp (e : exp) (s : SS.t) : string =
     match e with
     | Val v -> comp_value v
@@ -208,14 +210,11 @@ let rec decl_attribs (gv : global_vars) : string =
     debug_print ">> decl_attribs";
     match gv with
     | [] -> ""
-    | (sq, et, x, None)::t -> (match et with
-        | VecTyp n -> "var " ^ x ^ "=vec" ^ (string_of_int n) ^ ".create();" ^ (decl_attribs t)
-        | MatTyp (m,n) -> "var " ^ x ^ "=mat" ^ (string_of_int (max m n)) ^ ".create();" ^ (decl_attribs t)
-        | _ -> "var " ^ x ^ ";" ^ (decl_attribs t))
-    | (sq, et, x, Some v)::t -> match et with
-        | VecTyp n -> "var " ^ x ^ "=vec" ^ (string_of_int n) ^ ".create();" ^ x ^ "=" ^ (comp_value v) ^ (decl_attribs t)
-        | MatTyp (m,n) -> "var " ^ x ^ "=mat" ^ (string_of_int (max m n)) ^ ".create();" ^ x ^ "=" ^ (comp_value v) ^ (decl_attribs t)
-        | _ -> "var " ^ x ^ "=" ^ (comp_value v) ^ ";" ^ (decl_attribs t)
+    | (sq, et, x, e)::t -> let e_str = string_of_option_removed (fun x -> "= " ^ comp_texp x SS.empty) e in
+        match et with
+        | VecTyp n -> "var " ^ x ^ "= vec" ^ (string_of_int n) ^ ".create();" ^ x ^ e_str ^ (decl_attribs t)
+        | MatTyp (m,n) -> "var " ^ x ^ "= mat" ^ (string_of_int (max m n)) ^ ".create();" ^ e_str ^ (decl_attribs t)
+        | _ -> "var " ^ x ^ e_str ^ ";" ^ (decl_attribs t)
 
 let util_funcs =
     String.concat "" (List.map
