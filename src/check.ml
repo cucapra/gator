@@ -34,6 +34,24 @@ type phi = fn_type Assoc.context
 (* Note that the resulting thing could be a call with a concrete parameterization, hence the typ list (which is empty for matrices) *)
 type psi = ((typ * fn_inv) list) Assoc.context
 
+(* A type to contain every context to simplify definitions *)
+type contexts = delta * mu * gamma * phi * psi * parameterization * metadata
+let delta (d,_,_,_,_,_,_: contexts) : delta = d
+let mu (_,m,_,_,_,_,_: contexts) : mu = m
+let gamma (_,_,g,_,_,_,_: contexts) : gamma = g
+let phi (_,_,_,p,_,_,_: contexts) : phi = p
+let psi (_,_,_,_,ps,_,_: contexts) : psi = ps
+let pm (_,_,_,_,_,pm,_: contexts) : parameterization = pm
+let meta (_,_,_,_,_,_,meta: contexts) : metadata = meta
+
+let u_delta (d,m,g,p,ps,pm,meta: contexts) (d' : delta) : contexts = d',m,g,p,ps,pm,meta
+let u_mu (d,m,g,p,ps,pm,meta: contexts) (m' : mu) : contexts = d,m',g,p,ps,pm,meta
+let u_gamma (d,m,g,p,ps,pm,meta: contexts) (g' : gamma) : contexts = d,m,g',p,ps,pm,meta
+let u_phi (d,m,g,p,ps,pm,meta: contexts) (p' : phi) : contexts = d,m,g,p',ps,pm,meta
+let u_psi (d,m,g,p,ps,pm,meta: contexts) (ps' : psi) : contexts = d,m,g,p,ps',pm,meta
+let u_pm (d,m,g,p,ps,pm,meta: contexts) (pm' : parameterization) : contexts = d,m,g,p,ps,pm',meta
+let u_meta (d,m,g,p,ps,pm,meta: contexts) (meta' : metadata) : contexts = d,m,g,p,ps,pm,meta'
+
 let typ_ignore (t : typ) : unit = ignore t
 let constrain_ignore (c : constrain) : unit = ignore c
 let string_of_delta (d : delta) = Assoc.to_string 
@@ -48,26 +66,26 @@ let trans_top (n1: int) (n2: int) : typ =
 let trans_bot (n1: int) (n2: int) : typ =
     TransTyp (TopVecTyp (DimNum n1), BotVecTyp n2)
 
-let rec unwrap_abstyp (s: string) (pm : parameterization) (meta: metadata) : constrain =
+let rec unwrap_abstyp (cx: contexts) (s: string)  : constrain =
     debug_print ">> unwrap_abstyp";
     if Assoc.mem s pm 
     then match Assoc.lookup s pm with 
-        | TypConstraint(AbsTyp s) ->  unwrap_abstyp s pm meta
+        | TypConstraint(AbsTyp s) ->  unwrap_abstyp cx pm s
         | p -> p
-    else raise (TypeExceptionMeta ("AbsTyp " ^ s ^ " not found in parameterization", meta))
+    else raise (TypeExceptionMeta ("AbsTyp " ^ s ^ " not found in parameterization", meta c))
 
-let as_matrix_pair (t: typ) (d: delta) (pm: parameterization) (meta: metadata) : typ * typ =
+let as_matrix_pair (cx: contexts) (t: typ) : typ * typ =
     debug_print ">> as_matrix_pair";
     (* Checks whether the given abstract type is a vector *)
     let fail _ = failwith ("Cannot treat " ^ (string_of_typ t) ^ " as a mtrix") in
     match t with
     | TransTyp (t1, t2) -> (t1, t2)
-    | AbsTyp s -> (match unwrap_abstyp s pm meta with
+    | AbsTyp s -> (match unwrap_abstyp cx pm s with
         | TypConstraint (TransTyp (t1, t2)) -> (t1, t2)
         | _ -> fail ())
     | _ -> fail ()
 
-let rec reduce_dexp (d : dexp) (s : dexp Assoc.context) (meta: metadata) : dexp =
+let rec reduce_dexp (cx: contexts) (s : dexp Assoc.context) (d : dexp) : dexp =
     debug_print (">> reduce_dexp " ^ string_of_dexp d);
     match d with
     | DimNum n -> d
@@ -80,13 +98,13 @@ let rec reduce_dexp (d : dexp) (s : dexp Assoc.context) (meta: metadata) : dexp 
             | _ -> raise (TypeExceptionMeta ("Invalid binary operation to dimension expression " ^ string_of_binop b, meta)))
         | _ -> d)
 
-let dim_top (d: dexp) (meta: metadata) : int =
+let dim_top (cx: contexts) (d: dexp) : int =
     match (reduce_dexp d Assoc.empty meta) with
     | DimNum n -> n
     | _ -> failwith ("Unexpected inclusion of an abstract type in dimension calculation of " ^ (string_of_dexp d)
         ^ "at line " ^ string_of_int meta.pos_lnum)
 
-let rec replace_abstype (t: typ) (c: typ Assoc.context) : typ =
+let rec replace_abstype (cx: contexts) (c: typ Assoc.context) (t: typ) : typ =
     debug_print ">> replace_abstype";
     match t with
     | ParTyp (s, tl) -> ParTyp (s, List.map (fun x -> replace_abstype x c) tl)
@@ -97,7 +115,7 @@ let rec replace_abstype (t: typ) (c: typ Assoc.context) : typ =
 (* Given a parameterization and a list of types being invoked on that parameterization *)
 (* Returns the appropriate concretized context if one exists *)
 (* Should only be used on previously verified parameterized type invokations *)
-let rec match_parameterization_unsafe (d: delta) (pm: parameterization) (dim_pm: parameterization) (pml : typ list) (meta: metadata)
+let rec match_parameterization_unsafe (cx: contexts) (dim_pm: parameterization) (pml : typ list)
 : (typ Assoc.context * dexp Assoc.context) =
     debug_print ">> match_parameterization_unsafe";
     let pmb = Assoc.bindings pm in
@@ -118,7 +136,7 @@ let rec match_parameterization_unsafe (d: delta) (pm: parameterization) (dim_pm:
         ^ ("<" ^ string_of_list string_of_typ pml) ^ ">", meta))
 
 (* Looks up delta without checking the bounds on the pml (hence, 'unsafe') *)
-and delta_lookup_unsafe (x: id) (pml: typ list) (dim_pm: parameterization) (d: delta) (meta: metadata) : typ =
+and delta_lookup_unsafe (cx: contexts) (pml: typ list) (dim_pm: parameterization) (x: id) : typ =
     (* If the given type evaluates to a declared tag, return it *)
     (* If the return type would be a top type, resolve the dimension to a number *)
     debug_print ">> delta_lookup_unsafe";
@@ -131,7 +149,7 @@ and delta_lookup_unsafe (x: id) (pml: typ list) (dim_pm: parameterization) (d: d
     | _ -> reduced)
     else raise (TypeExceptionMeta ("Unknown tag " ^ x, meta))
 
-and vec_dim_constrain (t: typ) (d: delta) (pm: parameterization) (meta: metadata) : dexp option =
+and vec_dim_constrain (cx: contexts) (t: typ) : dexp option =
     debug_print (">> vec_dim " ^ string_of_typ t);
     match t with
     | TopVecTyp d -> Some d
@@ -145,18 +163,18 @@ and vec_dim_constrain (t: typ) (d: delta) (pm: parameterization) (meta: metadata
         | _ -> None)
     | _ -> None
 
-and vec_dim_safe (t: typ) (d: delta) (pm: parameterization) (meta: metadata) : int option =
+and vec_dim_safe (cx: contexts) (t: typ) : int option =
     match vec_dim_constrain t d pm meta with
     | Some (DimNum i) -> Some i 
     | Some _ -> raise (TypeExceptionMeta ("Vector " ^ string_of_typ t ^ " does not have a concrete dimension", meta))
     | None -> None
 
-and vec_dim (t: typ) (d: delta) (pm: parameterization) (meta: metadata) : int =
+and vec_dim (c: contexts) (t: typ) : int =
     match vec_dim_safe t d pm meta with
     | Some i -> i
     | None -> failwith ("Expected vector for computing dimension, got " ^ string_of_typ t)
 
-let rec etyp_to_typ (e : TypedAst.etyp) : typ =
+let rec etyp_to_typ (cx: contexts) (e : TypedAst.etyp) : typ =
     debug_print ">> etyp_to_typ";
     match e with 
     | TypedAst.UnitTyp -> UnitTyp
@@ -171,7 +189,7 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     | TypedAst.AbsTyp (s, c) -> AbsTyp s
     | TypedAst.ArrTyp (t, c) -> ArrTyp (etyp_to_typ t, c)
 
-and constrain_to_constrain (c : TypedAst.constrain) : constrain =
+and constrain_to_constrain (cx: contexts) (c : TypedAst.constrain) : constrain =
     debug_print ">> constrain_to_constrain";
     match c with
     | TypedAst.AnyTyp -> AnyTyp
@@ -180,7 +198,7 @@ and constrain_to_constrain (c : TypedAst.constrain) : constrain =
     | TypedAst.GenVecTyp -> GenVecTyp
     | TypedAst.ETypConstraint t -> TypConstraint (etyp_to_typ t)
 
-let rec tag_erase_param (t: typ) (d: delta) (pm: parameterization) (meta: metadata) : TypedAst.etyp = 
+let rec tag_erase_param (cx: contexts) (t: typ) : TypedAst.etyp = 
     debug_print ">> tag_erase_param";
     match t with 
     | AbsTyp s -> if Assoc.mem s pm then 
@@ -189,7 +207,7 @@ let rec tag_erase_param (t: typ) (d: delta) (pm: parameterization) (meta: metada
         else raise (TypeExceptionMeta ("AbsTyp " ^ s ^ " was not found in function parameterization definition", meta))
     | _ -> tag_erase t d pm meta
 
-and tag_erase (t : typ) (d : delta) (pm: parameterization) (meta: metadata) : TypedAst.etyp =
+and tag_erase (cx: contexts) (t : typ) : TypedAst.etyp =
     debug_print ">> tag_erase";
     match t with
     | UnitTyp -> TypedAst.UnitTyp
@@ -217,7 +235,7 @@ and tag_erase (t : typ) (d : delta) (pm: parameterization) (meta: metadata) : Ty
     | ArrTyp (t, c) -> ArrTyp (tag_erase t d pm meta, c)
     | AutoTyp -> raise (TypeExceptionMeta ("Illegal use of auto (cannot use auto as part of a function call)", meta))
 
-and constrain_erase (c: constrain) (d : delta) (pm : parameterization) (meta: metadata) : TypedAst.constrain =
+and constrain_erase (cx: contexts) (c: constrain) : TypedAst.constrain =
     debug_print ">> constrain_erase";
     match c with
     | AnyTyp -> TypedAst.AnyTyp
@@ -226,7 +244,7 @@ and constrain_erase (c: constrain) (d : delta) (pm : parameterization) (meta: me
     | GenVecTyp -> TypedAst.GenVecTyp
     | TypConstraint t -> TypedAst.ETypConstraint (tag_erase t d pm meta)
 
-let rec is_typ_eq (t1: typ) (t2: typ) (meta: metadata) : bool =
+let rec is_typ_eq (cx: contexts) (t1: typ) (t2: typ) : bool =
     match (t1, t2) with
     | UnitTyp, UnitTyp
     | BoolTyp, BoolTyp
@@ -247,7 +265,7 @@ let rec is_typ_eq (t1: typ) (t2: typ) (meta: metadata) : bool =
     | ArrTyp (t1, n1), ArrTyp (t2, n2) -> n1 = n2 && is_typ_eq t1 t2 meta
     | _ -> false
 
-let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameterization) (meta: metadata) : bool =
+let rec is_subtype (cx: contexts) (to_check : typ) (target : typ) : bool =
     debug_print (">> is_subtype " ^ (string_of_pair (string_of_typ to_check) (string_of_typ target)));
     let abstyp_step (s: string) : bool =
         if Assoc.mem s pm 
@@ -300,8 +318,7 @@ let rec is_subtype (to_check : typ) (target : typ) (d : delta) (pm: parameteriza
     | BotVecTyp n, AbsTyp _ -> (is_subtype target (TopVecTyp (DimNum n)) d pm meta)
     | _ -> false
 
-let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta) (pm: parameterization) 
-(m: mu) (meta: metadata): bool =
+let rec is_sub_constraint (cx: contexts) (to_check : constrain) (target : constrain): bool =
     debug_print (">> is_sub_constraint " ^ string_of_constraint to_check ^ " " ^ string_of_constraint target);
     match (to_check, target) with
     | _, AnyTyp -> true
@@ -324,20 +341,20 @@ let rec is_sub_constraint (to_check : constrain) (target : constrain) (d : delta
     | (TypConstraint (TransTyp _), GenMatTyp) -> true
     | (_, GenMatTyp) -> false
 
-let is_bounded_by (t: typ) (c: constrain) (d: delta) (pm: parameterization) (m: mu) (meta: metadata) : bool =
+let is_bounded_by (cx: contexts) (t: typ) (c: constrain) (d: delta) (pm: parameterization) (m: mu) (meta: metadata) : bool =
     debug_print ">> is_bounded_by";
     is_sub_constraint (TypConstraint t) c d pm m meta
 
 (* Special case that comes up a bunch -- previously covered incorrectly by 'genType' *)
-let is_non_bool (t: typ) (d: delta) (pm: parameterization) (m: mu) (meta: metadata) : bool =
+let is_non_bool (cx: contexts) (t: typ) (d: delta) (pm: parameterization) (m: mu) (meta: metadata) : bool =
     is_bounded_by t GenTyp d pm m meta || is_bounded_by t GenMatTyp d pm m meta
 
-let check_parameterization (d: delta) (pmb: (string * constrain) list) (pml : typ list) (pm: parameterization) 
+let check_parameterization (cx: contexts) (d: delta) (pmb: (string * constrain) list) (pml : typ list) (pm: parameterization) 
 (m: mu) (meta: metadata) : bool =
     debug_print ">> check_parameterization";
     List.length pmb == List.length pml && List.fold_left2 (fun acc (s, c) t -> is_bounded_by t c d pm m meta && acc) true pmb pml
 
-let delta_lookup (s: id) (pml: typ list) (d: delta) (pm: parameterization) (m: mu) (meta: metadata) : typ =
+let delta_lookup (cx: contexts) (s: id) (pml: typ list) (d: delta) (pm: parameterization) (m: mu) (meta: metadata) : typ =
     (* The safe version, where we check the validity of abstract type resolution *)
     debug_print ">> delta_lookup";
     if Assoc.mem s d then
@@ -347,7 +364,7 @@ let delta_lookup (s: id) (pml: typ list) (d: delta) (pm: parameterization) (m: m
         else raise (TypeExceptionMeta ("Invalid parameters <" ^ (string_of_list string_of_typ pml) ^ "> to " ^ s, meta))
     else raise (TypeExceptionMeta ("Unknown tag " ^ s, meta))
 
-let rec greatest_common_child (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (meta: metadata): typ =
+let rec greatest_common_child (cx: contexts) (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (meta: metadata): typ =
     debug_print ">> greatest_common_child";    
     let fail _ = raise (TypeExceptionMeta ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2), meta)) in
     if (is_subtype t1 t2 d pm meta) then t1 else 
@@ -361,7 +378,7 @@ let rec greatest_common_child (t1: typ) (t2: typ) (d: delta) (pm: parameterizati
     | _, TopVecTyp _ -> t1
     | _ -> BotVecTyp n1 (* This works since both t1 and t2 are vectors with the same dimension and are not subtypes of each other *)
 
-let rec least_common_parent (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu) (meta: metadata): typ =
+let rec least_common_parent (cx: contexts) (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu) (meta: metadata): typ =
     debug_print (">> least_common_parent" ^ (string_of_pair (string_of_typ t1) (string_of_typ t2)));
     let fail _ = raise (TypeExceptionMeta ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2), meta)) in
     let rec step_abstyp s1 s2 =
@@ -394,7 +411,7 @@ let rec least_common_parent (t1: typ) (t2: typ) (d: delta) (pm: parameterization
         (* Note that every other possible pair of legal joins would be caught by the is_subtype calls above *)
         | _ -> fail ()
 
-let least_common_parent_safe (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu) (meta: metadata): typ option =
+let least_common_parent_safe (cx: contexts) (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu) (meta: metadata): typ option =
     try Some (least_common_parent t1 t2 d pm m meta) with
     | TypeExceptionMeta (t, _) -> None
     | DimensionException _ -> None
@@ -403,7 +420,7 @@ let least_common_parent_safe (t1: typ) (t2: typ) (d: delta) (pm: parameterizatio
 let collapse_parameterization_decl (pmd: parameterization_decl) : parameterization =
     Assoc.gen_context pmd
 
-let infer_pml (d : delta) ((params, rt, pr, meta) : fn_type) (args_typ : typ list) 
+let infer_pml (cx: contexts) (d : delta) ((params, rt, pr, meta) : fn_type) (args_typ : typ list) 
 (pm : parameterization) (m : mu): (typ list) option =
     debug_print ">> infer_pml";
     let update_inference (t : typ) (s : string) (fpm : (typ Assoc.context) option) : (typ Assoc.context) option =
@@ -447,15 +464,15 @@ let infer_pml (d : delta) ((params, rt, pr, meta) : fn_type) (args_typ : typ lis
                 (Some Assoc.empty) args_typ params)
     
 
-let check_subtype_list (t: typ) (l: typ list) (d: delta) (pm: parameterization) (meta: metadata) : bool =
+let check_subtype_list (cx: contexts) (t: typ) (l: typ list) (d: delta) (pm: parameterization) (meta: metadata) : bool =
     debug_print ">> check_subtype_list";
     List.fold_left (fun acc t' -> acc || (is_subtype t t' d pm meta)) false l
 
-let check_bounds_list (t: typ) (l: constrain list) (d: delta) (pm: parameterization) (m: mu) (meta: metadata) : bool =
+let check_bounds_list (cx: contexts) (t: typ) (l: constrain list) (d: delta) (pm: parameterization) (m: mu) (meta: metadata) : bool =
     debug_print ">> check_bounds_list";
     List.fold_left (fun acc t' -> acc || (is_bounded_by t t' d pm m meta)) false l
     
-let check_typ_valid (ogt: typ) (d: delta) (pm: parameterization) (m: mu) (meta: metadata) : unit =
+let check_typ_valid (cx: contexts) (ogt: typ) (d: delta) (pm: parameterization) (m: mu) (meta: metadata) : unit =
     let rec check_typ_valid_rec (t: typ) : unit =
         debug_print ">> check_typ_valid";
         match t with
@@ -474,7 +491,7 @@ let check_typ_valid (ogt: typ) (d: delta) (pm: parameterization) (m: mu) (meta: 
         | _ -> ()
     in check_typ_valid_rec ogt
 
-let check_val (v: value) (d: delta) (meta: metadata) : typ = 
+let check_val (cx: contexts) (v: value) (d: delta) (meta: metadata) : typ = 
     debug_print ">> check_aval";
     match v with
     | Bool b -> BoolTyp
@@ -489,7 +506,7 @@ let check_val (v: value) (d: delta) (meta: metadata) : typ =
         else (raise (TypeExceptionMeta ("Matrix must have the same number of elements in each row", meta))))
     | _ -> raise (TypeExceptionMeta ("Unexpected typechecker value " ^ (string_of_value v), meta))
 
-let rec check_typ_exp (t: typ) (d: delta) (pm: parameterization) (m: mu) (meta: metadata) : unit =
+let rec check_typ_exp (cx: contexts) (t: typ) (d: delta) (pm: parameterization) (m: mu) (meta: metadata) : unit =
     debug_print ">> check_typ";
     match t with
     | AutoTyp -> raise (TypeExceptionMeta ("Cannot use type auto as a tag type", meta))
@@ -512,7 +529,7 @@ let rec check_typ_exp (t: typ) (d: delta) (pm: parameterization) (m: mu) (meta: 
     | AbsTyp s -> raise  (TypeExceptionMeta ("Cannot use a generic type as a tag argument yet", meta))
 
 (* "scalar linear exp", (i.e. ctimes) returns generalized MatTyp *)
-let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm : parameterization) (meta: metadata): typ = 
+let check_ctimes_exp (cx: contexts) (t1: typ) (t2: typ) (d: delta) (m: mu) (pm : parameterization) (meta: metadata): typ = 
     debug_print ">> check_ctimes_exp";
     if is_bounded_by t1 GenVecTyp d pm m meta
     then (least_common_parent t1 t2 d pm m meta |> typ_ignore; UntaggedVecTyp (vec_dim t1 d pm meta))
@@ -523,25 +540,25 @@ let check_ctimes_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm : parameterizati
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2), meta))
 
 (* Type check binary bool operators (i.e. &&, ||) *)
-let check_bool_binop (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata): typ = 
+let check_bool_binop (cx: contexts) (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata): typ = 
     debug_print ">> check_bool_binop";
     if is_subtype t1 BoolTyp d pm meta then least_common_parent t1 t2 d pm m meta
     else raise (TypeExceptionMeta ("Expected boolean expression for binop", meta))
 
 (* Type check unary number operators (i.e. -) *)
-let check_num_unop (t: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata) : typ =
+let check_num_unop (cx: contexts) (t: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata) : typ =
     debug_print ">> check_num_unop";
     if is_non_bool t d pm m meta then t
     else raise (TypeExceptionMeta ("Expected integer, float, vector, or matrix expression", meta))
 
 (* Type check unary bool operators (i.e. !) *)
-let check_bool_unop (t: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata) : typ =
+let check_bool_unop (cx: contexts) (t: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata) : typ =
     debug_print ">> check_bool_unop";
     if is_subtype t BoolTyp d pm meta then t
     else raise (TypeExceptionMeta ("Expected boolean expression for boolean operator", meta))
 
 (* Type check unary bool operators (i.e. !) *)
-let check_swizzle (s : id) (t: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata) : typ =
+let check_swizzle (cx: contexts) (s : id) (t: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata) : typ =
     debug_print ">> check_swizzle";
     let check_reg = if Str.string_match (Str.regexp "[xyzwrgbastpq]+") s 0 
         then if String.length s == 1 then FloatTyp else UntaggedVecTyp (String.length s)
@@ -551,7 +568,7 @@ let check_swizzle (s : id) (t: typ) (d: delta) (m: mu) (pm: parameterization) (m
 
 (* Type check equality (==) *)
 (* Only bool, int, float are comparable *)
-let check_equality_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata) : typ = 
+let check_equality_exp (cx: contexts) (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata) : typ = 
     debug_print ">> check_comp_binop";
     let subtype_list = [BoolTyp; IntTyp; FloatTyp] in
     if check_subtype_list t1 subtype_list d pm meta
@@ -560,27 +577,27 @@ let check_equality_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterizat
 
 (* Type check comparative binary operators (i.e. <. <=) *)
 (* Only int and float are comparable *)
-let check_comp_binop (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata) : typ = 
+let check_comp_binop (cx: contexts) (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata) : typ = 
     debug_print ">> check_comp_binop";
     let subtype_list = [IntTyp; FloatTyp] in
     if check_subtype_list t1 subtype_list d pm meta
     then (least_common_parent t1 t2 d pm m meta |> typ_ignore; BoolTyp)
     else raise (TypeExceptionMeta ("Comparison checks must be between integers or floats", meta))
 
-let check_as_exp (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu) (meta: metadata) : typ =
+let check_as_exp (cx: contexts) (t1: typ) (t2: typ) (d: delta) (pm: parameterization) (m: mu) (meta: metadata) : typ =
     debug_print (">> check_as_exp " ^ string_of_typ t1 ^ " " ^ string_of_typ t2);
     least_common_parent t1 t2 d pm m meta |> typ_ignore; t2
 
 (* Type checking addition operations on scalar (int, float) expressions *)
 (* Types are closed under addition and scalar multiplication *)
-let check_addition_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata): typ =
+let check_addition_exp (cx: contexts) (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata): typ =
     debug_print ">> check_addition";
     if is_non_bool t1 d pm m meta then least_common_parent t1 t2 d pm m meta
     else raise (TypeExceptionMeta ("Invalid expressions for addition: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2), meta))
 
 (* Type checking times operator - on scalar mult & matrix transformations *)
-let check_times_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata): typ = 
+let check_times_exp (cx: contexts) (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata): typ = 
     debug_print ">> check_times_exp";
     let fail () = raise (TypeExceptionMeta ("Invalid expressions for multiplication: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2), meta)) in
@@ -603,7 +620,7 @@ let check_times_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization
 
 (* Type checking division operations (/) *)
 (* Types are closed under scalar division *)
-let check_division_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata) : typ =
+let check_division_exp (cx: contexts) (t1: typ) (t2: typ) : typ =
     debug_print ">> check_division";
     let subtype_list = [IntTyp; FloatTyp] in
     if check_subtype_list t1 subtype_list d pm meta
@@ -613,7 +630,7 @@ let check_division_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterizat
     else raise (TypeExceptionMeta ("Invalid expressions for division: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2), meta))
 
-let check_index_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization) (meta: metadata): typ =
+let check_index_exp (cx: contexts) (t1: typ) (t2: typ) : typ =
     debug_print ">> check_index_exp";
     let fail _ = raise (TypeExceptionMeta ("Invalid expressions for indexing: "
         ^ (string_of_typ t1) ^ ", " ^ (string_of_typ t2), meta)) in
@@ -628,7 +645,7 @@ let check_index_exp (t1: typ) (t2: typ) (d: delta) (m: mu) (pm: parameterization
         end
     else fail ()
 
-let check_parameterization_decl (d: delta) (m: mu) (pmd: parameterization_decl) (meta: metadata) : unit =
+let check_parameterization_decl (cx: contexts) (pmd: parameterization_decl) : unit =
     debug_print ">> check_parameterization_decl";
     let rec check_para_list param found : unit = 
         match param with
@@ -643,15 +660,14 @@ let check_parameterization_decl (d: delta) (m: mu) (pmd: parameterization_decl) 
         in
     check_para_list pmd Assoc.empty; ()
 
-let as_par_typ (t: typ) : string * typ list =
+let as_par_typ (cx: contexts) (t: typ) : string * typ list =
     match t with
     | VarTyp s -> (s, [])
 	| ParTyp (VarTyp s, tl) -> (s, tl)
 	| AbsTyp s -> ("`" ^ s, [])
 	| _ -> failwith ("Unexpected type " ^ string_of_typ t ^ " provided to manipulating psi")
 	
-let update_psi (start: typ) (target: typ) (ml: modification list) ((f, pml) : string * typ list) 
-(m: mu) (ps: psi) (meta: metadata) : psi =
+let update_psi (cx: contexts) (ml: modification list) (start: typ) (target: typ) ((f, pml) : string * typ list) : psi =
     (* Update psi, raising errors in case of a duplicate *)
     (* If the given type is not valid in psi, psi is returned unmodified *)
     (* Will raise a failure if a non-concrete vartyp is used *)
@@ -695,36 +711,32 @@ let update_psi (start: typ) (target: typ) (ml: modification list) ((f, pml) : st
         else Assoc.update start_index [to_add] ps 
     else ps
 
-let update_psi_matrix (f: string) (t: typ) (ml: modification list) (m: mu) (ps: psi) (meta: metadata) : psi =
+let update_psi_matrix (cx: contexts) (ml: modification list) (t: typ) (f: string) : psi =
     match t with
     | TransTyp (t1, t2) -> update_psi t1 t2 ml (f, []) m ps meta
     | _ -> ps
 
 (* Type check parameter; make sure there are no name-shadowed parameter names *)
 (* TODO : parametrized types *)
-let check_param ((ml, t, id): (modification list * typ * string)) (g: gamma) (d: delta) (m: mu) 
-(pm : parameterization) (ps: psi) (meta: metadata) : gamma * psi = 
+let check_param (cx: contexts) ((ml, t, id): (modification list * typ * string)) : contexts = 
     debug_print ">> check_param";
     if Assoc.mem id g 
     then raise (TypeExceptionMeta ("Duplicate parameter name in function declaration: " ^ id, meta))
     else check_typ_valid t d pm m meta; (Assoc.update id t g, update_psi_matrix id t ml m ps meta)
     
 (* Get list of parameters from param list *)
-let check_params (pl : params) (g: gamma) (d : delta) (m: mu) 
-(pm : parameterization) (ps: psi) (meta: metadata) : TypedAst.params * gamma * psi = 
+let check_params (cx: contexts) (pl : params) : contexts * TypedAst.params = 
     debug_print ">> check_params";
     let (g', ps') = List.fold_left (fun (g', ps') p -> check_param p g' d m pm ps' meta) (g, ps) pl in 
     let p = (List.map (fun (_, t, i) -> (tag_erase t d pm meta, i)) pl) in 
     (p, g', ps')
     
-let exp_to_texp (checked_exp : TypedAst.exp * typ) (d : delta) (pm : parameterization) (meta: metadata)
-: TypedAst.texp = 
+let exp_to_texp (cx: contexts) (checked_exp : TypedAst.exp * typ) : TypedAst.texp = 
     debug_print ">> exp_to_texp";
     ((fst checked_exp), (tag_erase (snd checked_exp) d pm meta))
 
 (* Super expensive.  We're essentially relying on small contexts *)
-let check_in_exp (start_exp: aexp) (start: typ) (target: typ) (m: mu) (g: gamma) (d: delta) 
-(pm: parameterization) (p: phi) (ps: psi) : aexp = 
+let check_in_exp (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : aexp = 
     debug_print ">> check_in_exp";
     let meta = snd start_exp in
     let rec psi_path_rec (to_search: (typ * aexp) Queue.t) (found: typ list) : aexp =
@@ -826,12 +838,10 @@ let check_in_exp (start_exp: aexp) (start: typ) (target: typ) (m: mu) (g: gamma)
 	let q = Queue.create () in Queue.push (start, start_exp) q;
 	psi_path_rec q []
 
-let rec check_aexp ((e, meta) : aexp) (d : delta) (m: mu) (g : gamma) 
-    (pm : parameterization) (p : phi) (ps: psi) : TypedAst.exp * typ =
+let rec check_aexp (cx: contexts) ((e, meta) : aexp) : TypedAst.exp * typ =
     check_exp e d m g pm p ps meta
 
-and check_exp (e : exp) (d : delta) (m: mu) (g : gamma) (pm : parameterization) 
-    (p : phi) (ps: psi) (meta: metadata) : TypedAst.exp * typ = 
+and check_exp (cx: contexts) (e : exp) : TypedAst.exp * typ = 
     debug_print ">> check_exp";
     let check_aexpf to_check = check_aexp to_check d m g pm p ps in
     let build_unop (op : unop) (e': aexp) (check_fun: typ->delta->mu->parameterization->metadata->typ) (pm: parameterization)
@@ -872,8 +882,7 @@ and check_exp (e : exp) (d : delta) (m: mu) (g : gamma) (pm : parameterization)
     | FnInv (i, args, pr) -> let ((i, tpl, args_exp), rt) = check_fn_inv d m g p args i pr pm ps meta in 
         (FnInv (i, tpl, args_exp), rt)
         
-and check_arr (d : delta) (m: mu) (g : gamma) (p : phi) (a : aexp list) (pm : parameterization) (ps: psi) (meta: metadata)
- : (TypedAst.exp * typ) =
+and check_arr (cx: contexts) (a : aexp list) : (TypedAst.exp * typ) =
     debug_print ">> check_arr";
     let is_vec (v: TypedAst.texp list) : bool =
         List.fold_left (fun acc (_, t) -> match t with
@@ -895,9 +904,8 @@ and check_arr (d : delta) (m: mu) (g : gamma) (p : phi) (a : aexp list) (pm : pa
         (string_of_exp (Arr a)) ^ ", must be a matrix or vector", meta)))
 
 
-and check_fn_inv (d : delta) (m: mu) (g : gamma) (p : phi) (pml: typ list) (i : string) (args : args) 
-(pm : parameterization) (ps: psi) (meta: metadata)
- : (string * TypedAst.etyp list * TypedAst.args) * typ = 
+and check_fn_inv (cx: contexts) (pml: typ list) (f : string) (args : args) 
+: (string * TypedAst.etyp list * TypedAst.args) * typ = 
     debug_print (">> check_fn_inv " ^ i);
     let fn_invocated = if Assoc.mem i p
         then Assoc.lookup i p
@@ -971,12 +979,10 @@ and check_fn_inv (d : delta) (m: mu) (g : gamma) (p : phi) (pml: typ list) (i : 
     ^ (if List.length pml > 0 then "<" ^ (String.concat "," (List.map string_of_typ pml)) ^ ">" else "")
     ^ " matching types (" ^ (String.concat "," (List.map string_of_typ args_typ)) ^ ") found", meta))) 
 
-and check_acomm ((c, meta): acomm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p: phi) (ps: psi)
-    : TypedAst.comm * gamma * psi =
+and check_acomm (cx: contexts) ((c, meta): acomm) : contexts * TypedAst.comm =
     check_comm c d m g pm p ps meta
 
-and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p: phi) (ps: psi) (meta: metadata)
-    : TypedAst.comm * gamma * psi = 
+and check_comm (cx: contexts) (c: comm) : contexts * TypedAst.comm =
     debug_print ">> check_comm";
     let check_acommf to_check = check_acomm to_check d m g pm p ps in
     match c with
@@ -1064,8 +1070,7 @@ and check_comm (c: comm) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p
             (TypedAst.FnCall (i, tpl, args_exp), g, ps)
         | _ -> raise (TypeExceptionMeta ("Cannot treat the type " ^ string_of_typ it ^ " as a function call", meta)))
 
-and check_comm_lst (cl : acomm list) (d: delta) (m: mu) (g: gamma) (pm : parameterization) (p: phi) (ps: psi) 
-: TypedAst.comm list * gamma * psi = 
+and check_comm_lst (cx: contexts) (cl : acomm list) : contexts * TypedAst.comm list = 
     debug_print ">> check_comm_lst";
     match cl with
     | [] -> ([], g, ps)
@@ -1073,8 +1078,7 @@ and check_comm_lst (cl : acomm list) (d: delta) (m: mu) (g: gamma) (pm : paramet
         let (cl', g'', ps'') = check_comm_lst t d m g' pm p ps' in 
         (c' :: cl', g'', ps'')
 
-and check_assign (t: typ) (s: string) (etyp : typ)  (d: delta) (g: gamma) (p: phi) (pm: parameterization) 
-(m:mu) (meta: metadata): gamma =
+and check_assign (cx: contexts) (t: typ) (s: string) (etyp : typ) : contexts =
     debug_print (">> check_assign <<"^s^">>");
     debug_print (string_of_typ t);
     (* Check that t, if not a core type, is a registered tag *)
@@ -1102,8 +1106,8 @@ and check_assign (t: typ) (s: string) (etyp : typ)  (d: delta) (g: gamma) (p: ph
         else raise (TypeExceptionMeta ("Mismatched types for var decl for " ^ s ^
             ": expected " ^ (string_of_typ t) ^ ", found " ^ (string_of_typ etyp), meta))
 
-let check_fn_decl ((fm, id, (pmd, rt, pl)): fn_decl) (d: delta) (m: mu) (g: gamma) (p: phi) (ps: psi) (meta: metadata) : 
-(TypedAst.params * gamma * psi) * TypedAst.parameterization * mu * phi =
+let check_fn_decl (cx: contexts) ((fm, id, (pmd, rt, pl)): fn_decl) : 
+contexts * TypedAst.params * TypedAst.parameterization =
     debug_print (">> check_fn_decl : " ^ id);
     check_parameterization_decl d m pmd meta;
     let pm = collapse_parameterization_decl pmd in
@@ -1117,13 +1121,13 @@ let check_fn_decl ((fm, id, (pmd, rt, pl)): fn_decl) (d: delta) (m: mu) (g: gamm
 (* Helper function for type checking void functions. 
  * Functions that return void can have any number of void return statements 
  * anywhere. *)
-let check_void_return (c: acomm) (meta: metadata) =
+let check_void_return (c: acomm) (meta: metadata) : unit =
     debug_print ">> check_void_return";
     match c with
     | (Return Some _, _) -> raise (TypeExceptionMeta ("Void functions cannot return a value", meta))
     | _ -> ()
 
-let check_return (t: typ) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (p: phi) (ps: psi) (c: acomm) = 
+let check_return (cx: contexts) (t: typ) (c: acomm) : unit = 
     debug_print ">> check_return";
     match c with
     | (Return None, meta) -> raise (TypeExceptionMeta ("Expected a return value instead of void", meta))
@@ -1136,7 +1140,7 @@ let check_return (t: typ) (d: delta) (m: mu) (g: gamma) (pm: parameterization) (
         )
     | _ -> ()
 
-let update_mu_with_function (((fm, id, (pmd, r, pr))): fn_decl) (d: delta) (m: mu) (ps: psi) (meta: metadata) : mu =
+let update_mu_with_function (cx: contexts) (((fm, id, (pmd, r, pr))): fn_decl) : contexts =
     let m' = Assoc.update id fm m in
     if List.mem Canon fm then
         match pr with
@@ -1163,7 +1167,7 @@ let update_mu_with_function (((fm, id, (pmd, r, pr))): fn_decl) (d: delta) (m: m
         | _ -> raise (TypeExceptionMeta ("Cannot have a canonical function with zero or more than one arguments", meta))
     else m'
 
-let check_typ_decl ((s, pmd, t) : typ_decl) (d: delta) (m: mu) (meta: metadata) : delta = 
+let check_typ_decl (cx: contexts) ((s, pmd, t) : typ_decl) : contexts = 
     debug_print ">> check_tag_decl";
     let pm = collapse_parameterization_decl pmd in
     let rec check_valid_supertype (t: typ) : constrain =
@@ -1196,8 +1200,7 @@ let check_typ_decl ((s, pmd, t) : typ_decl) (d: delta) (m: mu) (meta: metadata) 
     else ();
     Assoc.update s (pm, t) d
 
-let check_decls (ed : extern_decl) (d: delta) (g: gamma) (m: mu) (p: phi) (ps: psi) (meta: metadata) 
-    : (gamma * mu * phi) =
+let check_decls (cx: contexts) (ed : extern_decl) : contexts =
     match ed with
     | ExternFn f -> let (_, _, _, p') = (check_fn_decl g d m f p ps meta) in 
         let m' = update_mu_with_function f d m ps meta in
@@ -1206,9 +1209,7 @@ let check_decls (ed : extern_decl) (d: delta) (g: gamma) (m: mu) (p: phi) (ps: p
     | _ -> raise (TypeExceptionMeta ("Invalid declaration, must be a function or variable", meta))
 
 (* Type check global variable *)
-let check_global_variable ((ml, sq, t, id, e): global_var) 
-    (d: delta) (m:mu) (g: gamma) (p: phi) (ps: psi) (meta: metadata) : 
-    TypedAst.global_var * gamma * psi =
+let check_global_variable (cx: contexts) ((ml, sq, t, id, e): global_var) : contexts * TypedAst.global_var =
     debug_print ">> check_global_variable";
     let e' = option_map (fun x -> check_aexp x d m g Assoc.empty p ps) e in
     if Assoc.mem id g
@@ -1217,8 +1218,7 @@ let check_global_variable ((ml, sq, t, id, e): global_var)
         ((sq, tag_erase t d Assoc.empty meta, id, option_map (fun x -> exp_to_texp x d Assoc.empty meta) e'), 
             Assoc.update id t g, update_psi_matrix id t ml m ps meta)
 
-let check_fn (((fm, id, (pmd, r, pr)), cl): fn) (d: delta) (m: mu) (g: gamma) (p: phi) (ps: psi) (meta: metadata)
-: TypedAst.fn * mu * phi * psi = 
+let check_fn (cx: contexts) (((fm, id, (pmd, r, pr)), cl): fn) : contexts * TypedAst.fn = 
     debug_print (">> check_fn : " ^ id);
     (* update phi with function declaration *)
     let pm = collapse_parameterization_decl pmd in
@@ -1233,8 +1233,7 @@ let check_fn (((fm, id, (pmd, r, pr)), cl): fn) (d: delta) (m: mu) (g: gamma) (p
     | t -> List.iter (check_return t d m g'' pm p ps'') cl; 
         (((id, (pl', tag_erase t d pm meta, pm')), cl')), m'', p', ps'
 
-let check_term (t: term) (g, d, m, p, ps : gamma * delta * mu * phi * psi) (meta: metadata)
-: TypedAst.fn option * TypedAst.global_var option * (gamma * delta * mu * phi * psi) =
+let check_term (cx: contexts) (t: term) : contexts * TypedAst.fn option * TypedAst.global_var option) =
     match t with    
     | Prototype p -> 
     | Coordinate c -> 
@@ -1249,17 +1248,17 @@ let check_term (t: term) (g, d, m, p, ps : gamma * delta * mu * phi * psi) (meta
     | Fn f -> let (f', m', p', ps') = check_fn f g d m p ps meta in
         Some f', None, (g, d, m', p', ps')
     
-let check_aterm ((t, meta): aterm) (c : gamma * delta * mu * phi * psi) =
-    check_term t c meta
+let check_aterm (cx: contexts) ((t, meta): aterm) =
+    check_term (u_meta cx meta) t check_term
 
 let rec check_term_list (tl: aterm list) :
     TypedAst.prog * TypedAst.global_vars * phi =
     debug_print ">> check_global_var_or_fn_lst";
     let app_maybe o l = match o with | Some v -> v::l | None -> l in
-    let (f, gv, ctxs) = List.fold_left (fun acc t -> let (f', gv', contexts) = check_aterm t (tr_thd acc) in
+    let (f, gv, cxs) = List.fold_left (fun acc t -> let (f', gv', contexts) = check_aterm t (tr_thd acc) in
         (app_maybe f' (tr_fst acc), app_maybe gv' (tr_snd acc), contexts))
         ([], [], (Assoc.empty, Assoc.empty, Assoc.empty, Assoc.empty, Assoc.empty)) tl in
-    List.rev f, List.rev gv, match ctxs with (_, _, _, p, _) -> p
+    List.rev f, List.rev gv, match cxs with (_, _, _, p, _) -> p
 
 (* Check that there is a void main() defined *)
 let check_main_fn (p: phi) : unit =
