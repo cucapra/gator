@@ -64,7 +64,6 @@ let rec string_of_value (v: value) : string =
   | Float f -> string_of_float f
   | VecLit v -> string_of_vec v
   | MatLit m -> string_of_mat m
-  | Arr a -> "[" ^ string_of_list string_of_value a ^ "]"
 
 let string_of_unop (op : unop) : string =
   match op with

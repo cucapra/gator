@@ -65,12 +65,6 @@ let string_of_fn_inv ((s, tl) : fn_inv) = s ^ "<" ^ string_of_list string_of_typ
 let string_of_psi (ps : psi) = Assoc.to_string 
     (fun x -> string_of_list (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_fn_inv p ^ ")") x) ps
 
-let trans_top (t : typ) (n1: int) (n2: int) : typ =
-    TransTyp (ArrLit (t, [n1]), ArrTyp (t, [DimNum n2]))
-
-let trans_bot (t: typ) (n1: int) (n2: int) : typ =
-    TransTyp (ArrTyp (t, [DimNum n1]), ArrLit (t, [n2]))
-
 let rec unwrap_abstyp (cx: contexts) (s: string)  : constrain =
     debug_print ">> unwrap_abstyp";
     if Assoc.mem s cx.pm
@@ -131,15 +125,15 @@ let rec match_parameterization_unsafe (cx: contexts) (dim_pm: parameterization) 
     let check_vec t = match t with | Some x -> x | None -> failwith ("Expected vector for computing dimension, got something else") in
     let update_assic c (dim : dexp) (assic : dexp Assoc.context) : dexp Assoc.context = 
         match c with 
-        | TypConstraint (ArrTyp (_, [DimVar s])) -> Assoc.update s dim assic 
-        | TypConstraint (ArrTyp (_, [DimNum _])) -> assic
+        | TypConstraint (ArrTyp (_, DimVar s)) -> Assoc.update s dim assic 
+        | TypConstraint (ArrTyp (_, DimNum _)) -> assic
         | TypConstraint (ArrTyp _) -> raise (TypeExceptionMeta 
             ("Dimension constraints on types must be exactly single variables to recover dimensions", cx.meta))
         | _ -> assic
     in
     if List.length pmb == List.length pml
     then List.fold_left2 (fun (tcacc, icacc) (s, c) t -> 
-        (Assoc.update s t tcacc, update_assic c (check_vec (vec_dim_constrain ({cx with pm=dim_pm}) t)) icacc))
+        (Assoc.update s t tcacc, update_assic c (check_vec (arr_dim_constrain ({cx with pm=dim_pm}) t)) icacc))
         (Assoc.empty, Assoc.empty) (Assoc.bindings cx.pm) pml
     else raise (TypeExceptionMeta ("Invalid parameterization provided in " 
         ^ "<" ^ string_of_list string_of_typ pml ^ ">", cx.meta))
@@ -154,32 +148,33 @@ and delta_lookup_unsafe (cx: contexts) (pml: typ list) (x: id) : typ =
     let (tc, ic) = (match_parameterization_unsafe cx dim_pm pml) in
     let reduced = replace_abstype tc t in
     (match reduced with
-    | ArrTyp (t, d) -> ArrTyp (t, List.map (reduce_dexp cx ic) d)
+    | ArrTyp (t, d) -> ArrTyp (t, reduce_dexp cx ic d)
     | _ -> reduced)
     else raise (TypeExceptionMeta ("Unknown tag " ^ x, cx.meta))
 
-and vec_dim_constrain (cx: contexts) (t: typ) : dexp option =
+and arr_dim_constrain (cx: contexts) (t: typ) : dexp option =
     debug_print (">> vec_dim " ^ string_of_typ t);
     match t with
-    | TopVecTyp d -> Some d
-    | UntaggedVecTyp n
-    | BotVecTyp n -> Some (DimNum n)
-    | ParTyp (VarTyp s, pml) -> vec_dim_constrain cx (delta_lookup_unsafe cx pml s)
-    | VarTyp s -> vec_dim_constrain cx (delta_lookup_unsafe cx [] s)
+    | ArrTyp (ArrTyp _, _) -> None
+    | ArrTyp (_, d) -> Some d
+    (* We ignore arrays of arrays for this function, as it is intended to only work on a single dimension *)
+    | VecTyp n -> Some (DimNum n)
+    | ParTyp (VarTyp s, pml) -> arr_dim_constrain cx (delta_lookup_unsafe cx pml s)
+    | VarTyp s -> arr_dim_constrain cx (delta_lookup_unsafe cx [] s)
     | AbsTyp s -> (match unwrap_abstyp cx s with
-        | TypConstraint t' -> vec_dim_constrain cx t'
+        | TypConstraint t' -> arr_dim_constrain cx t'
         | GenVecTyp -> Some (DimVar s)
         | _ -> None)
     | _ -> None
 
-and vec_dim_safe (cx: contexts) (t: typ) : int option =
-    match vec_dim_constrain cx t with
+and arr_dim_safe (cx: contexts) (t: typ) : int option =
+    match arr_dim_constrain cx t with
     | Some (DimNum i) -> Some i 
     | Some _ -> raise (TypeExceptionMeta ("Vector " ^ string_of_typ t ^ " does not have a concrete dimension", cx.meta))
     | None -> None
 
-and vec_dim (cx: contexts) (t: typ) : int =
-    match vec_dim_safe cx t with
+and arr_dim (cx: contexts) (t: typ) : int =
+    match arr_dim_safe cx t with
     | Some i -> i
     | None -> failwith ("Expected vector for computing dimension, got " ^ string_of_typ t)
 
@@ -196,8 +191,7 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     | TypedAst.SamplerTyp n -> SamplerTyp n
     | TypedAst.SamplerCubeTyp -> SamplerCubeTyp
     | TypedAst.AbsTyp (s, c) -> AbsTyp s
-    | TypedAst.ArrTyp (t, cl) -> ArrTyp (etyp_to_typ t, 
-        List.map (fun c -> match c with | ConstInt i -> DimNum i | ConstVar v -> DimVar v) cl)
+    | TypedAst.ArrTyp (t, c) -> ArrTyp (etyp_to_typ t, match c with | ConstInt i -> DimNum i | ConstVar v -> DimVar v)
 
 and constrain_to_constrain (c : TypedAst.constrain) : constrain =
     debug_print ">> constrain_to_constrain";
@@ -220,24 +214,26 @@ let rec tag_erase_param (cx: contexts) (t: typ) : TypedAst.etyp =
 
 and frame_erase (cx: contexts) (t : typ) : TypedAst.etyp =
     debug_print ">> tag_erase";
+    let d_to_c opd = match opd with
+    | Some (DimNum i) -> TypedAst.VecTyp i 
+    | Some (DimVar s) -> TypedAst.AbsTyp (s, TypedAst.GenVecTyp)
+    | _ -> raise (TypeExceptionMeta ("No valid vector interpretation of " ^ string_of_typ t, cx.meta)) in
     match t with
     | UnitTyp -> TypedAst.UnitTyp
     | BoolTyp -> TypedAst.BoolTyp
     | IntTyp -> TypedAst.IntTyp
     | FloatTyp -> TypedAst.FloatTyp
-    | ArrTyp (t, c) -> ArrTyp (frame_erase cx t, c)
+    | ArrTyp (t, d) -> ArrTyp (frame_erase cx t, c)
+    | ArrParsedTyp _
     | VecTyp _
     | ArrLit _
     | CoordTyp _
     | VarTyp _
-    | ParTyp (VarTyp _, _) -> (match vec_dim_constrain cx t with
-        | Some (DimNum i) -> TypedAst.VecTyp i 
-        | Some (DimVar s) -> TypedAst.AbsTyp (s, TypedAst.GenVecTyp)
-        | _ -> raise (TypeExceptionMeta ("No valid vector interpretation of " ^ string_of_typ t, cx.meta)))
+    | ParTyp (VarTyp _, _) -> d_to_c (arr_dim_constrain cx t)
     | ParTyp (t', _) -> frame_erase cx t'
     | TransTyp (t1, t2) -> 
     begin
-        match (vec_dim_constrain cx t1, vec_dim_constrain cx t2) with
+        match (arr_dim_constrain cx t1, arr_dim_constrain cx t2) with
         | (Some (DimNum n1), Some (DimNum n2)) -> TypedAst.MatTyp (n2, n1)
         | _ -> TypedAst.TransTyp (frame_erase cx t1, frame_erase cx t2)
     end

@@ -285,6 +285,8 @@ let dexp :=
   | x = ID;
     <DimVar>
   
+let combined(A, B) == A; B; {}
+
 let typ :=
   | AUTOTYP;
     { AutoTyp }
@@ -296,8 +298,8 @@ let typ :=
     { FloatTyp }
   | INTTYP;
     { IntTyp }
-  | t = typ; d = delimited(LBRACK, separated_nonempty_list(COMMA, dexp), RBRACK);
-    <ArrTyp>
+  | t = typ; LBRACK; d = separated_list(combined(LBRACK, RBRACK), dexp); RBRACK;
+    < ArrParsedTyp >
   | m = MATTYP;
     { let len = String.length m in
       let dim = String.sub m 3 (len-3) in

@@ -17,9 +17,10 @@ type typ =
     | BoolTyp
     | IntTyp
     | FloatTyp
-    | ArrTyp of typ * (dexp list) (* i.e. float[5] or bool[2][3] *)
+    | ArrParsedTyp of typ * dexp list (* Because parsers are dumb *)
+    | ArrTyp of typ * dexp (* i.e. float[5] or bool[2][3] *)
     | VecTyp of int
-    | ArrLit of typ * (int list) (* Literals such as [0., 1.] or [true, false] -- constant length *)
+    | ArrLit of typ * int (* Literals such as [0., 1.] or [true, false] -- constant length *)
     | VarTyp of id (* i.e. color *)
     | CoordTyp of typ * typ (* i.e. cart.point *)
     | TransTyp of typ * typ

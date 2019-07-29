@@ -15,7 +15,6 @@ type value =
   | Float of float
   | VecLit of vec
   | MatLit of mat
-  | Arr of value list
 
 type unop =
   | Neg

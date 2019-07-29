@@ -18,9 +18,10 @@ let rec string_of_typ (t: typ) : string =
     | BoolTyp -> "bool"
     | IntTyp -> "int"
     | FloatTyp -> "float"
-    | ArrTyp (t, d) -> string_of_typ t ^ "[" ^ string_of_list string_of_dexp d ^ "]"
+    | ArrParsedTyp (t, d) -> string_of_typ t ^ "[" ^ string_of_list string_of_dexp d ^ "]"
+    | ArrTyp (t, d) -> string_of_typ t ^ "[" ^ string_of_dexp d ^ "]"
     | VecTyp n -> "vec"^(string_of_int n)
-    | ArrLit (t, n) -> string_of_typ t ^ "[" ^ string_of_list string_of_int n ^ "]%lit"
+    | ArrLit (t, n) -> string_of_typ t ^ "[" ^ string_of_int n ^ "]%lit"
     | VarTyp s -> s
     | CoordTyp (t1, t2) -> string_of_typ t1 ^ "." ^ string_of_typ t2
     | ParTyp (t, tl) -> string_of_typ t ^ "<" ^ (string_of_list string_of_typ tl) ^ ">"
