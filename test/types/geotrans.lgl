@@ -25,10 +25,10 @@ prototype {
 coordinate cart3 {
     dimension 3;
 
-    point<r> = float[3];
-    vector<r> = float[3];
-    direction<r> = float[3];
-    matrix<r1, r2> = float[3][3];
+    point<r> is float[3];
+    vector<r> is float[3];
+    direction<r> is float[3];
+    matrix<r1, r2> is float[3][3];
 
     vector<r> +(vector<r> x, vector<r> y) {
         return x + y;
@@ -98,8 +98,8 @@ coordinate hom {
     }
 }
 
-frame model is float[3];
-frame world is float[3];
+frame model dimension 3;
+frame world dimension 3;
 
 declare with dimension(3) r,
 cart3.direction<r> normalize(cart3.vector<r> v);

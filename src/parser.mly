@@ -17,7 +17,6 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token EOF
 %token <int> NUM
 %token <float> FLOAT
-%token <string> MATTYP
 %token <string> ID
 %token SAMPLERCUBE
 %token <string> SAMPLER
@@ -30,7 +29,6 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token RBRACK
 %token LPAREN
 %token RPAREN
-%token TRANS
 %token GETS
 %token IN
 %token OUT
@@ -92,7 +90,6 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 (* Precedences *)
 
 %left ID
-%left TRANS
 %left AS IN
 %left AND OR
 %left NOT EQ LEQ GEQ LBRACK 
@@ -269,9 +266,9 @@ let comm_element ==
 
 let constrain == 
   | VEC;
-    { GenVecTyp }
+    { GenArrTyp(TypConstraint(FloatTyp)) }
   | MAT;
-    { GenMatTyp }
+    { GenArrTyp(GenArrTyp(TypConstraint(FloatTyp))) }
   | GENTYPE; 
     { GenTyp }
   | t = typ;
@@ -298,32 +295,14 @@ let typ :=
     { FloatTyp }
   | INTTYP;
     { IntTyp }
-  | t = typ; LBRACK; d = separated_list(combined(LBRACK, RBRACK), dexp); RBRACK;
-    < ArrParsedTyp >
-  | m = MATTYP;
-    { let len = String.length m in
-      let dim = String.sub m 3 (len-3) in
-      let dim_lst = Str.split_delim (regexp "x") dim in
-      TransTyp (VecTyp (int_of_string(List.nth dim_lst 1)),
-      (VecTyp (int_of_string(List.nth dim_lst 0))))}
-  | t1 = typ; TRANS; t2 = typ;
-    <TransTyp>
+  | t = typ; LBRACK; dl = separated_list(combined(LBRACK, RBRACK), dexp); RBRACK;
+    { List.fold_right (fun d acc -> ArrTyp(acc, d)) dl t }
   | t1 = typ; DOT; t2 = typ;
     <CoordTyp>
   | t = typ; pt = delimited(LWICK, separated_list(COMMA, typ), RWICK);
     <ParTyp>
   | x = ID;
-    { if (Str.string_match vec x 0) then (
-      let len = String.length x in 
-      let dim = int_of_string (String.sub x 3 (len-3)) in
-      VecTyp dim
-      ) else
-      if (Str.string_match mat x 0) then (
-      let len = String.length x in 
-      let dim = int_of_string (String.sub x 3 (len-3)) in
-      TransTyp (VecTyp dim, VecTyp dim)
-      ) 
-      else (VarTyp x) }
+    { VarTyp x }
   | SAMPLERCUBE;
     { SamplerCubeTyp }
   | s = SAMPLER;

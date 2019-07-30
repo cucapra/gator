@@ -14,7 +14,7 @@ type fn_inv = string * typ list
 
 (* Type definitions *)
 (* Stores supertype and possible parameterization information for the tag *)
-type delta = (parameterization * typ) Assoc.context
+type tau = (parameterization * typ) Assoc.context
 
 (* Type and function modifiers *)
 (* Specifically the canonical and with keywords *)
@@ -23,6 +23,18 @@ type mu = (modification list) Assoc.context
 (* Variable definitions *)
 (* Maps from variable names to the type of that variable *)
 type gamma = typ Assoc.context
+
+(* Dimension definitions *)
+(* Stores dimension information for reference frames *)
+type delta = dexp Assoc.context
+
+(* Coordinate systems *)
+(* Stores information on every member element and function of coordinate systems *)
+type chi = coordinate_element Assoc.context
+
+(* Prototypes *)
+(* Stores information on every object and function permission of prototypes *)
+type omega = prototype_element Assoc.context
 
 (* Function definitions *)
 (* Stores the full type and parameterization of each function *)
@@ -34,20 +46,22 @@ type phi = fn_typ Assoc.context
 (* Note that the resulting thing could be a call with a concrete parameterization, hence the typ list (which is empty for matrices) *)
 type psi = ((typ * fn_inv) list) Assoc.context
 
-let fresh = Assoc.empty
-
 (* A type to contain every context to simplify definitions *)
 type contexts = {
-    d : delta;
+    t : tau;
     m : mu;
     g : gamma;
+    d : delta;
+    c : chi;
+    o : omega;
     p : phi;
     ps : psi;
     pm : parameterization;
     meta : metadata
 }
 
-let init_contexts meta = {d=fresh; m=fresh; g=fresh; p=fresh; ps=fresh; pm=fresh; meta=meta}
+let init_contexts meta = {t=Assoc.empty; m=Assoc.empty; g=Assoc.empty; d=Assoc.empty;
+    c=Assoc.empty; o=Assoc.empty; p=Assoc.empty; ps=Assoc.empty; pm=Assoc.empty; meta=meta}
 
 let w_d cx (d' : delta) = {cx with d=d'}
 let w_m cx (m' : mu) = {cx with m=m'}
@@ -59,8 +73,8 @@ let w_meta cx (meta' : metadata) = {cx with meta=meta'}
 
 let typ_ignore (t : typ) : unit = ignore t
 let constrain_ignore (c : constrain) : unit = ignore c
-let string_of_delta (d : delta) = Assoc.to_string 
-    (fun (pm, t) -> "(" ^ string_of_parameterization pm ^ ", " ^ string_of_typ t ^ ")") d
+let string_of_tau (t : tau) = Assoc.to_string 
+    (fun (pm, t') -> "(" ^ string_of_parameterization pm ^ ", " ^ string_of_typ t' ^ ")") t
 let string_of_fn_inv ((s, tl) : fn_inv) = s ^ "<" ^ string_of_list string_of_typ tl ^ ">"
 let string_of_psi (ps : psi) = Assoc.to_string 
     (fun x -> string_of_list (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_fn_inv p ^ ")") x) ps
@@ -73,17 +87,6 @@ let rec unwrap_abstyp (cx: contexts) (s: string)  : constrain =
         | p -> p
     else raise (TypeExceptionMeta ("AbsTyp " ^ s 
         ^ " not found in parameterization " ^ (string_of_parameterization cx.pm), cx.meta))
-
-let as_matrix_pair (cx: contexts) (t: typ) : typ * typ =
-    debug_print ">> as_matrix_pair";
-    (* Checks whether the given abstract type is a vector *)
-    let fail _ = failwith ("Cannot treat " ^ (string_of_typ t) ^ " as a mtrix") in
-    match t with
-    | TransTyp (t1, t2) -> (t1, t2)
-    | AbsTyp s -> (match unwrap_abstyp cx s with
-        | TypConstraint (TransTyp (t1, t2)) -> (t1, t2)
-        | _ -> fail ())
-    | _ -> fail ()
 
 let rec reduce_dexp (cx: contexts) (s : dexp Assoc.context) (d : dexp) : dexp =
     debug_print (">> reduce_dexp " ^ string_of_dexp d);
@@ -101,7 +104,7 @@ let rec reduce_dexp (cx: contexts) (s : dexp Assoc.context) (d : dexp) : dexp =
         | _ -> d)
 
 let dim_top (cx: contexts) (d: dexp) : int =
-    match (reduce_dexp cx fresh d) with
+    match (reduce_dexp cx Assoc.empty d) with
     | DimNum n -> n
     | _ -> failwith ("Unexpected inclusion of an abstract type in dimension calculation of " ^ (string_of_dexp d)
         ^ "at line " ^ string_of_int (cx.meta).pos_lnum)
@@ -112,7 +115,6 @@ let rec replace_abstype (c: typ Assoc.context) (t: typ) : typ =
     match t with
     | ParTyp (s, tl) -> ParTyp (s, List.map rep_abs_int tl)
     | AbsTyp s -> Assoc.lookup s c
-    | TransTyp (t1, t2) -> TransTyp (rep_abs_int t1, rep_abs_int t2)
     | _ -> t
 
 (* Given a parameterization and a list of types being invoked on that parameterization *)
@@ -139,12 +141,12 @@ let rec match_parameterization_unsafe (cx: contexts) (dim_pm: parameterization) 
         ^ "<" ^ string_of_list string_of_typ pml ^ ">", cx.meta))
 
 (* Looks up delta without checking the bounds on the pml (hence, 'unsafe') *)
-and delta_lookup_unsafe (cx: contexts) (pml: typ list) (x: id) : typ =
+and tau_lookup_unsafe (cx: contexts) (pml: typ list) (x: id) : typ =
     (* If the given type evaluates to a declared tag, return it *)
     (* If the return type would be a top type, resolve the dimension to a number *)
     debug_print ">> delta_lookup_unsafe";
     if Assoc.mem x cx.d then
-    let (dim_pm, t) = Assoc.lookup x cx.d in
+    let (dim_pm, t) = Assoc.lookup x cx.t in
     let (tc, ic) = (match_parameterization_unsafe cx dim_pm pml) in
     let reduced = replace_abstype tc t in
     (match reduced with
@@ -159,11 +161,11 @@ and arr_dim_constrain (cx: contexts) (t: typ) : dexp option =
     | ArrTyp (_, d) -> Some d
     (* We ignore arrays of arrays for this function, as it is intended to only work on a single dimension *)
     | VecTyp n -> Some (DimNum n)
-    | ParTyp (VarTyp s, pml) -> arr_dim_constrain cx (delta_lookup_unsafe cx pml s)
-    | VarTyp s -> arr_dim_constrain cx (delta_lookup_unsafe cx [] s)
+    | ParTyp (VarTyp s, pml) -> arr_dim_constrain cx (tau_lookup_unsafe cx pml s)
+    | VarTyp s -> arr_dim_constrain cx (tau_lookup_unsafe cx [] s)
     | AbsTyp s -> (match unwrap_abstyp cx s with
         | TypConstraint t' -> arr_dim_constrain cx t'
-        | GenVecTyp -> Some (DimVar s)
+        | GenArrTyp c -> Some (DimVar s)
         | _ -> None)
     | _ -> None
 
@@ -186,8 +188,8 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     | TypedAst.IntTyp -> IntTyp
     | TypedAst.FloatTyp -> FloatTyp
     | TypedAst.VecTyp n -> VecTyp n
-    | TypedAst.MatTyp (n1, n2) -> TransTyp(VecTyp n1, VecTyp n2)
-    | TypedAst.TransTyp (s1, s2) -> TransTyp(etyp_to_typ s1, etyp_to_typ s2)
+    | TypedAst.MatTyp (n1, n2) -> ArrTyp(ArrTyp(FloatTyp, DimNum n1), DimNum n2)
+    | TypedAst.TransTyp (s1, s2) -> failwith "unimplemented removal of transtyp from typedast"
     | TypedAst.SamplerTyp n -> SamplerTyp n
     | TypedAst.SamplerCubeTyp -> SamplerCubeTyp
     | TypedAst.AbsTyp (s, c) -> AbsTyp s
@@ -198,8 +200,8 @@ and constrain_to_constrain (c : TypedAst.constrain) : constrain =
     match c with
     | TypedAst.AnyTyp -> AnyTyp
     | TypedAst.GenTyp -> GenTyp
-    | TypedAst.GenMatTyp -> GenMatTyp
-    | TypedAst.GenVecTyp -> GenVecTyp
+    | TypedAst.GenMatTyp -> GenArrTyp(TypConstraint(FloatTyp))
+    | TypedAst.GenVecTyp -> GenArrTyp(GenArrTyp(TypConstraint(FloatTyp)))
     | TypedAst.ETypConstraint t -> TypConstraint (etyp_to_typ t)
 
 let rec tag_erase_param (cx: contexts) (t: typ) : TypedAst.etyp = 
@@ -210,33 +212,26 @@ let rec tag_erase_param (cx: contexts) (t: typ) : TypedAst.etyp =
         TypedAst.AbsTyp (s, constrain_erase cx c)
         else raise (TypeExceptionMeta ("AbsTyp " ^ s 
             ^ " was not found in function parameterization definition", cx.meta))
-    | _ -> frame_erase cx t
+    | _ -> typ_erase cx t
 
-and frame_erase (cx: contexts) (t : typ) : TypedAst.etyp =
+and typ_erase (cx: contexts) (t : typ) : TypedAst.etyp =
     debug_print ">> tag_erase";
     let d_to_c opd = match opd with
-    | Some (DimNum i) -> TypedAst.VecTyp i 
-    | Some (DimVar s) -> TypedAst.AbsTyp (s, TypedAst.GenVecTyp)
-    | _ -> raise (TypeExceptionMeta ("No valid vector interpretation of " ^ string_of_typ t, cx.meta)) in
+    | DimNum i -> ConstInt(i) 
+    | DimVar s -> ConstVar(s)
+    | _ -> raise (TypeExceptionMeta ("No valid concrete interpretation of " ^ string_of_typ t, cx.meta)) in
     match t with
     | UnitTyp -> TypedAst.UnitTyp
     | BoolTyp -> TypedAst.BoolTyp
     | IntTyp -> TypedAst.IntTyp
     | FloatTyp -> TypedAst.FloatTyp
-    | ArrTyp (t, d) -> ArrTyp (frame_erase cx t, c)
-    | ArrParsedTyp _
-    | VecTyp _
-    | ArrLit _
-    | CoordTyp _
-    | VarTyp _
-    | ParTyp (VarTyp _, _) -> d_to_c (arr_dim_constrain cx t)
-    | ParTyp (t', _) -> frame_erase cx t'
-    | TransTyp (t1, t2) -> 
-    begin
-        match (arr_dim_constrain cx t1, arr_dim_constrain cx t2) with
-        | (Some (DimNum n1), Some (DimNum n2)) -> TypedAst.MatTyp (n2, n1)
-        | _ -> TypedAst.TransTyp (frame_erase cx t1, frame_erase cx t2)
-    end
+    | ArrLitTyp (t', i) -> TypedAst.ArrTyp (typ_erase cx t', ConstInt(i))
+    | ArrTyp (t', d) -> TypedAst.ArrTyp (typ_erase cx t', d_to_c d)
+    | VecTyp n -> TypedAst.VecTyp(n)
+    | CoordTyp _ -> failwith "unimplemented coord_typ erasure"
+    | VarTyp v -> failwith "unimplemented vartyp erasure"
+    | ParTyp (VarTyp _, _) -> failwith "unimplemented partyp erasure"
+    | ParTyp (t', _) -> typ_erase cx t'
     | SamplerTyp i -> TypedAst.SamplerTyp i
     | SamplerCubeTyp -> TypedAst.SamplerCubeTyp
     | AbsTyp s -> tag_erase_param cx t
@@ -247,9 +242,8 @@ and constrain_erase (cx: contexts) (c: constrain) : TypedAst.constrain =
     match c with
     | AnyTyp -> TypedAst.AnyTyp
     | GenTyp -> TypedAst.GenTyp
-    | GenMatTyp -> TypedAst.GenMatTyp
-    | GenVecTyp -> TypedAst.GenVecTyp
-    | TypConstraint t -> TypedAst.ETypConstraint (tag_erase cx t)
+    | GenArrTyp _ -> failwith "unimplemented genarrtyp erasure"
+    | TypConstraint t -> TypedAst.ETypConstraint (typ_erase cx t)
 
 let rec is_typ_eq (cx: contexts) (t1: typ) (t2: typ) : bool =
     match (t1, t2) with
@@ -258,33 +252,31 @@ let rec is_typ_eq (cx: contexts) (t1: typ) (t2: typ) : bool =
     | IntTyp, IntTyp
     | FloatTyp, FloatTyp
     | SamplerCubeTyp, SamplerCubeTyp -> true
-    | TopVecTyp d1, TopVecTyp d2 -> dim_top cx d1 = dim_top cx d2
-    | UntaggedVecTyp n1, UntaggedVecTyp n2
-    | BotVecTyp n1, BotVecTyp n2
+    | VecTyp n1, VecTyp n2
     | SamplerTyp n1, SamplerTyp n2 -> n1 = n2
     | VarTyp s1, VarTyp s2
     | AbsTyp s1, AbsTyp s2 -> s1 = s2
-    | TransTyp (l1, r1), TransTyp (l2, r2) -> is_typ_eq cx l1 l2 && is_typ_eq cx r1 r2
+    | CoordTyp (l1, r1), CoordTyp(l2, r2) -> is_typ_eq cx l1 l2 && is_typ_eq cx r1 r2
     | ParTyp (t1, tl1), ParTyp (t2, tl2) -> is_typ_eq cx t1 t2 && 
         (if (List.length tl1 = List.length tl2) 
         then List.fold_left2 ((fun acc t1' t2' -> acc && is_typ_eq cx t1' t2')) true tl1 tl2
         else false)
-    | ArrTyp (t1, n1), ArrTyp (t2, n2) -> n1 = n2 && is_typ_eq cx t1 t2
+    | ArrTyp (t1, d1), ArrTyp (t2, d2) -> failwith "unimplemented dimension equality checking"
     | _ -> false
 
 let rec is_subtype (cx: contexts) (to_check : typ) (target : typ) : bool =
     debug_print (">> is_subtype " ^ (string_of_pair (string_of_typ to_check) (string_of_typ target)));
     let abstyp_step (s: string) : bool =
         if Assoc.mem s cx.pm 
-        then match Assoc.lookup s cx.pm with
+        then match Assoc.lookup s cx.pm with 
         | TypConstraint t -> is_subtype cx t target
-        | GenVecTyp -> (match target with | TopVecTyp (DimVar _) -> true | _ -> false) (* Super special case for vec <: vec<n> (which is true!) *)
+        | GenArrTyp c -> (match target with | ArrTyp (_, (DimVar _)) -> true | _ -> false) (* Super special case for vec <: vec<n> (which is true!) *)
         | _ -> false
         else raise (TypeExceptionMeta ("AbsTyp " ^ s ^ " not found in parameterization", cx.meta))
     in
     match (to_check, target) with 
     (* A top type with a single variable is the same as genvectyp except for the untagged type *)
-    | BotVecTyp _, TopVecTyp (DimVar _) -> true
+    | ArrLit _, TopVecTyp (DimVar _) -> true
     | VarTyp _, TopVecTyp (DimVar _) -> true
     | ParTyp (VarTyp _, _), TopVecTyp (DimVar _) -> true
     | TopVecTyp _, TopVecTyp (DimVar _) -> true

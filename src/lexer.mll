@@ -32,7 +32,7 @@ rule read = parse
   | "object"        { OBJECT }
   | "coordinate"    { COORDINATE }
   | "dimension"     { DIMENSION }  
-  | "tag"         { FRAME }
+  | "tag"           { FRAME }
   | "type"          { TYP }
   | "is"            { IS }
   | "with"          { WITH }
@@ -49,7 +49,6 @@ rule read = parse
   | "float"         { FLOATTYP }
   | "auto"          { AUTOTYP }
   | "samplerCube"   { SAMPLERCUBE }
-  | mat as mat      { MATTYP mat }
   | "bool"          { BOOLTYP }
   | "+"             { PLUS }
   | "-"             { MINUS }
@@ -74,7 +73,6 @@ rule read = parse
   | "}"             { RBRACE }
   | "("             { LPAREN }
   | ")"             { RPAREN }
-  | "->"            { TRANS }
   | "="             { GETS }
   | "=="            { EQ }
   | "<="            { LEQ }

@@ -18,23 +18,21 @@ let rec string_of_typ (t: typ) : string =
     | BoolTyp -> "bool"
     | IntTyp -> "int"
     | FloatTyp -> "float"
-    | ArrParsedTyp (t, d) -> string_of_typ t ^ "[" ^ string_of_list string_of_dexp d ^ "]"
     | ArrTyp (t, d) -> string_of_typ t ^ "[" ^ string_of_dexp d ^ "]"
     | VecTyp n -> "vec"^(string_of_int n)
-    | ArrLit (t, n) -> string_of_typ t ^ "[" ^ string_of_int n ^ "]%lit"
+    (* Essentially the bottom type for all arrays *)
+    | ArrLitTyp (t, n) -> string_of_typ t ^ "[" ^ string_of_int n ^ "]%lit"
     | VarTyp s -> s
     | CoordTyp (t1, t2) -> string_of_typ t1 ^ "." ^ string_of_typ t2
     | ParTyp (t, tl) -> string_of_typ t ^ "<" ^ (string_of_list string_of_typ tl) ^ ">"
-    | TransTyp (t1, t2) -> string_of_typ t1 ^ "->" ^ string_of_typ t2
     | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D "
     | SamplerCubeTyp -> "samplerCube"
     | AbsTyp s -> "`" ^ s
 
-let string_of_constraint (c: constrain) : string =
+let rec string_of_constraint (c: constrain) : string =
     match c with
     | GenTyp -> "genTyp"
-    | GenMatTyp -> "mat"
-    | GenVecTyp -> "vec"
+    | GenArrTyp c -> "arr of " ^ string_of_constraint c
     | TypConstraint t -> string_of_typ t
     | AnyTyp -> ""
 
