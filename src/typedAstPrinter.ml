@@ -13,8 +13,6 @@ let rec string_of_typ (t: etyp) : string =
     | VecTyp v -> if v = 1 then "float" else "vec" ^ (string_of_int v)
     | MatTyp (m1, m2) -> "mat" ^ (string_of_int m1) ^ "x" ^ (string_of_int m2)
     | TransTyp (s1, s2) -> (string_of_typ s1) ^ "->" ^ (string_of_typ s2)
-    | SamplerTyp n -> "sampler" ^ (string_of_int n) ^ "D"
-    | SamplerCubeTyp -> "samplerCube"
     | AbsTyp (s, typ) -> "`" ^ s
     | ArrTyp (t, c) -> string_of_typ t ^ "[" ^ string_of_constvar c ^ "]"
 

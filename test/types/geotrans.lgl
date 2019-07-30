@@ -2,7 +2,7 @@ declare float cos(float f);
 declare float sqrt(float f);
 declare float acos(float f);
 
-prototype {
+prototype geometry {
     object point<r>;
     object vector<r>;
     object direction<r>;
@@ -22,13 +22,13 @@ prototype {
     matrix<r1, r3> *(matrix<r1, r2>, matrix<r2, r3>);
 }
 
-coordinate cart3 {
+coordinate cart3 : geometry {
     dimension 3;
 
-    point<r> is float[3];
-    vector<r> is float[3];
-    direction<r> is float[3];
-    matrix<r1, r2> is float[3][3];
+    object point<r> is float[3];
+    object vector<r> is float[3];
+    object direction<r> is float[3];
+    object matrix<r1, r2> is float[3][3];
 
     vector<r> +(vector<r> x, vector<r> y) {
         return x + y;
@@ -75,11 +75,13 @@ coordinate cart3 {
     }
 }
 
-coordinate hom {
-    point<r> = float[4];
-    vector<r> = float[4];
-    direction<r> = float[4];
-    matrix<r1, r2> = float[4, 4];
+coordinate hom : geometry {
+    dimension 3;
+
+    object point<r> is float[4];
+    object vector<r> is float[4];
+    object direction<r> is float[4];
+    object matrix<r1, r2> is float[4][4];
 
     vector<r2> *(matrix<r1, r2> m, vector<r1> v) {
         return m * v;

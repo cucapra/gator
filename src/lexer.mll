@@ -11,8 +11,6 @@ exception SyntaxError of string
 let white = [' ' '\t']
 let num = ['0'-'9']+
 let letter = ['a'-'z' 'A'-'Z']
-let mat = "mat" num ['x'] num
-let sampler = "sampler" num ['D']
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let floatval = ((['0'-'9']*['.']['0'-'9']+)|(['0'-'9']+['.']['0'-'9']*))
 let newline = ['\n' '\r']
@@ -48,7 +46,6 @@ rule read = parse
   | "int"           { INTTYP }
   | "float"         { FLOATTYP }
   | "auto"          { AUTOTYP }
-  | "samplerCube"   { SAMPLERCUBE }
   | "bool"          { BOOLTYP }
   | "+"             { PLUS }
   | "-"             { MINUS }
@@ -84,8 +81,6 @@ rule read = parse
   | ";"             { SEMI }
   | "."             { DOT }
   | ":"             { COLON }
-  | "`"             { BACKTICK }
-  | sampler as sm   { SAMPLER sm }
   | "void"          { VOID }
   | "return"        { RETURN }
   | "declare"       { DECLARE }

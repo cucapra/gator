@@ -19,15 +19,10 @@ let rec string_of_typ (t: typ) : string =
     | IntTyp -> "int"
     | FloatTyp -> "float"
     | ArrTyp (t, d) -> string_of_typ t ^ "[" ^ string_of_dexp d ^ "]"
-    | VecTyp n -> "vec"^(string_of_int n)
     (* Essentially the bottom type for all arrays *)
     | ArrLitTyp (t, n) -> string_of_typ t ^ "[" ^ string_of_int n ^ "]%lit"
-    | VarTyp s -> s
-    | CoordTyp (t1, t2) -> string_of_typ t1 ^ "." ^ string_of_typ t2
-    | ParTyp (t, tl) -> string_of_typ t ^ "<" ^ (string_of_list string_of_typ tl) ^ ">"
-    | SamplerTyp i -> "sampler" ^ (string_of_int i) ^ "D "
-    | SamplerCubeTyp -> "samplerCube"
-    | AbsTyp s -> "`" ^ s
+    | CoordTyp (s, t) -> s ^ "." ^ string_of_typ t
+    | ParTyp (s, tl) -> s ^ "<" ^ (string_of_list string_of_typ tl) ^ ">"
 
 let rec string_of_constraint (c: constrain) : string =
     match c with
@@ -109,14 +104,15 @@ and string_of_comm (c: comm) : string =
         ^ string_of_acomm u ^ ") " ^ block_string cl
     | Return None -> "return;"
     | Return Some e -> "return" ^ (string_of_aexp e) ^ ";"
-    | FnCall (n, tl, e) -> string_of_typ n ^ "<" ^ string_of_list string_of_typ tl ^ ">" 
+    | FnCall (s, tl, e) -> s ^ "<" ^ string_of_list string_of_typ tl ^ ">" 
         ^ "(" ^ string_of_list string_of_aexp e ^ ");"
 
 let rec string_of_gen_typ_decl (pred: string) ((s, pmd, t) : typ_decl) : string =
     pred ^ " " ^ s ^ "<" ^ (string_of_parameterization_decl pmd) ^ ">"
     ^ " is " ^ (string_of_typ t) ^ ";"
 
-let string_of_frame_decl (t : typ_decl) = string_of_gen_typ_decl "frame" t
+let string_of_frame_decl ((f, i, s) : frame_decl) = 
+    f ^ " dimension " ^ string_of_int i ^ string_of_option_removed (fun x -> " is " ^ x) s
 let string_of_typ_decl (t : typ_decl) = string_of_gen_typ_decl "type" t
 
 let string_of_gen_fn (f : 'a -> string) ((g, cl) : 'a gen_fn) : string =
@@ -131,8 +127,8 @@ let string_of_prototype_element (pe : prototype_element) : string =
     | ProtoFnDecl f -> string_of_fn_decl f ^ ";"
     | ProtoBinopDecl f -> string_of_gen_fn_decl string_of_binop f ^ ";"
 
-let string_of_prototype (p : prototype) : string = 
-    "prototype {\n" ^ string_of_separated_list "\n" string_of_prototype_element p ^ "}"
+let string_of_prototype ((s, p) : prototype) : string = 
+    "prototype " ^ s ^ "{\n" ^ string_of_separated_list "\n" string_of_prototype_element p ^ "}"
 
 let string_of_coordinate_element (ce : coordinate_element) : string = 
     match ce with
@@ -141,8 +137,8 @@ let string_of_coordinate_element (ce : coordinate_element) : string =
     | CoordFnDecl f -> string_of_fn f
     | CoordBinopDecl f -> string_of_gen_fn string_of_binop f
 
-let string_of_coordinate ((x, n, cl) : coordinate) : string =
-    "coordinate " ^ "{\n" ^ "dimension " ^ string_of_int n ^ ";"
+let string_of_coordinate ((x, p, n, cl) : coordinate) : string =
+    "coordinate " ^ x ^ " : " ^ p ^ "{\n" ^ "dimension " ^ string_of_int n ^ ";"
     ^ string_of_list (fun ce -> string_of_coordinate_element ce ^ "\n") cl ^ "}"
 
 let string_of_declare (f: fn_decl) : string = 

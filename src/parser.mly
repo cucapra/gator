@@ -5,11 +5,6 @@ open GatorAst
 open Str
 
 exception ParseException of string
-
-(* let matr = Str.regexp "mat\\([0-9]+\\)x\\([0-9]+\\)" *)
-let vec = Str.regexp "vec\\([0-9]+\\)"
-let mat = Str.regexp "mat\\([0-9]+\\)"
-
 %}
 
 (* Tokens *)
@@ -18,8 +13,6 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token <int> NUM
 %token <float> FLOAT
 %token <string> ID
-%token SAMPLERCUBE
-%token <string> SAMPLER
 %token PLUS
 %token MINUS
 %token TIMES
@@ -76,7 +69,6 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token VOID
 %token DECLARE
 %token COLON
-%token BACKTICK
 %token GENTYPE
 %token LWICK
 %token RWICK
@@ -94,7 +86,6 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %left AND OR
 %left NOT EQ LEQ GEQ LBRACK 
 %left LWICK RWICK 
-%left LPAREN
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
@@ -127,19 +118,24 @@ let terminated_list(X, Y) ==
   | x = X+; y = Y;
     <>
 
+let combined(A, B) == a = A; b = B; { (a, b) }
+let fst(T) == (a, b) = T; { a }
+let snd(T) == (a, b) = T; { b }
+
 let aterm ==
   | t = term;
     { (t, $startpos) }
 
 let term == 
-  | PROTOTYPE; LBRACE; p = list(prototype_element); RBRACE;
-    <Prototype> 
-  | COORDINATE; x = ID; LBRACE; d = dimension; c = list(coordinate_element); RBRACE;
+  | PROTOTYPE; x = ID; LBRACE; p = list(prototype_element); RBRACE;
+    <Prototype>
+  | COORDINATE; x = ID; COLON; p = ID;
+    LBRACE; d = dimension; SEMI; c = list(coordinate_element); RBRACE;
     <Coordinate>
-  | FRAME; x = ID; pm = parameterization(constrained); IS; t = typ; SEMI;
-    { FrameDecl(x, pm, t) }
+  | FRAME; x = ID; d = dimension; s = snd(combined(IS, ID))?; SEMI;
+    <FrameDecl>
   | TYP; x = ID; pm = parameterization(constrained); IS; t = typ; SEMI;
-    { TypDecl(x, pm, t) }
+    <TypDecl>
   | DECLARE; d = decl_extern; SEMI; 
     <ExternDecl>
   | m = modification*; sq = storage_qual; t = typ;
@@ -167,11 +163,11 @@ let with_statement ==
     <>
 
 let dimension ==
-  | DIMENSION; n = NUM; SEMI;
+  | DIMENSION; n = NUM;
     <>
 
 let coordinate_element ==
-  | x = ID; p = parameterization(constrained); GETS; t = typ;
+  | OBJECT; x = ID; p = parameterization(constrained); IS; t = typ;
     <CoordObjectAssign>
   | f = gen_fn(ID);
     <CoordFnDecl>
@@ -236,23 +232,27 @@ let acomm_element ==
   | ce = comm_element;
     { (ce, $startpos) }
 
+let assignop ==
+  | PLUSEQ;
+    { Plus }
+  | MINUSEQ;
+    { Minus }
+  | TIMESEQ;
+    { Times }
+  | DIVEQ;
+    { Div }
+  | CTIMESEQ;
+    { CTimes }
+
 let comm_element == 
   | SKIP;
     { Skip }
-  | (m, t) = terminated_list(modification, typ); x = ID; GETS; e1 = aexp; 
+  | (m, t) = terminated_list(modification, typ); x = ID; GETS; e = aexp; 
     < Decl >
-  | x = ID; GETS; e1 = aexp; 
+  | x = ID; GETS; e = aexp; 
     < Assign >
-  | x = ID; PLUSEQ; e1 = aexp; 
-    { AssignOp(x, Plus, e1) }
-  | x = ID; MINUSEQ; e1 = aexp; 
-    { AssignOp(x, Minus, e1) }
-  | x = ID; TIMESEQ; e1 = aexp; 
-    { AssignOp(x, Times, e1) }
-  | x = ID; DIVEQ; e1 = aexp; 
-    { AssignOp(x, Div, e1) }
-  | x = ID; CTIMESEQ; e1 = aexp; 
-    { AssignOp(x, CTimes, e1) }
+  | x = ID; a = assignop; e = aexp; 
+    < AssignOp >
   | PRINT; e = aexp; 
     < Print >
   | RETURN; e = aexp?;
@@ -261,8 +261,8 @@ let comm_element ==
     < Inc >
   | x = ID; DEC; 
     < Dec >
-  | t = typ; p = parameterization(typ); a = arguments;
-    <FnCall>
+  | x = ID; p = parameterization(typ); a = arguments;
+    < FnCall >
 
 let constrain == 
   | VEC;
@@ -281,37 +281,24 @@ let dexp :=
     <DimNum>
   | x = ID;
     <DimVar>
-  
-let combined(A, B) == A; B; {}
 
 let typ :=
   | AUTOTYP;
     { AutoTyp }
-  | BACKTICK; e = ID;
-    <AbsTyp>
   | BOOLTYP;
     { BoolTyp }
   | FLOATTYP;
     { FloatTyp }
   | INTTYP;
     { IntTyp }
-  | t = typ; LBRACK; dl = separated_list(combined(LBRACK, RBRACK), dexp); RBRACK;
-    { List.fold_right (fun d acc -> ArrTyp(acc, d)) dl t }
-  | t1 = typ; DOT; t2 = typ;
-    <CoordTyp>
-  | t = typ; pt = delimited(LWICK, separated_list(COMMA, typ), RWICK);
-    <ParTyp>
-  | x = ID;
-    { VarTyp x }
-  | SAMPLERCUBE;
-    { SamplerCubeTyp }
-  | s = SAMPLER;
-    { let len = String.length s in
-      let dim = String.sub s 7 (len-7) in 
-      let dim_lst = Str.split_delim (regexp "D") dim in
-      SamplerTyp (int_of_string(List.nth dim_lst 0)) }
   | VOID;
     { UnitTyp }
+  | t = typ; LBRACK; dl = separated_list(combined(LBRACK, RBRACK), dexp); RBRACK;
+    { List.fold_right (fun d acc -> ArrTyp(acc, d)) dl t }
+  | x = ID; DOT; t = typ;
+    <CoordTyp>
+  | x = ID; pt = parameterization(typ);
+    <ParTyp>
 
 let storage_qual ==
   | IN;
@@ -347,11 +334,11 @@ let aexp ==
 
 let exp:=
   | LPAREN; a = exp; RPAREN;
-    { a }
+    <>
   | v = value;
-    { Val v }
+    <Val>
   | x = ID;
-    { Var x }
+    <Var>
   | e1 = aexp; op = binop; e2 = aexp;
     <Binop>
   | u = unop; e = aexp;
@@ -361,9 +348,9 @@ let exp:=
   | LBRACK; e = separated_list(COMMA, aexp); RBRACK; 
     <Arr>
   | e = aexp; AS; t = typ;
-    { As(e, t) }
+    <As>
   | e = aexp; IN; t = typ;
-    { In(e, t) }
+    <In>
   | e = aexp; DOT; s = ID;
     { Unop(Swizzle s,e) }
   | x = ID; LBRACK; e = aexp; RBRACK;

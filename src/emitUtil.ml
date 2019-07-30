@@ -12,8 +12,6 @@ let rec replace_type (et : etyp) (t : etyp) (r : etyp) : etyp =
         | VecTyp m, VecTyp n -> m == n
         | MatTyp(k, l), MatTyp(m, n) -> k == m && l == n
         | TransTyp(et1, et2), TransTyp(et3, et4) -> eq et1 et3 && eq et2 et4
-        | SamplerTyp m, SamplerTyp n -> m == n
-        | SamplerCubeTyp, SamplerCubeTyp -> true
         | AbsTyp(x, _), AbsTyp(y, _) -> debug_print (x ^ " " ^ y); debug_print (string_of_bool (x = y)); x = y
         | _, _ -> false
     in

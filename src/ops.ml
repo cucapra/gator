@@ -254,8 +254,6 @@ let rec default_value (t : etyp) =
     | VecTyp n -> VecLit (init n 0.)
     | MatTyp (m, n) -> MatLit (init m (init n 0.))
     | TransTyp (t1, t2) -> Unit
-    | SamplerTyp n -> Unit
-    | SamplerCubeTyp -> Unit
     | AbsTyp _ -> Unit
     | ArrTyp _ -> Unit
     

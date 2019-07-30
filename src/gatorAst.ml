@@ -17,15 +17,10 @@ type typ =
     | BoolTyp
     | IntTyp
     | FloatTyp
-    | ArrTyp of typ * dexp (* i.e. float[5] or bool[2][3] *)
-    | VecTyp of int
     | ArrLitTyp of typ * int (* Literals such as [0., 1.] or [true, false] -- constant length *)
-    | VarTyp of id (* i.e. color *)
-    | CoordTyp of typ * typ (* i.e. cart.point *)
-    | ParTyp of typ * typ list (* i.e. point<model> or matrix<model, world> *)
-    | SamplerTyp of int
-    | SamplerCubeTyp
-    | AbsTyp of id (* i.e. `t *)
+    | ArrTyp of typ * dexp (* i.e. float[5] or bool[2][3] *)
+    | CoordTyp of string * typ (* i.e. cart.point *)
+    | ParTyp of string * typ list (* i.e. color or matrix<model, world> *)
 
 type constrain =
     (* Special constraint types *)
@@ -82,7 +77,9 @@ and comm =
     | If of if_block * if_block list * (acomm list) option  (* if - elif list - else *)
     | For of acomm * aexp * acomm * acomm list
     | Return of aexp option
-    | FnCall of typ * typ list * args (* e.g. f<model>(position) -- note that 'f' must be a string, but we treat it as a type to allow parsing of parametrized types *)
+    | FnCall of string * typ list * args (* Function invocation as a command *)
+    (* e.g. f<model>(position) -- note that 'f' must be a string, 
+    but we treat it as a type to allow parsing of parametrized types *)
 and if_block = aexp * acomm list
 
 (* General function declarations *)
@@ -94,19 +91,22 @@ type prototype_element =
     | ProtoObjectDecl of string * parameterization_decl
     | ProtoFnDecl of fn_decl
     | ProtoBinopDecl of binop gen_fn_decl
-type prototype = prototype_element list
+(* Name and list of declarations *)
+type prototype = string * prototype_element list
 
 type coordinate_element =
     | CoordObjectAssign of string * parameterization_decl * typ
     | CoordFnDecl of fn
     | CoordBinopDecl of binop gen_fn
-type coordinate = string * int * coordinate_element list
+(* Name, underlying prototype, dimension, and list of definitions *)
+type coordinate = string * string * int * coordinate_element list
 
+type frame_decl = string * int * string option
 type typ_decl = string * parameterization_decl * typ
 type global_var = modification list * storage_qual * typ * string * aexp option
 type extern_decl =
     | ExternFn of fn_decl
-    | ExternVar of (modification list * typ * aexp)
+    | ExternVar of modification list * typ * aexp
 
 (* Terms that make up a program *)
 (* In any order, we have:
@@ -119,7 +119,7 @@ type aterm = term astNode
 and term =
     | Prototype of prototype
     | Coordinate of coordinate
-    | FrameDecl of typ_decl
+    | FrameDecl of frame_decl
     | TypDecl of typ_decl
     | ExternDecl of extern_decl
     | GlobalVar of global_var

@@ -10,8 +10,6 @@ type etyp =
     | VecTyp of int
     | MatTyp of int * int
     | TransTyp of etyp * etyp
-    | SamplerTyp of int
-    | SamplerCubeTyp
     | AbsTyp of string * constrain
     | ArrTyp of etyp * constvar (* i.e. vec3[5] *)
 

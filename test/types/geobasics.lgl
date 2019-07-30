@@ -1,27 +1,27 @@
-prototype {
+prototype geometry {
     object point<r>;
     object vector<r>;
 }
 
-coordinate cart2 {
+coordinate cart2 : geometry {
     dimension 2;
 
     point<r> is float[2];
     vector<r> is float[2];
 }
-coordinate cart3 {
+coordinate cart3 : geometry {
     dimension 3;
 
     point<r> is float[3];
     vector<r> is float[3];
 }
-coordinate polar {
+coordinate polar : geometry {
     dimension 2;
     
     point<r> is float[2];
     vector<r> is float[2];
 }
-coordinate hom {
+coordinate hom : geometry {
     dimension 3;
 
     point<r> is float[4];

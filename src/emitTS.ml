@@ -16,8 +16,6 @@ let rec comp_type (t : etyp) : string =
     | VecTyp n -> "vec" ^ (string_of_int n)
     | MatTyp (m, n) -> "mat" ^ (string_of_int (max m n))
     | TransTyp (t1, t2) -> ("Cannot represent TransTyp " ^ comp_type t1 ^ comp_type t2 ^ " in Javascript")
-    | SamplerTyp n -> failwith "Cannot represent SamplerTyp in Javascript"
-    | SamplerCubeTyp -> failwith "Cannot represent SamplerCubeTyp in Javascript"
     | AbsTyp (x, _) -> "Cannot represent AbsTyp " ^ x ^ " in Javascript"
     | ArrTyp _ -> failwith "Cannot represent ArrTyp in Javascript"
 
@@ -151,7 +149,7 @@ let comp_assign (x : id) ((e, t) : texp) (s : SS.t) : string =
     | UnitTyp | BoolTyp | IntTyp | FloatTyp | AbsTyp _ -> x ^ "=" ^ (comp_exp e s) ^ ";"
     | VecTyp v -> "vec" ^ (string_of_int v) ^ ".copy(" ^ x ^ "," ^ (comp_exp e s) ^ ");"
     | MatTyp (m, n) -> "mat" ^ (string_of_int (max m n)) ^ ".copy(" ^ x ^ "," ^ (comp_exp e s) ^ ");"
-    | TransTyp _ | SamplerTyp _ | SamplerCubeTyp | ArrTyp _ -> comp_type t
+    | TransTyp _ | ArrTyp _ -> comp_type t
 
 let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
     debug_print ">> comp_comm_lst";
