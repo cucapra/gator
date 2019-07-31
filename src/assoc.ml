@@ -1,6 +1,5 @@
-(* A representation for a general context *)
+(* A association list representation for contexts *)
 (* A context is simply a finite map from strings to 'a  *)
-(* This implementation uses association lists. *)
 type 'a context = (string * 'a) list
 
 (* Make a new empty context. *)
@@ -13,8 +12,11 @@ let merge c1 c2 = c1 @ c2
 (* Raises Not_found if no binding *)
 let lookup x c = try List.assoc x c with _ -> failwith ("Undefined association member: " ^ x)
 
+(* Remove var from context *)
+let remove x c = List.remove_assoc x c
+
 (* Rebind var to value in context. *)
-let update x v c = let c' = (if List.mem_assoc x c then List.remove_assoc x c else c) in (x, v) :: c'
+let update x v c = (x, v) :: (List.remove_assoc x c)
 
 (* Produce bindings as an association list. *)
 let bindings c = c
@@ -25,7 +27,7 @@ let gen_context l = List.fold_left (fun acc (s, v) -> update s v acc) empty (Lis
 (* Check var exists in context *)
 let mem x c = List.mem_assoc x c
 
-let map f c = List.map (fun (s, x) -> (s, f x)) c
+let map f c = List.map (fun (x, v) -> (x, f v)) c
 
 let size c = List.length c
 

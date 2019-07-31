@@ -4,81 +4,8 @@ open GatorAstPrinter
 open Util
 open Printf
 open Str
-
-exception TypeException of string
-exception TypeExceptionMeta of string * metadata
-exception DimensionException of int * int
-
-(* For readability, especially with psi *)
-type fn_inv = string * typ list 
-
-(* Type definitions *)
-(* Stores supertype and possible parameterization information for the tag *)
-type tau = (parameterization * typ) Assoc.context
-
-(* Type and function modifiers *)
-(* Specifically the canonical and with keywords *)
-type mu = (modification list) Assoc.context
-
-(* Variable definitions *)
-(* Maps from variable names to the type of that variable *)
-type gamma = typ Assoc.context
-
-(* Dimension definitions *)
-(* Stores dimension information for reference frames *)
-type delta = dexp Assoc.context
-
-(* Coordinate systems *)
-(* Stores information on every member element and function of coordinate systems *)
-type chi = coordinate_element Assoc.context
-
-(* Prototypes *)
-(* Stores information on every object and function permission of prototypes *)
-type omega = prototype_element Assoc.context
-
-(* Function definitions *)
-(* Stores the full type and parameterization of each function *)
-type phi = fn_typ Assoc.context
-
-(* Transformation context *)
-(* Effectively has the type 'start->(target, f<pml>) list' for types start and target (both restricted implicitely to var types), *)
-(* function/matrix name f, and function parameter list pml *)
-(* Note that the resulting thing could be a call with a concrete parameterization, hence the typ list (which is empty for matrices) *)
-type psi = ((typ * fn_inv) list) Assoc.context
-
-(* A type to contain every context to simplify definitions *)
-type contexts = {
-    t : tau;
-    m : mu;
-    g : gamma;
-    d : delta;
-    c : chi;
-    o : omega;
-    p : phi;
-    ps : psi;
-    pm : parameterization;
-    meta : metadata
-}
-
-let init_contexts meta = {t=Assoc.empty; m=Assoc.empty; g=Assoc.empty; d=Assoc.empty;
-    c=Assoc.empty; o=Assoc.empty; p=Assoc.empty; ps=Assoc.empty; pm=Assoc.empty; meta=meta}
-
-let w_d cx (d' : delta) = {cx with d=d'}
-let w_m cx (m' : mu) = {cx with m=m'}
-let w_g cx (g' : gamma) = {cx with g=g'}
-let w_p cx (p' : phi) = {cx with p=p'}
-let w_ps cx (ps' : psi) = {cx with ps=ps'}
-let w_pm cx (pm' : parameterization) = {cx with pm=pm'}
-let w_meta cx (meta' : metadata) = {cx with meta=meta'}
-
-let typ_ignore (t : typ) : unit = ignore t
-let constrain_ignore (c : constrain) : unit = ignore c
-let string_of_tau (t : tau) = Assoc.to_string 
-    (fun (pm, t') -> "(" ^ string_of_parameterization pm ^ ", " ^ string_of_typ t' ^ ")") t
-let string_of_fn_inv ((s, tl) : fn_inv) = s ^ "<" ^ string_of_list string_of_typ tl ^ ">"
-let string_of_psi (ps : psi) = Assoc.to_string 
-    (fun x -> string_of_list (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_fn_inv p ^ ")") x) ps
-let line_number (meta : metadata) = ("Line: " ^ string_of_int(meta.pos_lnum))
+open CheckUtil
+open Contexts
 
 let rec unwrap_abstyp (cx: contexts) (s: string) : constrain =
     debug_print ">> unwrap_abstyp";
@@ -133,16 +60,16 @@ let tau_lookup_unsafe (cx: contexts) (pml: typ list) (x: id) : typ =
     (* If the given type evaluates to a declared tag, return it *)
     (* If the return type would be a top type, resolve the dimension to a number *)
     debug_print ">> delta_lookup_unsafe";
-    if Assoc.mem x cx.d then
-    let (dim_pm, t) = Assoc.lookup x cx.t in
-    let tc = match_parameterization_unsafe cx dim_pm pml in
-    let reduced = replace_abstype tc t in
-    (* TODO *)
-    (* This probably needs to be updated, but I'm keeping it for early errors *)
-    (match reduced with
-    | ArrTyp (t, d) -> ArrTyp (t, reduce_dexp cx d)
-    | _ -> reduced)
-    else raise (TypeExceptionMeta ("Unknown tag " ^ x, cx.meta))
+    match find cx x with | Some Tau t ->
+        let (dim_pm, t) = Assoc.lookup x cx.t in
+        let tc = match_parameterization_unsafe cx dim_pm pml in
+        let reduced = replace_abstype tc t in
+        (* TODO *)
+        (* This probably needs to be updated, but I'm keeping it for early errors *)
+        (match reduced with
+        | ArrTyp (t, d) -> ArrTyp (t, reduce_dexp cx d)
+        | _ -> reduced)
+    | _ -> raise (TypeExceptionMeta ("Unknown type " ^ x, cx.meta))
 
 let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     debug_print ">> etyp_to_typ";
