@@ -8,14 +8,15 @@ exception TypeExceptionMeta of string * metadata
 exception DimensionException of int * int
 
 (* Produces an empty set of gator contexts with a starting metadata *)
-let init_contexts meta = let b = 
+let init meta = let b = 
   {t=Assoc.empty; g=Assoc.empty; d=Assoc.empty; 
   c=Assoc.empty; o=Assoc.empty; l=Assoc.empty} in
-  {m=Assoc.empty; p=Assoc.empty; ps=Assoc.empty; meta=meta; _bindings=b }
+  {m=Assoc.empty; p=Assoc.empty; ps=Assoc.empty; pm=Assoc.empty; meta=meta; _bindings=b }
 
 let with_m cx m' = {cx with m=m'}
 let with_p cx p' = {cx with p=p'}
 let with_ps cx ps' = {cx with ps=ps'}
+let with_pm cx pm' = {cx with pm=pm'}
 let with_meta cx meta' = {cx with meta=meta'}
 
 let get_m cx x = if Assoc.mem x cx.m then Assoc.lookup x cx.m else 
@@ -24,6 +25,8 @@ let get_p cx x = if Assoc.mem x cx.p then Assoc.lookup x cx.p else
   raise (TypeExceptionMeta ("Undefined function " ^ x, cx.meta))
 let get_ps cx x = if Assoc.mem x cx.ps then Assoc.lookup x cx.ps else 
   raise (TypeExceptionMeta ("Undefined canonical item " ^ x, cx.meta))
+let get_pm cx x = if Assoc.mem x cx.pm then Assoc.lookup x cx.pm else 
+  raise (TypeExceptionMeta (x ^ " not found in parameterization " ^ string_of_parameterization cx.pm, cx.meta))
 
 (* Finds which context in which to find the given string *)
 let find_safe cx x =
@@ -69,7 +72,7 @@ let string_of_fn_inv ((s, tl) : fn_inv) : string =
 let line_number (meta : metadata) : string = 
   ("Line: " ^ string_of_int(meta.pos_lnum))
 let string_of_tau (pm, t : tau) =
-  string_of_pair (string_of_parameterization pm) (string_of_typ t)
+  string_of_parameterization pm ^ " " ^  string_of_typ t
 let string_of_mu (ml : mu) =
   string_of_mod_list ml
 let string_of_gamma (g : gamma) =

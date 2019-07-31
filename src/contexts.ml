@@ -66,6 +66,7 @@ type contexts = {
   m : mu Assoc.context;
   p : phi Assoc.context;
   ps : psi Assoc.context;
+  pm : parameterization;
   meta : metadata;
   _bindings : binding_contexts
 }

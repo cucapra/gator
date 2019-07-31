@@ -18,14 +18,11 @@ let rec reduce_dexp (cx: contexts) (frames : string Assoc.context) (d : dexp) : 
             | _ -> raise (TypeExceptionMeta ("Invalid binary operation to dimension expression " 
                 ^ string_of_binop b, cx.meta))
 
-let rec unwrap_abstyp (cx: contexts) (pm : parameterization) (s: string) : constrain =
+let rec unwrap_abstyp (cx: contexts) (s: string) : constrain =
     debug_print ">> unwrap_abstyp";
-    if Assoc.mem s pm
-    then match Assoc.lookup s pm with 
+    match get_pm cx s with
         | TypConstraint(ParTyp (s, tl)) -> failwith "unimplemented partyp unwrapping"
         | p -> p
-    else raise (TypeExceptionMeta ("Abstract type " ^ s 
-        ^ " not found in parameterization " ^ string_of_parameterization pm, cx.meta))
 
 let rec replace_abstype (c: typ Assoc.context) (t: typ) : typ =
     debug_print ">> replace_abstype";
@@ -37,23 +34,23 @@ let rec replace_abstype (c: typ Assoc.context) (t: typ) : typ =
 (* Given a parameterization and a list of types being invoked on that parameterization *)
 (* Returns the appropriate concretized context if one exists *)
 (* Should only be used on previously verified parameterized type invokations *)
-let match_parameterization_unsafe (cx: contexts) (pm: parameterization) (pml : typ list)
+let match_parameterization_unsafe (cx: contexts) (pml : typ list)
 : typ Assoc.context =
     debug_print ">> match_parameterization_unsafe";
-    let pmb = Assoc.bindings pm in
+    let pmb = Assoc.bindings cx.pm in
     if List.length pmb == List.length pml
     then List.fold_left2 (fun tcacc (s, c) t -> Assoc.update s t tcacc)
-        Assoc.empty (Assoc.bindings pm) pml
+        Assoc.empty (Assoc.bindings cx.pm) pml
     else raise (TypeExceptionMeta ("Invalid parameterization provided in " 
         ^ "<" ^ string_of_list string_of_typ pml ^ ">", cx.meta))
-
+ 
 (* Looks up a supertype without checking the bounds on the provided parameters (hence, 'unsafe') *)
 let tau_lookup_unsafe (cx: contexts) (pml: typ list) (x: id) : typ =
     (* If the given type evaluates to a declared tag, return it *)
     (* If the return type would be a top type, resolve the dimension to a number *)
     debug_print ">> tau_lookup_unsafe";
     let (new_pm, t) = get_typ cx x in
-    let tc = match_parameterization_unsafe cx new_pm pml in
+    let tc = match_parameterization_unsafe (with_pm cx new_pm) pml in
     replace_abstype tc t
 
 let rec etyp_to_typ (e : TypedAst.etyp) : typ =
@@ -79,11 +76,11 @@ and constrain_to_constrain (c : TypedAst.constrain) : constrain =
     | TypedAst.GenVecTyp -> GenArrTyp(GenArrTyp(TypConstraint(FloatTyp)))
     | TypedAst.ETypConstraint t -> TypConstraint (etyp_to_typ t)
 
-let rec typ_erase_param (cx: contexts) (pm : parameterization) (t: typ) : TypedAst.etyp = 
+let rec typ_erase_param (cx: contexts) (t: typ) : TypedAst.etyp = 
     debug_print ">> tag_erase_param";
     match t with
-    | ParTyp(s, tl) -> if Assoc.mem s pm then 
-        let c = Assoc.lookup s pm in 
+    | ParTyp(s, tl) -> if Assoc.mem s cx.pm then 
+        let c = Assoc.lookup s cx.pm in 
         TypedAst.AbsTyp (s, constrain_erase cx c)
         else raise (TypeExceptionMeta ("AbsTyp " ^ s 
             ^ " was not found in function parameterization definition", cx.meta))
