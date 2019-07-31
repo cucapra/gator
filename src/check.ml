@@ -7,51 +7,43 @@ open Str
 open CheckUtil
 open Contexts
 
-let rec unwrap_abstyp (cx: contexts) (s: string) : constrain =
-    debug_print ">> unwrap_abstyp";
-    if Assoc.mem s cx.pm
-    then match Assoc.lookup s cx.pm with 
-        | TypConstraint(ParTyp (s, tl)) -> failwith "unimplemented partyp unwrapping"
-        | p -> p
-    else raise (TypeExceptionMeta ("AbsTyp " ^ s 
-        ^ " not found in parameterization " ^ (string_of_parameterization cx.pm), cx.meta))
-
-let rec reduce_dexp (cx: contexts) (d : dexp) : dexp =
+let rec reduce_dexp (cx: contexts) (frames : string Assoc.context) (d : dexp) : int =
     debug_print (">> reduce_dexp " ^ string_of_dexp d);
     match d with
-    | DimNum n -> d
-    | DimVar x -> failwith ("unimplemented variable dimensions" ^ line_number cx.meta)
-    | DimBinop (l, b, r) -> (match (reduce_dexp cx l, reduce_dexp cx r) with
-        | (DimNum n1, DimNum n2) -> (match b with
-            | Plus -> DimNum (n1 + n2)
-            | Minus -> DimNum (n1 - n2)
-            | _ -> raise (TypeExceptionMeta ("Invalid binary operation to dimension expression " 
-                ^ string_of_binop b, cx.meta)))
-        | _ -> d)
-
-let dim_top (cx: contexts) (d: dexp) : int =
-    match (reduce_dexp cx d) with
     | DimNum n -> n
-    | _ -> failwith ("Unexpected inclusion of an abstract type in dimension calculation of " ^ (string_of_dexp d)
-        ^ "at line " ^ string_of_int (cx.meta).pos_lnum)
+    | DimVar x -> fst (get_frame cx (Assoc.lookup x frames))
+    | DimBinop (l, b, r) -> match b with
+            | Plus -> reduce_dexp cx frames l + reduce_dexp cx frames r
+            | Minus -> reduce_dexp cx frames l - reduce_dexp cx frames r
+            | _ -> raise (TypeExceptionMeta ("Invalid binary operation to dimension expression " 
+                ^ string_of_binop b, cx.meta))
+
+let rec unwrap_abstyp (cx: contexts) (pm : parameterization) (s: string) : constrain =
+    debug_print ">> unwrap_abstyp";
+    if Assoc.mem s pm
+    then match Assoc.lookup s pm with 
+        | TypConstraint(ParTyp (s, tl)) -> failwith "unimplemented partyp unwrapping"
+        | p -> p
+    else raise (TypeExceptionMeta ("Abstract type " ^ s 
+        ^ " not found in parameterization " ^ string_of_parameterization pm, cx.meta))
 
 let rec replace_abstype (c: typ Assoc.context) (t: typ) : typ =
     debug_print ">> replace_abstype";
     match t with
-    | ParTyp (s, tl) -> failwith "unimplemented abstyp replacement"
+    | ParTyp (s, tl) -> failwith "unimplemented abstract type replacement"
     (* ParTyp (s, List.map (replace_abstype c) tl) *)
     | _ -> t
 
 (* Given a parameterization and a list of types being invoked on that parameterization *)
 (* Returns the appropriate concretized context if one exists *)
 (* Should only be used on previously verified parameterized type invokations *)
-let match_parameterization_unsafe (cx: contexts) (dim_pm: parameterization) (pml : typ list)
+let match_parameterization_unsafe (cx: contexts) (pm: parameterization) (pml : typ list)
 : typ Assoc.context =
     debug_print ">> match_parameterization_unsafe";
-    let pmb = Assoc.bindings cx.pm in
+    let pmb = Assoc.bindings pm in
     if List.length pmb == List.length pml
     then List.fold_left2 (fun tcacc (s, c) t -> Assoc.update s t tcacc)
-        Assoc.empty (Assoc.bindings cx.pm) pml
+        Assoc.empty (Assoc.bindings pm) pml
     else raise (TypeExceptionMeta ("Invalid parameterization provided in " 
         ^ "<" ^ string_of_list string_of_typ pml ^ ">", cx.meta))
 
@@ -59,17 +51,10 @@ let match_parameterization_unsafe (cx: contexts) (dim_pm: parameterization) (pml
 let tau_lookup_unsafe (cx: contexts) (pml: typ list) (x: id) : typ =
     (* If the given type evaluates to a declared tag, return it *)
     (* If the return type would be a top type, resolve the dimension to a number *)
-    debug_print ">> delta_lookup_unsafe";
-    match find cx x with | Some Tau t ->
-        let (dim_pm, t) = Assoc.lookup x cx.t in
-        let tc = match_parameterization_unsafe cx dim_pm pml in
-        let reduced = replace_abstype tc t in
-        (* TODO *)
-        (* This probably needs to be updated, but I'm keeping it for early errors *)
-        (match reduced with
-        | ArrTyp (t, d) -> ArrTyp (t, reduce_dexp cx d)
-        | _ -> reduced)
-    | _ -> raise (TypeExceptionMeta ("Unknown type " ^ x, cx.meta))
+    debug_print ">> tau_lookup_unsafe";
+    let (new_pm, t) = get_typ cx x in
+    let tc = match_parameterization_unsafe cx new_pm pml in
+    replace_abstype tc t
 
 let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     debug_print ">> etyp_to_typ";
@@ -82,7 +67,8 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     | TypedAst.MatTyp (n1, n2) -> ArrTyp(ArrTyp(FloatTyp, DimNum n1), DimNum n2)
     | TypedAst.TransTyp (s1, s2) -> failwith "unimplemented removal of transtyp from typedast"
     | TypedAst.AbsTyp (s, c) -> ParTyp(s, [])
-    | TypedAst.ArrTyp (t, c) -> ArrTyp (etyp_to_typ t, match c with | ConstInt i -> DimNum i | ConstVar v -> DimVar v)
+    | TypedAst.ArrTyp (t, c) -> ArrTyp (etyp_to_typ t, 
+        match c with | ConstInt i -> DimNum i | ConstVar v -> DimVar v)
 
 and constrain_to_constrain (c : TypedAst.constrain) : constrain =
     debug_print ">> constrain_to_constrain";
@@ -93,11 +79,11 @@ and constrain_to_constrain (c : TypedAst.constrain) : constrain =
     | TypedAst.GenVecTyp -> GenArrTyp(GenArrTyp(TypConstraint(FloatTyp)))
     | TypedAst.ETypConstraint t -> TypConstraint (etyp_to_typ t)
 
-let rec tag_erase_param (cx: contexts) (t: typ) : TypedAst.etyp = 
+let rec typ_erase_param (cx: contexts) (pm : parameterization) (t: typ) : TypedAst.etyp = 
     debug_print ">> tag_erase_param";
     match t with
-    | ParTyp(s, tl) -> if Assoc.mem s cx.pm then 
-        let c = Assoc.lookup s cx.pm in 
+    | ParTyp(s, tl) -> if Assoc.mem s pm then 
+        let c = Assoc.lookup s pm in 
         TypedAst.AbsTyp (s, constrain_erase cx c)
         else raise (TypeExceptionMeta ("AbsTyp " ^ s 
             ^ " was not found in function parameterization definition", cx.meta))
