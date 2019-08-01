@@ -130,9 +130,9 @@ let term ==
   | PROTOTYPE; x = ID; LBRACE; p = list(prototype_element); RBRACE;
     <Prototype>
   | COORDINATE; x = ID; COLON; p = ID;
-    LBRACE; d = dimension; SEMI; c = list(coordinate_element); RBRACE;
+    LBRACE; DIMENSION; n = NUM; SEMI; c = list(coordinate_element); RBRACE;
     <Coordinate>
-  | FRAME; x = ID; d = dimension; s = snd(combined(IS, ID))?; SEMI;
+  | FRAME; x = ID; IS; d = frame_dim; SEMI;
     <FrameDecl>
   | TYP; x = ID; pm = parameterization(constrained); IS; t = typ; SEMI;
     <TypDecl>
@@ -143,6 +143,12 @@ let term ==
     <GlobalVar>
   | f = gen_fn(ID);
     <Fn>
+
+let frame_dim ==
+  | x = ID;
+    <FrameDim>
+  | DIMENSION; n = NUM;
+    <FrameNum>
 
 let prototype_element ==
   | OBJECT; x = ID; p = parameterization(constrained); SEMI;
@@ -160,10 +166,6 @@ let modification ==
 
 let with_statement ==
   | FRAME; d = delimited(LPAREN, NUM, RPAREN); r = separated_list(COMMA, ID); COLON;
-    <>
-
-let dimension ==
-  | DIMENSION; n = NUM;
     <>
 
 let coordinate_element ==
@@ -187,7 +189,7 @@ let constrained ==
 
 let parameterization(T) ==
   | { [] }
-  | pt = delimited(LWICK, separated_list(COMMA, T), RWICK); <>
+  | pt = delimited(LWICK, separated_list(COMMA, T), RWICK); { Assoc.gen_context pt }
 
 let parameter == 
   | m = modification*; t = typ; x = ID;

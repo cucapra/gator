@@ -77,8 +77,8 @@ let string_of_mu (ml : mu) =
   string_of_mod_list ml
 let string_of_gamma (g : gamma) =
   string_of_typ g
-let string_of_delta (n, s : delta) =
-  match s with | None -> string_of_int n | Some s' -> string_of_pair (string_of_int n) s'
+let string_of_delta (f : delta) =
+  string_of_frame_dim f
 let string_of_chi (c : chi) =
   string_of_coordinate_element c
 let string_of_omega (o : omega) =
@@ -88,27 +88,32 @@ let string_of_phi (p : phi) =
 let string_of_psi (ps : psi) : string =
   string_of_list (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_fn_inv p ^ ")") ps
 
-let get_typ (cx : contexts) (x : string) =
+let get_typ (cx : contexts) (x : string) : tau =
   match find_safe cx x with
   | Some Tau t -> t
   | _ -> raise (TypeExceptionMeta ("Undefined type " ^ x, cx.meta))
 
-let get_var (cx : contexts) (x : string) =
+let get_var (cx : contexts) (x : string) : gamma =
   match find_safe cx x with
   | Some Gamma g -> g
   | _ -> raise (TypeExceptionMeta ("Undefined variable " ^ x, cx.meta))
 
-let get_frame (cx : contexts) (x : string) =
+let get_frame (cx : contexts) (x : string) : delta =
   match find_safe cx x with
   | Some Delta d -> d
   | _ -> raise (TypeExceptionMeta ("Undefined frame " ^ x, cx.meta))
 
-let get_scheme (cx : contexts) (x : string) =
+let rec get_frame_top (cx : contexts) (x : string) : int =
+  match get_frame cx x with
+  | FrameDim s -> get_frame_top cx s
+  | FrameNum n -> n
+
+let get_scheme (cx : contexts) (x : string) : chi =
   match find_safe cx x with
   | Some Chi c -> c
   | _ -> raise (TypeExceptionMeta ("Undefined coordinate scheme " ^ x, cx.meta))
 
-let get_proto (cx : contexts) (x : string) =
+let get_proto (cx : contexts) (x : string) : omega =
   match find_safe cx x with
   | Some Omega o -> o
   | _ -> raise (TypeExceptionMeta ("Undefined object " ^ x, cx.meta))

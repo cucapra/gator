@@ -28,8 +28,8 @@ coordinate hom : geometry {
     vector<r> is float[4];
 }
 
-frame world dimension 3;
-frame plane dimension 2 is world;
+frame world is dimension 3;
+frame plane is dimension 2;
 
 void main() {
     cart3.point<world> pos = [1., 2., 3.];

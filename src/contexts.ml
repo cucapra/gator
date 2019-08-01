@@ -17,7 +17,7 @@ type gamma = typ
 
 (* Dimension definitions *)
 (* Stores dimension information for reference frames *)
-type delta = int * string option
+type delta = frame_dim
 
 (* Coordinate systems *)
 (* Stores type of each every member element and command list for each function in coordinate systems *)

@@ -5,6 +5,8 @@ open CoreAst
 type metadata = Lexing.position
 type 'a astNode = 'a * metadata
 
+type 'a decl = string * 'a
+
 type dexp =
     | DimVar of string
     | DimNum of int
@@ -46,10 +48,9 @@ type modification =
     | With of (int * (string list)) list
     | Canon
 
-(* function parameterization,
+(* function and type parameterization,
  * which may extend another type. *)
 type parameterization = constrain Assoc.context
-type parameterization_decl = (string * constrain) list
 
 (* function parameters *)
 (* arguments may have an optional parameterization type *)
@@ -57,12 +58,8 @@ type params = (modification list * typ * string) list
 type ret_typ = typ
 (* our functions are not first-order! *)
 type fn_typ = params * ret_typ * parameterization * metadata
-(* Note that the parameterization declaration is only useful when checking the function, not calling it *)
-type fn_typ_decl = parameterization_decl * ret_typ * params
 (* General function declarations (includes operation declarations) *)
-type 'a gen_fn_decl = modification list * 'a * fn_typ_decl
-(* function declaration *)
-type fn_decl = string gen_fn_decl
+type 'a gen_fn_decl = modification list * 'a * fn_typ
 
 (* commands *)
 type acomm = comm astNode
@@ -74,7 +71,7 @@ and comm =
     | Decl of modification list * typ * string * aexp
     | Assign of string * aexp
     | AssignOp of string * binop * aexp
-    | If of if_block * if_block list * (acomm list) option  (* if - elif list - else *)
+    | If of if_block * if_block list * acomm list option  (* if - elif list - else *)
     | For of acomm * aexp * acomm * acomm list
     | Return of aexp option
     | FnCall of string * typ list * args (* Function invocation as a command *)
@@ -85,27 +82,31 @@ and if_block = aexp * acomm list
 (* General function declarations *)
 type 'a gen_fn = 'a gen_fn_decl * acomm list
 (* General function declarations *)
-type fn = fn_decl * acomm list
+type fn = string gen_fn
+
+type frame =
+    | FrameDim of string
+    | FrameNum of int
+
+type partyp = parameterization * typ
 
 type prototype_element =
-    | ProtoObjectDecl of string * parameterization_decl
-    | ProtoFnDecl of fn_decl
+    | ProtoObjectDecl of string * parameterization
+    | ProtoFnDecl of fn_typ
     | ProtoBinopDecl of binop gen_fn_decl
 (* Name and list of declarations *)
-type prototype = string * prototype_element list
+type prototype = string * (string * prototype_element) list
 
 type coordinate_element =
-    | CoordObjectAssign of string * parameterization_decl * typ
+    | CoordObjectAssign of string * parameterization * typ
     | CoordFnDecl of fn
     | CoordBinopDecl of binop gen_fn
 (* Name, underlying prototype, dimension, and list of definitions *)
-type coordinate = string * string * int * coordinate_element list
+type coordinate = string * string * int * (string * coordinate_element) list
 
-type frame_decl = string * int * string option
-type typ_decl = string * parameterization_decl * typ
 type global_var = modification list * storage_qual * typ * string * aexp option
-type extern_decl =
-    | ExternFn of fn_decl
+type extern_element =
+    | ExternFn of fn_typ
     | ExternVar of modification list * typ * aexp
 
 (* Terms that make up a program *)
@@ -119,9 +120,9 @@ type aterm = term astNode
 and term =
     | Prototype of prototype
     | Coordinate of coordinate
-    | FrameDecl of frame_decl
-    | TypDecl of typ_decl
-    | ExternDecl of extern_decl
+    | FrameDecl of frame decl
+    | TypDecl of string * parameterization * typ
+    | ExternDecl of extern_element
     | GlobalVar of global_var
     | Fn of fn
 

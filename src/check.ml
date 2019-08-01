@@ -7,14 +7,14 @@ open Str
 open CheckUtil
 open Contexts
 
-let rec reduce_dexp (cx: contexts) (frames : string Assoc.context) (d : dexp) : int =
+let rec reduce_frame_dexp (cx: contexts) (d : dexp) : int =
     debug_print (">> reduce_dexp " ^ string_of_dexp d);
     match d with
     | DimNum n -> n
-    | DimVar x -> fst (get_frame cx (Assoc.lookup x frames))
+    | DimVar x -> get_frame_top cx x
     | DimBinop (l, b, r) -> match b with
-            | Plus -> reduce_dexp cx frames l + reduce_dexp cx frames r
-            | Minus -> reduce_dexp cx frames l - reduce_dexp cx frames r
+            | Plus -> reduce_frame_dexp cx l + reduce_frame_dexp cx r
+            | Minus -> reduce_frame_dexp cx l - reduce_frame_dexp cx r
             | _ -> raise (TypeExceptionMeta ("Invalid binary operation to dimension expression " 
                 ^ string_of_binop b, cx.meta))
 
@@ -49,9 +49,16 @@ let tau_lookup_unsafe (cx: contexts) (pml: typ list) (x: id) : typ =
     (* If the given type evaluates to a declared tag, return it *)
     (* If the return type would be a top type, resolve the dimension to a number *)
     debug_print ">> tau_lookup_unsafe";
-    let (new_pm, t) = get_typ cx x in
-    let tc = match_parameterization_unsafe (with_pm cx new_pm) pml in
+    let (pmd, t) = get_typ cx x in
+    let tc = match_parameterization_unsafe (with_pm cx pmd) pml in
     replace_abstype tc t
+
+let chi_object_lookup_unsafe (cx: contexts) (pml: typ list) (x : id) : typ =
+    match get_scheme cx x with
+    | CoordObjectAssign (x, pmd, t) -> 
+        let tc = match_parameterization_unsafe (with_pm cx pmd) pml in
+        replace_abstype tc t
+    | _ -> raise (TypeExceptionMeta ("", cx.meta))
 
 let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     debug_print ">> etyp_to_typ";

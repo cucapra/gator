@@ -111,8 +111,13 @@ let rec string_of_gen_typ_decl (pred: string) ((s, pmd, t) : typ_decl) : string 
     pred ^ " " ^ s ^ "<" ^ (string_of_parameterization_decl pmd) ^ ">"
     ^ " is " ^ (string_of_typ t) ^ ";"
 
-let string_of_frame_decl ((f, i, s) : frame_decl) = 
-    f ^ " dimension " ^ string_of_int i ^ string_of_option_removed (fun x -> " is " ^ x) s
+let string_of_frame_dim (d : frame_dim) =
+    match d with
+    | FrameDim s -> s
+    | FrameNum n -> "dimension " ^ string_of_int n
+
+let string_of_frame_decl ((f, d) : frame_decl) = 
+    "frame " ^ f ^ " is " ^ string_of_frame_dim d ^ ";"
 let string_of_typ_decl (t : typ_decl) = string_of_gen_typ_decl "type" t
 
 let string_of_gen_fn (f : 'a -> string) ((g, cl) : 'a gen_fn) : string =
