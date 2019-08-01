@@ -54,10 +54,10 @@ type parameterization = constrain Assoc.context
 
 (* function parameters *)
 (* arguments may have an optional parameterization type *)
-type params = (modification list * typ * string) list
+type params = (typ * string) list
 type ret_typ = typ
 (* our functions are not first-order! *)
-type fn_typ = params * ret_typ * parameterization * metadata
+type fn_typ = modification list * parameterization * params * ret_typ * metadata
 (* General function declarations (includes operation declarations) *)
 type 'a gen_fn_decl = modification list * 'a * fn_typ
 
@@ -98,8 +98,8 @@ type prototype_element =
 type prototype = string * (string * prototype_element) list
 
 type coordinate_element =
-    | CoordObjectAssign of string * parameterization * typ
-    | CoordFnDecl of fn
+    | CoordObjectAssign of parameterization * typ
+    | CoordFnDecl of fn_typ
     | CoordBinopDecl of binop gen_fn
 (* Name, underlying prototype, dimension, and list of definitions *)
 type coordinate = string * string * int * (string * coordinate_element) list
