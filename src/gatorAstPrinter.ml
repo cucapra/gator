@@ -4,6 +4,8 @@ open CoreAst
 open Util
 open GatorAst
 
+let string_of_decl (x : string) f : string = f x
+
 let rec string_of_dexp (d : dexp) : string = 
     match d with
     | DimBinop (l, op, r) -> string_of_binop_exp 
@@ -40,29 +42,16 @@ let string_of_modification (m: modification) : string =
 let string_of_mod_list (m: modification list) : string =
     string_of_separated_list " " string_of_modification m
 
-let string_of_param ((ml, t, s): modification list * typ * string) : string =
-    string_of_mod_list ml ^ " " ^ (string_of_typ t) ^ " " ^ s
+let string_of_param ((t, s): typ * string) : string =
+    string_of_typ t ^ " " ^ s
 
 let string_of_parameterization (p : parameterization) : string =
     string_if_true (fun a -> Assoc.size a != 0)
         (fun a -> "<" ^ Assoc.to_string string_of_constraint a ^ ">") p
 
-let string_of_parameterization_decl (pm : parameterization_decl) : string =
-    let string_of_pm = string_of_list (fun (s, c) -> s ^ " : " ^ string_of_constraint c) pm in
-    string_if_true nonempty (fun p -> "<" ^ string_of_pm ^ ">") pm
-
-let string_of_fn_typ ((p, r, pm, _): fn_typ) : string = 
-    (string_of_typ r) ^ string_of_parameterization pm
+let string_of_fn_typ (ml, r, x, pm, p, _ : fn_typ) : string = 
+    string_of_mod_list ml ^ " " ^ string_of_typ r ^ " " ^ x ^ string_of_parameterization pm
     ^ "(" ^ string_of_list string_of_param p ^ ")"
-
-let string_of_fn_typ_decl ((pm, r, p): fn_typ_decl) : string = 
-    (string_of_typ r) ^ " <" ^ string_of_parameterization_decl pm ^ ">" 
-    ^ "(" ^ string_of_list string_of_param p ^ ")"
-
-let string_of_gen_fn_decl (f : 'a -> string) ((fm, t, ft): 'a gen_fn_decl) =
-    string_of_mod_list fm ^ f t ^ " " ^ string_of_fn_typ_decl ft
-
-let string_of_fn_decl (fd: fn_decl) : string = string_of_gen_fn_decl (fun x -> x) fd
 
 let rec string_of_aexp ((e, m): aexp) : string =
     string_of_exp e
@@ -107,67 +96,53 @@ and string_of_comm (c: comm) : string =
     | FnCall (s, tl, e) -> s ^ "<" ^ string_of_list string_of_typ tl ^ ">" 
         ^ "(" ^ string_of_list string_of_aexp e ^ ");"
 
-let rec string_of_gen_typ_decl (pred: string) ((s, pmd, t) : typ_decl) : string =
-    pred ^ " " ^ s ^ "<" ^ (string_of_parameterization_decl pmd) ^ ">"
-    ^ " is " ^ (string_of_typ t) ^ ";"
-
-let string_of_frame_dim (d : frame_dim) =
-    match d with
+let string_of_frame (f : frame) =
+    match f with
     | FrameDim s -> s
     | FrameNum n -> "dimension " ^ string_of_int n
 
-let string_of_frame_decl ((f, d) : frame_decl) = 
-    "frame " ^ f ^ " is " ^ string_of_frame_dim d ^ ";"
-let string_of_typ_decl (t : typ_decl) = string_of_gen_typ_decl "type" t
+let string_of_frame_decl ((x, f) : frame_decl) =
+    "frame " ^ x ^ " is " ^ string_of_frame f ^ ";"
 
-let string_of_gen_fn (f : 'a -> string) ((g, cl) : 'a gen_fn) : string =
-    string_of_gen_fn_decl f g ^ "{" ^  string_of_separated_list "\n" string_of_acomm cl ^"}"
-
-let string_of_fn (fd : fn_decl * acomm list) : string = 
-    string_of_gen_fn (fun x -> x) fd
+let string_of_fn (t, c : fn_typ * acomm list) : string = 
+    string_of_fn_typ t ^ "{\n" ^ string_of_separated_list "\n" string_of_acomm c ^ "}"
 
 let string_of_prototype_element (pe : prototype_element) : string =
     match pe with
-    | ProtoObjectDecl (x, pd) -> "Object " ^ x ^ "<" ^ string_of_parameterization_decl pd ^ ">;"
-    | ProtoFnDecl f -> string_of_fn_decl f ^ ";"
-    | ProtoBinopDecl f -> string_of_gen_fn_decl string_of_binop f ^ ";"
+    | ProtoObject (x, p) -> "Object " ^ x ^ "<" ^ string_of_parameterization p ^ ">;"
+    | ProtoFn f -> string_of_fn_typ f ^ ";"
 
-let string_of_prototype ((s, p) : prototype) : string = 
-    "prototype " ^ s ^ "{\n" ^ string_of_separated_list "\n" string_of_prototype_element p ^ "}"
+let string_of_prototype (x, p : prototype) : string = 
+    "prototype " ^ x ^ "{\n" ^ string_of_separated_list "\n" string_of_prototype_element p ^ "}"
 
 let string_of_coordinate_element (ce : coordinate_element) : string = 
     match ce with
-    | CoordObjectAssign (x, pd, t) -> x ^ "<" ^ string_of_parameterization_decl pd ^ ">" 
-        ^ " = " ^ string_of_typ t ^ ";"
-    | CoordFnDecl f -> string_of_fn f
-    | CoordBinopDecl f -> string_of_gen_fn string_of_binop f
+    | CoordObjectAssign (x, p, t) -> x ^ string_of_parameterization p ^ " = " ^ string_of_typ t ^ ";"
+    | CoordFn f -> string_of_fn f
 
-let string_of_coordinate ((x, p, n, cl) : coordinate) : string =
+let string_of_coordinate (x, p, n, cl : coordinate) : string =
     "coordinate " ^ x ^ " : " ^ p ^ "{\n" ^ "dimension " ^ string_of_int n ^ ";"
     ^ string_of_list (fun ce -> string_of_coordinate_element ce ^ "\n") cl ^ "}"
 
-let string_of_declare (f: fn_decl) : string = 
-    "declare " ^ string_of_fn_decl f
-
-let string_of_global_var ((ml, sq, t, x, e) : global_var) : string =
+let string_of_global_var (ml, sq, t, x, e : global_var) : string =
     string_of_mod_list ml ^ " " ^ string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ x 
     ^ string_of_option_removed (fun x -> "= " ^ string_of_aexp x) e
 
-let string_of_extern (e : extern_decl) : string = 
+let string_of_extern (e : extern_element) : string = 
     match e with
-    | ExternFn f -> string_of_declare f
-    | ExternVar (m, t, e) -> string_of_mod_list m ^ " " ^ string_of_typ t ^ " " ^ (string_of_aexp e)
+    | ExternFn f -> "declare " ^ string_of_fn_typ f
+    | ExternVar (m, t, x, e) -> "declare " ^ string_of_mod_list m 
     
-let string_of_term(t : term) : string = 
+let string_of_term (t : term) : string = 
     match t with
     | Prototype p -> string_of_prototype p
     | Coordinate c -> string_of_coordinate c
-    | FrameDecl f -> string_of_frame_decl f
-    | TypDecl t -> string_of_typ_decl t
-    | ExternDecl e -> string_of_extern e
+    | Frame f -> string_of_frame_decl f
+    | Typ (x, p, t) -> "type " ^ x ^ " is " ^ string_of_typ t
+    | Extern e -> string_of_extern e
     | GlobalVar g -> string_of_global_var g
     | Fn f -> string_of_fn f
-let string_of_aterm((t, m) : aterm) : string = 
+let string_of_aterm (t, _ : aterm) : string = 
     string_of_term t
 
 let string_of_prog (tl : prog) : string =

@@ -5,8 +5,6 @@ open CoreAst
 type metadata = Lexing.position
 type 'a astNode = 'a * metadata
 
-type 'a decl = string * 'a
-
 type dexp =
     | DimVar of string
     | DimNum of int
@@ -19,13 +17,13 @@ type typ =
     | BoolTyp
     | IntTyp
     | FloatTyp
-    | ArrLitTyp of typ * int (* Literals such as [0., 1.] or [true, false] -- constant length *)
+    | ArrLitTyp of typ * int (* Literals such as [0., 1.] or [true, false] -- all have constant length *)
     | ArrTyp of typ * dexp (* i.e. float[5] or bool[2][3] *)
     | CoordTyp of string * typ (* i.e. cart.point *)
     | ParTyp of string * typ list (* i.e. color or matrix<model, world> *)
 
+(* special constraint types *)
 type constrain =
-    (* Special constraint types *)
     | AnyTyp
     | GenTyp
     | GenArrTyp of constrain
@@ -48,19 +46,6 @@ type modification =
     | With of (int * (string list)) list
     | Canon
 
-(* function and type parameterization,
- * which may extend another type. *)
-type parameterization = constrain Assoc.context
-
-(* function parameters *)
-(* arguments may have an optional parameterization type *)
-type params = (typ * string) list
-type ret_typ = typ
-(* our functions are not first-order! *)
-type fn_typ = modification list * parameterization * params * ret_typ * metadata
-(* General function declarations (includes operation declarations) *)
-type 'a gen_fn_decl = modification list * 'a * fn_typ
-
 (* commands *)
 type acomm = comm astNode
 and comm =
@@ -68,7 +53,7 @@ and comm =
     | Print of aexp
     | Inc of id
     | Dec of id
-    | Decl of modification list * typ * string * aexp
+    | Decl of modification list * typ * string * aexp 
     | Assign of string * aexp
     | AssignOp of string * binop * aexp
     | If of if_block * if_block list * acomm list option  (* if - elif list - else *)
@@ -79,35 +64,41 @@ and comm =
     but we treat it as a type to allow parsing of parametrized types *)
 and if_block = aexp * acomm list
 
-(* General function declarations *)
-type 'a gen_fn = 'a gen_fn_decl * acomm list
-(* General function declarations *)
-type fn = string gen_fn
+(* function and type parameterization,
+ * which may extend another type. *)
+ type parameterization = constrain Assoc.context
+
+(* function parameters *)
+(* arguments may have an optional parameterization *)
+type params = (typ * string) list
+type ret_typ = typ
+(* function header -- our functions are not first-order! *)
+type fn_typ = modification list * ret_typ * id * parameterization * params * metadata
+
+(* General functions *)
+type fn = fn_typ * acomm list
 
 type frame =
     | FrameDim of string
     | FrameNum of int
-
-type partyp = parameterization * typ
+type frame_decl = id * frame
 
 type prototype_element =
-    | ProtoObjectDecl of string * parameterization
-    | ProtoFnDecl of fn_typ
-    | ProtoBinopDecl of binop gen_fn_decl
+    | ProtoObject of id * parameterization
+    | ProtoFn of fn_typ
 (* Name and list of declarations *)
-type prototype = string * (string * prototype_element) list
+type prototype = id * prototype_element list
 
 type coordinate_element =
-    | CoordObjectAssign of parameterization * typ
-    | CoordFnDecl of fn_typ
-    | CoordBinopDecl of binop gen_fn
+    | CoordObjectAssign of id * parameterization * typ
+    | CoordFn of fn
 (* Name, underlying prototype, dimension, and list of definitions *)
-type coordinate = string * string * int * (string * coordinate_element) list
+type coordinate = id * string * int * coordinate_element list
 
-type global_var = modification list * storage_qual * typ * string * aexp option
+type global_var = modification list * storage_qual * typ * id * aexp option
 type extern_element =
     | ExternFn of fn_typ
-    | ExternVar of modification list * typ * aexp
+    | ExternVar of modification list * typ * id * aexp
 
 (* Terms that make up a program *)
 (* In any order, we have:
@@ -120,9 +111,9 @@ type aterm = term astNode
 and term =
     | Prototype of prototype
     | Coordinate of coordinate
-    | FrameDecl of frame decl
-    | TypDecl of string * parameterization * typ
-    | ExternDecl of extern_element
+    | Frame of frame_decl
+    | Typ of id * parameterization * typ
+    | Extern of extern_element
     | GlobalVar of global_var
     | Fn of fn
 
