@@ -118,6 +118,10 @@ let terminated_list(X, Y) ==
   | x = X+; y = Y;
     <>
 
+let oplist(X) ==
+  | x = X?;
+    { match x with | Some y -> y | None -> [] }
+
 let combined(A, B) == a = A; b = B; { (a, b) }
 let fst(T) == (a, b) = T; { a }
 let snd(T) == (a, b) = T; { b }
@@ -133,15 +137,15 @@ let term ==
     LBRACE; DIMENSION; n = NUM; SEMI; c = list(coordinate_element); RBRACE;
     <Coordinate>
   | FRAME; x = ID; IS; d = frame_dim; SEMI;
-    <FrameDecl>
+    <Frame>
   | TYP; x = ID; pm = parameterization(constrained); IS; t = typ; SEMI;
-    <TypDecl>
-  | DECLARE; d = decl_extern; SEMI; 
-    <ExternDecl>
+    <Typ>
+  | DECLARE; d = extern_element; SEMI; 
+    <Extern>
   | m = modification*; sq = storage_qual; t = typ;
     x = ID; v = preceded(GETS, aexp)?; SEMI; 
     <GlobalVar>
-  | f = gen_fn(ID);
+  | f = fn;
     <Fn>
 
 let frame_dim ==
@@ -152,11 +156,9 @@ let frame_dim ==
 
 let prototype_element ==
   | OBJECT; x = ID; p = parameterization(constrained); SEMI;
-    <ProtoObjectDecl>
-  | f = gen_fn_decl(ID);
-    <ProtoFnDecl>
-  | f = gen_fn_decl(binop);
-    <ProtoBinopDecl>
+    <ProtoObject>
+  | f = fn_typ;
+    <ProtoFn>
 
 let modification ==
   | WITH; w = with_statement+;
@@ -171,15 +173,13 @@ let with_statement ==
 let coordinate_element ==
   | OBJECT; x = ID; p = parameterization(constrained); IS; t = typ;
     <CoordObjectAssign>
-  | f = gen_fn(ID);
-    <CoordFnDecl>
-  | f = gen_fn(binop);
-    <CoordBinopDecl>
+  | f = fn;
+    <CoordFn>
 
-let decl_extern == 
+let extern_element == 
   | (m, t) = terminated_list(modification, typ); x = ID;
-    { ExternVar(m, t, (Var x, $startpos)) }
-  | f = gen_fn_decl(ID);
+    { ExternVar(m, t, x, $startpos) }
+  | f = fn_typ;
     <ExternFn>
 
 let constrained ==
@@ -187,26 +187,28 @@ let constrained ==
     { (t, AnyTyp) }
   | t = ID; COLON; c = constrain; <>
 
-let parameterization(T) ==
-  | { [] }
-  | pt = delimited(LWICK, separated_list(COMMA, T), RWICK); { Assoc.gen_context pt }
+
 
 let parameter == 
-  | m = modification*; t = typ; x = ID;
+  | t = typ; x = ID;
     <>
 
-let parameters ==
-  | x = delimited(LPAREN, separated_list(COMMA, parameter), RPAREN); <>
+let parameters(L, P, R) ==
+  | x = delimited(L, separated_list(COMMA, P), R); <>
+
+let parameterization(T) ==
+  | pt = oplist(parameters(LWICK, T, RWICK)); { Assoc.gen_context pt }
 
 let arguments ==
-  | x = delimited(LPAREN, separated_list(COMMA, aexp), RPAREN); <>
+  | x = parameters(LPAREN, aexp, RPAREN); <>
 
-let gen_fn_decl(A) ==
-  | (m, t) = terminated_list(modification, typ); a = A; pm = parameterization(constrained); args = parameters;
-    { (m, a, (pm, t, args)) }
+let fn_typ ==
+  | (m, t) = terminated_list(modification, typ); x = ID; 
+    pm = parameterization(constrained); params = parameters(LPAREN, parameter, RPAREN);
+    { (m, t, x, pm, params, $startpos) }
 
-let gen_fn(A) ==
-  | f = gen_fn_decl(A); LBRACE; cl = list(acomm); RBRACE; <>
+let fn ==
+  | f = fn_typ; LBRACE; cl = list(acomm); RBRACE; <>
 
 let acomm ==
   | c = comm;
@@ -230,10 +232,6 @@ let comm_block ==
     LBRACE; cl = acomm*; RBRACE; 
     <For>
 
-let acomm_element ==
-  | ce = comm_element;
-    { (ce, $startpos) }
-
 let assignop ==
   | PLUSEQ;
     { Plus }
@@ -245,6 +243,10 @@ let assignop ==
     { Div }
   | CTIMESEQ;
     { CTimes }
+
+let acomm_element ==
+  | ce = comm_element;
+    { (ce, $startpos) }
 
 let comm_element == 
   | SKIP;
@@ -263,7 +265,7 @@ let comm_element ==
     < Inc >
   | x = ID; DEC; 
     < Dec >
-  | x = ID; p = parameterization(typ); a = arguments;
+  | x = ID; p = oplist(parameters(LWICK, typ, RWICK)); a = arguments;
     < FnCall >
 
 let constrain == 
@@ -299,7 +301,7 @@ let typ :=
     { List.fold_right (fun d acc -> ArrTyp(acc, d)) dl t }
   | x = ID; DOT; t = typ;
     <CoordTyp>
-  | x = ID; pt = parameterization(typ);
+  | x = ID; pt = oplist(parameters(LWICK, typ, RWICK));
     <ParTyp>
 
 let storage_qual ==
@@ -345,7 +347,7 @@ let exp:=
     <Binop>
   | u = unop; e = aexp;
     <Unop>
-  | x = ID; p = parameterization(typ); a = arguments; 
+  | x = ID; p = oplist(parameters(LWICK, typ, RWICK)); a = arguments; 
     <FnInv>
   | LBRACK; e = separated_list(COMMA, aexp); RBRACK; 
     <Arr>

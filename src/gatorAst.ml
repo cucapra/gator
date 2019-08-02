@@ -98,7 +98,7 @@ type coordinate = id * string * int * coordinate_element list
 type global_var = modification list * storage_qual * typ * id * aexp option
 type extern_element =
     | ExternFn of fn_typ
-    | ExternVar of modification list * typ * id * aexp
+    | ExternVar of modification list * typ * id * metadata
 
 (* Terms that make up a program *)
 (* In any order, we have:

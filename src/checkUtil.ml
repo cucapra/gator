@@ -73,12 +73,12 @@ let line_number (meta : metadata) : string =
   ("Line: " ^ string_of_int(meta.pos_lnum))
 let string_of_tau (pm, t : tau) =
   string_of_parameterization pm ^ " " ^  string_of_typ t
-let string_of_mu (ml : mu) =
+let string_of_mu (ml : mu) =  
   string_of_mod_list ml
 let string_of_gamma (g : gamma) =
   string_of_typ g
 let string_of_delta (f : delta) =
-  string_of_frame_dim f
+  string_of_frame f
 let string_of_chi (c : chi) =
   string_of_coordinate_element c
 let string_of_omega (o : omega) =
