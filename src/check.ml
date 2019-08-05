@@ -205,8 +205,8 @@ let check_parameterization (cx: contexts) (pmb: (string * constrain) list) (pml 
     debug_print ">> check_parameterization";
     List.length pmb == List.length pml && List.fold_left2 (fun acc (s, c) t -> is_bounded_by cx t c && acc) true pmb pml
 
+(* The safe version, where we check the validity of abstract type resolution *)
 let tau_lookup (cx: contexts) (pml: typ list) (x: id) : typ =
-    (* The safe version, where we check the validity of abstract type resolution *)
     debug_print ">> tau_lookup";
     let pmd, t = get_typ cx x in
     if check_parameterization cx (Assoc.bindings pmd) pml then
@@ -229,15 +229,17 @@ let rec least_common_parent (cx: contexts) (t1: typ) (t2: typ): typ =
     | Some t1' -> least_common_parent cx t1' t2
     | None -> raise (TypeExceptionMeta ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2), cx.meta))
 
+(* Least common parent which will not raise an exception (used for typechecking of inferred types) *)
 let least_common_parent_safe (cx: contexts) (t1: typ) (t2: typ): typ option =
     try Some (least_common_parent cx t1 t2) with
     | TypeExceptionMeta (t, _) -> None
-    | DimensionException _ -> None
     | t -> raise t
 
-let infer_pml (cx: contexts) ((params, rt, pr, meta) : fn_typ) (args_typ : typ list) : (typ list) option =
+(* Given a function and list of arguments to that function *)
+(* Attempts to produce a list of valid types for the parameterization of the function *)
+let infer_pml (cx: contexts) (_, rt, x, pm, params, meta : fn_typ) (args_typ : typ list) : (typ list) option =
     debug_print ">> infer_pml";
-    let update_inference (t : typ) (s : string) (fpm : (typ Assoc.context) option) : (typ Assoc.context) option =
+    let update_inference (t : typ) (s : string) (fpm : typ Assoc.context option) : typ Assoc.context option =
         match fpm with | None -> None | Some p ->
         if Assoc.mem s p then (match least_common_parent_safe cx t (Assoc.lookup s p) with
             | None -> None
@@ -245,7 +247,7 @@ let infer_pml (cx: contexts) ((params, rt, pr, meta) : fn_typ) (args_typ : typ l
         else Some (Assoc.update s t p)
     in
     let rec unify_param (arg_typ : typ) (par_typ : typ) (fpm : (typ Assoc.context) option) : (typ Assoc.context) option =
-        match (arg_typ, par_typ) with
+        match arg_typ, par_typ with
         | (_, AbsTyp s) -> update_inference arg_typ s fpm
         (* Note that transtyp order doesn't matter; lots of commutivity *)
         | (TransTyp (al, ar), TransTyp (pl, pr)) -> unify_param ar pr (unify_param al pl fpm)
@@ -276,7 +278,6 @@ let infer_pml (cx: contexts) ((params, rt, pr, meta) : fn_typ) (args_typ : typ l
     in
     gen_pml (List.fold_left2 (fun fpm arg_typ (_, par_typ, _) -> unify_param arg_typ par_typ fpm) 
                 (Some Assoc.empty) args_typ params)
-    
 
 let check_subtype_list (cx: contexts) (l: typ list) (t: typ) : bool =
     debug_print ">> check_subtype_list";
@@ -1084,6 +1085,8 @@ let check_main_fn (p: phi) : unit =
     match ret_type with
         | UnitTyp -> ()
         | _ -> raise (TypeException "Expected main function to return void")
+
+exception TypeException of string
 
 (* Returns the list of fn's which represent the program 
  * and params of the void main() fn *)

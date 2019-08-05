@@ -3,9 +3,7 @@ open GatorAst
 open GatorAstPrinter
 open Contexts
 
-exception TypeException of string
 exception TypeExceptionMeta of string * metadata
-exception DimensionException of int * int
 
 (* Produces an empty set of gator contexts with a starting metadata *)
 let init meta = let b = 
