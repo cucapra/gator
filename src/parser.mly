@@ -187,8 +187,6 @@ let constrained ==
     { (t, AnyTyp) }
   | t = ID; COLON; c = constrain; <>
 
-
-
 let parameter == 
   | t = typ; x = ID;
     <>
@@ -301,8 +299,10 @@ let typ :=
     { List.fold_right (fun d acc -> ArrTyp(acc, d)) dl t }
   | x = ID; DOT; t = typ;
     <CoordTyp>
-  | x = ID; pt = oplist(parameters(LWICK, typ, RWICK));
+  | x = ID; pt = parameters(LWICK, typ, RWICK);
     <ParTyp>
+  | x = ID; /* explicit for clarity and to help out the parser */
+    { ParTyp(x, []) }
 
 let storage_qual ==
   | IN;

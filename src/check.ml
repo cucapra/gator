@@ -7,14 +7,19 @@ open Str
 open CheckUtil
 open Contexts
 
-let rec reduce_frame_dexp (cx: contexts) (d : dexp) : int =
+let rec get_frame_top (cx : contexts) (x : string) : int =
+    match get_frame cx x with
+    | FrameDim s -> get_frame_top cx s
+    | FrameNum n -> n
+
+let rec reduce_dexp (cx: contexts) (d : dexp) : int =
     debug_print (">> reduce_dexp " ^ string_of_dexp d);
     match d with
     | DimNum n -> n
     | DimVar x -> get_frame_top cx x
     | DimBinop (l, b, r) -> match b with
-            | Plus -> reduce_frame_dexp cx l + reduce_frame_dexp cx r
-            | Minus -> reduce_frame_dexp cx l - reduce_frame_dexp cx r
+            | Plus -> reduce_dexp cx l + reduce_dexp cx r
+            | Minus -> reduce_dexp cx l - reduce_dexp cx r
             | _ -> raise (TypeExceptionMeta ("Invalid binary operation to dimension expression " 
                 ^ string_of_binop b, cx.meta))
 
@@ -45,20 +50,37 @@ let match_parameterization_unsafe (cx: contexts) (pml : typ list)
         ^ "<" ^ string_of_list string_of_typ pml ^ ">", cx.meta))
  
 (* Looks up a supertype without checking the bounds on the provided parameters (hence, 'unsafe') *)
-let tau_lookup_unsafe (cx: contexts) (pml: typ list) (x: id) : typ =
+let tau_lookup_unsafe (cx: contexts) (x: id) (pml: typ list) : typ =
     (* If the given type evaluates to a declared tag, return it *)
     (* If the return type would be a top type, resolve the dimension to a number *)
     debug_print ">> tau_lookup_unsafe";
-    let (pmd, t) = get_typ cx x in
+    let pmd, t = get_typ cx x in
     let tc = match_parameterization_unsafe (with_pm cx pmd) pml in
     replace_abstype tc t
 
-let chi_object_lookup_unsafe (cx: contexts) (pml: typ list) (x : id) : typ =
-    match get_scheme cx x with
-    | CoordObjectAssign (x, pmd, t) -> 
-        let tc = match_parameterization_unsafe (with_pm cx pmd) pml in
+let chi_object_lookup_unsafe (cx: contexts) (c : id) (o: id) (f: typ list) : typ =
+    match get_coordinate_element cx c o with
+    | CoordObjectAssign (_, pmd, t) -> 
+        let tc = match_parameterization_unsafe (with_pm cx pmd) f in
         replace_abstype tc t
     | _ -> raise (TypeExceptionMeta ("", cx.meta))
+
+(* Steps types up a level in the subtyping tree *)
+(* Fails if given a primitive type, illegal geometric type, or external type (they have no supertype) *)
+let typ_step (cx : contexts) (t : typ) : typ option =
+    debug_print (">> typ_step" ^ string_of_typ t);
+    match t with
+    | ParTyp (s, tl) -> Some (tau_lookup_unsafe cx s tl)
+    | CoordTyp (c, ParTyp (o, f)) -> Some (chi_object_lookup_unsafe cx c o f)
+    | Literal t -> Some t
+    | _ -> None
+
+(* Produces a primitive type (boolean, int, float, array, or array literal) *)
+let rec primitive (cx : contexts) (t : typ) : typ =
+    debug_print (">> primitive" ^ string_of_typ t);
+    match typ_step cx t with
+    | Some t' -> primitive cx t'
+    | None -> t
 
 let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     debug_print ">> etyp_to_typ";
@@ -105,10 +127,8 @@ and typ_erase (cx: contexts) (t : typ) : TypedAst.etyp =
     | BoolTyp -> TypedAst.BoolTyp
     | IntTyp -> TypedAst.IntTyp
     | FloatTyp -> TypedAst.FloatTyp
-    | ArrLitTyp (t', i) -> TypedAst.ArrTyp (typ_erase cx t', ConstInt(i))
     | ArrTyp (t', d) -> TypedAst.ArrTyp (typ_erase cx t', d_to_c d)
-    | CoordTyp _ -> failwith "unimplemented coord_typ erasure"
-    | ParTyp _ -> failwith "unimplemented par_typ erasure"
+    | CoordTyp _ | ParTyp _ | Literal _ -> typ_erase cx (primitive cx t)
     | AutoTyp -> raise (TypeExceptionMeta 
         ("Illegal use of auto (cannot use auto as part of a function call)", cx.meta))
 
@@ -120,57 +140,42 @@ and constrain_erase (cx: contexts) (c: constrain) : TypedAst.constrain =
     | GenArrTyp _ -> failwith "unimplemented genarrtyp erasure"
     | TypConstraint t -> TypedAst.ETypConstraint (typ_erase cx t)
 
-let rec is_typ_eq (t1: typ) (t2: typ) : bool =
+let rec is_typ_eq (cx : contexts) (t1: typ) (t2: typ) : bool =
     match (t1, t2) with
     | UnitTyp, UnitTyp
     | BoolTyp, BoolTyp
     | IntTyp, IntTyp
     | FloatTyp, FloatTyp -> true
-    | CoordTyp (s1, t1), CoordTyp(s2, t2) -> s1 = s2 && is_typ_eq t1 t2
+    | Literal t1, Literal t2 -> is_typ_eq cx t1 t2
+    | ArrTyp (t1, d1), ArrTyp (t2, d2) -> is_typ_eq cx t1 t2 && reduce_dexp cx d1 = reduce_dexp cx d2
+    | CoordTyp (c1, ParTyp (o1, f1)), CoordTyp(c2, ParTyp (o2, f2)) -> 
+        c1 = c2 && is_typ_eq cx (ParTyp (o1, f1)) (ParTyp (o2, f2))
     | ParTyp (s1, tl1), ParTyp (s2, tl2) -> s1 = s2 && 
         (if (List.length tl1 = List.length tl2) 
-        then List.fold_left2 ((fun acc t1' t2' -> acc && is_typ_eq t1' t2')) true tl1 tl2
-        else false)
-    | ArrTyp (t1, d1), ArrTyp (t2, d2) -> failwith "unimplemented dimension equality checking"
+        then list_typ_eq cx tl1 tl2
+        else false)    
     | _ -> false
+
+and list_typ_eq (cx : contexts) (tl1: typ list) (tl2: typ list) : bool 
+    = List.fold_left2 (fun acc x y -> acc && is_typ_eq cx x y) true tl1 tl2
 
 let rec is_subtype (cx: contexts) (to_check : typ) (target : typ) : bool =
     debug_print (">> is_subtype " ^ (string_of_pair (string_of_typ to_check) (string_of_typ target)));
-    let abstyp_step (s: string) : bool =
-        if Assoc.mem s cx.pm 
-        then match Assoc.lookup s cx.pm with 
-        | TypConstraint t -> is_subtype cx t target
-        (* Super special case for vec <: vec<n> (which is true!) *)
-        | GenArrTyp c -> (match target with | ArrTyp (_, (DimVar _)) -> true | _ -> false) 
-        | _ -> false
-        else raise (TypeExceptionMeta ("AbsTyp " ^ s ^ " not found in parameterization", cx.meta))
-    in
-    if is_typ_eq to_check target then true else
+    if is_typ_eq cx to_check target then true else
     match (to_check, target) with 
     (* A top type with a single variable is the same as genvectyp except for the untagged type *)
-    | ArrLitTyp (t1, n), ArrTyp (t2, d2) -> DimNum n = reduce_dexp (w_pm cx Assoc.empty) d2
-        && is_subtype cx t1 t2
-    | ArrLitTyp (t, n), _ -> is_subtype cx target (ArrTyp (t, DimNum n))
     | ArrTyp (t1, d1), ArrTyp (t2, d2) ->
-        reduce_dexp (w_pm cx Assoc.empty) d1 = reduce_dexp (w_pm cx Assoc.empty) d2
+        reduce_dexp cx d1 = reduce_dexp cx d2 
         && is_subtype cx t1 t2
-    | ParTyp (s1, tl1), ParTyp (s2, tl2) -> (List.length tl1 = List.length tl2
-        && (s1 = s2 || is_subtype cx (VarTyp s1) (VarTyp s2))
-        && List.fold_left2 (fun acc x y -> acc && is_typ_eq x y) true tl1 tl2)
-    | ParTyp (VarTyp s, tl), VarTyp _ -> is_subtype cx (delta_lookup_unsafe cx tl s) target
-    | ParTyp (VarTyp s, tl), TopVecTyp dx -> vec_dim cx to_check = dim_top cx dx
-    | VarTyp s, ParTyp _ -> is_subtype cx (delta_lookup_unsafe cx [] s) target
-    | VarTyp s1, VarTyp s2 -> s1 = s2 || is_subtype cx (delta_lookup_unsafe cx [] s1) target
-    | VarTyp _, TopVecTyp dx -> (vec_dim cx to_check) = dim_top cx dx
-    | SamplerTyp i1, SamplerTyp i2 -> i1 = i2 
-    | TransTyp (t1, t2), TransTyp (t3, t4) -> 
-        (is_subtype cx t3 t1 && is_subtype cx t2 t4)
-    | AbsTyp s1, AbsTyp s2 -> 
-        s1 = s2 || abstyp_step s1
-    | AbsTyp s, _ -> 
-        abstyp_step s
-    (* Necessary because we have a lattice and the bottype is less than EVERYTHING in that lattice *)
-    | BotVecTyp n, AbsTyp _ -> (is_subtype cx target (TopVecTyp (DimNum n)))
+    | Literal t, _ -> is_subtype cx target t
+    | ParTyp (s1, tl1), ParTyp (s2, tl2) -> (s1 = s2 && List.length tl1 = List.length tl2
+        && list_typ_eq cx tl1 tl2)
+        || is_subtype cx (tau_lookup_unsafe cx s1 tl1) target
+    | ParTyp (s, tl), _ -> is_subtype cx (tau_lookup_unsafe cx s tl) target
+    | CoordTyp (c1, ParTyp (o1, f1)), CoordTyp (c2, ParTyp (o2, f2)) ->
+        (c1 = c2 && list_typ_eq cx f1 f2)
+        || is_subtype cx (chi_object_lookup_unsafe cx c1 o1 f1) target
+    | CoordTyp (c, ParTyp (o, f)), _ -> is_subtype cx (chi_object_lookup_unsafe cx c o f) target
     | _ -> false
 
 let rec is_sub_constraint (cx: contexts) (to_check : constrain) (target : constrain): bool =
@@ -178,101 +183,57 @@ let rec is_sub_constraint (cx: contexts) (to_check : constrain) (target : constr
     match (to_check, target) with
     | _, AnyTyp -> true
     | AnyTyp, _ -> false
-    | (TypConstraint t1, TypConstraint t2) -> is_subtype cx t1 t2
-    | (TypConstraint (AbsTyp s), _) -> is_sub_constraint cx (unwrap_abstyp cx s) target
-    | (GenVecTyp, TypConstraint (TopVecTyp (DimVar _))) -> true (* Super special case for vec <: vec<n> (which is true!) *)
-    | (_, TypConstraint _) -> false
-    | (TypConstraint (BoolTyp), GenTyp) -> false
-    | (TypConstraint (TransTyp _), GenTyp) -> false
-    | (_, GenTyp) -> true
-    | (GenVecTyp, GenVecTyp)
-    | (TypConstraint (BotVecTyp _), GenVecTyp)
-    | (TypConstraint (VarTyp _), GenVecTyp)
-    | (TypConstraint (UntaggedVecTyp _), GenVecTyp)
-    | (TypConstraint (TopVecTyp _), GenVecTyp)
-    | (TypConstraint (ParTyp (VarTyp _, _)), GenVecTyp) -> true
-    | (_, GenVecTyp) -> false
-    | (GenMatTyp, GenMatTyp)
-    | (TypConstraint (TransTyp _), GenMatTyp) -> true
-    | (_, GenMatTyp) -> false
+    | TypConstraint t1, TypConstraint t2 -> is_subtype cx t1 t2
+    | _, TypConstraint _ -> false
+    | TypConstraint(BoolTyp), GenTyp -> false
+    | _, GenTyp -> true
+    | GenArrTyp c1, GenArrTyp c2 -> is_sub_constraint cx c1 c2
+    | TypConstraint(ArrTyp (t, _)), GenArrTyp c -> is_sub_constraint cx (TypConstraint t) c
+    | TypConstraint(Literal _), _
+    | TypConstraint(ParTyp _), _
+    | TypConstraint(CoordTyp _), _ -> 
+        (match to_check with | TypConstraint t ->
+        is_sub_constraint cx (TypConstraint (primitive cx t)) target
+        | _ -> failwith (line_number cx.meta ^ " Something broke in OCaml varying types?"))
+    | _, GenArrTyp _ -> false
 
 let is_bounded_by (cx: contexts) (t: typ) (c: constrain) : bool =
     debug_print ">> is_bounded_by";
     is_sub_constraint cx (TypConstraint t) c
 
-(* Special case that comes up a bunch -- previously covered incorrectly by 'genType' *)
-let is_non_bool (cx: contexts) (t: typ) : bool =
-    is_bounded_by cx t GenTyp || is_bounded_by cx t GenMatTyp
-
 let check_parameterization (cx: contexts) (pmb: (string * constrain) list) (pml : typ list) : bool =
     debug_print ">> check_parameterization";
     List.length pmb == List.length pml && List.fold_left2 (fun acc (s, c) t -> is_bounded_by cx t c && acc) true pmb pml
 
-let delta_lookup (cx: contexts) (pml: typ list) (s: id) : typ =
+let tau_lookup (cx: contexts) (pml: typ list) (x: id) : typ =
     (* The safe version, where we check the validity of abstract type resolution *)
-    debug_print ">> delta_lookup";
-    if Assoc.mem s cx.d then
-        let (pm_to_match, t) = Assoc.lookup s cx.d in
-        if check_parameterization cx (Assoc.bindings pm_to_match) pml
-        then delta_lookup_unsafe cx pml s
-        else raise (TypeExceptionMeta ("Invalid parameters <" ^ (string_of_list string_of_typ pml) ^ "> to " ^ s, cx.meta))
-    else raise (TypeExceptionMeta ("Unknown tag " ^ s, cx.meta))
+    debug_print ">> tau_lookup";
+    let pmd, t = get_typ cx x in
+    if check_parameterization cx (Assoc.bindings pmd) pml then
+    let tc = match_parameterization_unsafe (with_pm cx pmd) pml in
+    replace_abstype tc t
+    else raise (TypeExceptionMeta ("Invalid parameters <" ^ (string_of_list string_of_typ pml) ^ "> to " ^ x, cx.meta))
 
 let rec greatest_common_child (cx: contexts) (t1: typ) (t2: typ): typ =
     debug_print ">> greatest_common_child";    
-    let fail _ = raise (TypeExceptionMeta ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2), cx.meta)) in
-    if (is_subtype cx t1 t2) then t1 else 
-    if (is_subtype cx t2 t1) then t2 else 
-    let n1 = match (vec_dim_safe cx t1) with | Some n -> n | None -> fail () in
-    let n2 = match (vec_dim_safe cx t2) with | Some n -> n | None -> fail () in
-    (* So this definition of n1 and n2 actually means non-vector types have already been checked *)
-    if not (n1 = n2) then fail () else
-    match (t1, t2) with                                                                                                                                                                                                                                                                                                                                                                                                                    
-    | TopVecTyp _, _ -> t2
-    | _, TopVecTyp _ -> t1
-    | _ -> BotVecTyp n1 (* This works since both t1 and t2 are vectors with the same dimension and are not subtypes of each other *)
+    if is_subtype cx t1 t2 then t1 else 
+    if is_subtype cx t2 t1 then t2 else 
+    let top = primitive cx t1 in
+    if is_typ_eq cx top (primitive cx t2) then Literal top else
+    raise (TypeExceptionMeta ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2), cx.meta))
 
 let rec least_common_parent (cx: contexts) (t1: typ) (t2: typ): typ =
     debug_print (">> least_common_parent" ^ (string_of_pair (string_of_typ t1) (string_of_typ t2)));
-    let fail _ = raise (TypeExceptionMeta ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2), cx.meta)) in
-    let rec step_abstyp s1 s2 =
-        begin
-            match Assoc.lookup s2 cx.pm with
-            | TypConstraint (AbsTyp s') -> if (is_subtype cx t1 (AbsTyp s')) then (AbsTyp s') else step_abstyp s1 s'
-            | TypConstraint t -> least_common_parent cx t t2
-            | c -> fail ()
-        end
-    in
-    if (is_subtype cx t1 t2) then t2 else if (is_subtype cx t2 t1) then t1 
-    else match (t1, t2) with
-        | UntaggedVecTyp n, _ ->
-            (* If we can't unify initially, then the next best thing is trying top *)
-            least_common_parent cx (TopVecTyp (DimNum n)) t2
-        | _, UntaggedVecTyp n ->
-            least_common_parent cx t1 (TopVecTyp (DimNum n))
-        | VarTyp s, _ ->
-            (* Just go up a step -- the end condition is the is_subtype check earlier *)
-            least_common_parent cx (delta_lookup cx [] s) t2
-        | _, VarTyp s ->
-            least_common_parent cx t1 (delta_lookup cx [] s)
-        | ParTyp (VarTyp s, tl), _ ->
-            least_common_parent cx (delta_lookup cx tl s) t2
-        | _, ParTyp (VarTyp s, tl) ->
-            least_common_parent cx t1 (delta_lookup cx tl s)
-        | (AbsTyp s1, AbsTyp s2) -> (step_abstyp s1 s2)
-        | (TransTyp (t1, t2), TransTyp(t3, t4)) -> 
-            (TransTyp (greatest_common_child cx t1 t3, least_common_parent cx t2 t4))
-        (* Note that every other possible pair of legal joins would be caught by the is_subtype calls above *)
-        | _ -> fail ()
+    if is_subtype cx t1 t2 then t2 else if is_subtype cx t2 t1 then t1 
+    else match typ_step cx t1 with 
+    | Some t1' -> least_common_parent cx t1' t2
+    | None -> raise (TypeExceptionMeta ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2), cx.meta))
 
 let least_common_parent_safe (cx: contexts) (t1: typ) (t2: typ): typ option =
     try Some (least_common_parent cx t1 t2) with
     | TypeExceptionMeta (t, _) -> None
     | DimensionException _ -> None
     | t -> raise t
-
-let collapse_parameterization_decl (pmd: parameterization_decl) : parameterization =
-    Assoc.gen_context pmd
 
 let infer_pml (cx: contexts) ((params, rt, pr, meta) : fn_typ) (args_typ : typ list) : (typ list) option =
     debug_print ">> infer_pml";

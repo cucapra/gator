@@ -17,7 +17,7 @@ type typ =
     | BoolTyp
     | IntTyp
     | FloatTyp
-    | ArrLitTyp of typ * int (* Literals such as [0., 1.] or [true, false] -- all have constant length *)
+    | Literal of typ
     | ArrTyp of typ * dexp (* i.e. float[5] or bool[2][3] *)
     | CoordTyp of string * typ (* i.e. cart.point *)
     | ParTyp of string * typ list (* i.e. color or matrix<model, world> *)

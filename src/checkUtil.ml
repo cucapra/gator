@@ -80,9 +80,9 @@ let string_of_gamma (g : gamma) =
 let string_of_delta (f : delta) =
   string_of_frame f
 let string_of_chi (c : chi) =
-  string_of_coordinate_element c
+  Assoc.to_string string_of_coordinate_element c
 let string_of_omega (o : omega) =
-  string_of_prototype_element o
+  Assoc.to_string string_of_prototype_element o
 let string_of_phi (p : phi) =
   string_of_fn_typ p
 let string_of_psi (ps : psi) : string =
@@ -103,17 +103,22 @@ let get_frame (cx : contexts) (x : string) : delta =
   | Some Delta d -> d
   | _ -> raise (TypeExceptionMeta ("Undefined frame " ^ x, cx.meta))
 
-let rec get_frame_top (cx : contexts) (x : string) : int =
-  match get_frame cx x with
-  | FrameDim s -> get_frame_top cx s
-  | FrameNum n -> n
-
 let get_scheme (cx : contexts) (x : string) : chi =
   match find_safe cx x with
   | Some Chi c -> c
   | _ -> raise (TypeExceptionMeta ("Undefined coordinate scheme " ^ x, cx.meta))
 
-let get_proto (cx : contexts) (x : string) : omega =
+let get_coordinate_element (cx : contexts) (c : string) (e : string) : coordinate_element =
+  let ce = get_scheme cx c in
+  if Assoc.mem e ce then Assoc.lookup e ce
+  else raise (TypeExceptionMeta (e ^ " is not a member of coordinate scheme " ^ c, cx.meta))
+
+let get_prototype (cx : contexts) (x : string) : omega =
   match find_safe cx x with
   | Some Omega o -> o
   | _ -> raise (TypeExceptionMeta ("Undefined object " ^ x, cx.meta))
+
+let get_prototype_element (cx : contexts) (p : string) (e : string) : prototype_element =
+  let pe = get_prototype cx p in
+  if Assoc.mem e pe then Assoc.lookup e pe
+  else raise (TypeExceptionMeta (e ^ " is not a member of coordinate scheme " ^ p, cx.meta))

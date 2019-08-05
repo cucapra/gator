@@ -20,9 +20,9 @@ let rec string_of_typ (t: typ) : string =
     | BoolTyp -> "bool"
     | IntTyp -> "int"
     | FloatTyp -> "float"
+    | Literal t -> string_of_typ t ^ "%lit"
     | ArrTyp (t, d) -> string_of_typ t ^ "[" ^ string_of_dexp d ^ "]"
     (* Essentially the bottom type for all arrays *)
-    | ArrLitTyp (t, n) -> string_of_typ t ^ "[" ^ string_of_int n ^ "]%lit"
     | CoordTyp (s, t) -> s ^ "." ^ string_of_typ t
     | ParTyp (s, tl) -> s ^ "<" ^ (string_of_list string_of_typ tl) ^ ">"
 
