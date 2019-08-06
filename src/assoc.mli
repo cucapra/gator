@@ -23,6 +23,12 @@ val update : string -> 'a -> 'a context -> 'a context
 (* Produce bindings as an association list. *)
 val bindings : 'a context -> (string * 'a) list
 
+(* Produces the list of keys of an association list *)
+val keys : 'a context -> string list
+
+(* Produces the list of values of an association list *)
+val values : 'a context -> 'a list
+
 (* Generates a context from a list *)
 val gen_context : (string * 'a) list -> 'a context
 

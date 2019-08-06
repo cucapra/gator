@@ -69,6 +69,8 @@ let string_of_fn_inv ((s, tl) : fn_inv) : string =
   s ^ "<" ^ string_of_list string_of_typ tl ^ ">"
 let line_number (meta : metadata) : string = 
   ("Line: " ^ string_of_int(meta.pos_lnum))
+let debug_fail (meta : metadata) (s : string) =
+  failwith (line_number meta ^ "\t" ^ s)
 let string_of_tau (pm, t : tau) =
   string_of_parameterization pm ^ " " ^  string_of_typ t
 let string_of_mu (ml : mu) =  

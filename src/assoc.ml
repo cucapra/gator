@@ -20,6 +20,8 @@ let update x v c = (x, v) :: (List.remove_assoc x c)
 
 (* Produce bindings as an association list. *)
 let bindings c = c
+let keys c = List.map fst c
+let values c = List.map snd c
 
 (* Generates a context from a list *)
 let gen_context l = List.fold_left (fun acc (s, v) -> update s v acc) empty (List.rev l)

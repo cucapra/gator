@@ -237,7 +237,7 @@ let least_common_parent_safe (cx: contexts) (t1: typ) (t2: typ): typ option =
 
 (* Given a function and list of arguments to that function *)
 (* Attempts to produce a list of valid types for the parameterization of the function *)
-let infer_pml (cx: contexts) (_, rt, x, pm, params, meta : fn_typ) (args_typ : typ list) : (typ list) option =
+let infer_pml (cx: contexts) (pr : params) (args : typ list) : (typ list) option =
     debug_print ">> infer_pml";
     let update_inference (t : typ) (s : string) (fpm : typ Assoc.context option) : typ Assoc.context option =
         match fpm with | None -> None | Some p ->
@@ -248,35 +248,44 @@ let infer_pml (cx: contexts) (_, rt, x, pm, params, meta : fn_typ) (args_typ : t
     in
     let rec unify_param (arg_typ : typ) (par_typ : typ) (fpm : (typ Assoc.context) option) : (typ Assoc.context) option =
         match arg_typ, par_typ with
-        | (ParTyp (_, tl1), ParTyp (s, tl2)) ->
-            let fpm' = update_inference arg_typ s fpm in
+        | ParTyp (_, tl1), ParTyp (s, tl2) ->
+            (* Only update our inference if we are working on an abstract type *)
+            let fpm' = if List.mem s (Assoc.keys cx.pm) then update_inference arg_typ s fpm else fpm in
             if List.length tl1 = List.length tl2 then
             List.fold_left2 (fun acc l r -> unify_param l r acc) fpm' tl1 tl2 else fpm'
         | _ -> fpm
     in
     let gen_pml (inferred : (typ Assoc.context) option) : (typ list) option =
-        let rec reduce_typ (t : typ) (fpm : typ Assoc.context) : typ =
+        let rec reduce_typ (fpm : typ Assoc.context) (t : typ) : typ =
+            let fail _ = debug_fail cx.meta "Bad match between type lookup and expected abstract type" in
             match t with
             (* Don't have to check if t is valid *)
             (* already handled by the typechecker when checking that 
              * the function declaration parameter dependencies were valid *)
-            | AbsTyp s -> Assoc.lookup s fpm
-            | TransTyp (l, r) -> TransTyp(reduce_typ l fpm, reduce_typ r fpm)
-            | ParTyp (t, tl) -> ParTyp(t, List.map (fun x -> reduce_typ x fpm) tl)
+            | ParTyp (s, tl) -> 
+                let s' = if not (Assoc.mem s fpm) then s else
+                    match Assoc.lookup s fpm with | ParTyp (s', _) -> s' | _ -> fail ()
+                in
+                ParTyp(s', List.map (reduce_typ fpm) tl)
+            | CoordTyp (s, t') ->
+                let s' = if not (Assoc.mem s fpm) then s else
+                    match Assoc.lookup s fpm with | CoordTyp (s', _) -> s' | _ -> fail ()
+                in
+                ParTyp(s', List.map (reduce_typ fpm) tl)
             | _ -> t
         in
         (* Correctly orders the resulting pml to match the parameters of the function parameterization list *)
         match inferred with | None -> None | Some tc -> 
-        option_map (fun c -> List.rev (List.map snd (Assoc.bindings c))) 
+        option_map (fun c -> List.rev (List.map snd (Assoc.bindings c)))
             (List.fold_left (fun acc (s, c) -> match acc with | None -> None | Some a -> 
                 if Assoc.mem s tc then Some (Assoc.update s (Assoc.lookup s tc) a) else
-                (match c with
-                | TypConstraint t' -> Some (Assoc.update s (reduce_typ t' a) a)
-                | _ -> None))
-            (Some Assoc.empty) (Assoc.bindings pr))
+                match c with
+                | TypConstraint t' -> Some (Assoc.update s (reduce_typ a t') a)
+                | _ -> None)
+            (Some Assoc.empty) (Assoc.bindings cx.pm))
     in
     gen_pml (List.fold_left2 (fun fpm arg_typ (par_typ, _) -> unify_param arg_typ par_typ fpm) 
-                (Some Assoc.empty) args_typ params)
+                (Some Assoc.empty) args pr)
 
 let check_subtype_list (cx: contexts) (l: typ list) (t: typ) : bool =
     debug_print ">> check_subtype_list";
