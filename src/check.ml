@@ -241,18 +241,17 @@ let infer_pml (cx: contexts) (_, rt, x, pm, params, meta : fn_typ) (args_typ : t
     debug_print ">> infer_pml";
     let update_inference (t : typ) (s : string) (fpm : typ Assoc.context option) : typ Assoc.context option =
         match fpm with | None -> None | Some p ->
-        if Assoc.mem s p then (match least_common_parent_safe cx t (Assoc.lookup s p) with
+        if Assoc.mem s p then match least_common_parent_safe cx t (Assoc.lookup s p) with
             | None -> None
-            | Some t' -> Some (Assoc.update s t' p))
+            | Some t' -> Some (Assoc.update s t' p)
         else Some (Assoc.update s t p)
     in
     let rec unify_param (arg_typ : typ) (par_typ : typ) (fpm : (typ Assoc.context) option) : (typ Assoc.context) option =
         match arg_typ, par_typ with
-        | (_, AbsTyp s) -> update_inference arg_typ s fpm
-        (* Note that transtyp order doesn't matter; lots of commutivity *)
-        | (TransTyp (al, ar), TransTyp (pl, pr)) -> unify_param ar pr (unify_param al pl fpm)
-        | (ParTyp (_, tl1), ParTyp (_, tl2)) -> if List.length tl1 = List.length tl2 then
-            List.fold_left2 (fun acc l r -> unify_param l r acc) fpm tl1 tl2 else fpm
+        | (ParTyp (_, tl1), ParTyp (s, tl2)) ->
+            let fpm' = update_inference arg_typ s fpm in
+            if List.length tl1 = List.length tl2 then
+            List.fold_left2 (fun acc l r -> unify_param l r acc) fpm' tl1 tl2 else fpm'
         | _ -> fpm
     in
     let gen_pml (inferred : (typ Assoc.context) option) : (typ list) option =
@@ -276,7 +275,7 @@ let infer_pml (cx: contexts) (_, rt, x, pm, params, meta : fn_typ) (args_typ : t
                 | _ -> None))
             (Some Assoc.empty) (Assoc.bindings pr))
     in
-    gen_pml (List.fold_left2 (fun fpm arg_typ (_, par_typ, _) -> unify_param arg_typ par_typ fpm) 
+    gen_pml (List.fold_left2 (fun fpm arg_typ (par_typ, _) -> unify_param arg_typ par_typ fpm) 
                 (Some Assoc.empty) args_typ params)
 
 let check_subtype_list (cx: contexts) (l: typ list) (t: typ) : bool =
