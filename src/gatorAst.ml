@@ -12,6 +12,7 @@ type dexp =
 
 (* types *)
 type typ =
+    | BotTyp (* Useful exactly for empty lists *)
     | AutoTyp
     | UnitTyp
     | BoolTyp
@@ -21,13 +22,9 @@ type typ =
     | ArrTyp of typ * dexp (* i.e. float[5] or bool[2][3] *)
     | CoordTyp of string * typ (* i.e. cart.point *)
     | ParTyp of string * typ list (* i.e. color or matrix<model, world> *)
-
-(* special constraint types *)
-type constrain =
     | AnyTyp
     | GenTyp
-    | GenArrTyp of constrain
-    | TypConstraint of typ
+    | GenArrTyp of typ
 
 (* expressions *)
 type aexp = exp astNode
@@ -66,7 +63,7 @@ and if_block = aexp * acomm list
 
 (* function and type parameterization,
  * which may extend another type. *)
- type parameterization = constrain Assoc.context
+type parameterization = typ Assoc.context
 
 (* function parameters *)
 (* arguments may have an optional parameterization *)

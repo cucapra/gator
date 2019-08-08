@@ -13,8 +13,7 @@ type value =
   | Bool of bool
   | Num of int
   | Float of float
-  | VecLit of vec
-  | MatLit of mat
+  | ArrLit of value list
 
 type unop =
   | Neg

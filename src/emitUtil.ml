@@ -3,6 +3,16 @@ open TypedAst
 open TypedAstPrinter
 open Util
 
+let as_vec (v : value list) : vec =
+    List.fold_right (fun x acc -> match x with 
+      | Float f -> f::acc 
+      | _ -> failwith "Expected float") v []
+  
+  let as_mat (v : value list) : mat =
+    List.fold_right (fun x acc -> match x with 
+      | ArrLit a -> as_vec a :: acc
+      | _ -> failwith "Expected float") v []
+
 let rec replace_type (et : etyp) (t : etyp) (r : etyp) : etyp =
     let rec eq (et : etyp) (t : etyp) : bool = match et, t with
         | UnitTyp, UnitTyp -> true

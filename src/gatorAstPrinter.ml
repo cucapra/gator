@@ -15,6 +15,7 @@ let rec string_of_dexp (d : dexp) : string =
 
 let rec string_of_typ (t: typ) : string = 
     match t with
+    | BotTyp -> "bottyp"
     | AutoTyp -> "auto"
     | UnitTyp -> "void"
     | BoolTyp -> "bool"
@@ -25,12 +26,8 @@ let rec string_of_typ (t: typ) : string =
     (* Essentially the bottom type for all arrays *)
     | CoordTyp (s, t) -> s ^ "." ^ string_of_typ t
     | ParTyp (s, tl) -> s ^ "<" ^ (string_of_list string_of_typ tl) ^ ">"
-
-let rec string_of_constraint (c: constrain) : string =
-    match c with
     | GenTyp -> "genTyp"
-    | GenArrTyp c -> "arr of " ^ string_of_constraint c
-    | TypConstraint t -> string_of_typ t
+    | GenArrTyp t' -> "arr of " ^ string_of_typ t'
     | AnyTyp -> ""
 
 let string_of_modification (m: modification) : string =
@@ -47,7 +44,7 @@ let string_of_param ((t, s): typ * string) : string =
 
 let string_of_parameterization (p : parameterization) : string =
     string_if_true (fun a -> Assoc.size a != 0)
-        (fun a -> "<" ^ Assoc.to_string string_of_constraint a ^ ">") p
+        (fun a -> "<" ^ Assoc.to_string string_of_typ a ^ ">") p
 
 let string_of_fn_typ (ml, r, x, pm, p, _ : fn_typ) : string = 
     string_of_mod_list ml ^ " " ^ string_of_typ r ^ " " ^ x ^ string_of_parameterization pm

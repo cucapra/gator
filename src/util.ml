@@ -36,10 +36,12 @@ let string_of_list (f: 'a -> string) (l: 'a list) : string =
   string_of_separated_list ", " f l
 let string_of_bounded_list (f: 'a -> string) (lb : string) (rb : string) (l : 'a list) : string =
   lb ^ string_of_list f l ^ rb
+let string_of_array (f : 'a -> string) (a: 'a list) =
+  string_of_bounded_list f "[" "]" a
 let string_of_vec (v: vec) : string =
-  string_of_bounded_list string_of_float "[" "]" v
+  string_of_array string_of_float v
 let string_of_mat (m: mat) : string = 
-  string_of_bounded_list string_of_vec "[" "]" m
+  string_of_array string_of_vec m
 
 let rec repeat (s : string) (count : int) : string = 
   if count <= 0 then "" else (if count > 1 then (s ^ (repeat s (count-1))) else s)
@@ -62,8 +64,7 @@ let rec string_of_value (v: value) : string =
   | Bool b -> string_of_bool b
   | Num n -> string_of_int n
   | Float f -> string_of_float f
-  | VecLit v -> string_of_vec v
-  | MatLit m -> string_of_mat m
+  | ArrLit a -> string_of_array string_of_value a
 
 let string_of_unop (op : unop) : string =
   match op with

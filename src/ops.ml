@@ -8,9 +8,19 @@ open Util
 
 type sigma = (value) Assoc.context
 
+let arr_app (fv : vec -> 'a) (fm : mat -> 'a) (a : value list) : 'a =
+    match as_vec_safe a with
+    | Some v -> fv v
+    | None -> (match as_mat_safe a with
+        | Some m -> fm m
+        | None -> failwith ("Typechecker failure, bad arr " ^ (string_of_array string_of_value a)))
+
+let arr_op (fv : vec -> vec) (fm : mat -> mat) (a : value list) : value =
+    arr_app (arr_of_vec |- fv) (arr_of_mat |- fm) a
+
 let interp_string_of_vec (v: vec) : string = 
     "[" ^ (String.concat ", " (List.map string_of_float v)) ^ "]"
-  
+
 let interp_string_of_mat (m: mat) : string = 
     "[" ^ (String.concat ", " (List.map interp_string_of_vec m)) ^ "]"
 
@@ -21,18 +31,18 @@ let rec fn_lookup (name : id) (fns : fn list) : (fn option * id list) =
         (if name = id then (Some h, List.map snd p) else fn_lookup name t)
 
 let rec eval_glsl_fn (name : id) (args : value list) : value =
-        let as_vec (v : value) : vec =
-            (match v with
-            | VecLit vec -> vec
-            | _ -> failwith "Expected vec, but didn't get it!")
-        in
-        if name = "dot" then Float (dot (as_vec (List.nth args 0)) (as_vec (List.nth args 1))) else
-        if name = "normalize" then VecLit (normalize (as_vec (List.nth args 0))) else
-        if Str.string_match (Str.regexp "vec[0-9]+") name 0 then
-            VecLit (vecn (int_of_string (Str.string_after name 3)) args) else
-        if Str.string_match (Str.regexp "mat[0-9]+") name 0 then
-            MatLit (matn (int_of_string (Str.string_after name 3)) args) else
-        failwith ("Unimplemented function " ^ name ^ " -- is this a GLSL function?")
+    let val_as_vec v =
+        match v with
+        | ArrLit a -> as_vec a
+        | _ -> failwith "Expected vector"
+    in
+    if name = "dot" then Float (dot (val_as_vec (List.nth args 0)) (val_as_vec (List.nth args 1))) else
+    if name = "normalize" then arr_of_vec(normalize (val_as_vec (List.nth args 0))) else
+    if Str.string_match (Str.regexp "vec[0-9]+") name 0 then
+        arr_of_vec(vecn (int_of_string (Str.string_after name 3)) args) else
+    if Str.string_match (Str.regexp "mat[0-9]+") name 0 then
+        arr_of_mat(matn (int_of_string (Str.string_after name 3)) args) else
+    failwith ("Unimplemented function " ^ name ^ " -- is this a GLSL function?")
 
 and eval_texp ((e, _) : texp) (fns : fn list) (s : sigma) (s_g : sigma) : value * sigma =
     eval_exp e fns s s_g
@@ -41,24 +51,8 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) (s_g : sigma) : value * sigma
     | Val v -> v, s_g
     | Var x -> (try Assoc.lookup x s with _ -> Assoc.lookup x s_g), s_g
     | Arr a ->
-        let (result, s_g') = (List.fold_left (fun (vl, s_g) (e, _) -> let (v, s_g) = eval_exp e fns s s_g in vl@[v], s_g) ([], s_g) a) in
-        let rec as_vec (arr : value list) : vec option =
-            (match arr with
-            | [] -> Some []
-            | h::t -> 
-            (match h with | Float f -> (option_map (fun l -> f::l) (as_vec t)) | _ -> None ))
-        in
-        let rec as_mat (arr : value list) : mat option =
-            (match arr with
-            | [] -> Some []
-            | h::t -> 
-            (match h with | VecLit v -> (option_map (fun l -> v::l) (as_mat t)) | _ -> None ))
-        in
-        (match as_vec result with
-        | Some v -> VecLit v, s_g'
-        | None -> (match as_mat result with
-            | Some m -> MatLit m, s_g'
-            | None -> failwith ("Typechecker failure, bad arr " ^ (string_of_exp e))))
+        let result, s_g' = List.fold_left (fun (vl, s_g) (e, _) -> let (v, s_g) = eval_exp e fns s s_g in vl@[v], s_g) ([], s_g) a in
+        arr_op (fun x -> x) (fun x -> x) result, s_g'
     | Unop (op, e') ->
         let (v, s_g') = eval_texp e' fns s s_g in
         let bad_unop _ =
@@ -68,15 +62,14 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) (s_g : sigma) : value * sigma
         | Neg -> (match v with
             | Num i -> Num (-i), s_g'
             | Float f -> Float (-.f), s_g'
-            | VecLit v -> VecLit (List.map (~-.) v), s_g'
-            | MatLit m -> MatLit (List.map (fun v -> (List.map (~-.) v)) m), s_g'
+            | ArrLit a -> arr_op (List.map (~-.)) (List.map (fun v -> List.map (~-.) v)) a, s_g'
             | _ -> bad_unop ())
         | Not -> (match v with
             | Bool b -> Bool (not b), s_g'
             | _ -> bad_unop ())
         | Swizzle s -> (match v with
-            | VecLit v -> let res = swizzle s v in
-                if List.length res == 1 then Float (List.hd res), s_g' else VecLit res, s_g'
+            | ArrLit a -> let res = swizzle s (as_vec a) in
+                if List.length res == 1 then Float (List.hd res), s_g' else arr_of_vec res, s_g'
             | _ -> bad_unop ()))
 
     | Binop (l, op, r) -> 
@@ -87,78 +80,67 @@ and eval_exp (e : exp) (fns : fn list) (s : sigma) (s_g : sigma) : value * sigma
             (string_of_binop_exp (string_of_value left) op (string_of_value right)))
         in
         (match op with
-        | Eq -> (match (left, right) with
-            | (Num n1, Num n2) -> Bool (n1 = n2), s_g''
-            | (Float f1, Float f2) -> Bool (f1 = f2), s_g''
-            | (Bool b1, Bool b2) -> Bool (b1 = b2), s_g''
+        | Eq -> (match left, right with
+            | Num n1, Num n2 -> Bool (n1 = n2), s_g''
+            | Float f1, Float f2 -> Bool (f1 = f2), s_g''
+            | Bool b1, Bool b2 -> Bool (b1 = b2), s_g''
             | _ -> bad_binop ())
-        | Leq -> (match (left, right) with
-            | (Num n1, Num n2) -> Bool (n1 <= n2), s_g''
-            | (Float f1, Float f2) -> Bool (f1 <= f2), s_g''
+        | Leq -> (match left, right with
+            | Num n1, Num n2 -> Bool (n1 <= n2), s_g''
+            | Float f1, Float f2 -> Bool (f1 <= f2), s_g''
             | _ -> bad_binop ())
-        | Lt -> (match (left, right) with
-            | (Num n1, Num n2) -> Bool (n1 < n2), s_g''
-            | (Float f1, Float f2) -> Bool (f1 < f2), s_g''
+        | Lt -> (match left, right with
+            | Num n1, Num n2 -> Bool (n1 < n2), s_g''
+            | Float f1, Float f2 -> Bool (f1 < f2), s_g''
             | _ -> bad_binop ())
-        | Geq -> (match (left, right) with
-            | (Num n1, Num n2) -> Bool (n1 >= n2), s_g''
-            | (Float f1, Float f2) -> Bool (f1 >= f2), s_g''
+        | Geq -> (match left, right with
+            | Num n1, Num n2 -> Bool (n1 >= n2), s_g''
+            | Float f1, Float f2 -> Bool (f1 >= f2), s_g''
             | _ -> bad_binop ())
-        | Gt -> (match (left, right) with
-            | (Num n1, Num n2) -> Bool (n1 > n2), s_g''
-            | (Float f1, Float f2) -> Bool (f1 > f2), s_g''
+        | Gt -> (match left, right with
+            | Num n1, Num n2 -> Bool (n1 > n2), s_g''
+            | Float f1, Float f2 -> Bool (f1 > f2), s_g''
             | _ -> bad_binop ())
-        | Or -> (match (left, right) with
-            | (Bool b1, Bool b2) -> Bool (b1 || b2), s_g''
+        | Or -> (match left, right with
+            | Bool b1, Bool b2 -> Bool (b1 || b2), s_g''
             | _ -> bad_binop ())
-        | And -> (match (left, right) with
-            | (Bool b1, Bool b2) -> Bool (b1 && b2), s_g''
+        | And -> (match left, right with
+            | Bool b1, Bool b2 -> Bool (b1 && b2), s_g''
             | _ -> bad_binop ())            
-        | Plus -> (match (left, right) with
-            | (Num i1, Num i2) -> Num (i1 + i2), s_g''
-            | (Float f1, Float f2) -> Float (f1 +. f2), s_g''
-            | (VecLit v1, VecLit v2) -> VecLit (vec_add v1 v2), s_g''
-            | (MatLit m1, MatLit m2) -> MatLit (mat_add m1 m2), s_g''
+        | Plus -> (match left, right with
+            | Num i1, Num i2 -> Num (i1 + i2), s_g''
+            | Float f1, Float f2 -> Float (f1 +. f2), s_g''
+            | ArrLit a1, ArrLit a2 -> arr_op (vec_add (as_vec a1)) (mat_add (as_mat a1)) a2 ,s_g''
             | _ -> bad_binop ())
 
         | Minus -> (match (left, right) with
-            | (Num i1, Num i2) -> Num (i1 - i2), s_g''
-            | (Float f1, Float f2) -> Float (f1 -. f2), s_g''
-            | (VecLit v1, VecLit v2) -> VecLit (vec_sub v1 v2), s_g''
-            | (MatLit m1, MatLit m2) -> MatLit (mat_sub m1 m2), s_g''
+            | Num i1, Num i2 -> Num (i1 - i2), s_g''
+            | Float f1, Float f2 -> Float (f1 -. f2), s_g''
+            | ArrLit a1, ArrLit a2 -> arr_op (vec_sub (as_vec a1)) (mat_sub (as_mat a1)) a2 ,s_g''
             | _ -> bad_binop ())
 
         | Times -> (match (left, right) with
-            | (Num i1, Num i2) -> Num (i1 * i2), s_g''
-            | (Float f1, Float f2) -> Float (f1 *. f2), s_g''
-            | (VecLit v, Num n)
-            | (Num n, VecLit v) -> VecLit (iv_mult n v), s_g''
-            | (VecLit v, Float s)
-            | (Float s, VecLit v) -> VecLit (sv_mult s v), s_g''
-            | (MatLit m, Num n)
-            | (Num n, MatLit m) -> MatLit (im_mult n m), s_g''
-            | (MatLit m, Float s)
-            | (Float s, MatLit m) -> MatLit (sm_mult s m), s_g''
-            | (MatLit m, VecLit v) -> VecLit (vec_mult v m), s_g''
-            | (MatLit m1, MatLit m2) -> MatLit (mat_mult m1 m2), s_g''
+            | Num i1, Num i2 -> Num (i1 * i2), s_g''
+            | Float f1, Float f2 -> Float (f1 *. f2), s_g''
+            | ArrLit a, Num n
+            | Num n, ArrLit a -> arr_op (iv_mult n) (im_mult n) a, s_g''
+            | ArrLit a, Float s
+            | Float s, ArrLit a -> arr_op (sv_mult s) (sm_mult s) a, s_g''
+            | ArrLit a1, ArrLit a2 -> let m = as_mat a1 in arr_op (vec_mult m) (mat_mult m) a2, s_g''
             | _ -> bad_binop ())
 
-        | Div -> (match (left, right) with
-            | (Num i1, Num i2) -> Num (i1 / i2), s_g''
-            | (Float f1, Float f2) -> Float (f1 /. f2), s_g''
-            | (VecLit v, Num n) -> VecLit (sv_mult (1. /. (float_of_int n)) v), s_g''
-            | (VecLit v, Float s) -> VecLit (sv_mult (1. /. s) v), s_g''
-            | (MatLit m, Num n) -> MatLit (sm_mult (1. /. (float_of_int n)) m), s_g''
-            | (MatLit m, Float s) -> MatLit (sm_mult (1. /. s) m), s_g''
+        | Div -> (match left, right with
+            | Num i1, Num i2 -> Num (i1 / i2), s_g''
+            | Float f1, Float f2 -> Float (f1 /. f2), s_g''
+            | ArrLit a, Num n -> let r = 1. /. (float_of_int n) in arr_op (sv_mult r) (sm_mult r) a, s_g''
+            | ArrLit a, Float s -> let r = 1. /. s in arr_op (sv_mult r) (sm_mult r) a, s_g''
             | _ -> bad_binop ())
 
-        | CTimes -> (match (left, right) with
-            | (VecLit v1, VecLit v2) -> VecLit (vc_mult v1 v2), s_g''
-            | (MatLit m1, MatLit m2) -> MatLit (mc_mult m1 m2), s_g''
+        | CTimes -> (match left, right with
+            | ArrLit a1, ArrLit a2 -> arr_op (vc_mult (as_vec a1)) (mc_mult (as_mat a1)) a2 ,s_g''
             | _ -> bad_binop ())
-        | Index -> (match (left, right) with
-            | (VecLit v, Num i) -> Float (List.nth v i), s_g''
-            | (MatLit m, Num i) -> VecLit (List.map (fun v -> List.nth v i) m), s_g''
+        | Index -> (match left, right with
+            | ArrLit a, Num i -> arr_app (fun v -> Float (List.nth v i)) (fun m -> arr_of_vec (List.map (fun v -> List.nth v i) m)) a, s_g''
             | _ -> bad_binop ())
         )
     | FnInv (id, tl, args) -> let (fn, p) = fn_lookup id fns in
@@ -174,8 +156,7 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) (s_g : sigma) : sigma * sig
     | Skip -> s, s_g
     | Print (e, _) -> let v, s_g = eval_exp e fns s s_g in
         (print_string ((match v with 
-            | VecLit v -> interp_string_of_vec v
-            | MatLit m -> interp_string_of_mat m
+            | ArrLit a -> arr_app interp_string_of_vec interp_string_of_mat a
             | _ -> (string_of_value v)
             ) ^ "\n"));
         s, s_g
@@ -251,8 +232,8 @@ let rec default_value (t : etyp) =
     | BoolTyp -> Bool false
     | IntTyp -> Num 0
     | FloatTyp -> Float 0.
-    | VecTyp n -> VecLit (init n 0.)
-    | MatTyp (m, n) -> MatLit (init m (init n 0.))
+    | VecTyp n -> arr_of_vec(init n 0.)
+    | MatTyp (m, n) -> arr_of_mat(init m (init n 0.))
     | TransTyp (t1, t2) -> Unit
     | AbsTyp _ -> Unit
     | ArrTyp _ -> Unit

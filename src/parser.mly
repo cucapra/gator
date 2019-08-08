@@ -185,7 +185,7 @@ let extern_element ==
 let constrained ==
   | t = ID;
     { (t, AnyTyp) }
-  | t = ID; COLON; c = constrain; <>
+  | t = ID; COLON; c = typ; <>
 
 let parameter == 
   | t = typ; x = ID;
@@ -266,16 +266,6 @@ let comm_element ==
   | x = ID; p = oplist(parameters(LWICK, typ, RWICK)); a = arguments;
     < FnCall >
 
-let constrain == 
-  | VEC;
-    { GenArrTyp(TypConstraint(FloatTyp)) }
-  | MAT;
-    { GenArrTyp(GenArrTyp(TypConstraint(FloatTyp))) }
-  | GENTYPE; 
-    { GenTyp }
-  | t = typ;
-    <TypConstraint>
-
 let dexp :=
   | d1 = dexp; b = binop; d2 = dexp;
     <DimBinop>
@@ -303,6 +293,12 @@ let typ :=
     <ParTyp>
   | x = ID; /* explicit for clarity and to help out the parser */
     { ParTyp(x, []) }
+  | VEC;
+    { GenArrTyp(FloatTyp) }
+  | MAT;
+    { GenArrTyp(GenArrTyp(FloatTyp)) }
+  | GENTYPE; 
+    { GenTyp }
 
 let storage_qual ==
   | IN;

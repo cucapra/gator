@@ -20,8 +20,11 @@ type gamma = typ
 type delta = frame
 
 (* Coordinate systems *)
-(* Stores type of each every member element and command list for each function in coordinate systems *)
-type chi = coordinate_element Assoc.context
+(* Stores the following information about the given coordinate scheme:
+ * The prototype implemented
+ * The require frame dimension
+ * A map to the underlying type of each every member element / a command list for each member function *)
+type chi = string * int * coordinate_element Assoc.context
 
 (* Prototypes *)
 (* Stores parameterization for objects and function permissions provided by prototypes *)

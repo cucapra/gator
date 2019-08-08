@@ -20,13 +20,12 @@ let rec reduce_dexp (cx: contexts) (d : dexp) : int =
     | DimBinop (l, b, r) -> match b with
             | Plus -> reduce_dexp cx l + reduce_dexp cx r
             | Minus -> reduce_dexp cx l - reduce_dexp cx r
-            | _ -> raise (TypeExceptionMeta ("Invalid binary operation to dimension expression " 
-                ^ string_of_binop b, cx.meta))
+            | _ -> error cx ("Invalid binary operation to dimension expression " ^ string_of_binop b)
 
-let rec unwrap_abstyp (cx: contexts) (s: string) : constrain =
+let rec unwrap_abstyp (cx: contexts) (s: string) : typ =
     debug_print ">> unwrap_abstyp";
     match get_pm cx s with
-        | TypConstraint(ParTyp (s, tl)) -> failwith "unimplemented partyp unwrapping"
+        | ParTyp (s, tl) -> failwith "unimplemented partyp unwrapping"
         | p -> p
 
 let rec replace_abstype (c: typ Assoc.context) (t: typ) : typ =
@@ -35,110 +34,6 @@ let rec replace_abstype (c: typ Assoc.context) (t: typ) : typ =
     | ParTyp (s, tl) -> failwith "unimplemented abstract type replacement"
     (* ParTyp (s, List.map (replace_abstype c) tl) *)
     | _ -> t
-
-(* Given a parameterization and a list of types being invoked on that parameterization *)
-(* Returns the appropriate concretized context if one exists *)
-(* Should only be used on previously verified parameterized type invokations *)
-let match_parameterization_unsafe (cx: contexts) (pml : typ list)
-: typ Assoc.context =
-    debug_print ">> match_parameterization_unsafe";
-    let pmb = Assoc.bindings cx.pm in
-    if List.length pmb == List.length pml
-    then List.fold_left2 (fun tcacc (s, c) t -> Assoc.update s t tcacc)
-        Assoc.empty (Assoc.bindings cx.pm) pml
-    else raise (TypeExceptionMeta ("Invalid parameterization provided in " 
-        ^ "<" ^ string_of_list string_of_typ pml ^ ">", cx.meta))
- 
-(* Looks up a supertype without checking the bounds on the provided parameters (hence, 'unsafe') *)
-let tau_lookup_unsafe (cx: contexts) (x: id) (pml: typ list) : typ =
-    (* If the given type evaluates to a declared tag, return it *)
-    (* If the return type would be a top type, resolve the dimension to a number *)
-    debug_print ">> tau_lookup_unsafe";
-    let pmd, t = get_typ cx x in
-    let tc = match_parameterization_unsafe (with_pm cx pmd) pml in
-    replace_abstype tc t
-
-let chi_object_lookup_unsafe (cx: contexts) (c : id) (o: id) (f: typ list) : typ =
-    match get_coordinate_element cx c o with
-    | CoordObjectAssign (_, pmd, t) -> 
-        let tc = match_parameterization_unsafe (with_pm cx pmd) f in
-        replace_abstype tc t
-    | _ -> raise (TypeExceptionMeta ("", cx.meta))
-
-(* Steps types up a level in the subtyping tree *)
-(* Fails if given a primitive type, illegal geometric type, or external type (they have no supertype) *)
-let typ_step (cx : contexts) (t : typ) : typ option =
-    debug_print (">> typ_step" ^ string_of_typ t);
-    match t with
-    | ParTyp (s, tl) -> Some (tau_lookup_unsafe cx s tl)
-    | CoordTyp (c, ParTyp (o, f)) -> Some (chi_object_lookup_unsafe cx c o f)
-    | Literal t -> Some t
-    | _ -> None
-
-(* Produces a primitive type (boolean, int, float, array, or array literal) *)
-let rec primitive (cx : contexts) (t : typ) : typ =
-    debug_print (">> primitive" ^ string_of_typ t);
-    match typ_step cx t with
-    | Some t' -> primitive cx t'
-    | None -> t
-
-let rec etyp_to_typ (e : TypedAst.etyp) : typ =
-    debug_print ">> etyp_to_typ";
-    match e with 
-    | TypedAst.UnitTyp -> UnitTyp
-    | TypedAst.BoolTyp -> BoolTyp
-    | TypedAst.IntTyp -> IntTyp
-    | TypedAst.FloatTyp -> FloatTyp
-    | TypedAst.VecTyp n -> ArrTyp (FloatTyp, DimNum n)
-    | TypedAst.MatTyp (n1, n2) -> ArrTyp(ArrTyp(FloatTyp, DimNum n1), DimNum n2)
-    | TypedAst.TransTyp (s1, s2) -> failwith "unimplemented removal of transtyp from typedast"
-    | TypedAst.AbsTyp (s, c) -> ParTyp(s, [])
-    | TypedAst.ArrTyp (t, c) -> ArrTyp (etyp_to_typ t, 
-        match c with | ConstInt i -> DimNum i | ConstVar v -> DimVar v)
-
-and constrain_to_constrain (c : TypedAst.constrain) : constrain =
-    debug_print ">> constrain_to_constrain";
-    match c with
-    | TypedAst.AnyTyp -> AnyTyp
-    | TypedAst.GenTyp -> GenTyp
-    | TypedAst.GenMatTyp -> GenArrTyp(TypConstraint(FloatTyp))
-    | TypedAst.GenVecTyp -> GenArrTyp(GenArrTyp(TypConstraint(FloatTyp)))
-    | TypedAst.ETypConstraint t -> TypConstraint (etyp_to_typ t)
-
-let rec typ_erase_param (cx: contexts) (t: typ) : TypedAst.etyp = 
-    debug_print ">> tag_erase_param";
-    match t with
-    | ParTyp(s, tl) -> if Assoc.mem s cx.pm then 
-        let c = Assoc.lookup s cx.pm in 
-        TypedAst.AbsTyp (s, constrain_erase cx c)
-        else raise (TypeExceptionMeta ("AbsTyp " ^ s 
-            ^ " was not found in function parameterization definition", cx.meta))
-    | _ -> typ_erase cx t
-
-and typ_erase (cx: contexts) (t : typ) : TypedAst.etyp =
-    debug_print ">> tag_erase";
-    let d_to_c opd = match opd with
-    | DimNum i -> ConstInt(i) 
-    | DimVar s -> ConstVar(s)
-    | _ -> raise (TypeExceptionMeta 
-        ("No valid concrete interpretation of " ^ string_of_typ t, cx.meta)) in
-    match t with
-    | UnitTyp -> TypedAst.UnitTyp
-    | BoolTyp -> TypedAst.BoolTyp
-    | IntTyp -> TypedAst.IntTyp
-    | FloatTyp -> TypedAst.FloatTyp
-    | ArrTyp (t', d) -> TypedAst.ArrTyp (typ_erase cx t', d_to_c d)
-    | CoordTyp _ | ParTyp _ | Literal _ -> typ_erase cx (primitive cx t)
-    | AutoTyp -> raise (TypeExceptionMeta 
-        ("Illegal use of auto (cannot use auto as part of a function call)", cx.meta))
-
-and constrain_erase (cx: contexts) (c: constrain) : TypedAst.constrain =
-    debug_print ">> constrain_erase";
-    match c with
-    | AnyTyp -> TypedAst.AnyTyp
-    | GenTyp -> TypedAst.GenTyp
-    | GenArrTyp _ -> failwith "unimplemented genarrtyp erasure"
-    | TypConstraint t -> TypedAst.ETypConstraint (typ_erase cx t)
 
 let rec is_typ_eq (cx : contexts) (t1: typ) (t2: typ) : bool =
     match (t1, t2) with
@@ -162,57 +57,79 @@ and list_typ_eq (cx : contexts) (tl1: typ list) (tl2: typ list) : bool
 let rec is_subtype (cx: contexts) (to_check : typ) (target : typ) : bool =
     debug_print (">> is_subtype " ^ (string_of_pair (string_of_typ to_check) (string_of_typ target)));
     if is_typ_eq cx to_check target then true else
-    match (to_check, target) with 
-    (* A top type with a single variable is the same as genvectyp except for the untagged type *)
+    match (to_check, target) with
+    | BotTyp, _ -> true
+    | _, BotTyp -> false
+    | _, AnyTyp -> true
+    | AnyTyp, _ -> false
+    | BoolTyp, GenTyp -> false
+    | _, GenTyp -> true
+    | GenArrTyp t1, GenArrTyp t2 -> is_subtype cx t1 t2
+    | ArrTyp (t, _), GenArrTyp c -> is_subtype cx t c
+
     | ArrTyp (t1, d1), ArrTyp (t2, d2) ->
         reduce_dexp cx d1 = reduce_dexp cx d2 
         && is_subtype cx t1 t2
-    | Literal t, _ -> is_subtype cx target t
     | ParTyp (s1, tl1), ParTyp (s2, tl2) -> (s1 = s2 && List.length tl1 = List.length tl2
         && list_typ_eq cx tl1 tl2)
-        || is_subtype cx (tau_lookup_unsafe cx s1 tl1) target
-    | ParTyp (s, tl), _ -> is_subtype cx (tau_lookup_unsafe cx s tl) target
+        || is_subtype cx (tau_lookup cx s1 tl1) target
     | CoordTyp (c1, ParTyp (o1, f1)), CoordTyp (c2, ParTyp (o2, f2)) ->
         (c1 = c2 && list_typ_eq cx f1 f2)
-        || is_subtype cx (chi_object_lookup_unsafe cx c1 o1 f1) target
-    | CoordTyp (c, ParTyp (o, f)), _ -> is_subtype cx (chi_object_lookup_unsafe cx c o f) target
+        || is_subtype cx (chi_object_lookup cx c1 o1 f1) target
+    
+    (* Type lookup cases *)
+    | Literal t, _ -> is_subtype cx target t
+    | ParTyp (s, tl), _ -> is_subtype cx (tau_lookup cx s tl) target
+    | CoordTyp (c, ParTyp (o, f)), _ -> is_subtype cx (chi_object_lookup cx c o f) target
+
     | _ -> false
 
-let rec is_sub_constraint (cx: contexts) (to_check : constrain) (target : constrain): bool =
-    debug_print (">> is_sub_constraint " ^ string_of_constraint to_check ^ " " ^ string_of_constraint target);
-    match (to_check, target) with
-    | _, AnyTyp -> true
-    | AnyTyp, _ -> false
-    | TypConstraint t1, TypConstraint t2 -> is_subtype cx t1 t2
-    | _, TypConstraint _ -> false
-    | TypConstraint(BoolTyp), GenTyp -> false
-    | _, GenTyp -> true
-    | GenArrTyp c1, GenArrTyp c2 -> is_sub_constraint cx c1 c2
-    | TypConstraint(ArrTyp (t, _)), GenArrTyp c -> is_sub_constraint cx (TypConstraint t) c
-    | TypConstraint(Literal _), _
-    | TypConstraint(ParTyp _), _
-    | TypConstraint(CoordTyp _), _ -> 
-        (match to_check with | TypConstraint t ->
-        is_sub_constraint cx (TypConstraint (primitive cx t)) target
-        | _ -> failwith (line_number cx.meta ^ " Something broke in OCaml varying types?"))
-    | _, GenArrTyp _ -> false
-
-let is_bounded_by (cx: contexts) (t: typ) (c: constrain) : bool =
-    debug_print ">> is_bounded_by";
-    is_sub_constraint cx (TypConstraint t) c
-
-let check_parameterization (cx: contexts) (pmb: (string * constrain) list) (pml : typ list) : bool =
-    debug_print ">> check_parameterization";
-    List.length pmb == List.length pml && List.fold_left2 (fun acc (s, c) t -> is_bounded_by cx t c && acc) true pmb pml
-
-(* The safe version, where we check the validity of abstract type resolution *)
-let tau_lookup (cx: contexts) (pml: typ list) (x: id) : typ =
+(* Given a parameterization and a list of types being invoked on that parameterization *)
+(* Returns the appropriate concretized context if one exists *)
+and match_parameterization (cx: contexts) (pml : typ list)
+: typ Assoc.context =
+    debug_print ">> match_parameterization";
+    let pmb = Assoc.bindings cx.pm in
+    if List.length pmb == List.length pml
+        && List.fold_left2 (fun acc (s, c) t -> is_subtype cx t c && acc) true pmb pml
+    then List.fold_left2 (fun tcacc (s, c) t -> Assoc.update s t tcacc)
+        Assoc.empty (Assoc.bindings cx.pm) pml
+    else error cx ("Invalid parameterization provided to " ^ string_of_parameterization cx.pm
+        ^ " by <" ^ string_of_separated_list "," string_of_typ pml ^ ">")
+ 
+(* Looks up a supertype without checking the bounds on the provided parameters (hence, 'unsafe') *)
+and tau_lookup (cx: contexts) (x: id) (pml: typ list) : typ =
+    (* If the given type evaluates to a declared tag, return it *)
+    (* If the return type would be a top type, resolve the dimension to a number *)
     debug_print ">> tau_lookup";
     let pmd, t = get_typ cx x in
-    if check_parameterization cx (Assoc.bindings pmd) pml then
-    let tc = match_parameterization_unsafe (with_pm cx pmd) pml in
+    let tc = match_parameterization (with_pm cx pmd) pml in
     replace_abstype tc t
-    else raise (TypeExceptionMeta ("Invalid parameters <" ^ (string_of_list string_of_typ pml) ^ "> to " ^ x, cx.meta))
+
+(* Looks up an object 'o' definition from a coordinate scheme 'c' without checking parameter bounds *)
+and chi_object_lookup (cx: contexts) (c : id) (o: id) (f: typ list) : typ =
+    match get_coordinate_element cx c o with
+    | CoordObjectAssign (_, pmd, t) -> 
+        let tc = match_parameterization (with_pm cx pmd) f in
+        replace_abstype tc t
+    | _ -> error cx ("")
+
+(* Steps types up a level in the subtyping tree *)
+(* Fails if given a primitive type, illegal geometric type, or external type (they have no supertype) *)
+let rec typ_step (cx : contexts) (t : typ) : typ option =
+    debug_print (">> typ_step" ^ string_of_typ t);
+    match t with
+    | ParTyp (s, tl) -> Some (tau_lookup cx s tl)
+    | CoordTyp (c, ParTyp (o, f)) -> Some (chi_object_lookup cx c o f)
+    | Literal t -> Some t
+    | _ -> None
+
+(* Produces a primitive type (boolean, int, float, array, or array literal) *)
+let rec primitive (cx : contexts) (t : typ) : typ =
+    debug_print (">> primitive" ^ string_of_typ t);
+    match typ_step cx t with
+    | Some t' -> primitive cx t'
+    | None -> t
 
 let rec greatest_common_child (cx: contexts) (t1: typ) (t2: typ): typ =
     debug_print ">> greatest_common_child";    
@@ -220,16 +137,16 @@ let rec greatest_common_child (cx: contexts) (t1: typ) (t2: typ): typ =
     if is_subtype cx t2 t1 then t2 else 
     let top = primitive cx t1 in
     if is_typ_eq cx top (primitive cx t2) then Literal top else
-    raise (TypeExceptionMeta ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2), cx.meta))
+    error cx ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2))
 
 let rec least_common_parent (cx: contexts) (t1: typ) (t2: typ): typ =
     debug_print (">> least_common_parent" ^ (string_of_pair (string_of_typ t1) (string_of_typ t2)));
     if is_subtype cx t1 t2 then t2 else if is_subtype cx t2 t1 then t1 
     else match typ_step cx t1 with 
     | Some t1' -> least_common_parent cx t1' t2
-    | None -> raise (TypeExceptionMeta ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2), cx.meta))
+    | None -> error cx ("Cannot unify " ^ (string_of_typ t1) ^ " and " ^ (string_of_typ t2))
 
-(* Least common parent which will not raise an exception (used for typechecking of inferred types) *)
+(* Least common parent which will not raise an exception (used for typechecking of inferred/internal types) *)
 let least_common_parent_safe (cx: contexts) (t1: typ) (t2: typ): typ option =
     try Some (least_common_parent cx t1 t2) with
     | TypeExceptionMeta (t, _) -> None
@@ -239,6 +156,7 @@ let least_common_parent_safe (cx: contexts) (t1: typ) (t2: typ): typ option =
 (* Attempts to produce a list of valid types for the parameterization of the function *)
 let infer_pml (cx: contexts) (pr : params) (args : typ list) : (typ list) option =
     debug_print ">> infer_pml";
+    let is_abs s = List.mem s (Assoc.keys cx.pm) in
     let update_inference (t : typ) (s : string) (fpm : typ Assoc.context option) : typ Assoc.context option =
         match fpm with | None -> None | Some p ->
         if Assoc.mem s p then match least_common_parent_safe cx t (Assoc.lookup s p) with
@@ -246,110 +164,106 @@ let infer_pml (cx: contexts) (pr : params) (args : typ list) : (typ list) option
             | Some t' -> Some (Assoc.update s t' p)
         else Some (Assoc.update s t p)
     in
-    let rec unify_param (arg_typ : typ) (par_typ : typ) (fpm : (typ Assoc.context) option) : (typ Assoc.context) option =
+    let rec unify_param (fpm : (typ Assoc.context) option) (arg_typ : typ) (par_typ : typ) : (typ Assoc.context) option =
+        (* Only update our inference if we are working on an abstract type *)
+        let new_fpm s = if is_abs s then update_inference arg_typ s fpm else fpm in
         match arg_typ, par_typ with
         | ParTyp (_, tl1), ParTyp (s, tl2) ->
-            (* Only update our inference if we are working on an abstract type *)
-            let fpm' = if List.mem s (Assoc.keys cx.pm) then update_inference arg_typ s fpm else fpm in
-            if List.length tl1 = List.length tl2 then
-            List.fold_left2 (fun acc l r -> unify_param l r acc) fpm' tl1 tl2 else fpm'
+            (* Abstract params may have unspecified parameterizations provided by the arguments *)
+            if List.length tl1 != List.length tl2 then new_fpm s else
+            List.fold_left2 unify_param (new_fpm s) tl1 tl2
+        | CoordTyp (_, t1), CoordTyp(s, t2) ->
+            unify_param (new_fpm s) t1 t2
         | _ -> fpm
     in
-    let gen_pml (inferred : (typ Assoc.context) option) : (typ list) option =
-        let rec reduce_typ (fpm : typ Assoc.context) (t : typ) : typ =
-            let fail _ = debug_fail cx.meta "Bad match between type lookup and expected abstract type" in
-            match t with
-            (* Don't have to check if t is valid *)
-            (* already handled by the typechecker when checking that 
-             * the function declaration parameter dependencies were valid *)
-            | ParTyp (s, tl) -> 
-                let s' = if not (Assoc.mem s fpm) then s else
-                    match Assoc.lookup s fpm with | ParTyp (s', _) -> s' | _ -> fail ()
-                in
-                ParTyp(s', List.map (reduce_typ fpm) tl)
-            | CoordTyp (s, t') ->
-                let s' = if not (Assoc.mem s fpm) then s else
-                    match Assoc.lookup s fpm with | CoordTyp (s', _) -> s' | _ -> fail ()
-                in
-                ParTyp(s', List.map (reduce_typ fpm) tl)
-            | _ -> t
-        in
-        (* Correctly orders the resulting pml to match the parameters of the function parameterization list *)
-        match inferred with | None -> None | Some tc -> 
-        option_map (fun c -> List.rev (List.map snd (Assoc.bindings c)))
-            (List.fold_left (fun acc (s, c) -> match acc with | None -> None | Some a -> 
-                if Assoc.mem s tc then Some (Assoc.update s (Assoc.lookup s tc) a) else
-                match c with
-                | TypConstraint t' -> Some (Assoc.update s (reduce_typ a t') a)
-                | _ -> None)
-            (Some Assoc.empty) (Assoc.bindings cx.pm))
-    in
-    gen_pml (List.fold_left2 (fun fpm arg_typ (par_typ, _) -> unify_param arg_typ par_typ fpm) 
-                (Some Assoc.empty) args pr)
+    let inferred = List.fold_left2 unify_param (Some Assoc.empty) args (List.map fst pr) in
+    option_map Assoc.values inferred
 
 let check_subtype_list (cx: contexts) (l: typ list) (t: typ) : bool =
     debug_print ">> check_subtype_list";
     List.fold_left (fun acc t' -> acc || (is_subtype cx t t')) false l
-
-let check_bounds_list (cx: contexts) (l: constrain list) (t: typ) : bool =
-    debug_print ">> check_bounds_list";
-    List.fold_left (fun acc t' -> acc || (is_bounded_by cx t t')) false l
     
 let check_typ_valid (cx: contexts) (ogt: typ) : unit =
     let rec check_typ_valid_rec (t: typ) : unit =
         debug_print ">> check_typ_valid";
         match t with
-        | VarTyp s -> if Assoc.mem s cx.d then () else raise (TypeExceptionMeta ("Unknown tag " ^ s, cx.meta))
-        | ParTyp (t, tl) -> check_typ_valid_rec t; 
-            let not_vec t = raise (TypeExceptionMeta ("Type " ^ (string_of_typ t) ^ " given to parameterization is not a vector", cx.meta)) in
-            let bad_untagged t = raise (TypeExceptionMeta ("Type " ^ (string_of_typ t) ^ " given to parameterization is an untagged vector", cx.meta)) in
-            List.fold_left (fun acc t' -> 
-                if is_bounded_by cx t' GenVecTyp then () else not_vec t'; 
-                match t' with UntaggedVecTyp _ -> bad_untagged t' | _ -> ();
-                check_typ_valid_rec t') () tl;
-        | AbsTyp s -> if Assoc.mem s cx.pm then () else raise (TypeExceptionMeta ("Unknown abstract type `" ^ s, cx.meta))
-        | TransTyp (t1, t2) -> check_typ_valid_rec t1; check_typ_valid_rec t2;
-            if is_bounded_by cx t1 GenVecTyp && is_bounded_by cx t2 GenVecTyp then ()
-            else raise (TypeExceptionMeta ("Invalid matrix type " ^ (string_of_typ ogt) ^ " (must be a map from vectors to vectors)", cx.meta))
+        | ParTyp (s, tl) -> 
+            ignore_typ (tau_lookup cx s tl);
+            List.fold_left (fun _ -> check_typ_valid_rec) () tl
+        | CoordTyp (c, ParTyp(o, f)) ->
+            ignore_typ (chi_object_lookup cx c o f);
+        | CoordTyp _ ->
+            error cx ("All types a.b must be geometric (i.e. of the form scheme.object<frames>) and "
+                ^ string_of_typ t ^ " fails to adhere to this form")
         | _ -> ()
     in check_typ_valid_rec ogt
 
-let check_val (cx: contexts) (v: value) : typ = 
+let rec typ_erase_param (cx: contexts) (t: typ) : TypedAst.etyp = 
+    debug_print ">> tag_erase_param";
+    match t with
+    | ParTyp(s, tl) -> if Assoc.mem s cx.pm then 
+        let c = Assoc.lookup s cx.pm in 
+        TypedAst.AbsTyp (s, constrain_erase cx c)
+        else error cx ("AbsTyp " ^ s ^ " was not found in function parameterization definition")
+    | _ -> typ_erase cx t
+
+and typ_erase (cx: contexts) (t : typ) : TypedAst.etyp =
+    debug_print ">> tag_erase";
+    let d_to_c opd = match opd with
+    | DimNum i -> ConstInt(i) 
+    | DimVar s -> ConstVar(s)
+    | _ -> error cx ("No valid concrete interpretation of " ^ string_of_typ t) in
+    match t with
+    | UnitTyp -> TypedAst.UnitTyp
+    | BoolTyp -> TypedAst.BoolTyp
+    | IntTyp -> TypedAst.IntTyp
+    | FloatTyp -> TypedAst.FloatTyp
+    | ArrTyp (t', d) -> TypedAst.ArrTyp (typ_erase cx t', d_to_c d)
+    | CoordTyp _ | ParTyp _ | Literal _ -> typ_erase cx (primitive cx t)
+    | AutoTyp -> error cx ("Illegal use of auto (cannot use auto as part of a function call)")
+    | _ -> debug_fail cx "Invalid use of typ_erase"
+
+and constrain_erase (cx: contexts) (t: typ) : TypedAst.constrain =
+    debug_print ">> constrain_erase";
+    match t with
+    | AnyTyp -> TypedAst.AnyTyp
+    | GenTyp -> TypedAst.GenTyp
+    | GenArrTyp _ -> debug_fail cx "unimplemented genarrtyp erasure"
+    | _ -> TypedAst.ETypConstraint(typ_erase cx t)
+
+let rec etyp_to_typ (e : TypedAst.etyp) : typ =
+    debug_print ">> etyp_to_typ";
+    match e with 
+    | TypedAst.UnitTyp -> UnitTyp
+    | TypedAst.BoolTyp -> BoolTyp
+    | TypedAst.IntTyp -> IntTyp
+    | TypedAst.FloatTyp -> FloatTyp
+    | TypedAst.VecTyp n -> ArrTyp (FloatTyp, DimNum n)
+    | TypedAst.MatTyp (n1, n2) -> ArrTyp(ArrTyp(FloatTyp, DimNum n1), DimNum n2)
+    | TypedAst.TransTyp (s1, s2) -> failwith "unimplemented removal of transtyp from typedast"
+    | TypedAst.AbsTyp (s, c) -> ParTyp(s, [])
+    | TypedAst.ArrTyp (t, c) -> ArrTyp (etyp_to_typ t, 
+        match c with | ConstInt i -> DimNum i | ConstVar v -> DimVar v)
+
+and constrain_to_typ (c : TypedAst.constrain) : typ =
+    debug_print ">> constrain_to_constrain";
+    match c with
+    | TypedAst.AnyTyp -> AnyTyp
+    | TypedAst.GenTyp -> GenTyp
+    | TypedAst.GenMatTyp -> GenArrTyp(FloatTyp)
+    | TypedAst.GenVecTyp -> GenArrTyp(GenArrTyp(FloatTyp))
+    | TypedAst.ETypConstraint t -> etyp_to_typ t
+
+let rec check_val (cx: contexts) (v: value) : typ = 
     debug_print ">> check_aval";
     match v with
-    | Bool b -> BoolTyp
-    | Num n -> IntTyp
-    | Float f -> FloatTyp
-    | VecLit v -> BotVecTyp (List.length v)
-    | MatLit m ->
-        (let rows = List.length m in
-        if rows = 0 then trans_bot 0 0 else
-        let cols = List.length (List.hd m) in
-        if List.for_all (fun v -> List.length v = cols) m then trans_bot cols rows
-        else (raise (TypeExceptionMeta ("Matrix must have the same number of elements in each row", cx.meta))))
-    | _ -> raise (TypeExceptionMeta ("Unexpected typechecker value " ^ (string_of_value v), cx.meta))
-
-let rec check_typ_exp (cx: contexts) (t: typ) : unit =
-    debug_print ">> check_typ";
-    match t with
-    | AutoTyp -> raise (TypeExceptionMeta ("Cannot use type auto as a tag type", cx.meta))
-    | UnitTyp
-    | BoolTyp
-    | IntTyp
-    | FloatTyp
-    | SamplerCubeTyp
-    | SamplerTyp _ 
-    | ArrTyp _ -> ()
-    | TopVecTyp dx -> (if (dim_top cx dx > 0) then () (* Note that dim_top actually checks the correctness of the toptyp calculation in this case *)
-        else raise (TypeExceptionMeta ("Cannot declare a type with dimension less than 0", cx.meta)))
-    | UntaggedVecTyp n
-    | BotVecTyp n -> (if (n > 0) then ()
-        else raise (TypeExceptionMeta ("Cannot declare a type with dimension less than 0", cx.meta)))
-    | VarTyp s -> delta_lookup cx [] s |> typ_ignore; ()
-    | ParTyp (VarTyp s, pml) -> delta_lookup cx pml s |> typ_ignore; ()
-    | ParTyp _ -> ()
-    | TransTyp (t1, t2) -> check_typ_exp cx t1; check_typ_exp cx t2; ()
-    | AbsTyp s -> raise  (TypeExceptionMeta ("Cannot use a generic type as a tag argument yet", cx.meta))
+    | Bool b -> Literal BoolTyp
+    | Num n -> Literal IntTyp
+    | Float f -> Literal FloatTyp
+    | ArrLit v -> Literal 
+        (ArrTyp (List.fold_left (least_common_parent cx) BotTyp (List.map (check_val cx) v), 
+        DimNum (List.length v)))
+    | _ -> error cx ("Unexpected typechecker value " ^ (string_of_value v))
 
 (* "scalar linear exp", (i.e. ctimes) returns generalized MatTyp *)
 let check_ctimes_exp (cx: contexts) (t1: typ) (t2: typ) : typ = 

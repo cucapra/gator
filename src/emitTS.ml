@@ -30,8 +30,7 @@ let rec comp_value (v : value) : string =
     | Bool b -> "<boolean>" ^ string_of_bool b
     | Num n -> "<number>" ^ string_of_int n
     | Float f -> string_of_float f
-    | VecLit v -> "[" ^ (String.concat "," (List.map string_of_float v)) ^ "]"
-    | MatLit m -> String.concat "," (List.map (fun v -> String.concat "," (List.map string_of_float v)) m)
+    | ArrLit a -> string_of_array comp_value a
 
 (* Note the column parameter for padding the matrix size *)
 let rec string_of_no_paren_vec (v: exp list) (padding: int) (s : SS.t) : string = 

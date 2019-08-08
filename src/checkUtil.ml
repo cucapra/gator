@@ -3,7 +3,7 @@ open GatorAst
 open GatorAstPrinter
 open Contexts
 
-exception TypeExceptionMeta of string * metadata
+exception TypeExceptionMeta of metadata * string
 
 (* Produces an empty set of gator contexts with a starting metadata *)
 let init meta = let b = 
@@ -17,14 +17,16 @@ let with_ps cx ps' = {cx with ps=ps'}
 let with_pm cx pm' = {cx with pm=pm'}
 let with_meta cx meta' = {cx with meta=meta'}
 
+let error cx s = raise (TypeExceptionMeta(cx.meta, s))
+
 let get_m cx x = if Assoc.mem x cx.m then Assoc.lookup x cx.m else 
-  raise (TypeExceptionMeta ("Undefined modifiable item " ^ x, cx.meta))
+  error cx ("Undefined modifiable item " ^ x)
 let get_p cx x = if Assoc.mem x cx.p then Assoc.lookup x cx.p else 
-  raise (TypeExceptionMeta ("Undefined function " ^ x, cx.meta))
+  error cx ("Undefined function " ^ x)
 let get_ps cx x = if Assoc.mem x cx.ps then Assoc.lookup x cx.ps else 
-  raise (TypeExceptionMeta ("Undefined canonical item " ^ x, cx.meta))
+  error cx ("Undefined canonical item " ^ x)
 let get_pm cx x = if Assoc.mem x cx.pm then Assoc.lookup x cx.pm else 
-  raise (TypeExceptionMeta (x ^ " not found in parameterization " ^ string_of_parameterization cx.pm, cx.meta))
+  error cx (x ^ " not found in parameterization " ^ string_of_parameterization cx.pm)
 
 (* Finds which context in which to find the given string *)
 let find_safe cx x =
@@ -39,7 +41,7 @@ let find_safe cx x =
 (* Binds a string with value to the correct lookup context *)
 let bind (cx : contexts) (x : string) (b : binding) : contexts =
   if Assoc.mem x cx._bindings.l
-  then raise (TypeExceptionMeta ("Duplicate use of the name " ^ x, cx.meta)) else 
+  then error cx ("Duplicate use of the name " ^ x) else 
   let update_bindings b' = {cx with _bindings=b'} in
   let _b = cx._bindings in
   match b with
@@ -63,14 +65,13 @@ let clear (cx : contexts) (b : binding_context) =
   | LChi ->   update_bindings { _b with l=clear _b.c; c=Assoc.empty }
   | LOmega -> update_bindings { _b with l=clear _b.o; o=Assoc.empty }
 
-let typ_ignore (t : typ) : unit = ignore t
-let constrain_ignore (c : constrain) : unit = ignore c
+let ignore_typ (t : typ) : unit = ignore t
 let string_of_fn_inv ((s, tl) : fn_inv) : string = 
   s ^ "<" ^ string_of_list string_of_typ tl ^ ">"
 let line_number (meta : metadata) : string = 
   ("Line: " ^ string_of_int(meta.pos_lnum))
-let debug_fail (meta : metadata) (s : string) =
-  failwith (line_number meta ^ "\t" ^ s)
+let debug_fail (cx : contexts) (s : string) =
+  failwith (line_number cx.meta ^ "\t" ^ s)
 let string_of_tau (pm, t : tau) =
   string_of_parameterization pm ^ " " ^  string_of_typ t
 let string_of_mu (ml : mu) =  
@@ -79,8 +80,9 @@ let string_of_gamma (g : gamma) =
   string_of_typ g
 let string_of_delta (f : delta) =
   string_of_frame f
-let string_of_chi (c : chi) =
-  Assoc.to_string string_of_coordinate_element c
+let string_of_chi (p, d, c : chi) =
+  "implements " ^ p ^ " with dimension " ^ string_of_int d ^
+  " and members: " ^ Assoc.to_string (fun e -> string_of_coordinate_element e ^ "\n") c
 let string_of_omega (o : omega) =
   Assoc.to_string string_of_prototype_element o
 let string_of_phi (p : phi) =
@@ -91,34 +93,34 @@ let string_of_psi (ps : psi) : string =
 let get_typ (cx : contexts) (x : string) : tau =
   match find_safe cx x with
   | Some Tau t -> t
-  | _ -> raise (TypeExceptionMeta ("Undefined type " ^ x, cx.meta))
+  | _ -> error cx ("Undefined type " ^ x)
 
 let get_var (cx : contexts) (x : string) : gamma =
   match find_safe cx x with
   | Some Gamma g -> g
-  | _ -> raise (TypeExceptionMeta ("Undefined variable " ^ x, cx.meta))
+  | _ -> error cx ("Undefined variable " ^ x)
 
 let get_frame (cx : contexts) (x : string) : delta =
   match find_safe cx x with
   | Some Delta d -> d
-  | _ -> raise (TypeExceptionMeta ("Undefined frame " ^ x, cx.meta))
+  | _ -> error cx ("Undefined frame " ^ x)
 
 let get_scheme (cx : contexts) (x : string) : chi =
   match find_safe cx x with
   | Some Chi c -> c
-  | _ -> raise (TypeExceptionMeta ("Undefined coordinate scheme " ^ x, cx.meta))
+  | _ -> error cx ("Undefined coordinate scheme " ^ x)
 
 let get_coordinate_element (cx : contexts) (c : string) (e : string) : coordinate_element =
-  let ce = get_scheme cx c in
+  let _,_,ce = get_scheme cx c in
   if Assoc.mem e ce then Assoc.lookup e ce
-  else raise (TypeExceptionMeta (e ^ " is not a member of coordinate scheme " ^ c, cx.meta))
+  else error cx (e ^ " is not a member of coordinate scheme " ^ c)
 
 let get_prototype (cx : contexts) (x : string) : omega =
   match find_safe cx x with
   | Some Omega o -> o
-  | _ -> raise (TypeExceptionMeta ("Undefined object " ^ x, cx.meta))
+  | _ -> error cx ("Undefined object " ^ x)
 
 let get_prototype_element (cx : contexts) (p : string) (e : string) : prototype_element =
   let pe = get_prototype cx p in
   if Assoc.mem e pe then Assoc.lookup e pe
-  else raise (TypeExceptionMeta (e ^ " is not a member of coordinate scheme " ^ p, cx.meta))
+  else error cx (e ^ " is not a member of coordinate scheme " ^ p)
