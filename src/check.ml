@@ -260,10 +260,81 @@ let rec check_val (cx: contexts) (v: value) : typ =
     | Bool b -> Literal BoolTyp
     | Num n -> Literal IntTyp
     | Float f -> Literal FloatTyp
-    | ArrLit v -> Literal 
-        (ArrTyp (List.fold_left (least_common_parent cx) BotTyp (List.map (check_val cx) v), 
+    | ArrLit v -> Literal (ArrTyp (List.fold_left (least_common_parent cx) BotTyp (List.map (check_val cx) v), 
         DimNum (List.length v)))
-    | _ -> error cx ("Unexpected typechecker value " ^ (string_of_value v))
+    | Unit -> error cx ("Unexpected value " ^ (string_of_value v))
+
+let check_fn_inv (cx: contexts) (pml: typ list) (x : id) (args : typ list) 
+: (string * TypedAst.etyp list * TypedAst.args) * typ = 
+    debug_print (">> check_fn_inv " ^ x);
+    let fn_invocated = get_function cx x in
+    let (_, rt, _, _, _, _) = fn_invocated in
+    (* find definition for function in phi *)
+    (* looks through all possible overloaded definitions of the function *)
+    let find_fn_inv ((_, rt, _, pr, params, meta') : fn_typ) : (typ Assoc.context) option =
+        debug_print ">> find_fn_inv";
+        (* This function asserts whether or not the function invocation matches the function given *)
+        (* In particular, this checks whether the given function matches the given parameterization and parameters *)
+        (* If it is valid, this returns (Some 'map from parameter to type'), otherwise returns 'None' *)
+
+        (* If we have the wrong number of arguments, then no match for sure *)
+        if List.length args != List.length params then None else
+        (* Work out the parameter inference if one is needed *)
+        let inferred_pml = 
+            (if Assoc.size pr == List.length pml then Some pml
+            else if List.length pml == 0 then infer_pml cx' (params, rt, pr, meta') args_typ
+            else None)
+        in
+        match inferred_pml with
+            | None -> None | Some pml' ->
+        (* Helper function for using the function parameters as they are constructed *)
+        let apply_fpm (c: typ) (fpm : typ Assoc.context) : constrain =
+            let rec in_function_t t = 
+                match t with
+                | AbsTyp s -> Assoc.lookup s fpm
+                | TransTyp (t1, t2) -> TransTyp (in_function_t t1, in_function_t t2)
+                | ParTyp (t, tl) -> ParTyp (in_function_t t, List.map in_function_t tl)
+                | _ -> t
+            in
+            match c with
+            | TypConstraint t -> TypConstraint (in_function_t t)
+            | _ -> c
+        in
+        (* Check that the parameterization conforms to the bounds provided *)
+        let param_check = 
+            debug_print ">> param_check";
+            List.fold_left2 (fun acc given_pm (s, c) -> 
+            (match acc with 
+            | None -> None
+            | Some fpm -> let bound = apply_fpm c fpm in 
+                if is_bounded_by cx given_pm bound
+                then Some (Assoc.update s given_pm fpm) else None))
+            (Some Assoc.empty) pml' (Assoc.bindings pr)
+        in
+        match param_check with | None -> None | Some pm_map ->
+        (* Get the parameters types and replace them in params_typ *)
+        let params_typ = List.map (fun (_,a,_) -> a) params in
+        let rec read_pm (t : typ) : typ =
+            match t with
+            | AbsTyp s -> Assoc.lookup s pm_map
+            | TransTyp (t1, t2) -> TransTyp (read_pm t1, read_pm t2)
+            | ParTyp (t, tl) -> ParTyp (read_pm t, List.map read_pm tl)
+            | _ -> t
+        in
+        let params_typ_corrected = List.map read_pm params_typ in
+        (* Finally, check that the arg and parameter types match *)
+        if List.length args_typ == List.length params_typ then
+            List.fold_left2 (fun acc arg param -> if (is_subtype cx arg param) then acc else None)
+            param_check args_typ params_typ_corrected
+        else None
+    in
+    (match find_fn_inv fn_invocated with
+    | Some l -> ((x, List.rev (List.map (fun p -> tag_erase cx (snd p)) (Assoc.bindings l)), 
+        List.map (fun a -> exp_to_texp cx a) args'), replace_abstype l rt)
+    | None -> raise (TypeExceptionMeta ("No overloaded function declaration of " ^ x
+    ^ (if List.length pml > 0 then "<" ^ (String.concat "," (List.map string_of_typ pml)) ^ ">" else "")
+    ^ " matching types (" ^ (String.concat "," (List.map string_of_typ args_typ)) ^ ") found", cx.meta)))
+    
 
 (* "scalar linear exp", (i.e. ctimes) returns generalized MatTyp *)
 let check_ctimes_exp (cx: contexts) (t1: typ) (t2: typ) : typ = 
@@ -641,84 +712,7 @@ and check_arr (cx: contexts) (a : aexp list) : (TypedAst.exp * typ) =
     (match is_mat checked_a with
     | Some n -> (TypedAst.Arr checked_a, trans_bot n length_a)
     | None ->  raise (TypeExceptionMeta ("Invalid array definition for " ^ 
-        (string_of_exp (Arr a)) ^ ", must be a matrix or vector", cx.meta)))
-
-
-and check_fn_inv (cx: contexts) (pml: typ list) (x : id) (args : args) 
-: (string * TypedAst.etyp list * TypedAst.args) * typ = 
-    debug_print (">> check_fn_inv " ^ x);
-    let fn_invocated = if Assoc.mem x cx.p
-        then Assoc.lookup x cx.p
-        else raise (TypeExceptionMeta ("Invocated function " ^ x ^ " not found", cx.meta)) in
-    let (_, rt, _, _) = fn_invocated in
-    let args' = List.map (fun a -> check_aexp cx a) args in 
-    let args_typ = List.map snd args' in
-    (* find definition for function in phi *)
-    (* looks through all possible overloaded definitions of the function *)
-    let find_fn_inv ((params, rt, pr, meta') : fn_typ) : (typ Assoc.context) option =
-        let cx' = w_meta cx meta' in
-        debug_print ">> find_fn_inv";
-        (* This function asserts whether or not the function invocation matches the function given *)
-        (* In particular, this checks whether the given function matches the given parameterization and parameters *)
-        (* If it is valid, this returns (Some 'map from parameter to type'), otherwise returns 'None' *)
-
-        (* If we have the wrong number of arguments, then no match for sure *)
-        if List.length args != List.length params then None else
-        (* Work out the parameter inference if one is needed *)
-        let inferred_pml = 
-            (if Assoc.size pr == List.length pml then Some pml
-            else if List.length pml == 0 then infer_pml cx' (params, rt, pr, meta') args_typ
-            else None)
-        in
-        match inferred_pml with
-         | None -> None | Some pml' ->
-        (* Helper function for using the function parameters as they are constructed *)
-        let apply_fpm (c: constrain) (fpm : typ Assoc.context) : constrain =
-            let rec in_function_t t = 
-                match t with
-                | AbsTyp s -> Assoc.lookup s fpm
-                | TransTyp (t1, t2) -> TransTyp (in_function_t t1, in_function_t t2)
-                | ParTyp (t, tl) -> ParTyp (in_function_t t, List.map in_function_t tl)
-                | _ -> t
-            in
-            match c with
-            | TypConstraint t -> TypConstraint (in_function_t t)
-            | _ -> c
-        in
-        (* Check that the parameterization conforms to the bounds provided *)
-        let param_check = 
-            debug_print ">> param_check";
-            List.fold_left2 (fun acc given_pm (s, c) -> 
-            (match acc with 
-            | None -> None
-            | Some fpm -> let bound = apply_fpm c fpm in 
-                if is_bounded_by cx given_pm bound
-                then Some (Assoc.update s given_pm fpm) else None))
-            (Some Assoc.empty) pml' (Assoc.bindings pr)
-        in
-        match param_check with | None -> None | Some pm_map ->
-        (* Get the parameters types and replace them in params_typ *)
-        let params_typ = List.map (fun (_,a,_) -> a) params in
-        let rec read_pm (t : typ) : typ =
-            match t with
-            | AbsTyp s -> Assoc.lookup s pm_map
-            | TransTyp (t1, t2) -> TransTyp (read_pm t1, read_pm t2)
-            | ParTyp (t, tl) -> ParTyp (read_pm t, List.map read_pm tl)
-            | _ -> t
-        in
-        let params_typ_corrected = List.map read_pm params_typ in
-        (* Finally, check that the arg and parameter types match *)
-        if List.length args_typ == List.length params_typ then
-            List.fold_left2 (fun acc arg param -> if (is_subtype cx arg param) then acc else None)
-            param_check args_typ params_typ_corrected
-        else None
-    in
-    (match find_fn_inv fn_invocated with
-    | Some l -> ((x, List.rev (List.map (fun p -> tag_erase cx (snd p)) (Assoc.bindings l)), 
-        List.map (fun a -> exp_to_texp cx a) args'), replace_abstype l rt)
-    | None -> raise (TypeExceptionMeta ("No overloaded function declaration of " ^ x
-    ^ (if List.length pml > 0 then "<" ^ (String.concat "," (List.map string_of_typ pml)) ^ ">" else "")
-    ^ " matching types (" ^ (String.concat "," (List.map string_of_typ args_typ)) ^ ") found", cx.meta))) 
+        (string_of_exp (Arr a)) ^ ", must be a matrix or vector", cx.meta))) 
 
 and check_acomm (cx: contexts) ((c, meta): acomm) : gamma * psi * TypedAst.comm =
     check_comm (w_meta cx meta) c

@@ -7,9 +7,9 @@ exception TypeExceptionMeta of metadata * string
 
 (* Produces an empty set of gator contexts with a starting metadata *)
 let init meta = let b = 
-  {t=Assoc.empty; g=Assoc.empty; d=Assoc.empty; 
-  c=Assoc.empty; o=Assoc.empty; l=Assoc.empty} in
-  {m=Assoc.empty; p=Assoc.empty; ps=Assoc.empty; pm=Assoc.empty; meta=meta; _bindings=b }
+  {t=Assoc.empty; g=Assoc.empty; d=Assoc.empty;
+  c=Assoc.empty; o=Assoc.empty; p=Assoc.empty; l=Assoc.empty } in
+  {m=Assoc.empty; ps=Assoc.empty; pm=Assoc.empty; meta=meta; _bindings=b }
 
 let with_m cx m' = {cx with m=m'}
 let with_p cx p' = {cx with p=p'}
@@ -21,8 +21,6 @@ let error cx s = raise (TypeExceptionMeta(cx.meta, s))
 
 let get_m cx x = if Assoc.mem x cx.m then Assoc.lookup x cx.m else 
   error cx ("Undefined modifiable item " ^ x)
-let get_p cx x = if Assoc.mem x cx.p then Assoc.lookup x cx.p else 
-  error cx ("Undefined function " ^ x)
 let get_ps cx x = if Assoc.mem x cx.ps then Assoc.lookup x cx.ps else 
   error cx ("Undefined canonical item " ^ x)
 let get_pm cx x = if Assoc.mem x cx.pm then Assoc.lookup x cx.pm else 
@@ -36,6 +34,7 @@ let find_safe cx x =
   | LDelta -> Some (Delta (Assoc.lookup x cx._bindings.d))
   | LChi -> Some (Chi (Assoc.lookup x cx._bindings.c))
   | LOmega -> Some (Omega (Assoc.lookup x cx._bindings.o))
+  | LPhi -> Some (Phi (Assoc.lookup x cx._bindings.p))
   else None
 
 (* Binds a string with value to the correct lookup context *)
@@ -50,6 +49,7 @@ let bind (cx : contexts) (x : string) (b : binding) : contexts =
   | Delta d' -> update_bindings { _b with l=Assoc.update x LTau _b.l; d=Assoc.update x d' _b.d }
   | Chi c' ->   update_bindings { _b with l=Assoc.update x LTau _b.l; c=Assoc.update x c' _b.c }
   | Omega o' -> update_bindings { _b with l=Assoc.update x LTau _b.l; o=Assoc.update x o' _b.o }
+  | Phi p' ->   update_bindings { _b with l=Assoc.update x LPhi _b.l; p=Assoc.update x p' _b.p }
 
 (* Clears the given lookup context of elements *)
 let clear (cx : contexts) (b : binding_context) =
@@ -64,6 +64,7 @@ let clear (cx : contexts) (b : binding_context) =
   | LDelta -> update_bindings { _b with l=clear _b.d; g=Assoc.empty }
   | LChi ->   update_bindings { _b with l=clear _b.c; c=Assoc.empty }
   | LOmega -> update_bindings { _b with l=clear _b.o; o=Assoc.empty }
+  | LPhi ->   update_bindings { _b with l=clear _b.p; o=Assoc.empty }
 
 let ignore_typ (t : typ) : unit = ignore t
 let string_of_fn_inv ((s, tl) : fn_inv) : string = 
@@ -124,3 +125,8 @@ let get_prototype_element (cx : contexts) (p : string) (e : string) : prototype_
   let pe = get_prototype cx p in
   if Assoc.mem e pe then Assoc.lookup e pe
   else error cx (e ^ " is not a member of coordinate scheme " ^ p)
+
+let get_function (cx : contexts) (x : string) : phi =
+  match find_safe cx x with
+  | Some Phi p -> p
+  | _ -> error cx ("Undefined function " ^ x)
