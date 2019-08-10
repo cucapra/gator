@@ -67,6 +67,7 @@ let clear (cx : contexts) (b : binding_context) =
   | LPhi ->   update_bindings { _b with l=clear _b.p; o=Assoc.empty }
 
 let ignore_typ (t : typ) : unit = ignore t
+let ignore_typ_context (t : typ Assoc.context) : unit = ignore t
 let string_of_fn_inv ((s, tl) : fn_inv) : string = 
   s ^ "<" ^ string_of_list string_of_typ tl ^ ">"
 let line_number (meta : metadata) : string = 
