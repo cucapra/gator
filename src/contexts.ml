@@ -46,7 +46,7 @@ type psi = (typ * fn_inv) list
  * then 'x' is in exactly one of the variant types of lookup 
  * otherwise 'x' is in none of the variant types *)
 (* Note that the parameterization variable names are _not_ necessarily unique, so aren't tracked in the lookup *)
-type binding_context = | LTau | LGamma | LDelta | LChi | LOmega | LPhi
+type binding_context = | CTau | CGamma | CDelta | CChi | COmega | CPhi
 
 (* Variant type for correctly abstracting storage of a new variable
  * Used with contexts to maintain the invariant described in 'lookup' *)
