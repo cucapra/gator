@@ -275,7 +275,7 @@ let infer_pml (cx: contexts) (pr : params) (args : typ list) : (typ list) option
     option_map Assoc.values inferred
 
 let check_fn_inv (cx: contexts) (x : id) (pml: typ list) (args : (TypedAst.exp * typ) list)
-: TypedAst.exp * typ = 
+: (string * TypedAst.etyp list * TypedAst.args) * typ = 
     debug_print (">> check_fn_inv " ^ x);
     let arg_typs = List.map snd args in
     (* find definition for function in phi *)
@@ -340,7 +340,7 @@ let check_fn_inv (cx: contexts) (x : id) (pml: typ list) (args : (TypedAst.exp *
     in
     let (_, rt, _, _, _, _) = fn_invocated in
     match find_fn_inv fn_invocated with
-    | Some pmt -> TypedAst.FnInv(x, List.rev (List.map (fun p -> typ_erase cx (snd p)) (Assoc.bindings pmt)), 
+    | Some pmt -> (x, List.rev (List.map (fun p -> typ_erase cx (snd p)) (Assoc.bindings pmt)), 
         List.map (exp_to_texp cx) args), replace_abstype pmt rt
     | None -> error cx ("No overloaded function declaration of " ^ x
     ^ if List.length pml > 0 then string_of_bounded_list string_of_typ "<" ">" pml else ""
@@ -579,7 +579,9 @@ and check_exp (cx: contexts) (e : exp) : TypedAst.exp * typ =
             | CTimes -> "*."
             | Index -> debug_fail cx "Bad assumption made"
         in build_binop op e1 e2 s)
-    | FnInv (x, pr, args) -> check_fn_inv cx x pr (List.map (check_aexp cx) args)
+    | FnInv (x, pr, args) -> 
+        let (a, b, c), t = check_fn_inv cx x pr (List.map (check_aexp cx) args) in
+        TypedAst.FnInv (a, b, c), t
         
 and check_arr (cx: contexts) (a : aexp list) : TypedAst.exp * typ =
     debug_print ">> check_arr";
@@ -591,11 +593,14 @@ and check_arr (cx: contexts) (a : aexp list) : TypedAst.exp * typ =
 let rec check_acomm (cx: contexts) ((c, meta): acomm) : contexts * TypedAst.comm =
     check_comm (with_meta cx meta) c
 
-and wrap_comm cx (g, ps, c) = (w_g (w_ps cx ps) g, c)
 (* Updates Gamma and Psi *)
 and check_comm (cx: contexts) (c: comm) : contexts * TypedAst.comm =
     debug_print ">> check_comm";
-    let wrap_gps (g, ps, c) = (w_g (w_ps cx ps) g, c) in
+    let check_incdec te x = let xt = snd (get_typ cx x) in
+        if is_subtype cx xt IntTyp then te x TypedAst.IntTyp
+        else if is_subtype cx xt FloatTyp then te x TypedAst.FloatTyp
+        else error cx ("++ and -- must be applied to an integer or float")
+    in
     match c with
     | Skip -> cx, TypedAst.Skip
     | Print e -> (
@@ -604,36 +609,17 @@ and check_comm (cx: contexts) (c: comm) : contexts * TypedAst.comm =
         | UnitTyp -> error cx ("Print function cannot print void types")
         | _ -> cx, TypedAst.Print (e, t)
     )
-    | Inc x -> let x_typ = (Assoc.lookup x cx.g) in (match x_typ with
-        | IntTyp -> cx, TypedAst.Inc (x, TypedAst.IntTyp)
-        | FloatTyp -> cx, TypedAst.Inc (x, TypedAst.FloatTyp)
-        | _ -> error cx ("increment must be applied to an integer or float"))
-    | Dec x -> let x_typ = (Assoc.lookup x cx.g) in (match x_typ with
-        | IntTyp -> cx, TypedAst.Dec (x, TypedAst.IntTyp)
-        | FloatTyp -> cx, TypedAst.Dec (x, TypedAst.FloatTyp)
-        | _ -> error cx ("decrement must be applied to an integer or float"))
+    | Inc x -> cx,check_incdec (fun l r -> TypedAst.Inc (l, r)) x
+    | Dec x -> cx,check_incdec (fun l r -> TypedAst.Dec (l, r)) x
     | Decl (ml, t, s, e) -> 
-        if Assoc.mem s cx.g then error cx ("variable name shadowing is illegal")
-        else 
         (check_typ_valid cx t; 
         let result = check_aexp cx e in
-        let t' = (match t with | AutoTyp -> 
-            (match (snd result) with
-                | BotVecTyp _ -> error cx ("Cannot infer the type of a vector literal")
-                | TransTyp (TopVecTyp _, BotVecTyp _) -> error cx ("Cannot infer the type of a matrix literal")
-                | t' -> t')
-            | TopVecTyp _ -> error cx ("Cannot declare a variable of the top vec type")
-            | TransTyp (TopVecTyp _, _)
-            | TransTyp (_, TopVecTyp _) -> error cx ("Cannot declare a transformation matrix with the top vec type")
-            | _ -> t) in
-            check_assign cx t' s (snd result), update_psi_matrix cx ml t s,
-                TypedAst.Decl (tag_erase cx t', s, (exp_to_texp cx result)))
+        check_assign cx t s (snd result),
+            TypedAst.Decl (typ_erase cx t, s, (exp_to_texp cx result)))
     | Assign (s, e) ->
-        if Assoc.mem s cx.g then
-            let t = Assoc.lookup s cx.g in
-            let result = check_aexp cx e in
-            check_assign cx t s (snd result), TypedAst.Assign (s, (exp_to_texp cx result))
-        else error cx ("Assignment to undeclared variable: " ^ s)
+        let t = snd (get_typ cx s) in
+        let result = check_aexp cx e in
+        check_assign cx t s (snd result), TypedAst.Assign (s, (exp_to_texp cx result))
     | AssignOp (s, b, e) -> 
         let cx', c' = check_acomm cx 
             (Assign (s, (Binop((Var s, snd e), b, e), cx.meta)), cx.meta) in
@@ -644,26 +630,24 @@ and check_comm (cx: contexts) (c: comm) : contexts * TypedAst.comm =
     | If ((b, c1), el, c2) ->
         let check_if b c =
             let er = (check_aexp cx b) in
-            let _, _, cr = check_comm_lst cx c in
+            let _, cr = check_comm_lst cx c in
             (match snd er with 
             | BoolTyp -> ((exp_to_texp cx er), cr)
             | _ -> error cx ("Expected boolean expression for if condition"))
         in
-        let c2r = (match c2 with | Some e -> Some (tr_thd (check_comm_lst cx e)) | None -> None) in
+        let c2r = (match c2 with | Some e -> Some (snd (check_comm_lst cx e)) | None -> None) in
         cx, TypedAst.If (check_if b c1, List.map (fun (b, c) -> check_if b c) el, c2r)
     | For (c1, b, c2, cl) ->
-        let cx', c1r = wrap_gps (check_acomm cx c1) in
+        let cx', c1r = check_acomm cx c1 in
         let br, brt = check_aexp cx' b in
         let btexp = exp_to_texp cx (br, brt) in
-        let cx'', c2r = wrap_gps (check_acomm cx' c2) in
-        cx, TypedAst.For (c1r, btexp, c2r, (tr_thd (check_comm_lst cx'' cl)))
+        let cx'', c2r = check_acomm cx' c2 in
+        cx, TypedAst.For (c1r, btexp, c2r, (snd (check_comm_lst cx'' cl)))
     | Return e ->
         cx, TypedAst.Return(option_map (exp_to_texp cx |- check_aexp cx) e)
-    | FnCall (it, args, pml) -> (match it with
-        | VarTyp i -> 
-            let ((i, tpl, args_exp), _) = check_fn_inv cx args i pml in 
-            cx, TypedAst.FnCall (i, tpl, args_exp)
-        | _ -> error cx ("Cannot treat the type " ^ string_of_typ it ^ " as a function call"))
+    | FnCall (x, pml, args) ->             
+        let ((i, tpl, args_exp), _) = check_fn_inv cx x pml (List.map (check_aexp cx) args) in 
+        cx, TypedAst.FnCall (i, tpl, args_exp)
 
 (* Updates Gamma and Psi *)
 and check_comm_lst (cx: contexts) (cl : acomm list) : contexts * TypedAst.comm list = 
@@ -681,39 +665,23 @@ and check_assign (cx: contexts) (t: typ) (s: string) (etyp : typ) : contexts =
     (* Check that t, if not a core type, is a registered tag *)
     let rec check_tag (t: typ) : unit =
         match t with
-        | ParTyp (VarTyp s, pml) -> delta_lookup cx pml s |> typ_ignore; ()
+        | ParTyp (s, pml) -> tau_lookup cx s pml |> ignore_typ; ()
         | _ -> ()
     in
     check_tag t;
-    let check_name regexp = if Str.string_match regexp s 0 
-    then raise (TypeExceptionMeta ("Invalid variable name " ^ s, cx.meta)) in
-    check_name (Str.regexp "int$");
-    check_name (Str.regexp "float$");
-    check_name (Str.regexp "bool$");
-    check_name (Str.regexp "vec[0-9]+$");
-    check_name (Str.regexp "mat[0-9]+$");
-    check_name (Str.regexp "mat[0-9]+x[0-9]+$");
-    if Assoc.mem s cx.d then 
-        error cx ("Variable " ^ s ^ " has the name of a tag")
-    else if Assoc.mem s cx.p then
-        error cx ("Variable " ^ s ^ " has the name of a function")
-    else
-        if is_subtype cx etyp t then bind cx s (Gamma t)
-        else error cx ("Mismatched types for var decl for " ^ s ^
-            ": expected " ^ (string_of_typ t) ^ ", found " ^ (string_of_typ etyp))
+    if is_subtype cx etyp t then bind cx s (Gamma t)
+    else error cx ("Mismatched types for var decl for " ^ s ^
+        ": expected " ^ (string_of_typ t) ^ ", found " ^ (string_of_typ etyp))
 
 (* Updates Phi, and internal calls update gamma and psi *)
-let check_fn_decl (cx: contexts) ((fm, id, (pmd, rt, pl)): fn_typ) : 
+let check_fn_decl (cx: contexts) (ml, rt, id, pm, pl, meta: fn_typ) : 
 contexts * TypedAst.params * TypedAst.parameterization =
     debug_print (">> check_fn_decl : " ^ id);
-    check_parameterization cx pmd;
-    let pm = collapse_parameterization_decl pmd in
-    let pr = check_params cx pl in 
+    check_parameterization cx pm;
+    let _,pr = check_params cx pl in 
     check_typ_valid cx rt;
     let pme = Assoc.gen_context (List.map (fun (s, c) -> (s, constrain_erase cx c)) (Assoc.bindings pm)) in
-    if Assoc.mem id cx.p 
-    then error cx ("Function of duplicate name has been found: " ^ id)
-    else Assoc.update id (pl, rt, pm, cx.meta) cx.p, pr, pme
+    bind cx id (Phi (ml, rt, id, pm, pl, meta)), pr, pme
 
 (* Helper function for type checking void functions. 
  * Functions that return void can have any number of void return statements 
@@ -738,141 +706,119 @@ let check_return (cx: contexts) (t: typ) (c: acomm) : unit =
     | _ -> ()
 
 (* Updates mu *)
-let update_mu_with_function (cx: contexts) (((fm, id, (pmd, r, pr))): fn_decl) : contexts =
-    let m' = (Assoc.update id fm cx.m) in
-    let cx' = w_m cx m' in
+let update_mu_with_function (cx: contexts) (fm, r, id, pmd, pr, meta : fn_typ) : contexts =
+    let cx' = with_m cx (Assoc.update id fm cx.m) in
     if List.mem Canon fm then
         match pr with
         (* Only update if it is a canon function with exactly one argument *)
-        (* TODO: add to phi, not to psi unless it is concrete *)
-        | [(_,t,_)] ->
+        | [(t,_)] ->
         begin
             if is_typ_eq cx' t r then error cx
                 ("Canonical function " ^ id ^ " cannot be a map from a type to itself") else
             let fail _ = error cx
             ("Canonical functions must be between tag or abstract types") in
             match t with
-            | VarTyp _
-            | ParTyp (VarTyp _, _)
-            | AbsTyp _ ->  
+            | ParTyp _ ->  
             begin
                 match r with
-                | VarTyp _
-                | ParTyp (VarTyp _, _)
-                | AbsTyp _ ->  m'
+                | ParTyp _ -> cx'
                 | _ -> fail ()
             end
             | _ -> fail ()
         end
         | _ -> error cx ("Cannot have a canonical function with zero or more than one arguments")
-    else m'
+    else cx
 
 (* Updates Tau with new typing information *)
-let check_typ_decl (cx: contexts) ((s, pmd, t) : typ_decl) : contexts =
+let check_typ_decl (cx: contexts) (x : string) (pm, t : tau) : contexts =
     debug_print ">> check_tag_decl";
-    let pm = collapse_parameterization_decl pmd in
     let rec check_valid_supertype (t: typ) : typ =
         match t with
-        | TopVecTyp _ -> TypConstraint t
-        | VarTyp s -> 
-            if not (Assoc.mem s cx.d) then error cx ("Unknown tag " ^ s) else TypConstraint t
-        | ParTyp (VarTyp s, pml) -> 
-            if not (Assoc.mem s cx.d) then error cx ("Unknown tag " ^ s)
-            else let (tpm, _) = Assoc.lookup s cx.d in
+        | ParTyp (s, pml) -> 
+            let tpm,_ = get_typ cx s in
             let pmb = Assoc.bindings tpm in
             if List.length pmb == List.length pml
-            then (List.fold_left2 (fun acc (s, c) t -> if is_sub_constraint cx t c then () else
+            then (List.fold_left2 (fun acc (s, c) t -> if is_subtype cx t c then () else
                 error cx ("Invalid constraint used for parameterization of " ^ s))
-                () (Assoc.bindings tpm) (List.map check_valid_supertype pml); TypConstraint t)
+                () (Assoc.bindings tpm) (List.map check_valid_supertype pml); t)
             else error cx ("Invalid number of parameters provided to parameterized type " ^ s)
-        | AbsTyp s -> if Assoc.mem s pm then Assoc.lookup s pm else error cx ("Unknown type " ^ (string_of_typ t))
-        | _ -> error cx ("Invalid type for tag declaration " ^ (string_of_typ t) ^
-            ", expected vector (not an untagged vector)")
+        | _ -> error cx ("Invalid type for tag declaration " ^ string_of_typ t)
     in
-    check_valid_supertype t |> constrain_ignore;
-    if Assoc.mem s cx.d then error cx ("Cannot redeclare tag")
-    else ();
-    Assoc.update s (pm, t) cx.d
+    check_valid_supertype t |> ignore_typ;
+    bind cx x (Tau (pm, t))
 
 (* Updates gamma, mu, and phi from underlying calls *)
-let check_decls (cx: contexts) (ed : extern_decl) : contexts =
-    match ed with
-    | ExternFn f -> let (p', _, _) = check_fn_decl cx f in 
-        let m' = update_mu_with_function cx f 
-        in cx.g, m', p'
-    | ExternVar (ml, t, (Var x, meta)) -> Assoc.update x t cx.g, Assoc.update x ml cx.m, cx.p
-    | _ -> error cx ("Invalid declaration, must be a function or variable")
+let check_decls (cx: contexts) (e : extern_element) : contexts =
+    match e with
+    | ExternFn f -> let (cx', _, _) = check_fn_decl cx f in 
+        update_mu_with_function cx' f
+    | ExternVar (ml, t, x, meta) -> bind cx x (Gamma t)
 
 (* Type check global variable *)
-(* Updates gamma and psi from underlying calls *)
-let check_global_variable (cx: contexts) ((ml, sq, t, id, e): global_var) 
+(* Updates gamma *)
+let check_global_variable (cx: contexts) (ml, sq, t, id, e: global_var) 
 : contexts * TypedAst.global_var =
     debug_print ">> check_global_variable";
     let e' = option_map (fun x -> check_aexp cx x) e in
-    if Assoc.mem id cx.g
-    then error cx ("Duplicate global variable: " ^ id)
-    else check_typ_valid cx t; 
-        Assoc.update id t cx.g, update_psi_matrix cx ml t id,
-        (sq, tag_erase cx t, id, option_map (fun x -> exp_to_texp cx x) e')
+    check_typ_valid cx t; 
+        bind cx id (Gamma t),
+        (sq, typ_erase cx t, id, option_map (fun x -> exp_to_texp cx x) e')
+        
 
 (* Updates mu, phi, and psi from underlying calls *)
-let check_fn (cx: contexts) (((fm, id, (pmd, r, pr)), cl): fn) 
+let check_fn (cx: contexts) (f, cl: fn) 
 : contexts * TypedAst.fn = 
-    let wrap_gps (g, ps, c) = (w_g (w_ps cx ps) g, c) in
+    let ml, r, id, pm, pr, meta = f in
     debug_print (">> check_fn : " ^ id);
     (* update phi with function declaration *)
-    let (p', (g', ps', pl'), pm') = check_fn_decl cx (fm, id, (pmd, r, pr)) in
-    let pm = collapse_parameterization_decl pmd in
+    let cx', pr', pm' = check_fn_decl cx f in
     (* Note that we don't use our updated phi to avoid recursion *)
-    let cx' = w_pm (w_g (w_ps cx ps') g') pm in
-    let (cx'', cl') = wrap_gps(check_comm_lst cx' cl) in 
-    let m' = update_mu_with_function cx (fm, id, (pmd, r, pr)) in
+    let cx'', cl' = check_comm_lst cx' cl in
+    let cxr = update_mu_with_function (clear cx'' CGamma) f in
     (* check that the last command is a return statement *)
     match r with
-    | UnitTyp -> List.iter (fun c -> check_void_return cx c) cl; 
-        m', p', ps', (((id, (pl', TypedAst.UnitTyp, pm')), cl'))
+    | UnitTyp -> List.iter (fun c -> check_void_return cx c) cl;
+        cxr, (((id, (pr', TypedAst.UnitTyp, pm')), cl'))
     (* TODO: might want to check that there is exactly one return statement at the end *)
     | t -> List.iter (check_return cx'' t) cl; 
-        m', p', ps', (((id, (pl', tag_erase cx t, pm')), cl'))
+        cxr, ((id, (pr', typ_erase cx t, pm')), cl')
 
 let check_term (cx: contexts) (t: term) 
 : contexts * TypedAst.fn option * TypedAst.global_var option =
     match t with    
     | Prototype p -> failwith ""
     | Coordinate c -> failwith ""
-    | FrameDecl t -> let cx' = w_d cx (check_typ_decl cx t) in
+    | Frame t -> failwith ""
+    | Typ (id, pm, t) ->
+        check_typ_decl cx id (pm, t), None, None
+    | Extern e -> let cx' = check_decls cx e in
         cx', None, None
-    | TypDecl t -> let cx' = w_d cx (check_typ_decl cx t) in
-        cx', None, None
-    | ExternDecl ed -> let (g, m, p) = check_decls cx ed in
-        w_g (w_m (w_p cx p) m) g, None, None
-    | GlobalVar gv -> let (g, ps, gv') = check_global_variable cx gv in
-        w_g (w_ps cx ps) g, None, Some gv'
-    | Fn f -> let (m, p, ps, f') = check_fn cx f in
-        w_m (w_p (w_ps cx ps) p) m, Some f', None
+    | GlobalVar gv -> let (cx', gv') = check_global_variable cx gv in
+        cx', None, Some gv'
+    | Fn f -> let (cx', f') = check_fn cx f in
+        cx', Some f', None
     
 let check_aterm (cx: contexts) ((t, meta): aterm) 
 : contexts * TypedAst.fn option * TypedAst.global_var option =
     check_term (with_meta cx meta) t
 
 let rec check_term_list (tl: aterm list) :
-phi * TypedAst.prog * TypedAst.global_vars =
+contexts * TypedAst.prog * TypedAst.global_vars =
     debug_print ">> check_global_var_or_fn_lst";
     (* Annoying bootstrapping hack *)
-    if List.length tl == 0 then fresh, [], [] else
     let app_maybe o l = match o with | Some v -> v::l | None -> l in
     let cx, f, gv = List.fold_left (fun acc t -> let (cx', f', gv') = check_aterm (tr_fst acc) t in
         (cx', app_maybe f' (tr_snd acc), app_maybe gv' (tr_thd acc)))
-        (init_contexts (snd (List.hd tl)), [], []) tl in
-    cx.p, List.rev f, List.rev gv
+        (init (snd (List.hd tl)), [], []) tl in
+    cx, List.rev f, List.rev gv
 
 (* Check that there is a void main() defined *)
 let check_main_fn (cx: contexts) : unit =
     debug_print ">> check_main_fn";
-    let (params, ret_type, pm, meta) = Assoc.lookup "main" p in 
-    debug_print (">> check_main_fn_2" ^ (string_of_list string_of_param params) ^ (string_of_parameterization pm));
-    if (List.length params) > 0 || (Assoc.size pm) > 0 then error cx ("Cannot provide parameters to main") else
-    match ret_type with
+    let (ml, rt, id, pm, pr, meta) = get_function cx "main" in 
+    debug_print (">> check_main_fn_2" ^ (string_of_list string_of_param pr) ^ (string_of_parameterization pm));
+    if (List.length pr) > 0 || (Assoc.size pm) > 0 then error cx ("Cannot provide parameters to main") else
+    match rt with
         | UnitTyp -> ()
         | _ -> raise (TypeException "Expected main function to return void")
 
@@ -880,9 +826,7 @@ let check_main_fn (cx: contexts) : unit =
  * and params of the void main() fn *)
 let check_prog (tl: prog) : TypedAst.prog * TypedAst.global_vars =
     debug_print ">> check_prog";
-    (*(d: delta) ((id, t): fn_decl) (p: phi) *)
-    (* delta from tag declarations *)
-    let (cx, typed_prog, typed_gvs) = check_term_list tl in
+    let cx, typed_prog, typed_gvs = check_term_list tl in
     check_main_fn cx;
     debug_print "===================";
     debug_print "Type Check Complete";
