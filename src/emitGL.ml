@@ -94,11 +94,7 @@ and string_of_exp (e : exp) : string =
                 | _ -> failwith "Typechecker error, a matrix must be a list of vectors")) in
                 string_of_glsl_mat (List.map as_vec_list a)
             | _ -> failwith "Typechecker error, every array must be a list of ints, floats, or vectors"))
-    | Binop (l, op, r) -> (match op with
-        | Times -> "(" ^ padded_mult l r ^ ")"
-        | CTimes -> "(" ^ string_of_texp l ^ " * " ^ string_of_texp r ^ ")"
-        | _ -> "(" ^ string_of_binop_exp (string_of_texp l) op (string_of_texp r) ^ ")")
-    | Unop (op, x) -> string_of_unop_exp op "(" ^ string_of_texp x ^ ")"
+    | Index (l, r) -> string_of_texp l ^ "[" ^ string_of_texp r ^ "]"
     | FnInv (id, tl, args) -> id ^ "(" ^ string_of_list string_of_texp args ^ ")"
 
 let rec string_of_comm (c: comm) : string =
@@ -112,7 +108,7 @@ let rec string_of_comm (c: comm) : string =
         ^ " = " ^ string_of_texp e ^ ";"
     | Assign (b, x) -> b ^ " = " ^ string_of_texp x ^ ";"
     | AssignOp ((x, _), op, e) -> x ^ " " 
-        ^  string_of_binop op ^ "= " ^ (string_of_texp e)
+        ^ op ^ "= " ^ (string_of_texp e)
     | If ((b, c1), elif_list, c2) -> 
         "if (" ^ string_of_texp b ^ ")" ^ block_string c1 
         ^ string_of_list (fun (b, c) -> "elif (" ^ string_of_texp b ^ ")" ^ block_string c) elif_list
@@ -120,7 +116,7 @@ let rec string_of_comm (c: comm) : string =
     | For (d, b, u, cl) -> "for (" ^ string_of_comm d ^ string_of_texp b ^ "; " 
         ^ string_of_comm u ^ ") " ^ block_string cl
     | Return x -> "return" ^ string_of_option_removed (fun x -> " " ^ string_of_texp x) x ^ ";"
-    | FnCall (id, tl, args) -> id ^ string_if_true nonempty (string_of_bounded_list string_of_typ "<" ">")  tl
+    | FnCall (id, tl, args) -> id ^ if nonempty tl then "<" ^ string_of_list string_of_typ tl ^ ">" else ""
         ^ "(" ^ string_of_list string_of_texp args ^")"
 
 let comp_fn (f : fn) : string = 

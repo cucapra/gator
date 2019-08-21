@@ -1,35 +1,37 @@
 type vec = CoreAst.vec
 type mat = CoreAst.mat
 
-let option_map (f: ('a -> 'b)) (o: 'a option) : 'b option =
+let option_map (f: 'a -> 'b) (o: 'a option) : 'b option =
   match o with
   | None -> None
   | Some x -> Some (f x)
 
-let as_vec_safe (a : CoreAst.value list) : vec option =
-  List.fold_right (fun x acc -> match x with 
-    | CoreAst.Float f -> option_map (fun y -> f::y) acc
-    | _ -> None) a (Some [])
+let as_vec_safe (a : TypedAst.exp) : vec option =
+  match a with
+  | TypedAst.Arr a -> 
+    List.fold_right (fun (x,_) acc -> match x with 
+      | TypedAst.Val (CoreAst.Float f) -> option_map (fun y -> f::y) acc
+      | _ -> None) a (Some [])
+  | _ -> None
 
-let as_vec (a : CoreAst.value list) : vec =
+let as_vec (a : TypedAst.exp) : vec =
   match as_vec_safe a with
   | Some v -> v
-  | _ -> failwith "Expected float"
+  | _ -> failwith "Expected float array"
 
-let as_mat_safe (a : CoreAst.value list) : mat option =
-  List.fold_right (fun x acc -> match x with 
-    | CoreAst.ArrLit a' -> option_map (fun y -> as_vec a'::y) acc
-    | _ -> None) a (Some [])
+let as_mat_safe (a : TypedAst.exp) : mat option =
+  match a with
+  | TypedAst.Arr a -> 
+    List.fold_right ((fun (x,_) acc -> match x with 
+    | TypedAst.Arr v -> option_map (fun y -> as_vec (TypedAst.Arr v)::y) acc
+    | _ -> None)) a (Some [])
+  | _ -> None
 
-let as_mat (a : CoreAst.value list) : mat =
-  match as_mat_safe a with
-  | Some m -> m
-  | _ -> failwith "Expected vector"
-
-let arr_of_vec (v : vec) : CoreAst.value =
-  CoreAst.ArrLit (List.fold_right (fun x acc -> CoreAst.Float x::acc) v [])
-let arr_of_mat (m : mat) : CoreAst.value =
-  CoreAst.ArrLit (List.fold_right (fun x acc -> arr_of_vec x::acc) m [])
+let arr_of_vec (v : vec) : TypedAst.exp =
+  TypedAst.Arr (List.map (fun x -> TypedAst.Val (CoreAst.Float x), TypedAst.FloatTyp) v)
+let arr_of_mat (m : mat) : TypedAst.exp =
+  TypedAst.Arr (List.map (fun x -> TypedAst.Arr (List.map (fun y -> TypedAst.Val (CoreAst.Float y), 
+    TypedAst.FloatTyp) x), TypedAst.FloatTyp) m)
 let vec_to_mat (v : vec) : mat = [v]
 let mat_to_vec (m : mat) : vec = 
   if (List.length m = 1) then (List.flatten m) else (failwith "Invalid Argument")

@@ -49,6 +49,7 @@ exception ParseException of string
 %token TYP
 %token CANON
 %token IS
+%token HAS
 %token WITH
 %token TRUE
 %token FALSE
@@ -136,7 +137,7 @@ let term ==
   | COORDINATE; x = ID; COLON; p = ID;
     LBRACE; DIMENSION; n = NUM; SEMI; c = list(coordinate_element); RBRACE;
     <Coordinate>
-  | FRAME; x = ID; IS; d = frame_dim; SEMI;
+  | FRAME; x = ID; HAS; d = frame_dim; SEMI;
     <Frame>
   | TYP; x = ID; pm = parameterization(constrained); IS; t = typ; SEMI;
     <Typ>
@@ -171,7 +172,7 @@ let with_statement ==
     <>
 
 let coordinate_element ==
-  | OBJECT; x = ID; p = parameterization(constrained); IS; t = typ;
+  | OBJECT; x = ID; p = parameterization(constrained); IS; t = typ; SEMI;
     <CoordObjectAssign>
   | f = fn;
     <CoordFn>
@@ -200,8 +201,13 @@ let parameterization(T) ==
 let arguments ==
   | x = parameters(LPAREN, aexp, RPAREN); <>
 
+let id_expanded ==
+  | x = ID; <>
+  | NOT; { "!" }
+  | x = infix; <>
+
 let fn_typ ==
-  | (m, t) = terminated_list(modification, typ); x = ID; 
+  | (m, t) = terminated_list(modification, typ); x = id_expanded; 
     pm = parameterization(constrained); params = parameters(LPAREN, parameter, RPAREN);
     { (m, t, x, pm, params, $startpos) }
 
@@ -232,15 +238,15 @@ let comm_block ==
 
 let assignop ==
   | PLUSEQ;
-    { Plus }
+    { "+" }
   | MINUSEQ;
-    { Minus }
+    { "-" }
   | TIMESEQ;
-    { Times }
+    { "*" }
   | DIVEQ;
-    { Div }
+    { "/" }
   | CTIMESEQ;
-    { CTimes }
+    { ".*" }
 
 let acomm_element ==
   | ce = comm_element;
@@ -267,8 +273,8 @@ let comm_element ==
     < FnCall >
 
 let dexp :=
-  | d1 = dexp; b = binop; d2 = dexp;
-    <DimBinop>
+  | d1 = dexp; PLUS; d2 = dexp;
+    <DimPlus>
   | n = NUM;
     <DimNum>
   | x = ID;
@@ -339,10 +345,10 @@ let exp:=
     <Val>
   | x = ID;
     <Var>
-  | e1 = aexp; op = binop; e2 = aexp;
-    <Binop>
-  | u = unop; e = aexp;
-    <Unop>
+  | op = unop; e = aexp;
+    { FnInv(op, [], [e]) }
+  | e1 = aexp; op = infix; e2 = aexp;
+    { FnInv(op, [], [e1; e2]) }
   | x = ID; p = oplist(parameters(LWICK, typ, RWICK)); a = arguments; 
     <FnInv>
   | LBRACK; e = separated_list(COMMA, aexp); RBRACK; 
@@ -352,26 +358,27 @@ let exp:=
   | e = aexp; IN; t = typ;
     <In>
   | e = aexp; DOT; s = ID;
-    { Unop(Swizzle s,e) }
+    { FnInv("swizzle",[],[Var s, $startpos; e]) }
   | x = ID; LBRACK; e = aexp; RBRACK;
-    { Binop((Var(x), $startpos), Index, e) }
+    { Index((Var x, $startpos), e) }
 
 let unop ==
-  | MINUS; { Neg }
-  | NOT; { Not }
+  /* NOTE: if you update this, update id_extended to avoid MINUS conflicts */
+  | NOT; { "!" }
+  | MINUS; { "-" }
 
-let binop ==
-  | PLUS; { Plus }
-  | TIMES; { Times }
-  | MINUS; { Minus }
-  | DIV; { Div }
-  | LWICK; { Lt }
-  | RWICK; { Gt }
-  | CTIMES; { CTimes }
-  | EQ; { Eq }
-  | LEQ; { Leq }
-  | GEQ; { Geq }
-  | OR; { Or }
-  | AND; { And }
+let infix ==
+  | PLUS; { "+" }
+  | TIMES; { "*" }
+  | MINUS; { "-" }
+  | DIV; { "/" }
+  | LWICK; { "<" }
+  | RWICK; { ">" }
+  | CTIMES; { ".*" }
+  | EQ; { "==" }
+  | LEQ; { "<=" }
+  | GEQ; { ">=" }
+  | OR; { "||" }
+  | AND; { "&&" }
 
 %%

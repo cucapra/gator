@@ -19,8 +19,6 @@ let tr_fst ((x, _, _): 'a * 'b * 'c) : 'a = x
 let tr_snd ((_, x, _): 'a * 'b * 'c) : 'b = x
 let tr_thd ((_, _, x): 'a * 'b * 'c) : 'c = x
 
-let string_if_true (b : 'a -> bool) (f : 'a -> string) (x : 'a) : string = 
-  if b x then "" else f x
 let nonempty x = List.length x > 0
 let string_of_option_removed (f : 'a -> string) (o : 'a option) : string =
   match o with
@@ -46,9 +44,17 @@ let string_of_mat (m: mat) : string =
 let rec repeat (s : string) (count : int) : string = 
   if count <= 0 then "" else (if count > 1 then (s ^ (repeat s (count-1))) else s)
 
+let rec transpose (m : 'a list) : 'a list =
+  (*https://stackoverflow.com/questions/3989776/transpose-of-a-list-of-lists*)
+  match m with
+  | [] -> []
+  | []::xss -> transpose xss
+  | (x::xs)::xss ->
+      (x :: List.map List.hd xss) :: transpose (xs :: List.map List.tl xss)
+
 let get_mat_square_dim (m : mat) = 
     (* Note the transpose to match the glsl column-oriented style *)
-    let tm = Lin_ops.transpose m in
+    let tm = transpose m in
     let r = (List.length tm) in
     let c = (if r = 0 then 0 else List.length (List.hd tm)) in
     max r c
@@ -64,29 +70,6 @@ let rec string_of_value (v: value) : string =
   | Bool b -> string_of_bool b
   | Num n -> string_of_int n
   | Float f -> string_of_float f
-  | ArrLit a -> string_of_array string_of_value a
-
-let string_of_unop (op : unop) : string =
-  match op with
-  | Neg -> "-"
-  | Not -> "!"
-  | Swizzle s -> "." ^ s
-
-let string_of_binop (op: binop) : string =
-  match op with
-  | Eq -> "=="
-  | Leq -> "<="
-  | Lt -> "<"
-  | Geq -> ">="
-  | Gt -> ">"
-  | Or -> "||"
-  | And -> "&&"
-  | Plus -> "+"
-  | Minus -> "-"
-  | Times -> "*"
-  | Div -> "/"
-  | CTimes -> ".*"
-  | Index -> "[]"
 
 let string_of_storage_qual (s: storage_qual) : string =
   match s with
@@ -97,21 +80,10 @@ let string_of_storage_qual (s: storage_qual) : string =
   | Uniform -> "uniform"
   | Varying -> "varying"
 
-let string_of_unop_exp (op: unop) (e: string) : string =
-  match op with
-  | Swizzle s -> e ^ "." ^ s
-  | _ -> string_of_unop op ^  " " ^ e
-
-let string_of_binop_exp (left: string) (op: binop) (right: string) : string =
-  match op with
-  | Index -> left ^ "[" ^ right ^ "]"
-  | _ -> left ^ " " ^ string_of_binop op ^ " " ^ right
-  
-
 (*****************************************************
  * Debug-printer
  *****************************************************)
 
- let debug = false
+ let debug = true
 
  let debug_print (s: string) : unit = if debug then Printf.printf "%s\n" s

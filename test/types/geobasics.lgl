@@ -6,30 +6,30 @@ prototype geometry {
 coordinate cart2 : geometry {
     dimension 2;
 
-    point<r> is float[2];
-    vector<r> is float[2];
+    object point<r> is float[2];
+    object vector<r> is float[2];
 }
 coordinate cart3 : geometry {
     dimension 3;
 
-    point<r> is float[3];
-    vector<r> is float[3];
+    object point<r> is float[3];
+    object vector<r> is float[3];
 }
 coordinate polar : geometry {
     dimension 2;
     
-    point<r> is float[2];
-    vector<r> is float[2];
+    object point<r> is float[2];
+    object vector<r> is float[2];
 }
 coordinate hom : geometry {
     dimension 3;
 
-    point<r> is float[4];
-    vector<r> is float[4];
+    object point<r> is float[4];
+    object vector<r> is float[4];
 }
 
-frame world is dimension 3;
-frame plane is dimension 2;
+frame world has dimension 3;
+frame plane has dimension 2;
 
 void main() {
     cart3.point<world> pos = [1., 2., 3.];

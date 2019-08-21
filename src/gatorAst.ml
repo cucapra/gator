@@ -8,7 +8,7 @@ type 'a astNode = 'a * metadata
 type dexp =
     | DimVar of string
     | DimNum of int
-    | DimBinop of dexp * binop * dexp
+    | DimPlus of dexp * dexp
 
 (* types *)
 type typ =
@@ -32,8 +32,7 @@ and exp =
     | Val of value
     | Var of string
     | Arr of aexp list
-    | Unop of unop * aexp
-    | Binop of aexp * binop * aexp
+    | Index of aexp * aexp (* a[3] -- special operation that can't be user-defined *)
     | As of aexp * typ
     | In of aexp * typ
     | FnInv of string * typ list * args (* function invocation *)
@@ -52,7 +51,7 @@ and comm =
     | Dec of id
     | Decl of modification list * typ * string * aexp 
     | Assign of string * aexp
-    | AssignOp of string * binop * aexp
+    | AssignOp of string * string * aexp
     | If of if_block * if_block list * acomm list option  (* if - elif list - else *)
     | For of acomm * aexp * acomm * acomm list
     | Return of aexp option

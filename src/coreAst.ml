@@ -13,26 +13,6 @@ type value =
   | Bool of bool
   | Num of int
   | Float of float
-  | ArrLit of value list
-
-type unop =
-  | Neg
-  | Not
-  | Swizzle of id
-type binop =
-  | Eq
-  | Leq
-  | Lt
-  | Geq
-  | Gt
-  | Or
-  | And
-  | Plus
-  | Minus
-  | Times
-  | Div
-  | CTimes (* Component-wise multiplication *)
-  | Index
 
 (* Storage qualifiers *)
 type storage_qual =

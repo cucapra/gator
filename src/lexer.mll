@@ -30,9 +30,10 @@ rule read = parse
   | "object"        { OBJECT }
   | "coordinate"    { COORDINATE }
   | "dimension"     { DIMENSION }  
-  | "tag"           { FRAME }
+  | "frame"           { FRAME }
   | "type"          { TYP }
   | "is"            { IS }
+  | "has"           { HAS }
   | "with"          { WITH }
   | "canon"         { CANON }
   | "true"          { TRUE }

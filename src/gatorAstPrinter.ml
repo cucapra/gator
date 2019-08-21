@@ -8,8 +8,8 @@ let string_of_decl (x : string) f : string = f x
 
 let rec string_of_dexp (d : dexp) : string = 
     match d with
-    | DimBinop (l, op, r) -> string_of_binop_exp 
-        (string_of_dexp l) op (string_of_dexp r)
+    | DimPlus (l, r) ->  
+        string_of_dexp l ^ " + " ^ string_of_dexp r
     | DimNum n -> string_of_int n
     | DimVar s -> s
 
@@ -21,14 +21,17 @@ let rec string_of_typ (t: typ) : string =
     | BoolTyp -> "bool"
     | IntTyp -> "int"
     | FloatTyp -> "float"
-    | Literal t -> string_of_typ t ^ "%lit"
+    | Literal t -> "%(" ^ string_of_typ t ^ ")"
     | ArrTyp (t, d) -> string_of_typ t ^ "[" ^ string_of_dexp d ^ "]"
     (* Essentially the bottom type for all arrays *)
     | CoordTyp (s, t) -> s ^ "." ^ string_of_typ t
-    | ParTyp (s, tl) -> s ^ "<" ^ (string_of_list string_of_typ tl) ^ ">"
+    | ParTyp (s, tl) -> s ^ string_of_pml tl
     | GenTyp -> "genTyp"
     | GenArrTyp t' -> "arr of " ^ string_of_typ t'
     | AnyTyp -> ""
+
+and string_of_pml (p : typ list) : string =
+    if List.length p > 0 then "<" ^ string_of_list string_of_typ p ^ ">" else ""
 
 let string_of_modification (m: modification) : string =
     match m with
@@ -42,9 +45,8 @@ let string_of_mod_list (m: modification list) : string =
 let string_of_param ((t, s): typ * string) : string =
     string_of_typ t ^ " " ^ s
 
-let string_of_parameterization (p : parameterization) : string =
-    string_if_true (fun a -> Assoc.size a != 0)
-        (fun a -> "<" ^ Assoc.to_string string_of_typ a ^ ">") p
+let string_of_parameterization (pm : parameterization) : string =
+    if Assoc.size pm != 0 then "<" ^ Assoc.to_string string_of_typ pm ^ ">" else ""
 
 let string_of_fn_typ (ml, r, x, pm, p, _ : fn_typ) : string = 
     string_of_mod_list ml ^ " " ^ string_of_typ r ^ " " ^ x ^ string_of_parameterization pm
@@ -57,15 +59,10 @@ and string_of_exp (e: exp) : string =
     | Val v -> string_of_value v
     | Var v -> v
     | Arr a -> "[" ^ string_of_list string_of_aexp a ^ "]"
-    | Unop (op, x) -> (string_of_unop_exp op (string_of_aexp x))
-    | Binop (l, op, r) -> 
-        let ls = (string_of_aexp l) in
-        let rs = (string_of_aexp r) in
-        (match op with
-        | _ -> (string_of_binop_exp ls op rs))
+    | Index (a, i) -> string_of_aexp a ^ "[" ^ string_of_aexp i ^ "]"
     | As (e, t) -> (string_of_aexp e) ^ " as " ^ (string_of_typ t)
     | In (e, t) -> (string_of_aexp e) ^ " in " ^ (string_of_typ t)
-    | FnInv (i, pr, args) -> i ^ "<" ^ string_of_list string_of_typ pr ^ ">" 
+    | FnInv (i, pr, args) -> i ^ string_of_pml pr
         ^ "(" ^ (string_of_list string_of_aexp args) ^ ")"
 
 let rec string_of_acomm ((c, m) : acomm) : string = 
@@ -81,7 +78,7 @@ and string_of_comm (c: comm) : string =
     | Dec x -> x ^ "--"
     | Decl (ml, t, s, e) -> (string_of_typ t) ^ " " ^ s ^ " = " ^ (string_of_aexp e) ^ ";"
     | Assign (b, x) -> b ^ " = " ^ (string_of_aexp x) ^ ";"
-    | AssignOp (x, op, e) -> x ^ " " ^  string_of_binop op ^ "= " ^ (string_of_aexp e)
+    | AssignOp (x, op, e) -> x ^ " " ^ op ^ "= " ^ (string_of_aexp e)
     | If ((b, c1), elif_list, c2) -> 
         "if (" ^ string_of_aexp b ^ ")" ^ block_string c1 
         ^ string_of_list (fun (b, c) -> "elif (" ^ string_of_aexp b ^ ")" ^ block_string c) elif_list
@@ -90,7 +87,7 @@ and string_of_comm (c: comm) : string =
         ^ string_of_acomm u ^ ") " ^ block_string cl
     | Return None -> "return;"
     | Return Some e -> "return" ^ (string_of_aexp e) ^ ";"
-    | FnCall (s, tl, e) -> s ^ "<" ^ string_of_list string_of_typ tl ^ ">" 
+    | FnCall (s, tl, e) -> s ^ string_of_pml tl
         ^ "(" ^ string_of_list string_of_aexp e ^ ");"
 
 let string_of_frame (f : frame) =

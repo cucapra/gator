@@ -7,7 +7,7 @@ exception TypeException of string
 
 let line_number (meta : metadata) : string = 
   ("Line: " ^ string_of_int(meta.pos_lnum))
-let error cx s = raise (TypeException(line_number cx.meta ^ s))
+let error cx s = raise (TypeException(line_number cx.meta ^ " -- " ^ s))
 
 (* Produces an empty set of gator contexts with a starting metadata *)
 let init meta = let b = 
@@ -91,6 +91,8 @@ let string_of_phi (p : phi) =
   string_of_fn_typ p
 let string_of_psi (ps : psi) : string =
   string_of_list (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_fn_inv p ^ ")") ps
+let option_clean (x : 'a option) : 'a =
+  match x with | Some x -> x | None -> failwith "Failed option assumption"
 
 let get_typ (cx : contexts) (x : string) : tau =
   match find_safe cx x with
@@ -130,4 +132,4 @@ let get_prototype_element (cx : contexts) (p : string) (e : string) : prototype_
 let get_function (cx : contexts) (x : string) : phi =
   match find_safe cx x with
   | Some Phi p -> p
-  | _ -> error cx ("Undefined function " ^ x)
+  | _ -> error cx ("No type definition for function " ^ x)

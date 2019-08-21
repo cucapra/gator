@@ -33,7 +33,7 @@ let rec vec_expand (length : int) (vals : value list) : vec =
   | h::t -> (match h with
     | Num n -> (float_of_int n)::(vec_expand (length - 1) t)
     | Float f -> f::(vec_expand (length - 1) t)
-    | ArrLit a -> (as_vec a)@(vec_expand (length - (List.length a)) t)
+    (* | ArrLit a -> (as_vec a)@(vec_expand (length - (List.length a)) t) *)
     | _ -> failwith ("Bad argument to vecn " ^ (Util.string_of_value h))
   )
 let rec vec_contract(length : int) (v : vec) : vec =
@@ -46,8 +46,8 @@ let vecn (length : int) (args : value list) : vec =
   | [] -> make_list 0. length
   | [Num n] -> make_list (float_of_int n) length 
   | [Float f] -> make_list f length 
-  | [ArrLit a] -> 
-    if length < List.length a then vec_contract length (as_vec a) else vec_expand length args
+  (* | [ArrLit a] -> 
+    if length < List.length a then vec_contract length (as_vec a) else vec_expand length args *)
   | _ -> vec_expand length args
 
 let vec_with_f_index (length : int) (f : float) (index : int) : vec =
@@ -107,18 +107,18 @@ let matn (size : int) (args : value list) : mat =
     | Float f::t -> f::(as_fs t)
     | _ -> failwith fail_text
   in
-  let rec as_vs (args : value list) : vec list =
+  (* let rec as_vs (args : value list) : vec list =
     match args with
     | [] -> []
     | ArrLit v::t -> (as_vec v)::(as_vs t)
     | _ -> failwith fail_text
-  in
+  in *)
   match args with
   | [] -> matf size 0.
   | [Float f] -> matf size f
-  | [ArrLit m] ->
-    if size < List.length m then mat_contract size (as_mat m) else mat_expand size (as_mat m)
+  (* | [ArrLit m] ->
+    if size < List.length m then mat_contract size (as_mat m) else mat_expand size (as_mat m) *)
   | _ -> (match (List.hd args) with 
     | Float _ -> matfs size (as_fs args)
-    | ArrLit _ -> matvs (as_vs args)
+    (* | ArrLit _ -> matvs (as_vs args) *)
     | _ -> failwith fail_text)
