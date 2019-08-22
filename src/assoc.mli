@@ -30,7 +30,7 @@ val keys : 'a context -> string list
 val values : 'a context -> 'a list
 
 (* Generates a context from a list *)
-val gen_context : (string * 'a) list -> 'a context
+val create : (string * 'a) list -> 'a context
 
 (* val state_to_string : ('a, 'a) context -> string *)
 

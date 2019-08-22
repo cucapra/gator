@@ -25,7 +25,7 @@ coordinate hom : geometry {
     dimension 3;
 
     object point<r> is float[4];
-    object vector<r> is float[4];
+    object vector<r> is float[3];
 }
 
 frame world has dimension 3;

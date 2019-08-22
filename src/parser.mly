@@ -110,7 +110,7 @@ exception ParseException of string
 %%
 
 main:
-  | t = aterm+; EOF;
+  | t = node(term)+; EOF;
     { t }
 
 let terminated_list(X, Y) ==
@@ -126,37 +126,28 @@ let oplist(X) ==
 let combined(A, B) == a = A; b = B; { (a, b) }
 let fst(T) == (a, b) = T; { a }
 let snd(T) == (a, b) = T; { b }
-
-let aterm ==
-  | t = term;
-    { (t, $startpos) }
+let node(T) == t = T; { (t, $startpos) }
 
 let term == 
-  | PROTOTYPE; x = ID; LBRACE; p = list(prototype_element); RBRACE;
+  | PROTOTYPE; x = ID; LBRACE; p = list(node(prototype_element)); RBRACE;
     <Prototype>
   | COORDINATE; x = ID; COLON; p = ID;
-    LBRACE; DIMENSION; n = NUM; SEMI; c = list(coordinate_element); RBRACE;
+    LBRACE; DIMENSION; d = dexp; SEMI; c = list(node(coordinate_element)); RBRACE;
     <Coordinate>
-  | FRAME; x = ID; HAS; d = frame_dim; SEMI;
+  | FRAME; x = ID; HAS; DIMENSION; d = dexp; SEMI;
     <Frame>
   | TYP; x = ID; pm = parameterization(constrained); IS; t = typ; SEMI;
     <Typ>
   | DECLARE; d = extern_element; SEMI; 
     <Extern>
   | m = modification*; sq = storage_qual; t = typ;
-    x = ID; v = preceded(GETS, aexp)?; SEMI; 
+    x = ID; v = preceded(GETS, node(exp))?; SEMI; 
     <GlobalVar>
   | f = fn;
     <Fn>
 
-let frame_dim ==
-  | x = ID;
-    <FrameDim>
-  | DIMENSION; n = NUM;
-    <FrameNum>
-
 let prototype_element ==
-  | OBJECT; x = ID; p = parameterization(constrained); SEMI;
+  | OBJECT; x = ID; p = oplist(parameters(LWICK, ID, RWICK)); SEMI;
     <ProtoObject>
   | f = fn_typ;
     <ProtoFn>
@@ -172,7 +163,7 @@ let with_statement ==
     <>
 
 let coordinate_element ==
-  | OBJECT; x = ID; p = parameterization(constrained); IS; t = typ; SEMI;
+  | OBJECT; x = ID; p = oplist(parameters(LWICK, ID, RWICK)); IS; t = typ; SEMI;
     <CoordObjectAssign>
   | f = fn;
     <CoordFn>
@@ -196,10 +187,10 @@ let parameters(L, P, R) ==
   | x = delimited(L, separated_list(COMMA, P), R); <>
 
 let parameterization(T) ==
-  | pt = oplist(parameters(LWICK, T, RWICK)); { Assoc.gen_context pt }
+  | pt = oplist(parameters(LWICK, T, RWICK)); { Assoc.create pt }
 
 let arguments ==
-  | x = parameters(LPAREN, aexp, RPAREN); <>
+  | x = parameters(LPAREN, node(exp), RPAREN); <>
 
 let id_expanded ==
   | x = ID; <>
@@ -225,15 +216,15 @@ let comm ==
     <>
 
 let if_block(delim) ==
-  | delim; LPAREN; b = aexp; RPAREN; LBRACE; c = acomm*; RBRACE;
+  | delim; LPAREN; b = node(exp); RPAREN; LBRACE; c = acomm*; RBRACE;
     <>
 
 let comm_block ==
   | i = if_block(IF); el = if_block(ELIF)*; 
     e = option(preceded(ELSE, delimited(LBRACE, list(acomm), RBRACE)));
     <If>
-  | FOR; LPAREN; c1 = acomm_element; SEMI; b = aexp; SEMI; c2 = acomm_element; RPAREN;
-    LBRACE; cl = acomm*; RBRACE; 
+  | FOR; LPAREN; c1 = node(comm_element); SEMI; b = node(exp); SEMI; c2 = node(comm_element); RPAREN;
+    LBRACE; cl = node(comm)*; RBRACE; 
     <For>
 
 let assignop ==
@@ -248,22 +239,18 @@ let assignop ==
   | CTIMESEQ;
     { ".*" }
 
-let acomm_element ==
-  | ce = comm_element;
-    { (ce, $startpos) }
-
 let comm_element == 
   | SKIP;
     { Skip }
-  | (m, t) = terminated_list(modification, typ); x = ID; GETS; e = aexp; 
+  | (m, t) = terminated_list(modification, typ); x = ID; GETS; e = node(exp); 
     < Decl >
-  | x = ID; GETS; e = aexp; 
+  | x = ID; GETS; e = node(exp); 
     < Assign >
-  | x = ID; a = assignop; e = aexp; 
+  | x = ID; a = assignop; e = node(exp); 
     < AssignOp >
-  | PRINT; e = aexp; 
+  | PRINT; e = node(exp); 
     < Print >
-  | RETURN; e = aexp?;
+  | RETURN; e = node(exp)?;
     < Return >
   | x = ID; INC; 
     < Inc >
@@ -334,10 +321,6 @@ let bool ==
   | FALSE;
     { false }
 
-let aexp ==
-  | e = exp;
-    { (e, $startpos) }
-
 let exp:=
   | LPAREN; a = exp; RPAREN;
     <>
@@ -345,21 +328,21 @@ let exp:=
     <Val>
   | x = ID;
     <Var>
-  | op = unop; e = aexp;
+  | op = unop; e = node(exp);
     { FnInv(op, [], [e]) }
-  | e1 = aexp; op = infix; e2 = aexp;
+  | e1 = node(exp); op = infix; e2 = node(exp);
     { FnInv(op, [], [e1; e2]) }
   | x = ID; p = oplist(parameters(LWICK, typ, RWICK)); a = arguments; 
     <FnInv>
-  | LBRACK; e = separated_list(COMMA, aexp); RBRACK; 
+  | LBRACK; e = separated_list(COMMA, node(exp)); RBRACK; 
     <Arr>
-  | e = aexp; AS; t = typ;
+  | e = node(exp); AS; t = typ;
     <As>
-  | e = aexp; IN; t = typ;
+  | e = node(exp); IN; t = typ;
     <In>
-  | e = aexp; DOT; s = ID;
+  | e = node(exp); DOT; s = ID;
     { FnInv("swizzle",[],[Var s, $startpos; e]) }
-  | x = ID; LBRACK; e = aexp; RBRACK;
+  | x = ID; LBRACK; e = node(exp); RBRACK;
     { Index((Var x, $startpos), e) }
 
 let unop ==

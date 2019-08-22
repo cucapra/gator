@@ -16,7 +16,6 @@ let init meta = let b =
   {m=Assoc.empty; ps=Assoc.empty; pm=Assoc.empty; meta=meta; _bindings=b }
 
 let with_m cx m' = {cx with m=m'}
-let with_p cx p' = {cx with p=p'}
 let with_ps cx ps' = {cx with ps=ps'}
 let with_pm cx pm' = {cx with pm=pm'}
 let with_meta cx meta' = {cx with meta=meta'}
@@ -57,7 +56,7 @@ let bind (cx : contexts) (x : string) (b : binding) : contexts =
 let clear (cx : contexts) (b : binding_context) =
   let update_bindings b' = {cx with _bindings=b'} in
   let _b = cx._bindings in
-  let build_l l xs = Assoc.gen_context (List.fold_left (fun acc (x, v) -> 
+  let build_l l xs = Assoc.create (List.fold_left (fun acc (x, v) -> 
     if List.mem x xs then acc else (x, v)::acc) [] l) in
   let clear c = build_l (Assoc.bindings _b.l) (List.map fst (Assoc.bindings c)) in
   match b with
@@ -69,22 +68,23 @@ let clear (cx : contexts) (b : binding_context) =
   | CPhi ->   update_bindings { _b with l=clear _b.p; o=Assoc.empty }
 
 let ignore_typ (t : typ) : unit = ignore t
+let ignore_dexp (d : dexp) : unit = ignore d
 let ignore_typ_context (t : typ Assoc.context) : unit = ignore t
 let string_of_fn_inv ((s, tl) : fn_inv) : string = 
   s ^ "<" ^ string_of_list string_of_typ tl ^ ">"
 let debug_fail (cx : contexts) (s : string) =
   failwith (line_number cx.meta ^ "\t" ^ s)
-let string_of_tau (pm, t : tau) =
+let string_of_tau (t, pm : tau) =
   string_of_parameterization pm ^ " " ^  string_of_typ t
 let string_of_mu (ml : mu) =  
   string_of_mod_list ml
 let string_of_gamma (g : gamma) =
   string_of_typ g
 let string_of_delta (f : delta) =
-  string_of_frame f
-let string_of_chi (p, d, c : chi) =
-  "implements " ^ p ^ " with dimension " ^ string_of_int d ^
-  " and members: " ^ Assoc.to_string (fun e -> string_of_coordinate_element e ^ "\n") c
+  string_of_dexp f
+let string_of_chi (p,d,c : chi) =
+  "implements " ^ p ^ " with dimension " ^ string_of_dexp d ^ " and members: " 
+  ^ Assoc.to_string (fun e -> string_of_coordinate_element e ^ "\n") c
 let string_of_omega (o : omega) =
   Assoc.to_string string_of_prototype_element o
 let string_of_phi (p : phi) =
@@ -93,6 +93,9 @@ let string_of_psi (ps : psi) : string =
   string_of_list (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_fn_inv p ^ ")") ps
 let option_clean (x : 'a option) : 'a =
   match x with | Some x -> x | None -> failwith "Failed option assumption"
+
+let node (cx : contexts) (f : contexts -> 'a -> 'b) ((args, meta) : 'a astNode) : 'b =
+  f (with_meta cx meta) args
 
 let get_typ (cx : contexts) (x : string) : tau =
   match find_safe cx x with

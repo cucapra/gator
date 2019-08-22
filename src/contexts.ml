@@ -4,8 +4,8 @@ open GatorAst
 type fn_inv = string * typ list 
 
 (* Type definitions *)
-(* Stores supertype and possible parameterization information for the tag *)
-type tau = parameterization * typ
+(* Stores supertype and possible parameterization information for the type *)
+type tau = typ * parameterization
 
 (* Type and function modifiers *)
 (* Specifically the canonical and with keywords *)
@@ -17,14 +17,14 @@ type gamma = typ
 
 (* Dimension definitions *)
 (* Stores dimension information for reference frames *)
-type delta = frame
+type delta = dexp
 
 (* Coordinate systems *)
 (* Stores the following information about the given coordinate scheme:
  * The prototype implemented
  * The require frame dimension
  * A map to the underlying type of each every member element / a command list for each member function *)
-type chi = string * int * coordinate_element Assoc.context
+type chi = string * dexp * coordinate_element Assoc.context
 
 (* Prototypes *)
 (* Stores parameterization for objects and function permissions provided by prototypes *)

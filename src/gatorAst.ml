@@ -23,6 +23,8 @@ type typ =
     | CoordTyp of string * typ (* i.e. cart.point *)
     | ParTyp of string * typ list (* i.e. color or matrix<model, world> *)
     | AnyTyp
+    | AnyFrameTyp (* top type for frames (used in prototype declarations) *)
+    | FrameTyp of dexp (* i.e. frame<3> or frame<n> *)
     | GenTyp
     | GenArrTyp of typ
 
@@ -73,23 +75,21 @@ type fn_typ = modification list * ret_typ * id * parameterization * params * met
 
 (* General functions *)
 type fn = fn_typ * acomm list
-
-type frame =
-    | FrameDim of string
-    | FrameNum of int
-type frame_decl = id * frame
+type frame = id * dexp
 
 type prototype_element =
-    | ProtoObject of id * parameterization
+    | ProtoObject of id * string list
     | ProtoFn of fn_typ
 (* Name and list of declarations *)
-type prototype = id * prototype_element list
+type aprototype_element = prototype_element astNode
+type prototype = id * aprototype_element list
 
 type coordinate_element =
-    | CoordObjectAssign of id * parameterization * typ
+    | CoordObjectAssign of id * string list * typ
     | CoordFn of fn
 (* Name, underlying prototype, dimension, and list of definitions *)
-type coordinate = id * string * int * coordinate_element list
+type acoordinate_element = coordinate_element astNode
+type coordinate = id * string * dexp * acoordinate_element list
 
 type global_var = modification list * storage_qual * typ * id * aexp option
 type extern_element =
@@ -107,7 +107,7 @@ type aterm = term astNode
 and term =
     | Prototype of prototype
     | Coordinate of coordinate
-    | Frame of frame_decl
+    | Frame of frame
     | Typ of id * parameterization * typ
     | Extern of extern_element
     | GlobalVar of global_var

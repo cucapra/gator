@@ -20,15 +20,17 @@ let rec string_of_typ (t: typ) : string =
     | UnitTyp -> "void"
     | BoolTyp -> "bool"
     | IntTyp -> "int"
+    | FrameTyp d -> "frame<" ^ string_of_dexp d ^ ">"
     | FloatTyp -> "float"
     | Literal t -> "%(" ^ string_of_typ t ^ ")"
     | ArrTyp (t, d) -> string_of_typ t ^ "[" ^ string_of_dexp d ^ "]"
     (* Essentially the bottom type for all arrays *)
     | CoordTyp (s, t) -> s ^ "." ^ string_of_typ t
     | ParTyp (s, tl) -> s ^ string_of_pml tl
-    | GenTyp -> "genTyp"
+    | GenTyp -> "genType"
     | GenArrTyp t' -> "arr of " ^ string_of_typ t'
-    | AnyTyp -> ""
+    | AnyFrameTyp -> "frame"
+    | AnyTyp -> "anyType"
 
 and string_of_pml (p : typ list) : string =
     if List.length p > 0 then "<" ^ string_of_list string_of_typ p ^ ">" else ""
@@ -90,33 +92,28 @@ and string_of_comm (c: comm) : string =
     | FnCall (s, tl, e) -> s ^ string_of_pml tl
         ^ "(" ^ string_of_list string_of_aexp e ^ ");"
 
-let string_of_frame (f : frame) =
-    match f with
-    | FrameDim s -> s
-    | FrameNum n -> "dimension " ^ string_of_int n
-
-let string_of_frame_decl ((x, f) : frame_decl) =
-    "frame " ^ x ^ " is " ^ string_of_frame f ^ ";"
+let string_of_frame ((x, d) : frame) =
+    "frame " ^ x ^ " is " ^ string_of_dexp d ^ ";"
 
 let string_of_fn (t, c : fn_typ * acomm list) : string = 
     string_of_fn_typ t ^ "{\n" ^ string_of_separated_list "\n" string_of_acomm c ^ "}"
 
 let string_of_prototype_element (pe : prototype_element) : string =
     match pe with
-    | ProtoObject (x, p) -> "Object " ^ x ^ "<" ^ string_of_parameterization p ^ ">;"
+    | ProtoObject (x, p) -> "Object " ^ x ^ "<" ^ string_of_list (fun x -> x) p ^ ">;"
     | ProtoFn f -> string_of_fn_typ f ^ ";"
 
 let string_of_prototype (x, p : prototype) : string = 
-    "prototype " ^ x ^ "{\n" ^ string_of_separated_list "\n" string_of_prototype_element p ^ "}"
+    "prototype " ^ x ^ "{\n" ^ string_of_separated_list "\n" string_of_prototype_element (List.map fst p) ^ "}"
 
 let string_of_coordinate_element (ce : coordinate_element) : string = 
     match ce with
-    | CoordObjectAssign (x, p, t) -> x ^ string_of_parameterization p ^ " = " ^ string_of_typ t ^ ";"
+    | CoordObjectAssign (x, p, t) -> x ^ string_of_list (fun x -> x) p ^ " = " ^ string_of_typ t ^ ";"
     | CoordFn f -> string_of_fn f
 
-let string_of_coordinate (x, p, n, cl : coordinate) : string =
-    "coordinate " ^ x ^ " : " ^ p ^ "{\n" ^ "dimension " ^ string_of_int n ^ ";"
-    ^ string_of_list (fun ce -> string_of_coordinate_element ce ^ "\n") cl ^ "}"
+let string_of_coordinate (x, p, d, cl : coordinate) : string =
+    "coordinate " ^ x ^ " : " ^ p ^ "{\n dimension " ^ string_of_dexp d ^ ";\n"
+    ^ string_of_list (fun ce -> string_of_coordinate_element ce ^ "\n") (List.map fst cl) ^ "}"
 
 let string_of_global_var (ml, sq, t, x, e : global_var) : string =
     string_of_mod_list ml ^ " " ^ string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ x 
@@ -131,7 +128,7 @@ let string_of_term (t : term) : string =
     match t with
     | Prototype p -> string_of_prototype p
     | Coordinate c -> string_of_coordinate c
-    | Frame f -> string_of_frame_decl f
+    | Frame f -> string_of_frame f
     | Typ (x, p, t) -> "type " ^ x ^ " is " ^ string_of_typ t
     | Extern e -> string_of_extern e
     | GlobalVar g -> string_of_global_var g

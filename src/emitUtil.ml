@@ -88,7 +88,7 @@ let rec replace_type_in_params (p : params) (t : etyp) (r : etyp) : params =
 
 let rec replace_type_in_parameterization (pm : parameterization) (t : etyp) (r : etyp) : parameterization =
     let pm_list = Assoc.bindings pm in
-    Assoc.gen_context (List.map (fun (n, c) -> match t with AbsTyp(x, _) -> if x = n then x, r 
+    Assoc.create (List.map (fun (n, c) -> match t with AbsTyp(x, _) -> if x = n then x, r 
     else (n, c) | _ -> (n, c)) pm_list)
 
 let rec replace_type_in_fn (((n, (p, rt, pm)), cl) : fn) (t : etyp) (r : etyp) : fn =
