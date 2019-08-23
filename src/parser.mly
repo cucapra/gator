@@ -149,7 +149,7 @@ let term ==
 let prototype_element ==
   | OBJECT; x = ID; p = oplist(parameters(LWICK, ID, RWICK)); SEMI;
     <ProtoObject>
-  | f = fn_typ;
+  | f = fn_typ; SEMI;
     <ProtoFn>
 
 let modification ==

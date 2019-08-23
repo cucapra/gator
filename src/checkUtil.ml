@@ -11,14 +11,15 @@ let error cx s = raise (TypeException(line_number cx.meta ^ " -- " ^ s))
 
 (* Produces an empty set of gator contexts with a starting metadata *)
 let init meta = let b = 
-  {t=Assoc.empty; g=Assoc.empty; d=Assoc.empty;
-  c=Assoc.empty; o=Assoc.empty; p=Assoc.empty; l=Assoc.empty } in
-  {m=Assoc.empty; ps=Assoc.empty; pm=Assoc.empty; meta=meta; _bindings=b }
+  {t=Assoc.empty; g=Assoc.empty; d=Assoc.empty; c=Assoc.empty; p=Assoc.empty; l=Assoc.empty } in
+  {m=Assoc.empty; ps=Assoc.empty; pm=Assoc.empty; member=None; meta=meta; _bindings=b }
 
 let with_m cx m' = {cx with m=m'}
 let with_ps cx ps' = {cx with ps=ps'}
 let with_pm cx pm' = {cx with pm=pm'}
 let with_meta cx meta' = {cx with meta=meta'}
+let with_member cx s = {cx with member=Some s}
+let clear_member cx = {cx with member=None}
 
 let get_m cx x = if Assoc.mem x cx.m then Assoc.lookup x cx.m else 
   error cx ("Undefined modifiable item " ^ x)
@@ -34,7 +35,6 @@ let find_safe cx x =
   | CGamma -> Some (Gamma (Assoc.lookup x cx._bindings.g))
   | CDelta -> Some (Delta (Assoc.lookup x cx._bindings.d))
   | CChi -> Some (Chi (Assoc.lookup x cx._bindings.c))
-  | COmega -> Some (Omega (Assoc.lookup x cx._bindings.o))
   | CPhi -> Some (Phi (Assoc.lookup x cx._bindings.p))
   else None
 
@@ -49,11 +49,10 @@ let bind (cx : contexts) (x : string) (b : binding) : contexts =
   | Gamma g' -> update_bindings { _b with l=Assoc.update x CGamma _b.l; g=Assoc.update x g' _b.g }
   | Delta d' -> update_bindings { _b with l=Assoc.update x CDelta _b.l; d=Assoc.update x d' _b.d }
   | Chi c' ->   update_bindings { _b with l=Assoc.update x CChi _b.l; c=Assoc.update x c' _b.c }
-  | Omega o' -> update_bindings { _b with l=Assoc.update x COmega _b.l; o=Assoc.update x o' _b.o }
   | Phi p' ->   update_bindings { _b with l=Assoc.update x CPhi _b.l; p=Assoc.update x p' _b.p }
 
 (* Clears the given lookup context of elements *)
-let clear (cx : contexts) (b : binding_context) =
+let clear (cx : contexts) (b : binding_context) : contexts =
   let update_bindings b' = {cx with _bindings=b'} in
   let _b = cx._bindings in
   let build_l l xs = Assoc.create (List.fold_left (fun acc (x, v) -> 
@@ -62,10 +61,17 @@ let clear (cx : contexts) (b : binding_context) =
   match b with
   | CTau ->   update_bindings { _b with l=clear _b.t; t=Assoc.empty }
   | CGamma -> update_bindings { _b with l=clear _b.g; g=Assoc.empty }
-  | CDelta -> update_bindings { _b with l=clear _b.d; g=Assoc.empty }
+  | CDelta -> update_bindings { _b with l=clear _b.d; d=Assoc.empty }
   | CChi ->   update_bindings { _b with l=clear _b.c; c=Assoc.empty }
-  | COmega -> update_bindings { _b with l=clear _b.o; o=Assoc.empty }
-  | CPhi ->   update_bindings { _b with l=clear _b.p; o=Assoc.empty }
+  | CPhi ->   update_bindings { _b with l=clear _b.p; p=Assoc.empty }
+
+let add_function (cx : contexts) (f : fn_typ) : contexts =
+  let update_bindings b' = {cx with _bindings=b'} in
+  let _b = cx._bindings in
+  let _,_,id,_,_,_ = f in
+  if Assoc.mem id _b.p
+  then let p' = f::Assoc.lookup id _b.p in update_bindings { _b with p=Assoc.update id p' _b.p }
+  else bind cx id (Phi [f])
 
 let ignore_typ (t : typ) : unit = ignore t
 let ignore_dexp (d : dexp) : unit = ignore d
@@ -74,7 +80,7 @@ let string_of_fn_inv ((s, tl) : fn_inv) : string =
   s ^ "<" ^ string_of_list string_of_typ tl ^ ">"
 let debug_fail (cx : contexts) (s : string) =
   failwith (line_number cx.meta ^ "\t" ^ s)
-let string_of_tau (t, pm : tau) =
+let string_of_tau (pm, t : tau) =
   string_of_parameterization pm ^ " " ^  string_of_typ t
 let string_of_mu (ml : mu) =  
   string_of_mod_list ml
@@ -82,25 +88,32 @@ let string_of_gamma (g : gamma) =
   string_of_typ g
 let string_of_delta (f : delta) =
   string_of_dexp f
-let string_of_chi (p,d,c : chi) =
-  "implements " ^ p ^ " with dimension " ^ string_of_dexp d ^ " and members: " 
-  ^ Assoc.to_string (fun e -> string_of_coordinate_element e ^ "\n") c
-let string_of_omega (o : omega) =
-  Assoc.to_string string_of_prototype_element o
+let string_of_chi (p,d : chi) =
+  "implements " ^ p ^ " with dimension " ^ string_of_dexp d
 let string_of_phi (p : phi) =
-  string_of_fn_typ p
+  string_of_list string_of_fn_typ p
 let string_of_psi (ps : psi) : string =
   string_of_list (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_fn_inv p ^ ")") ps
 let option_clean (x : 'a option) : 'a =
   match x with | Some x -> x | None -> failwith "Failed option assumption"
 
-let node (cx : contexts) (f : contexts -> 'a -> 'b) ((args, meta) : 'a astNode) : 'b =
-  f (with_meta cx meta) args
+let check_member (cx : contexts) (check : string->'a option) (x : string) : 'a option =
+  match cx.member with
+  | Some c -> let res = check (c ^ "."  ^ x) in 
+    (match res with
+    | Some _ -> res
+    | None -> check x)
+  | None -> check x
 
-let get_typ (cx : contexts) (x : string) : tau =
-  match find_safe cx x with
-  | Some Tau t -> t
-  | _ -> error cx ("Undefined type " ^ x)
+let get_typ (cx : contexts) (id : string) : tau =
+  let get_typ_safe x = 
+    match find_safe cx x with
+    | Some Tau t -> Some t
+    | _ -> None 
+  in
+  match check_member cx get_typ_safe id with
+  | Some t -> t
+  | None -> error cx ("Undefined type " ^ id)
 
 let get_var (cx : contexts) (x : string) : gamma =
   match find_safe cx x with
@@ -117,22 +130,17 @@ let get_coordinate (cx : contexts) (x : string) : chi =
   | Some Chi c -> c
   | _ -> error cx ("Undefined coordinate scheme " ^ x)
 
-let get_coordinate_element (cx : contexts) (c : string) (e : string) : coordinate_element =
-  let _,_,ce = get_coordinate cx c in
-  if Assoc.mem e ce then Assoc.lookup e ce
-  else error cx (e ^ " is not a member of coordinate scheme " ^ c)
+let get_functions_safe (cx : contexts) (id : string) : phi =
+  let get_fn_safe x = 
+    match find_safe cx x with
+    | Some Phi p -> if List.length p > 0 then Some p else None
+    | _ -> None
+  in
+  match check_member cx get_fn_safe id with
+  | Some t -> t
+  | None -> []
 
-let get_prototype (cx : contexts) (x : string) : omega =
-  match find_safe cx x with
-  | Some Omega o -> o
-  | _ -> error cx ("Undefined object " ^ x)
-
-let get_prototype_element (cx : contexts) (p : string) (e : string) : prototype_element =
-  let pe = get_prototype cx p in
-  if Assoc.mem e pe then Assoc.lookup e pe
-  else error cx (e ^ " is not a member of coordinate scheme " ^ p)
-
-let get_function (cx : contexts) (x : string) : phi =
-  match find_safe cx x with
-  | Some Phi p -> p
-  | _ -> error cx ("No type definition for function " ^ x)
+let get_functions (cx : contexts) (id : string) : phi = 
+  match get_functions_safe cx id with
+  | [] -> error cx ("No type definition for function " ^ id)
+  | p -> p

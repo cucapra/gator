@@ -10,10 +10,10 @@ let curry f x y = f (x, y)
 let uncurry f (x, y) = f x y
 
 (* Cause for some reason Option.map doesn't exist? *)
-let option_map (f: ('a -> 'b)) (o: 'a option) : 'b option =
+let option_map (f: 'a -> 'b) (o: 'a option) : 'b option =
   match o with
   | None -> None
-  | Some x -> Some (f x)
+  | Some x -> Some (f x) 
 
 let tr_fst ((x, _, _): 'a * 'b * 'c) : 'a = x
 let tr_snd ((_, x, _): 'a * 'b * 'c) : 'b = x

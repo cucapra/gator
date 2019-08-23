@@ -2,7 +2,7 @@ declare float cos(float f);
 declare float sqrt(float f);
 declare float acos(float f);
 
-prototype {
+prototype geometry {
     object point<r>;
     object vector<r>;
 
@@ -17,10 +17,11 @@ prototype {
     vector<r> -(point<r> x, point<r> y);
     vector<r> -(point<r> x);
 }
-coord cart2 {
+coordinate cart2 : geometry {
     dimension 2; // i.e. all frame parameters implicitly require dimension 2
-    point<r> = float[2];
-    vector<r> = float[2];
+
+    object point<r> is float[2];
+    object vector<r> is float[2];
 
     vector<r> +(vector<r> x, vector<r> y) {
         return x + y;
@@ -53,10 +54,11 @@ coord cart2 {
         return -v;
     }
 }
-coord cart3 {
+coordinate cart3 : geometry {
     dimension 3;
-    point<r> = float[3];
-    vector<r> = float[3];
+
+    object point<r> is float[3];
+    object vector<r> is float[3];
 
     vector<r> +(vector<r> x, vector<r> y) {
         return x + y;
@@ -89,12 +91,13 @@ coord cart3 {
         return -v;
     }
 }
-coord polar {
+coordinate polar : geometry {
     dimension 2;
 
-    point = float[2];
-    vector = float[2];
-    float%[2] __trans(float%[2] x, float[2]% y) {
+    object point<r> is float[2];
+    object vector<r> is float[2];
+
+    t __trans<t : float[2]>(t x, t y) {
         // https://pritschet.me/wiki/physics/linear-translation-polar-coordinates/
         float r1 = x[0];
         float r2 = y[0];
@@ -135,10 +138,11 @@ coord polar {
         return [-v[0], v[1]];
     }
 }
-coord hom {
+coordinate hom : geometry {
     dimension 3;
-    object point = float[4];
-    object vector = float[4];
+
+    object point is float[4];
+    object vector is float[4];
 
     vector<r> +(vector<r> x, vector<r> y) {
         return [x[0] + y[0], x[1] + y[1], x[2] + y[2], 0.];
@@ -170,8 +174,8 @@ coord hom {
     // We don't actually need to define every function, it will just fail if we try and call an undefined function
 }
 
-frame world is float[3];
-frame plane is float[2];
+frame world has dimension 3;
+frame plane has dimension 2;
 
 void main() {
     cart2.point<plane> ppos = [1., 1.];

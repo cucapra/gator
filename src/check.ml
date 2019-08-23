@@ -30,7 +30,7 @@ let rec replace_abstype (c: typ Assoc.context) (t: typ) : typ =
     | CoordTyp (s, t') ->
         if is_abs s then Assoc.lookup s c
         else CoordTyp (s, replace_abstype c t')
-    | ArrTyp (t', _) -> replace_abstype c t'
+    | ArrTyp (t', d) -> ArrTyp (replace_abstype c t', d)
     | _ -> t
 
 let rec replace_absframe (c : dexp Assoc.context) (t: typ) : typ =
@@ -136,29 +136,28 @@ and tau_lookup (cx: contexts) (x: id) (pml: typ list) : typ =
     (* If the given type evaluates to a declared tag, return it *)
     (* If the return type would be a top type, resolve the dimension to a number *)
     debug_print ">> tau_lookup";
-    let t, pmd = get_typ cx x in
+    let pmd, t = get_typ cx x in
     let tc = match_parameterization (with_pm cx pmd) pml in
     replace_abstype tc t
 
 (* Looks up an object 'o' definition from a coordinate scheme 'c' without checking parameter bounds *)
 and chi_object_lookup (cx: contexts) (c : id) (o: id) (tl: typ list) : typ =
     debug_print (">> chi_object_lookup " ^ c ^ "." ^ o ^ "<" ^ string_of_list string_of_typ tl ^ ">");
-    let _,d,_ = get_coordinate cx c in
+    let _,d = get_coordinate cx c in
     let fl = List.map (fun t -> match t with 
         | ParTyp(s, []) -> s 
         | _ -> error cx ("Expected a frame, got " ^ string_of_typ t)) tl
     in
-    match get_coordinate_element cx c o with
-    | CoordObjectAssign (_, pmd, t) ->
-        if not (List.length fl = List.length pmd) then
-            error cx ("Invalid number of frame parameters given to " ^ c ^ "." ^ o);
-        let dc =
-            List.fold_left2 (fun acc p f -> let df = get_frame cx f in
-                if not (reduce_dexp cx df = reduce_dexp cx d) then error cx ("Invalid frame " ^ f);
-                Assoc.update p df acc) Assoc.empty pmd fl
-        in
-        replace_absframe dc t
-    | _ -> error cx ("Attempted to treat " ^ c ^ "." ^ o ^ " as an object when it is a function")
+    let pmc, t = get_typ cx (c ^ "." ^ o) in
+    let pmd = Assoc.keys pmc in 
+    if not (List.length fl = List.length pmd) then
+        error cx ("Invalid number of frame parameters given to " ^ c ^ "." ^ o);
+    let dc =
+        List.fold_left2 (fun acc p f -> let df = get_frame cx f in
+            if not (reduce_dexp cx df = reduce_dexp cx d) then error cx ("Invalid frame " ^ f);
+            Assoc.update p df acc) Assoc.empty pmd fl
+    in
+    replace_absframe dc t
 
 (* Steps types up a level in the subtyping tree *)
 (* Returns None if given a primitive type, illegal geometric type, or external type (they have no supertype) *)
@@ -284,9 +283,6 @@ let exp_to_texp (cx: contexts) ((exp, t) : TypedAst.exp * typ) : TypedAst.texp =
 (* Attempts to produce a list of valid types for the parameterization of the function *)
 let infer_pml (cx: contexts) (args : typ list) (target : params) : (typ list) option =
     debug_print ">> infer_pml";
-    print_endline (string_of_parameterization cx.pm);
-    print_endline (string_of_list string_of_param target);
-    print_endline (string_of_list string_of_typ args);
     let update_inference (t : typ) (s : string) (fpm : typ Assoc.context option) : typ Assoc.context option =
         match fpm with | None -> None | Some p ->
         if Assoc.mem s p then match least_common_parent_safe cx t (Assoc.lookup s p) with
@@ -315,12 +311,12 @@ let infer_pml (cx: contexts) (args : typ list) (target : params) : (typ list) op
 let check_fn_inv (cx: contexts) (x : id) (pml: typ list) (args : (TypedAst.exp * typ) list)
 : (string * TypedAst.etyp list * TypedAst.args) * typ = 
     debug_print (">> check_fn_inv " ^ x);
-    print_endline (string_of_parameterization cx.pm);
     let arg_typs = List.map snd args in
     (* find definition for function in phi *)
     (* looks through all possible overloaded definitions of the function *)
-    let find_fn_inv ((ml, rt, x, pm, params, meta') : fn_typ) : (typ Assoc.context) option =
-        debug_print (">> find_fn_inv " ^ x ^ string_of_parameterization pm);
+    let try_fn_inv (f : fn_typ) : (fn_typ * typ Assoc.context) option =
+        let ml, rt, x, pm, params, meta' = f in
+        debug_print (">> try_fn_inv " ^ string_of_fn_typ f);
         (* This function asserts whether or not the function invocation matches the function given *)
         (* In particular, this checks whether the given function matches the given parameterization and parameters *)
         (* If it is valid, this returns (Some 'map from parameter to type'), otherwise returns 'None' *)
@@ -335,7 +331,6 @@ let check_fn_inv (cx: contexts) (x : id) (pml: typ list) (args : (TypedAst.exp *
         in
         match inferred_pml with | None -> None | Some ipml ->
         (* Helper function for using the function parameters as they are constructed *)
-        print_endline (string_of_list string_of_typ ipml);
         let rec apply_fpm (fpm : typ Assoc.context) (t: typ) : typ =
             let is_abs s = Assoc.mem s fpm in
             (* TODO: this isn't right, but I'm not sure what I want here *)
@@ -358,32 +353,26 @@ let check_fn_inv (cx: contexts) (x : id) (pml: typ list) (args : (TypedAst.exp *
             | None -> None
             | Some fpm -> let bound = apply_fpm fpm t in 
                 if is_subtype cx given_pm bound
-                then (print_endline ("CHECK: " ^ string_of_typ t); Some (Assoc.update s given_pm fpm)) else None)
+                then Some (Assoc.update s given_pm fpm) else None)
             (Some Assoc.empty) ipml (Assoc.bindings pm)
         in
         match param_check with | None -> None | Some pm_map ->
-        print_endline (Assoc.to_string string_of_typ pm_map);
         (* Get the parameters types and replace them in params_typ *)
         let param_typs = List.map fst params in
         let param_typs_updated = List.map (apply_fpm pm_map) param_typs in
         (* Finally, check that the arg and parameter types match *)
         if List.length arg_typs == List.length param_typs then
-            List.fold_left2 (fun acc arg param -> if (is_subtype cx arg param) then acc else None)
-            param_check arg_typs param_typs_updated
+            option_map (fun x -> (f, x))
+            (List.fold_left2 (fun acc arg param -> if (is_subtype cx arg param) then acc else None)
+            param_check arg_typs param_typs_updated)
         else None
     in
-    let fn_invocated =  
-    match String.split_on_char '.' x with
-    | [c;x'] -> let p,_,_ = get_coordinate cx c in
-        (match get_prototype_element cx p x' with
-        | ProtoFn f -> f
-        | _ -> error cx ("Expected " ^ p ^ "." ^ x ^ " to be a function"))
-    | [_] -> get_function cx x 
-    | _ -> error cx ("Multiple leves of coordinate schemes not supported for " ^ x)
-    in
-    match find_fn_inv fn_invocated with
-    | Some pmt -> 
-        let (_, rt, _, _, _, _) = fn_invocated in
+    let fn_invocated = get_functions cx x in
+    print_endline (string_of_list string_of_fn_typ fn_invocated);
+    match List.fold_left (fun acc x -> 
+        match acc with | None -> try_fn_inv x | Some _ -> acc) None fn_invocated with
+    | Some (fn_found, pmt) -> 
+        let (_, rt, _, _, _, _) = fn_found in
         (x, List.rev (List.map (fun p -> typ_erase cx (snd p)) (Assoc.bindings pmt)), 
         List.map (exp_to_texp cx) args), replace_abstype pmt rt
     | None -> error cx ("No overloaded function declaration of " ^ x
@@ -483,11 +472,12 @@ let check_in_exp (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
             (* 1. Minimize upcasting requirements (actually handled by use of this function) *)
             (* 2. Minimize number of type parameters *)
             (* 3. Minimize constraint bounds *)            
-            let rec search_phi_rec (fns : (string * fn_typ) list) : (typ * (id * typ list * typ list)) list =
+            let rec search_phi_rec (fns : (string * fn_typ list) list) : (typ * (id * typ list * typ list)) list =
                 match fns with
                 (* Note that matrices are always selected over canonical function invocations *)
                 | [] -> List.map (fun (t, (x, y)) -> (t, (x, y, []))) ps_lst 
-                | (id, (ml, rt, _, pr, params, meta')) :: t -> 
+                | (id, fs) :: t -> 
+                    let (ml, rt, _, pr, params, meta') = List.hd fs in
                     let cx' = with_meta cx meta' in
                     if List.mem Canon (Assoc.lookup id cx.m) then
                         let pt = match params with | [(pt,_)] -> pt 
@@ -609,7 +599,7 @@ let rec check_acomm (cx: contexts) ((c, meta): acomm) : contexts * TypedAst.comm
 (* Updates Gamma and Psi *)
 and check_comm (cx: contexts) (c: comm) : contexts * TypedAst.comm =
     debug_print (">> check_comm " ^ string_of_comm c);
-    let check_incdec te x = let xt = fst (get_typ cx x) in
+    let check_incdec te x = let xt = snd (get_typ cx x) in
         if is_subtype cx xt IntTyp then te x TypedAst.IntTyp
         else if is_subtype cx xt FloatTyp then te x TypedAst.FloatTyp
         else error cx ("++ and -- must be applied to an integer or float")
@@ -688,15 +678,16 @@ and check_assign (cx: contexts) (t: typ) (s: string) (etyp : typ) : unit =
         ": expected " ^ (string_of_typ t) ^ ", found " ^ (string_of_typ etyp))
 
 (* Updates Phi, and internal calls update gamma and psi *)
-let check_fn_decl (cx: contexts) (ml, rt, id, pm, pl, meta: fn_typ) : 
+let check_fn_decl (cx: contexts) (f : fn_typ) : 
 contexts * TypedAst.params * TypedAst.parameterization =
+    let ml, rt, id, pm, pl, meta = f in
     debug_print (">> check_fn_decl : " ^ id ^ string_of_parameterization pm);
     let cx' = check_parameterization cx pm in
     let _,pr = check_params cx' pl in 
     check_typ_valid cx' rt;
     let pme = Assoc.create (List.map (fun (s, c) -> (s, typ_erase cx c)) (Assoc.bindings pm)) in
     (* Don't return the parameterization used here *)
-    bind cx id (Phi (ml, rt, id, pm, pl, meta)), pr, pme
+    add_function cx f, pr, pme
 
 (* Helper function for type checking void functions. 
  * Functions that return void can have any number of void return statements 
@@ -745,7 +736,7 @@ let update_mu_with_function (cx: contexts) (fm, r, id, pmd, pr, meta : fn_typ) :
     else cx
 
 (* Updates Tau with new typing information *)
-let check_typ_decl (cx: contexts) (x : string) (t,pm : tau) : contexts =
+let check_typ_decl (cx: contexts) (x : string) (pm,t : tau) : contexts =
     debug_print ">> check_tag_decl";
     let rec check_valid_supertype (t: typ) : typ =
         match t with
@@ -754,7 +745,7 @@ let check_typ_decl (cx: contexts) (x : string) (t,pm : tau) : contexts =
         | FloatTyp -> t
         | ArrTyp (t', _) -> check_valid_supertype t'
         | ParTyp (s, pml) -> 
-            let _,tpm = get_typ cx s in
+            let tpm,_ = get_typ cx s in
             let pmb = Assoc.bindings tpm in
             if List.length pmb == List.length pml
             then (List.fold_left2 (fun acc (s, c) t -> if is_subtype cx t c then () else
@@ -764,7 +755,7 @@ let check_typ_decl (cx: contexts) (x : string) (t,pm : tau) : contexts =
         | _ -> error cx ("Invalid type declaration " ^ string_of_typ t)
     in
     check_valid_supertype t |> ignore_typ;
-    bind cx x (Tau (t, pm))
+    bind cx x (Tau (pm, t))
         
 (* Updates gamma, mu, and phi from underlying calls *)
 let check_extern (cx: contexts) (e : extern_element) : contexts =
@@ -805,64 +796,60 @@ let check_fn (cx: contexts) (f, cl: fn)
 
 let check_frame (cx : contexts) ((id, d) : frame) : contexts =
     debug_print (">> check_frame " ^ id);
-    check_dexp cx d;
-    bind cx id (Delta d)
+    check_dexp cx d; bind cx id (Delta d)
 
-let check_prototype_element (cx : contexts) (pe : prototype_element) (found : id list) : id =
+(* Updates tau or phi with the prototype element being checked *)
+let check_prototype_element (cx : contexts) (p : string) (pe : prototype_element) : contexts =
     debug_print (">> check_prototype_element " ^ string_of_prototype_element pe);
-    print_endline (string_of_list (fun x -> x) found);
-    let check s = if List.mem s found then error cx ("Duplicate object " ^ s) in
     match pe with
-    | ProtoObject (id, pm) -> check id; id
-    | ProtoFn (_, _, id, _, _, _) -> check id; id
-let check_aprototype_element cx (pe, meta) found = check_prototype_element (with_meta cx meta) pe found
+    | ProtoObject (id, pm) -> bind cx (p ^ "." ^ id) 
+        (Tau (Assoc.create (List.map (fun x -> (x, AnyFrameTyp)) pm), AnyTyp))
+    | ProtoFn f -> let a,b,id,c,d,e = f in add_function cx (a,b,p ^ "." ^ id,c,d,e)
+let check_aprototype_element cx p (pe, meta) : contexts = check_prototype_element (with_meta cx meta) p pe
 
-(* Updates chi with the coordinate scheme element being checked *)
+(* Updates tau or phi with the coordinate scheme element being checked *)
 (* We assume that  *)
-let check_coordinate_element (cx : contexts) (proto : string) (d: dexp) (ce : coordinate_element) 
-    : id * contexts =
+let check_coordinate_element (cx : contexts) (c: string) (ce : coordinate_element) : contexts =
     debug_print (">> check_coordinate_element");
+    let proto,d = get_coordinate cx c in
     match ce with
     | CoordObjectAssign (id, fl, t) -> 
         (* Check that the object is declared in the underlying prototype *)
-        (match get_prototype_element cx proto id with
-        | ProtoObject (_,s) -> if List.length s != List.length fl then
-            error cx (id ^ " does not have the same number of frame parameterizations as in " ^ proto)
-        | ProtoFn _ -> error cx (id ^ " expected to be an object in prototype " ^ proto));
+        let s,_ = get_typ cx (proto ^ "." ^ id) in
+        let s = Assoc.keys s in
+        if List.length s != List.length fl then
+            error cx (id ^ " does not have the same number of frame parameterizations as in " ^ proto);
         (* Check that the object has a resolvable type *)
         let pm = Assoc.create (List.map (fun x -> x,FrameTyp d) fl) in
         check_typ_valid (with_pm cx pm) t;
-        id, bind cx id (Tau (t, pm))
+        bind cx (c ^ "." ^ id) (Tau (pm, t))
     | CoordFn f ->
         let (ml, rt, id, pm, pr, meta), cl = f in
         let cxc = with_pm cx pm in
         let rt' = replace_unbound cxc (FrameTyp d) rt in
         let pr' = List.map (fun (a, b) -> replace_unbound cxc (FrameTyp d) a, b) pr in
-        (match get_prototype_element cx proto id with
-        | ProtoFn (_, prt, _, ppm, ppr, _) ->
-            let cxp = with_pm cx ppm in
-            if not (is_subtype cx rt' (replace_unbound cxp AnyFrameTyp prt) &&
-            is_subtype_list cx (List.map fst pr') (List.map (replace_unbound cxp AnyFrameTyp |- fst) ppr))
-            then error cx ("The type of function " ^ id ^ " does not match the prototype definition")
-        | ProtoObject (_,s) -> 
-            error cx (id ^ " expected to be a function in prototype " ^ proto)
-        );
-        id, fst (check_fn cxc ((ml, rt', id, pm, pr', meta), cl))
-let check_acoordinate_element cx p d (ce, meta) = check_coordinate_element (with_meta cx meta) p d ce
+        let _,prt,_,ppm,ppr,_ = List.hd (get_functions cx (proto ^ "." ^ id)) in
+            let cxp = with_member (with_pm cx ppm) proto in
+        if not (is_subtype cx rt' (replace_unbound cxp AnyFrameTyp prt) &&
+        is_subtype_list cx (List.map fst pr') (List.map (replace_unbound cxp AnyFrameTyp |- fst) ppr))
+        then error cx ("The type of function " ^ id ^ " does not match the prototype definition");
+        fst (check_fn cxc ((ml, rt', id, pm, pr', meta), cl))
+let check_acoordinate_element cx c (ce, meta) : contexts = 
+    check_coordinate_element (with_meta cx meta) c ce
 
 (* Returns the context with a checked prototype *)
 let check_prototype (cx: contexts) ((id, p) : prototype) : contexts =
     debug_print (">> check_prototype " ^ id);
-    bind cx id (Omega (fst (List.fold_left 
-        (fun (a, f) (pe, meta) -> let s = check_aprototype_element cx (pe, meta) f in Assoc.update s pe a, s::f) 
-        (Assoc.empty, []) p)))
+    let cx' = List.fold_left (fun acc (pe, meta) -> check_aprototype_element acc id (pe, meta)) 
+        (with_member cx id) p
+    in clear_member cx'
 
 (* Returns the context with a checked coordinate scheme *)
 let check_coordinate (cx: contexts) ((id,p,d,ce) : coordinate) : contexts =
     debug_print (">> check_prototype " ^ id);
-    bind cx id (Chi (p, d, fst (List.fold_left 
-        (fun (a, cx') (ce, meta) -> let s, cx'' = check_acoordinate_element cx' p d (ce, meta) 
-        in Assoc.update s ce a, cx'') (Assoc.empty, cx) ce)))
+    let cx' = with_member (bind cx id (Chi (p, d))) id in
+    let cx'' = List.fold_left (fun acc (ce, meta) -> check_acoordinate_element acc id (ce, meta)) cx' ce
+    in clear_member cx''
 
 let check_term (cx: contexts) (t: term) 
 : contexts * TypedAst.fn option * TypedAst.global_var option =
@@ -871,7 +858,7 @@ let check_term (cx: contexts) (t: term)
     | Coordinate c -> check_coordinate cx c, None, None
     | Frame f -> check_frame cx f, None, None
     | Typ (id, pm, t) ->
-        check_typ_decl cx id (t, pm), None, None
+        check_typ_decl cx id (pm, t), None, None
     | Extern e -> let cx' = check_extern cx e in
         cx', None, None
     | GlobalVar gv -> let (cx', gv') = check_global_variable cx gv in
@@ -896,7 +883,7 @@ contexts * TypedAst.prog * TypedAst.global_vars =
 (* Check that there is a void main() defined *)
 let check_main_fn (cx: contexts) : unit =
     debug_print ">> check_main_fn";
-    let (ml, rt, id, pm, pr, meta) = get_function cx "main" in 
+    let (ml, rt, id, pm, pr, meta) = List.hd (get_functions cx "main") in 
     debug_print (">> check_main_fn_2" ^ (string_of_list string_of_param pr) ^ (string_of_parameterization pm));
     if (List.length pr) > 0 || (Assoc.size pm) > 0 then error cx ("Cannot provide parameters to main") else
     match rt with
