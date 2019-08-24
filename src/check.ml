@@ -279,7 +279,7 @@ let exp_to_texp (cx: contexts) ((exp, t) : TypedAst.exp * typ) : TypedAst.texp =
     debug_print ">> exp_to_texp";
     exp, typ_erase cx t
 
-(* Given a function and list of arguments to that function *)
+(* Given a list of arguments and the arguments of a funciton 'target' *)
 (* Attempts to produce a list of valid types for the parameterization of the function *)
 let infer_pml (cx: contexts) (args : typ list) (target : params) : (typ list) option =
     debug_print ">> infer_pml";
@@ -306,7 +306,10 @@ let infer_pml (cx: contexts) (args : typ list) (target : params) : (typ list) op
         | _ -> fpm
     in
     let inferred = List.fold_left2 unify_param (Some Assoc.empty) args (List.map fst target) in
-    option_map (List.rev |- Assoc.values) inferred
+    (* Correctly sort the produced parameter list *)
+    match inferred with | None -> None | Some inf ->
+        (List.fold_right (fun x a -> match a with | None -> None | Some acc ->
+            if Assoc.mem x inf then Some (Assoc.lookup x inf::acc) else None) (Assoc.keys cx.pm) (Some []))
 
 let check_fn_inv (cx: contexts) (x : id) (pml: typ list) (args : (TypedAst.exp * typ) list)
 : (string * TypedAst.etyp list * TypedAst.args) * typ = 
@@ -368,7 +371,6 @@ let check_fn_inv (cx: contexts) (x : id) (pml: typ list) (args : (TypedAst.exp *
         else None
     in
     let fn_invocated = get_functions cx x in
-    print_endline (string_of_list string_of_fn_typ fn_invocated);
     match List.fold_left (fun acc x -> 
         match acc with | None -> try_fn_inv x | Some _ -> acc) None fn_invocated with
     | Some (fn_found, pmt) -> 

@@ -6,7 +6,7 @@ declare t -<t>(t f);
 declare t +<t:vec2>(t v1, t v2);
 declare t *<t:vec3,u:float>(t v, u f);
 declare t *<t:vec3,u:float>(u f, t v);
-declare t .*<t:vec2>(t v);
+declare t .*<t:vec2>(t v1, t v2);
 
 void main() {
     vec2 r1 = [1., 2.] + [-2.,-3.];
