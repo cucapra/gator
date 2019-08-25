@@ -461,7 +461,7 @@ let check_index_exp (cx : contexts) (t1 : typ)  (t2 : typ) : typ =
 
 let check_as_exp (cx: contexts) (start: typ) (target : typ) : typ =
     if is_subtype cx start target then target
-    else error cx ("Expected " ^ string_of_typ start ^ " to be a subtype of " ^ string_of_typ target)
+    else error cx ("Expected " ^ string_of_typ start ^ " to be type adjacent to " ^ string_of_typ target)
 
 (* Super expensive.  We're essentially relying on small contexts *)
 let check_in_exp (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : aexp = 
@@ -658,6 +658,7 @@ and check_comm (cx: contexts) (c: comm) : contexts * TypedAst.comm =
 (* Updates Gamma and Psi *)
 and check_comm_lst (cx: contexts) (cl : acomm list) : contexts * TypedAst.comm list = 
     debug_print ">> check_comm_lst";
+    print_endline (string_of_context cx);
     match cl with
     | [] -> cx, []
     | h::t -> let cx', c' = check_acomm cx h in
@@ -679,18 +680,6 @@ and check_assign (cx: contexts) (t: typ) (s: string) (etyp : typ) : unit =
     else error cx ("Mismatched types for var decl for " ^ s ^
         ": expected " ^ (string_of_typ t) ^ ", found " ^ (string_of_typ etyp))
 
-(* Updates Phi, and internal calls update gamma and psi *)
-let check_fn_decl (cx: contexts) (f : fn_typ) : 
-contexts * TypedAst.params * TypedAst.parameterization =
-    let ml, rt, id, pm, pl, meta = f in
-    debug_print (">> check_fn_decl : " ^ id ^ string_of_parameterization pm);
-    let cx' = check_parameterization cx pm in
-    let _,pr = check_params cx' pl in 
-    check_typ_valid cx' rt;
-    let pme = Assoc.create (List.map (fun (s, c) -> (s, typ_erase cx c)) (Assoc.bindings pm)) in
-    (* Don't return the parameterization used here *)
-    add_function cx f, pr, pme
-
 (* Helper function for type checking void functions. 
  * Functions that return void can have any number of void return statements 
  * anywhere. *)
@@ -702,40 +691,45 @@ let check_void_return (cx : contexts) (c: acomm) : unit =
 
 let check_return (cx: contexts) (t: typ) (c: acomm) : unit = 
     debug_print ">> check_return";
-    match c with
-    | (Return None, meta) -> error cx ("Expected a return value instead of void")
-    | (Return Some r, meta) -> (
-        let (_, rt) = check_aexp cx r in
+    match t,c with
+    | UnitTyp, (Return None, meta) -> ()
+    | _, (Return None, meta) -> error (with_meta cx meta) ("Expected a return value instead of void")
+    | UnitTyp, (Return Some _, meta) -> error (with_meta cx meta) ("Void functions cannot return a value")
+    | _, (Return Some r, meta) -> (
+        let cx' = with_meta cx meta in
+        let _, rt = check_aexp cx' r in
         (* raises return exception of given boolean exp is false *)
-        if is_subtype cx rt t then () 
-        else error cx ("Mismatched return types, expected: " ^ 
-        (string_of_typ t) ^ ", found: " ^ (string_of_typ rt))
-        )
+        if is_subtype cx' rt t then () 
+        else error cx' ("Mismatched return types, expected: " ^ 
+        string_of_typ t ^ ", found: " ^ string_of_typ rt))
     | _ -> ()
 
 (* Updates mu *)
-let update_mu_with_function (cx: contexts) (fm, r, id, pmd, pr, meta : fn_typ) : contexts =
-    let cx' = with_m cx (Assoc.update id fm cx.m) in
+let include_function (cx: contexts) (f : fn_typ) : contexts =
+    let fm,r,id,pmd,pr,meta = f in
+    debug_print (">> include_function " ^ string_of_fn_typ f);
+    let cx' = add_function cx f in
+    let cxm = with_m cx (Assoc.update id fm cx.m) in
     if List.mem Canon fm then
         match pr with
         (* Only update if it is a canon function with exactly one argument *)
-        | [(t,_)] ->
+        | [t,_] ->
         begin
-            if is_typ_eq cx' t r then error cx
+            if is_typ_eq cx t r then error cx'
                 ("Canonical function " ^ id ^ " cannot be a map from a type to itself") else
-            let fail _ = error cx
+            let fail _ = error cx'
             ("Canonical functions must be between tag or abstract types") in
             match t with
             | ParTyp _ ->  
             begin
                 match r with
-                | ParTyp _ -> cx'
+                | ParTyp _ -> cxm
                 | _ -> fail ()
             end
             | _ -> fail ()
         end
-        | _ -> error cx ("Cannot have a canonical function with zero or more than one arguments")
-    else cx
+        | _ -> error cx' ("Cannot have a canonical function with zero or more than one arguments")
+    else cx'
 
 (* Updates Tau with new typing information *)
 let check_typ_decl (cx: contexts) (x : string) (pm,t : tau) : contexts =
@@ -759,13 +753,24 @@ let check_typ_decl (cx: contexts) (x : string) (pm,t : tau) : contexts =
     check_valid_supertype t |> ignore_typ;
     bind cx x (Tau (pm, t))
         
+(* Updates Phi, and internal calls update gamma and psi *)
+let check_fn_decl (cx: contexts) (f : fn_typ) : 
+contexts * TypedAst.params * TypedAst.parameterization =
+    let ml, rt, id, pm, pl, meta = f in
+    debug_print (">> check_fn_decl : " ^ id ^ string_of_parameterization pm);
+    let cx' = check_parameterization cx pm in
+    let cx'',pr = check_params cx' pl in
+    check_typ_valid cx' rt;
+    let pme = Assoc.create (List.map (fun (s, c) -> (s, typ_erase cx c)) (Assoc.bindings pm)) in
+    (* Don't return the parameterization used here *)
+    cx'', pr, pme
+
 (* Updates gamma, mu, and phi from underlying calls *)
 let check_extern (cx: contexts) (e : extern_element) : contexts =
     debug_print (">> check_extern " ^ string_of_extern e);
     match e with
-    | ExternFn f -> let (cx', _, _) = 
-        check_fn_decl cx f in 
-        update_mu_with_function cx' f
+    | ExternFn f -> let (cx', _, _) = check_fn_decl cx f in 
+        include_function (clear cx' CGamma) f
     | ExternVar (ml, t, x, meta) -> bind cx x (Gamma t)
 
 (* Type check global variable *)
@@ -781,20 +786,18 @@ let check_global_variable (cx: contexts) (ml, sq, t, id, e: global_var)
 (* Updates mu, phi, and psi from underlying calls *)
 let check_fn (cx: contexts) (f, cl: fn) 
 : contexts * TypedAst.fn = 
-    let ml, r, id, pm, pr, meta = f in
+    let ml, rt, id, pm, pr, meta = f in
     debug_print (">> check_fn : " ^ id);
+    print_endline (string_of_context cx);
     (* update phi with function declaration *)
     let cx', pr', pm' = check_fn_decl cx f in
     (* Note that we don't use our updated phi to avoid recursion *)
     let cx'', cl' = check_comm_lst cx' cl in
-    let cxr = update_mu_with_function (clear cx'' CGamma) f in
+    let cxr = include_function (clear cx'' CGamma) f in
     (* check that the last command is a return statement *)
-    match r with
-    | UnitTyp -> List.iter (fun c -> check_void_return cx c) cl;
-        cxr, (((id, (pr', TypedAst.UnitTyp, pm')), cl'))
-    (* TODO: might want to check that there is exactly one return statement at the end *)
-    | t -> List.iter (check_return cx'' t) cl; 
-        cxr, ((id, (pr', typ_erase cx t, pm')), cl')
+    (* TODO: might want to check that there is exactly one return statement on each branch *)
+    List.iter (check_return cx'' rt) cl; 
+        cxr, ((id, (pr', typ_erase cx rt, pm')), cl')
 
 let check_frame (cx : contexts) ((id, d) : frame) : contexts =
     debug_print (">> check_frame " ^ id);
@@ -806,7 +809,7 @@ let check_prototype_element (cx : contexts) (p : string) (pe : prototype_element
     match pe with
     | ProtoObject (id, pm) -> bind cx (p ^ "." ^ id) 
         (Tau (Assoc.create (List.map (fun x -> (x, AnyFrameTyp)) pm), AnyTyp))
-    | ProtoFn f -> let a,b,id,c,d,e = f in add_function cx (a,b,p ^ "." ^ id,c,d,e)
+    | ProtoFn f -> add_function cx (rename_fn (fun id -> p ^ "." ^ id) f)
 let check_aprototype_element cx p (pe, meta) : contexts = check_prototype_element (with_meta cx meta) p pe
 
 (* Updates tau or phi with the coordinate scheme element being checked *)
@@ -830,12 +833,15 @@ let check_coordinate_element (cx : contexts) (c: string) (ce : coordinate_elemen
         let cxc = with_pm cx pm in
         let rt' = replace_unbound cxc (FrameTyp d) rt in
         let pr' = List.map (fun (a, b) -> replace_unbound cxc (FrameTyp d) a, b) pr in
-        let _,prt,_,ppm,ppr,_ = List.hd (get_functions cx (proto ^ "." ^ id)) in
+        (* Check associated functions in the prototype to see if any match *)
+        let has_binding = List.fold_left (fun acc (_,prt,_,ppm,ppr,_) -> 
             let cxp = with_member (with_pm cx ppm) proto in
-        if not (is_subtype cx rt' (replace_unbound cxp AnyFrameTyp prt) &&
-        is_subtype_list cx (List.map fst pr') (List.map (replace_unbound cxp AnyFrameTyp |- fst) ppr))
-        then error cx ("The type of function " ^ id ^ " does not match the prototype definition");
-        fst (check_fn cxc ((ml, rt', id, pm, pr', meta), cl))
+            acc || (not (is_subtype cx rt' (replace_unbound cxp AnyFrameTyp prt) &&
+            is_subtype_list cx (List.map fst pr') (List.map (replace_unbound cxp AnyFrameTyp |- fst) ppr))))
+            false (get_functions cx (proto ^ "." ^ id) )
+        in
+        if not (has_binding) then error cx ("The type of function " ^ c ^ "." ^ id ^ " does not match any prototype definition");
+        fst (check_fn cxc ((ml, rt', c ^ "." ^ id, pm, pr', meta), cl))
 let check_acoordinate_element cx c (ce, meta) : contexts = 
     check_coordinate_element (with_meta cx meta) c ce
 

@@ -73,6 +73,8 @@ let add_function (cx : contexts) (f : fn_typ) : contexts =
   then let p' = f::Assoc.lookup id _b.p in update_bindings { _b with p=Assoc.update id p' _b.p }
   else bind cx id (Phi [f])
 
+let rename_fn (f : string -> string) (a,b,id,c,d,e:fn_typ) : fn_typ = a,b,f id,c,d,e
+
 let ignore_typ (t : typ) : unit = ignore t
 let ignore_dexp (d : dexp) : unit = ignore d
 let ignore_typ_context (t : typ Assoc.context) : unit = ignore t
@@ -91,9 +93,35 @@ let string_of_delta (f : delta) =
 let string_of_chi (p,d : chi) =
   "implements " ^ p ^ " with dimension " ^ string_of_dexp d
 let string_of_phi (p : phi) =
-  string_of_list string_of_fn_typ p
+  string_of_list string_of_fn_typ (List.map (rename_fn (fun x -> "%")) p)
 let string_of_psi (ps : psi) : string =
   string_of_list (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_fn_inv p ^ ")") ps
+
+let string_of_cxt   (cx : contexts) = Assoc.to_string_sep string_of_tau   "\n" cx._bindings.t
+let string_of_cxg   (cx : contexts) = Assoc.to_string_sep string_of_gamma "\n" cx._bindings.g
+let string_of_cxd   (cx : contexts) = Assoc.to_string_sep string_of_delta "\n" cx._bindings.d
+let string_of_cxc   (cx : contexts) = Assoc.to_string_sep string_of_chi   "\n" cx._bindings.c
+let string_of_cxp   (cx : contexts) = Assoc.to_string_sep string_of_phi   "\n" cx._bindings.p
+let string_of_cxm   (cx : contexts) = Assoc.to_string_sep string_of_mu    "\n" cx.m
+let string_of_cxps  (cx : contexts) = Assoc.to_string_sep string_of_psi   "\n" cx.ps
+let string_of_cxpm  (cx : contexts) = string_of_parameterization cx.pm
+let string_of_cxmem (cx : contexts) = string_of_option_removed (fun x -> x) cx.member
+
+let string_of_bindings (cx : contexts) =
+  "Bindings:"
+  ^ "\ntau:\n"     ^ string_of_cxt cx
+  ^ "\ngamma:\n"   ^ string_of_cxg cx
+  ^ "\ndelta:\n"   ^ string_of_cxd cx
+  ^ "\nchi:\n"     ^ string_of_cxc cx
+  ^ "\nphi:\n"     ^ string_of_cxp cx
+let string_of_context (cx : contexts) = 
+  "Current context:" 
+  ^ "\nmember:\t"  ^ string_of_cxmem cx 
+  ^ "\npm:\t"      ^ string_of_cxpm cx
+  ^ "\n" ^ string_of_bindings cx
+  ^ "\nmu:\t"      ^ string_of_cxm cx
+  ^ "\npsi:\t"     ^ string_of_cxps cx
+
 let option_clean (x : 'a option) : 'a =
   match x with | Some x -> x | None -> failwith "Failed option assumption"
 

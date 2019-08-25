@@ -38,4 +38,8 @@ val map : ('a -> 'b) -> 'a context -> 'b context
 
 val size : 'a context -> int
 
+(* Gives a string resprentation of this association list, seperated by sep *)
+val to_string_sep : ('a -> string) -> string -> 'a context -> string
+
+(* String representation seperated by ", " *)
 val to_string : ('a -> string) -> 'a context -> string

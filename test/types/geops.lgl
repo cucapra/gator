@@ -1,3 +1,14 @@
+type vec2 is float[2];
+type vec3 is float[3];
+
+declare float dot<t:vec2>(t x, t y);
+declare t normalize<t:vec2>(t x);
+declare t -<t>(t f);
+declare t +<t:vec2>(t v1, t v2);
+declare t *<t:vec3,u:float>(t v, u f);
+declare t *<t:vec3,u:float>(u f, t v);
+declare t .*<t:vec2>(t v1, t v2);
+
 declare float cos(float f);
 declare float sqrt(float f);
 declare float acos(float f);
@@ -24,7 +35,7 @@ coordinate cart2 : geometry {
     object vector<r> is float[2];
 
     vector<r> +(vector<r> x, vector<r> y) {
-        return x + y;
+        return x as vec2 + y as vec2;
     }
     vector<r> -(vector<r> x, vector<r> y) {
         return x - y;

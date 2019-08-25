@@ -33,4 +33,5 @@ let map f c = List.map (fun (x, v) -> (x, f v)) c
 
 let size c = List.length c
 
-let to_string f c = Util.string_of_list (fun (l, r) -> l ^ " : " ^ f r) c
+let to_string_sep f sep c = String.concat sep (List.map (fun (l, r) -> l ^ " : " ^ f r) c)
+let to_string f c = to_string_sep f ", " c

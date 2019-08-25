@@ -19,7 +19,7 @@ let rec string_of_typ (t: etyp) : string =
     | GenTyp -> "genType"
 
 let string_of_parameterization (pm : parameterization) : string =
-  if Assoc.size pm > 0 then "<" ^ Assoc.to_string string_of_typ pm ^ ">" else ""
+  if Assoc.size pm > 0 then "<" ^ Assoc.to_string string_of_typ pm  ^ ">" else ""
 
 let rec string_of_texp ((e, _): texp) : string = 
   string_of_exp e
