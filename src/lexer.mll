@@ -53,7 +53,7 @@ rule read = parse
   | "*"             { TIMES }
   | "/"             { DIV }
   | ".*"            { CTIMES }
-  | "as"            { AS }
+  | "as!"           { AS }
   | "in"            { IN }
   | "out"           { OUT }
   | "+="            { PLUSEQ }

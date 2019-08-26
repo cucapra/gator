@@ -66,7 +66,7 @@ type contexts = {
   m : mu Assoc.context;
   ps : psi Assoc.context;
   pm : parameterization;
-  member : string option; (* Used for declarations and expressions within a coordinate system or prototype *)
+  member : string option; (* Used for functions declared in prototypes or coordinate schemes *)
   meta : metadata;
   _bindings : binding_contexts
 }

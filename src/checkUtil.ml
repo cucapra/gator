@@ -8,6 +8,8 @@ exception TypeException of string
 let line_number (meta : metadata) : string = 
   ("Line: " ^ string_of_int(meta.pos_lnum))
 let error cx s = raise (TypeException(line_number cx.meta ^ " -- " ^ s))
+let debug_fail (cx : contexts) (s : string) =
+  failwith (line_number cx.meta ^ "\t" ^ s)
 
 (* Produces an empty set of gator contexts with a starting metadata *)
 let init meta = let b = 
@@ -18,7 +20,6 @@ let with_m cx m' = {cx with m=m'}
 let with_ps cx ps' = {cx with ps=ps'}
 let with_pm cx pm' = {cx with pm=pm'}
 let with_meta cx meta' = {cx with meta=meta'}
-let with_member cx s = {cx with member=Some s}
 let clear_member cx = {cx with member=None}
 
 let get_m cx x = if Assoc.mem x cx.m then Assoc.lookup x cx.m else 
@@ -65,13 +66,42 @@ let clear (cx : contexts) (b : binding_context) : contexts =
   | CChi ->   update_bindings { _b with l=clear _b.c; c=Assoc.empty }
   | CPhi ->   update_bindings { _b with l=clear _b.p; p=Assoc.empty }
 
+let within cx s = 
+  match find_safe cx s with
+  | Some Chi _
+  | None -> {cx with member=Some s}
+  | _ -> debug_fail cx ("Invalid use of member " ^ s ^ " (should be a coordinate or prototype)")
+
+let get_dimtyp (cx : contexts) (mem : string) =
+  match find_safe cx mem with
+  | Some Chi (_,d) -> FrameTyp d
+  | None -> AnyFrameTyp
+  | _ -> debug_fail cx ("Invalid use of member " ^ mem ^ " (should be a coordinate or prototype)")
+
+(* Adds the function 'f' to the context *)
+(* If we are in a declaration 'member', then also updates the declaration of the members of 'f' *)
 let add_function (cx : contexts) (f : fn_typ) : contexts =
   let update_bindings b' = {cx with _bindings=b'} in
   let _b = cx._bindings in
-  let _,_,id,_,_,_ = f in
-  if Assoc.mem id _b.p
-  then let p' = f::Assoc.lookup id _b.p in update_bindings { _b with p=Assoc.update id p' _b.p }
-  else bind cx id (Phi [f])
+  let ml,rt,id,pm,pr,meta = f in
+  let id', f' = match cx.member with
+  | None -> id,f
+  | Some m -> 
+    let lift s = m ^ "." ^ s in
+    let pmt = get_dimtyp cx m in
+    let rec replace t =
+      match t with
+      | ParTyp (s,pml) -> (match find_safe cx (lift s) with 
+        | Some _ -> ParTyp (lift s,List.fold_left (fun acc x -> pmt::acc) [] pml) | None -> t)
+      | ArrTyp (t',_) -> replace t'
+      | _ -> t
+    in
+    let id' = lift id in
+    id',(ml,(replace rt),id',pm,List.map (fun (t,x) -> (replace t), x) pr,meta)
+  in
+  if Assoc.mem id' _b.p
+  then let p' = f'::Assoc.lookup id' _b.p in update_bindings { _b with p=Assoc.update id' p' _b.p }
+  else bind cx id' (Phi [f'])
 
 let rename_fn (f : string -> string) (a,b,id,c,d,e:fn_typ) : fn_typ = a,b,f id,c,d,e
 
@@ -80,8 +110,6 @@ let ignore_dexp (d : dexp) : unit = ignore d
 let ignore_typ_context (t : typ Assoc.context) : unit = ignore t
 let string_of_fn_inv ((s, tl) : fn_inv) : string = 
   s ^ "<" ^ string_of_list string_of_typ tl ^ ">"
-let debug_fail (cx : contexts) (s : string) =
-  failwith (line_number cx.meta ^ "\t" ^ s)
 let string_of_tau (pm, t : tau) =
   string_of_parameterization pm ^ " " ^  string_of_typ t
 let string_of_mu (ml : mu) =  
@@ -125,23 +153,15 @@ let string_of_context (cx : contexts) =
 let option_clean (x : 'a option) : 'a =
   match x with | Some x -> x | None -> failwith "Failed option assumption"
 
-let check_member (cx : contexts) (check : string->'a option) (x : string) : 'a option =
-  match cx.member with
-  | Some c -> let res = check (c ^ "."  ^ x) in 
-    (match res with
-    | Some _ -> res
-    | None -> check x)
-  | None -> check x
+let get_typ_safe (cx : contexts) (id : string) : tau option = 
+  match find_safe cx id with
+  | Some Tau t -> Some t
+  | _ -> None
 
 let get_typ (cx : contexts) (id : string) : tau =
-  let get_typ_safe x = 
-    match find_safe cx x with
-    | Some Tau t -> Some t
-    | _ -> None 
-  in
-  match check_member cx get_typ_safe id with
+  match get_typ_safe cx id with
   | Some t -> t
-  | None -> error cx ("Undefined type " ^ id)
+  | _ -> error cx ("Undefined type " ^ id)
 
 let get_var (cx : contexts) (x : string) : gamma =
   match find_safe cx x with
@@ -159,16 +179,18 @@ let get_coordinate (cx : contexts) (x : string) : chi =
   | _ -> error cx ("Undefined coordinate scheme " ^ x)
 
 let get_functions_safe (cx : contexts) (id : string) : phi =
-  let get_fn_safe x = 
-    match find_safe cx x with
-    | Some Phi p -> if List.length p > 0 then Some p else None
-    | _ -> None
+  let get_fn x = match find_safe cx x with
+    | Some Phi p -> p | _ -> []
   in
-  match check_member cx get_fn_safe id with
-  | Some t -> t
-  | None -> []
+  match cx.member with
+  | Some c -> let res = get_fn (c ^ "."  ^ id) in 
+    (match res with
+    | [] -> get_fn id
+    | _ -> res)
+  | None -> get_fn id
 
 let get_functions (cx : contexts) (id : string) : phi = 
   match get_functions_safe cx id with
   | [] -> error cx ("No type definition for function " ^ id)
   | p -> p
+  

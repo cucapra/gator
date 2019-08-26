@@ -83,13 +83,13 @@ exception ParseException of string
 (* Precedences *)
 
 %left ID
-%left AS IN
 %left AND OR
 %left NOT EQ LEQ GEQ LBRACK 
 %left LWICK RWICK 
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
+%left AS IN
 %left DOT
 
 (* After declaring associativity and precedence, we need to declare what

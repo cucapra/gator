@@ -19,7 +19,7 @@ prototype geometry {
 
     vector<r> +(vector<r> x, vector<r> y);
     vector<r> -(vector<r> x, vector<r> y);
-    vector<r> *(vector<r> v, scalar<r> s);
+    vector<r> *(vector<r> v, scalar s);
     vector<r> *(scalar<r> s, vector<r> v);
     vector<r> -(vector<r> v);
     position<r> translate(position<r> p, vector<r> v);
@@ -33,9 +33,10 @@ coordinate cart2 : geometry {
 
     object point<r> is float[2];
     object vector<r> is float[2];
+    object test is float[3];
 
-    vector<r> +(vector<r> x, vector<r> y) {
-        return x as vec2 + y as vec2;
+    float +(vector<r> x, vector<r> y) {
+        return (x as! vec2 + y as! vec2) as! vector<r>;
     }
     vector<r> -(vector<r> x, vector<r> y) {
         return x - y;
