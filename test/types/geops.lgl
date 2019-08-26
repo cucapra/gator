@@ -1,5 +1,6 @@
 type vec2 is float[2];
 type vec3 is float[3];
+type scalar is float;
 
 declare float dot<t:vec2>(t x, t y);
 declare t normalize<t:vec2>(t x);
@@ -20,28 +21,27 @@ prototype geometry {
     vector<r> +(vector<r> x, vector<r> y);
     vector<r> -(vector<r> x, vector<r> y);
     vector<r> *(vector<r> v, scalar s);
-    vector<r> *(scalar<r> s, vector<r> v);
+    vector<r> *(scalar s, vector<r> v);
     vector<r> -(vector<r> v);
-    position<r> translate(position<r> p, vector<r> v);
+    point<r> translate(point<r> p, vector<r> v);
     point<r> +(point<r> p, vector<r> v);
     point<r> -(point<r> p, vector<r> v);
     vector<r> -(point<r> x, point<r> y);
     vector<r> -(point<r> x);
 }
 coordinate cart2 : geometry {
-    dimension 2; // i.e. all frame parameters implicitly require dimension 2
+    dimension 2; // i.e. all type parameterizations are implicitly frames of dimension 2
 
     object point<r> is float[2];
     object vector<r> is float[2];
-    object test is float[3];
 
-    float +(vector<r> x, vector<r> y) {
+    vector<r> +(vector<r> x, vector<r> y) {
         return (x as! vec2 + y as! vec2) as! vector<r>;
     }
-    vector<r> -(vector<r> x, vector<r> y) {
+    vector<t> -(vector<t> x, vector<t> y) {
         return x - y;
     }
-    vector<r> *(vector<r> v, scalar s) {
+    vector<r> *(vector<t> v, scalar s) {
         return v * s;
     }
     vector<r> *(scalar s, vector<r> v) {

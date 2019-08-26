@@ -81,6 +81,7 @@ let get_dimtyp (cx : contexts) (mem : string) =
 (* Adds the function 'f' to the context *)
 (* If we are in a declaration 'member', then also updates the declaration of the members of 'f' *)
 let add_function (cx : contexts) (f : fn_typ) : contexts =
+  debug_print (">> add_function " ^ string_of_fn_typ f);
   let update_bindings b' = {cx with _bindings=b'} in
   let _b = cx._bindings in
   let ml,rt,id,pm,pr,meta = f in
@@ -89,15 +90,21 @@ let add_function (cx : contexts) (f : fn_typ) : contexts =
   | Some m -> 
     let lift s = m ^ "." ^ s in
     let pmt = get_dimtyp cx m in
-    let rec replace t =
+    let rec replace t pm =
       match t with
       | ParTyp (s,pml) -> (match find_safe cx (lift s) with 
-        | Some _ -> ParTyp (lift s,List.fold_left (fun acc x -> pmt::acc) [] pml) | None -> t)
-      | ArrTyp (t',_) -> replace t'
-      | _ -> t
+        | Some _ -> ParTyp (lift s,pml), 
+          List.fold_left (fun acc x -> 
+            match x with | ParTyp (s, []) -> Assoc.update s pmt acc
+            | _ -> debug_fail cx ("Invalid frame typ " ^ string_of_typ x)) pm pml | None -> t,pm)
+      | ArrTyp (t',_) -> replace t' pm
+      | _ -> t,pm
     in
     let id' = lift id in
-    id',(ml,(replace rt),id',pm,List.map (fun (t,x) -> (replace t), x) pr,meta)
+    let rt',pm' = replace rt pm in
+    let pr',pm'' = List.fold_left (fun (pr',pm'') (t,x) -> let l,r = replace t pm'' in (l,x)::pr',r) 
+      ([], pm') pr in
+    id',(ml,rt',id',pm'',pr',meta)
   in
   if Assoc.mem id' _b.p
   then let p' = f'::Assoc.lookup id' _b.p in update_bindings { _b with p=Assoc.update id' p' _b.p }

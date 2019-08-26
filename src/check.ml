@@ -38,8 +38,7 @@ let rec replace_absframe (c : dexp Assoc.context) (t: typ) : typ =
     let rec replace_dexp d : dexp =
         match d with
         | DimNum _ -> d
-        | DimVar v -> if Assoc.mem v c then Assoc.lookup v c
-            else failwith ("Unknown frame " ^ v)
+        | DimVar v -> if Assoc.mem v c then Assoc.lookup v c else failwith ("Invalid frame " ^ v)
         | DimPlus (l, r) -> DimPlus (replace_dexp l, replace_dexp r)
     in match t with
     | ArrTyp (t, d) -> ArrTyp(replace_absframe c t, replace_dexp d)
@@ -68,6 +67,7 @@ and list_typ_eq (cx : contexts) (tl1: typ list) (tl2: typ list) : bool
 
 let rec is_subtype (cx: contexts) (to_check : typ) (target : typ) : bool =
     debug_print (">> is_subtype " ^ (string_of_pair (string_of_typ to_check) (string_of_typ target)));
+    print_endline (string_of_context cx);
     if is_typ_eq cx to_check target then true else
     match (to_check, target) with
     | BotTyp, _ -> true
@@ -88,13 +88,20 @@ let rec is_subtype (cx: contexts) (to_check : typ) (target : typ) : bool =
         && is_subtype_list cx tl1 tl2)
         || is_subtype cx (tau_lookup cx s1 tl1) target
     | CoordTyp (c1, ParTyp (o1, f1)), CoordTyp (c2, ParTyp (o2, f2)) ->
-        (c1 = c2 && is_subtype_list cx f1 f2)
+        (c1 = c2 || (match find_safe cx c1 with | Some Chi (s,_) -> s = c2 | _ -> false) 
+        && is_subtype_list cx f1 f2)
         || is_subtype cx (chi_object_lookup cx c1 o1 f1) target
     
     (* Type lookup cases *)
     (* Note that the primitive of a given type is the top representation of that type *)
     | Literal t, _ -> is_subtype cx target (primitive cx to_check)
-    | ParTyp (s, tl), _ -> is_subtype cx (tau_lookup cx s tl) target
+    | ParTyp (s, tl), _ -> 
+        (match cx.member with 
+        | Some m -> (match get_typ_safe cx (m ^ "." ^ s) with
+            | Some _ -> is_subtype cx (CoordTyp (m, ParTyp (s, tl))) target
+            | None -> false)
+        || is_subtype cx (tau_lookup cx s tl) target
+        | None -> false)
     | CoordTyp (c, ParTyp (o, f)), _ -> is_subtype cx (chi_object_lookup cx c o f) target
     | FrameTyp d1, FrameTyp d2 -> reduce_dexp cx d1 = reduce_dexp cx d1
 
@@ -115,17 +122,12 @@ and match_parameterization (cx: contexts) (pml : typ list)
         && List.fold_left2 (fun acc (s, c) t -> is_subtype cx t c && acc) true pmb pml
     then List.fold_left2 (fun tcacc (s, c) t -> Assoc.update s t tcacc)
         Assoc.empty (Assoc.bindings cx.pm) pml
-    else error cx ("Invalid parameterization provided to " ^ string_of_parameterization cx.pm
-        ^ " by <" ^ string_of_separated_list "," string_of_typ pml ^ ">")
+    else error cx ("Invalid parameterization provided by <" 
+        ^ string_of_separated_list "," string_of_typ pml ^ ">")
 
 (* Looks up an object 'o' definition from a coordinate scheme 'c' *)
 and chi_object_lookup (cx: contexts) (c : id) (o: id) (tl: typ list) : typ =
     debug_print (">> chi_object_lookup " ^ c ^ "." ^ o ^ "<" ^ string_of_list string_of_typ tl ^ ">");
-    let d = match get_dimtyp cx c with
-        | AnyFrameTyp -> -1
-        | FrameTyp d -> reduce_dexp cx d
-        | _ -> debug_fail cx ("Unknown coordinate scheme " ^ c)
-    in
     let fl = List.map (fun t -> match t with 
         | ParTyp(s, []) -> s 
         | _ -> error cx ("Expected a frame, got " ^ string_of_typ t)) tl
@@ -134,27 +136,36 @@ and chi_object_lookup (cx: contexts) (c : id) (o: id) (tl: typ list) : typ =
     let pmd = Assoc.keys pmc in 
     if not (List.length fl = List.length pmd) then
         error cx ("Invalid number of frame parameters given to " ^ c ^ "." ^ o);
-    let check_frame df = if d = -1 then true else reduce_dexp cx df = d in
-    let dc =
-        List.fold_left2 (fun acc p f -> let df = get_frame cx f in
-            if not (check_frame df) then error cx ("Invalid frame " ^ f);
-            Assoc.update p df acc) Assoc.empty pmd fl
-    in
-    replace_absframe dc t
+    match cx.member with
+    | Some _ -> t (* Only occurs when typechecking -- don't erase the frames yet *)
+    | None ->
+        let d = match get_dimtyp cx c with
+        | AnyFrameTyp -> -1
+        | FrameTyp d -> reduce_dexp cx d
+        | _ -> debug_fail cx ("Invalid coordinate scheme " ^ c)
+        in let dc =
+            List.fold_left2 (fun acc p f -> let df = get_frame cx f in
+                if not (if d = -1 then true else reduce_dexp cx df = d)
+                then error cx ("Invalid frame " ^ f);
+                Assoc.update p df acc) Assoc.empty pmd fl
+        in replace_absframe dc t
 
 (* Looks up a supertype of the given partyp *)
 and tau_lookup (cx: contexts) (x: id) (pml: typ list) : typ =
     (* If the given type evaluates to a declared tag, return it *)
     (* If the return type would be a top type, resolve the dimension to a number *)
     debug_print (">> tau_lookup " ^ x ^ "<" ^ string_of_list string_of_typ pml ^ ">");
-    match get_typ_safe cx x with
-    | None -> (match cx.member with 
-        | Some m -> chi_object_lookup cx m x pml 
-        | None -> error cx ("Undefined type " ^ x))
-    | Some (pmd, t) ->
-    let tc = match_parameterization (with_pm cx pmd) pml in
-    replace_abstype tc t
-
+    let get_supertyp _ =
+        let pmd, t = get_typ cx x in
+        let tc = match_parameterization (with_pm cx pmd) pml in
+        replace_abstype tc t
+    in
+    match cx.member with 
+    | Some m -> (match get_typ_safe cx (m ^ "." ^ x) with
+        | Some _ -> chi_object_lookup cx m x pml
+        | None -> get_supertyp ())
+    | None -> get_supertyp ()
+    
 (* Steps types up a level in the subtyping tree *)
 (* Returns None if given a primitive type, illegal geometric type, or external type (they have no supertype) *)
 and typ_step (cx : contexts) (t : typ) : typ =
@@ -209,7 +220,12 @@ let check_typ_valid (cx: contexts) (ogt: typ) : unit =
         | ParTyp (s, tl) ->
             if not (Assoc.mem s cx.pm) then
             ignore_typ (tau_lookup cx s tl);
-            List.fold_left (fun _ -> check_typ_valid_rec) () tl
+            (* If this is an internal type, don't recurse on checking frames *)
+            if (match cx.member with None -> true
+                | Some m -> (match get_typ_safe cx (m ^ "." ^ s) with
+                    | None -> true
+                    | Some (_,_) -> false))
+            then List.fold_left (fun _ -> check_typ_valid_rec) () tl
         | CoordTyp (c, ParTyp(o, f)) ->
             ignore_typ (chi_object_lookup cx c o f);
         | CoordTyp _ ->
@@ -804,7 +820,11 @@ let check_prototype_element (cx : contexts) (p : string) (pe : prototype_element
     match pe with
     | ProtoObject (id, pm) -> bind cx (p ^ "." ^ id) 
         (Tau (Assoc.create (List.map (fun x -> (x, AnyFrameTyp)) pm), AnyTyp))
-    | ProtoFn f -> fst (check_fn (within cx p) (f, []))
+    (* We don't actually generate erased prototype functions, just typecheck them *)
+    | ProtoFn f -> let _,rt,_,_,pr,_ = f in
+        let cx' = within cx p in
+        check_typ_valid cx' rt; List.fold_left (fun acc -> check_typ_valid cx' |- fst) () pr;
+        clear_member (include_function cx' f)
 let check_aprototype_element cx p (pe, meta) : contexts = check_prototype_element (with_meta cx meta) p pe
 
 (* Updates tau or phi with the coordinate scheme element being checked *)
@@ -812,6 +832,7 @@ let check_aprototype_element cx p (pe, meta) : contexts = check_prototype_elemen
 let check_coordinate_element (cx : contexts) (c: string) (ce : coordinate_element) : contexts =
     debug_print (">> check_coordinate_element " ^ string_of_coordinate_element ce);
     let proto,d = get_coordinate cx c in
+    print_endline (string_of_context cx);
     match ce with
     | CoordObjectAssign (id, fl, t) -> 
         (* Check that the object is declared in the underlying prototype *)
@@ -825,14 +846,15 @@ let check_coordinate_element (cx : contexts) (c: string) (ce : coordinate_elemen
         bind cx (c ^ "." ^ id) (Tau (pm, t))
     | CoordFn fn ->
         let (ml, rt, id, pm, pr, meta), cl = fn in
-        let cxc = with_pm cx pm in
+        let cxc = within (with_pm cx pm) c in
         (* Check associated functions in the prototype to see if any match *)
         let has_binding = List.fold_left (fun acc (_,prt,_,_,ppr,_) -> 
-            acc || (not (is_subtype cx rt prt &&
-            is_subtype_list cx (List.map fst pr) (List.map fst ppr))))
+            acc || (is_subtype cxc rt prt &&
+            is_subtype_list cxc (List.map fst pr) (List.map fst ppr)))
             false (get_functions cx (proto ^ "." ^ id))
         in
-        if not (has_binding) then error cx ("The type of function " ^ c ^ "." ^ id ^ " does not match any prototype definition");
+        if not (has_binding) then error cx 
+            ("The type of function " ^ c ^ "." ^ id ^ " does not match any prototype definition");
         fst (check_fn cxc (rename_fn (fun x -> c ^ "." ^ x) (fst fn), cl))
 let check_acoordinate_element cx c (ce, meta) : contexts = 
     check_coordinate_element (with_meta cx meta) c ce
