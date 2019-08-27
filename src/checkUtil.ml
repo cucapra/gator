@@ -93,17 +93,17 @@ let add_function (cx : contexts) (f : fn_typ) : contexts =
     let rec replace t pm =
       match t with
       | ParTyp (s,pml) -> (match find_safe cx (lift s) with 
-        | Some _ -> ParTyp (lift s,pml), 
-          List.fold_left (fun acc x -> 
+        | Some _ -> CoordTyp (m, ParTyp(s, pml)), 
+          List.fold_right (fun x acc -> 
             match x with | ParTyp (s, []) -> Assoc.update s pmt acc
-            | _ -> debug_fail cx ("Invalid frame typ " ^ string_of_typ x)) pm pml | None -> t,pm)
+            | _ -> debug_fail cx ("Invalid frame typ " ^ string_of_typ x)) pml pm | None -> t,pm)
       | ArrTyp (t',_) -> replace t' pm
       | _ -> t,pm
     in
     let id' = lift id in
     let rt',pm' = replace rt pm in
-    let pr',pm'' = List.fold_left (fun (pr',pm'') (t,x) -> let l,r = replace t pm'' in (l,x)::pr',r) 
-      ([], pm') pr in
+    let pr',pm'' = List.fold_right (fun (t,x) (pr',pm'') -> let l,r = replace t pm'' in (l,x)::pr',r) 
+      pr ([], pm') in
     id',(ml,rt',id',pm'',pr',meta)
   in
   if Assoc.mem id' _b.p
@@ -132,30 +132,30 @@ let string_of_phi (p : phi) =
 let string_of_psi (ps : psi) : string =
   string_of_list (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_fn_inv p ^ ")") ps
 
-let string_of_cxt   (cx : contexts) = Assoc.to_string_sep string_of_tau   "\n" cx._bindings.t
-let string_of_cxg   (cx : contexts) = Assoc.to_string_sep string_of_gamma "\n" cx._bindings.g
-let string_of_cxd   (cx : contexts) = Assoc.to_string_sep string_of_delta "\n" cx._bindings.d
-let string_of_cxc   (cx : contexts) = Assoc.to_string_sep string_of_chi   "\n" cx._bindings.c
-let string_of_cxp   (cx : contexts) = Assoc.to_string_sep string_of_phi   "\n" cx._bindings.p
-let string_of_cxm   (cx : contexts) = Assoc.to_string_sep string_of_mu    "\n" cx.m
-let string_of_cxps  (cx : contexts) = Assoc.to_string_sep string_of_psi   "\n" cx.ps
-let string_of_cxpm  (cx : contexts) = string_of_parameterization cx.pm
-let string_of_cxmem (cx : contexts) = string_of_option_removed (fun x -> x) cx.member
+let print_cxt   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_tau   "\n" cx._bindings.t)
+let print_cxg   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_gamma "\n" cx._bindings.g)
+let print_cxd   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_delta "\n" cx._bindings.d)
+let print_cxc   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_chi   "\n" cx._bindings.c)
+let print_cxp   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_phi   "\n" cx._bindings.p)
+let print_cxm   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_mu    "\n" cx.m)
+let print_cxps  (cx : contexts) = print_endline (Assoc.to_string_sep string_of_psi   "\n" cx.ps)
+let print_cxpm  (cx : contexts) = print_endline (string_of_parameterization cx.pm)
+let print_cxmem (cx : contexts) = print_endline (string_of_option_removed (fun x -> x) cx.member)
 
-let string_of_bindings (cx : contexts) =
-  "Bindings:"
-  ^ "\ntau:\n"     ^ string_of_cxt cx
-  ^ "\ngamma:\n"   ^ string_of_cxg cx
-  ^ "\ndelta:\n"   ^ string_of_cxd cx
-  ^ "\nchi:\n"     ^ string_of_cxc cx
-  ^ "\nphi:\n"     ^ string_of_cxp cx
-let string_of_context (cx : contexts) = 
-  "Current context:" 
-  ^ "\nmember:\t"  ^ string_of_cxmem cx 
-  ^ "\npm:\t"      ^ string_of_cxpm cx
-  ^ "\n" ^ string_of_bindings cx
-  ^ "\nmu:\t"      ^ string_of_cxm cx
-  ^ "\npsi:\t"     ^ string_of_cxps cx
+let print_bindings (cx : contexts) =
+  print_endline "Bindings:";
+  print_endline "tau:"     ; print_cxt cx;
+  print_endline "gamma:"   ; print_cxg cx;
+  print_endline "delta:"   ; print_cxd cx;
+  print_endline "chi:"     ; print_cxc cx;
+  print_endline "phi:"     ; print_cxp cx
+let print_context (cx : contexts) = 
+  print_endline "Current context:";
+  print_string "member:\t"  ; print_cxmem cx;
+  print_string "pm:\t"      ; print_cxpm cx;
+  print_bindings cx;
+  print_string "mu:\t"      ; print_cxm cx;
+  print_string "psi:\t"     ; print_cxps cx
 
 let option_clean (x : 'a option) : 'a =
   match x with | Some x -> x | None -> failwith "Failed option assumption"
@@ -189,12 +189,10 @@ let get_functions_safe (cx : contexts) (id : string) : phi =
   let get_fn x = match find_safe cx x with
     | Some Phi p -> p | _ -> []
   in
+  get_fn id @
   match cx.member with
-  | Some c -> let res = get_fn (c ^ "."  ^ id) in 
-    (match res with
-    | [] -> get_fn id
-    | _ -> res)
-  | None -> get_fn id
+  | Some c -> get_fn (c ^ "." ^ id)
+  | None -> []  
 
 let get_functions (cx : contexts) (id : string) : phi = 
   match get_functions_safe cx id with

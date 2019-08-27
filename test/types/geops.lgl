@@ -1,14 +1,31 @@
 type vec2 is float[2];
 type vec3 is float[3];
+type vec4 is float[4];
 type scalar is float;
 
-declare float dot<t:vec2>(t x, t y);
-declare t normalize<t:vec2>(t x);
-declare t -<t>(t f);
-declare t +<t:vec2>(t v1, t v2);
-declare t *<t:vec3,u:float>(t v, u f);
-declare t *<t:vec3,u:float>(u f, t v);
-declare t .*<t:vec2>(t v1, t v2);
+declare T +<T:vec2>(T v1, T v2);
+declare T -<T:vec2>(T v1, T v2);
+declare T -<T:vec2>(T v);
+declare T *<T:vec2,U:float>(T v, U f);
+declare T *<T:vec2,U:float>(U f, T v);
+
+declare T +<T:vec3>(T v1, T v2);
+declare T -<T:vec3>(T v1, T v2);
+declare T -<T:vec3>(T v);
+declare T *<T:vec3,U:float>(T v, U f);
+declare T *<T:vec3,U:float>(U f, T v);
+
+declare T +<T:vec4>(T v1, T v2);
+declare T -<T:vec4>(T v1, T v2);
+declare T -<T:vec4>(T v);
+declare T *<T:vec4,U:float>(T v, U f);
+declare T *<T:vec4,U:float>(U f, T v);
+
+declare T +<T:float>(T f1, T f2);
+declare T -<T:float>(T f1, T f2);
+declare T -<T:float>(T f);
+declare T *<T:float>(T f1, T f2);
+declare T /<T:float>(T f1, T f2);
 
 declare float cos(float f);
 declare float sqrt(float f);
@@ -38,32 +55,32 @@ coordinate cart2 : geometry {
     vector<r> +(vector<r> x, vector<r> y) {
         return (x as! vec2 + y as! vec2) as! vector<r>;
     }
-    vector<t> -(vector<t> x, vector<t> y) {
-        return x - y;
+    vector<r> -(vector<r> x, vector<r> y) {
+        return (x as! vec2 - y as! vec2) as! vector<r>;
     }
-    vector<r> *(vector<t> v, scalar s) {
-        return v * s;
+    vector<r> *(vector<r> v, scalar s) {
+        return (v as! vec2 * s) as! vector<r>;
     }
     vector<r> *(scalar s, vector<r> v) {
-        return s * v;
+        return (s * v as! vec2) as! vector<r>;
     }
     vector<r> -(vector<r> v) {
-        return -v;
+        return (-v as! vec2) as! vector<r>;
     }
     point<r> translate(point<r> p, vector<r> v) {
-        return p + v;
+        return (p as! vec2 + v as! vec2) as! point<r>;
     }
     point<r> +(point<r> p, vector<r> v) {
-        return p + v;
+        return (p as! vec2 + v as! vec2) as! point<r>;
     }
     point<r> -(point<r> p, vector<r> v) {
-        return p - v;
+        return (p as! vec2 - v as! vec2) as! point<r>;
     }
     vector<r> -(point<r> x, point<r> y) {
-        return x - y;
+        return (x as! vec2 - y as! vec2) as! vector<r>;
     }
     vector<r> -(point<r> v) {
-        return -v;
+        return (-v as! vec2) as! vector<r>;
     }
 }
 coordinate cart3 : geometry {
@@ -73,34 +90,34 @@ coordinate cart3 : geometry {
     object vector<r> is float[3];
 
     vector<r> +(vector<r> x, vector<r> y) {
-        return x + y;
+        return (x as! vec3 + y as! vec3) as! vector<r>;
     }
     vector<r> -(vector<r> x, vector<r> y) {
-        return x - y;
+        return (x as! vec3 - y as! vec3) as! vector<r>;
     }
-    vector<r> *(vector<r> v, scalar<r> s) {
-        return v * s;
+    vector<r> *(vector<r> v, scalar s) {
+        return (v as! vec3 * s) as! vector<r>;
     }
-    vector<r> *(scalar<r> s, vector<r> v) {
-        return s * v;
+    vector<r> *(scalar s, vector<r> v) {
+        return (s * v as! vec3) as! vector<r>;
     }
     vector<r> -(vector<r> v) {
-        return -v;
+        return (-v as! vec3) as! vector<r>;
     }
-    position<r> translate(position<r> p, vector<r> v) {
-        return p + v;
+    point<r> translate(point<r> p, vector<r> v) {
+        return (p as! vec3 + v as! vec3) as! point<r>;
     }
     point<r> +(point<r> p, vector<r> v) {
-        return p + v;
+        return (p as! vec3 + v as! vec3) as! point<r>;
     }
     point<r> -(point<r> p, vector<r> v) {
-        return p - v;
+        return (p as! vec3 - v as! vec3) as! point<r>;
     }
     vector<r> -(point<r> x, point<r> y) {
-        return x - y;
+        return (x as! vec3 - y as! vec3) as! vector<r>;
     }
     vector<r> -(point<r> v) {
-        return -v;
+        return (-v as! vec3) as! vector<r>;
     }
 }
 coordinate polar : geometry {
@@ -109,13 +126,13 @@ coordinate polar : geometry {
     object point<r> is float[2];
     object vector<r> is float[2];
 
-    t __trans<t : float[2]>(t x, t y) {
+    T __trans<T : float[2]>(T x, T y) {
         // https://pritschet.me/wiki/physics/linear-translation-polar-coordinates/
         float r1 = x[0];
         float r2 = y[0];
         float theta1 = x[1];
         float theta2 = x[2];
-        float r = sqrt(r1 * r1 + r2 * r2 + 2 * r1 * r2 * cos(theta1 - theta2));
+        float r = sqrt(r1 * r1 + r2 * r2 + 2. * r1 * r2 * cos(theta1 - theta2));
         float theta = acos((r1 * cos(theta1) + r2 * cos(theta2)) / r);
         return [r, theta];
     }
@@ -128,23 +145,23 @@ coordinate polar : geometry {
     vector<r> *(vector<r> v, scalar s) {
         return [v[0] * s, v[1]];
     }
-    vector<r> *(scalar s, vector v) {
+    vector<r> *(scalar s, vector<r> v) {
         return [s * v[0], v[1]];
     }
     vector<r> -(vector<r> v) {
         return [-v[0], v[1]];
     }
     point<r> translate(point<r> p, vector<r> v) {
-        return __trans(p, v);
+        return __trans(p, v) as! point<r>;
     }
     point<r> +(point<r> p, vector<r> v) {
-        return __trans(p, v);
+        return __trans(p, v) as! point<r>;
     }
     point<r> +(point<r> p, vector<r> v) {
-        return p - v;
+        return (p as! vec2 - v as! vec2) as! point<r>;
     }
     vector<r> -(point<r> x, point<r> y) {
-        return __trans(x, [-y[0], y[1]]);
+        return __trans(x, [-y[0], y[1]]) as! vector<r>;
     }
     vector<r> -(point<r> v) {
         return [-v[0], v[1]];
@@ -153,8 +170,8 @@ coordinate polar : geometry {
 coordinate hom : geometry {
     dimension 3;
 
-    object point is float[4];
-    object vector is float[4];
+    object point<r> is float[4];
+    object vector<r> is float[4];
 
     vector<r> +(vector<r> x, vector<r> y) {
         return [x[0] + y[0], x[1] + y[1], x[2] + y[2], 0.];
@@ -162,26 +179,26 @@ coordinate hom : geometry {
     vector<r> -(vector<r> x, vector<r> y) {
         return [x[0] - y[0], x[1] - y[1], x[2] - y[2], 0.];
     }
-    vector<r> *(vector<r> v, scalar<r> s) {
-        return [x[0] * s, x[1] * s, x[2] * s, 0.];
+    vector<r> *(vector<r> v, scalar s) {
+        return [v[0] * s, v[1] * s, v[2] * s, 0.];
     }
-    vector<r> *(scalar<r> s, vector<r> v) {
-        return [s * x[0], s * x[1], s * x[2], 0.];
+    vector<r> *(scalar s, vector<r> v) {
+        return [s * v[0], s * v[1], s * v[2], 0.];
     }
     vector<r> -(vector<r> v) {
-        return [s * x[0], s * x[1], s * x[2], 0.];
+        return [-v[0], -v[1], -v[2], 0.];
     }
     point<r> translate(point<r> p, vector<r> v) {
-        return p + v * p[3];
+        return (p as! vec4 + v as! vec4 * p[3]) as! point<r>;
     }
     point<r> +(point<r> p, vector<r> v) {
-        return p + v * p[3];
+        return (p as! vec4 + v as! vec4 * p[3]) as! point<r>;
     }
     point<r> -(point<r> p, vector<r> v) {
-        return p - v * p[3];
+        return (p as! vec4 - v as! vec4 * p[3]) as! point<r>;
     }
     vector<r> -(point<r> x, point<r> y) {
-        return x * y[3] + y * x[3];
+        return (x as! vec4 * y[3] + y as! vec4 * x[3]) as! vector<r>;
     }
     // We don't actually need to define every function, it will just fail if we try and call an undefined function
 }
@@ -193,8 +210,8 @@ void main() {
     cart2.point<plane> ppos = [1., 1.];
     cart2.vector<plane> poffset = [1., 2.];
 
-    print pos + offset;
-    print 2. * (pos - (pos + offset));
+    print ppos + poffset;
+    print 2. * (ppos - (ppos + poffset));
     
     cart3.vector<world> mpos = [1., 2., 3.];
     
@@ -209,6 +226,6 @@ void main() {
     hom.point<world> hpos = [1., 2., 3., 2.];
     hom.vector<world> hvec = [1., 1., 1., 0.];
 
-    print hpos + hvec * 2;
+    print hpos + hvec * 2.;
     print hpos - (hpos + hvec);
 }
