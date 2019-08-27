@@ -1,6 +1,31 @@
+type vec3 is float[3];
+type vec4 is float[4];
+type mat3 is float[3][3];
+type mat4 is float[4][4];
+type scalar is float;
+
+declare T +<T:vec3>(T v1, T v2);
+declare T -<T:vec3>(T v1, T v2);
+declare T -<T:vec3>(T v);
+declare T *<T:vec3,U:float>(T v, U f);
+declare T *<T:vec3,U:float>(U f, T v);
+
+declare T +<T:vec4>(T v1, T v2);
+declare T -<T:vec4>(T v1, T v2);
+declare T -<T:vec4>(T v);
+declare T *<T:vec4,U:float>(T v, U f);
+declare T *<T:vec4,U:float>(U f, T v);
+
+declare T +<T:float>(T f1, T f2);
+declare T -<T:float>(T f1, T f2);
+declare T -<T:float>(T f);
+declare T *<T:float>(T f1, T f2);
+declare T /<T:float>(T f1, T f2);
+
 declare float cos(float f);
 declare float sqrt(float f);
 declare float acos(float f);
+
 
 prototype geometry {
     object point<r>;
@@ -12,14 +37,14 @@ prototype geometry {
     vector<r> -(vector<r> x, vector<r> y);
     vector<r> *(vector<r> v, scalar s);
     vector<r> *(scalar s, vector<r> v);
-    position<r> translate(position<r> p, vector<r> v);
-    position<r> +(position<r> p, vector<r> v);
-    vector<r> -(position<r> x, position<r> y);
-    vector<r2> *(matrix<r1, r2>, vector<r1>);
-    vector<r2> *(matrix<r1, r2>, direction<r1>);
-    point<r2> *(matrix<r1, r2>, point<r1>);
-    matrix<r1, r2> +(matrix<r1, r2>, matrix<r1, r2>);
-    matrix<r1, r3> *(matrix<r1, r2>, matrix<r2, r3>);
+    point<r> translate(point<r> p, vector<r> v);
+    point<r> +(point<r> p, vector<r> v);
+    vector<r> -(point<r> x, point<r> y);
+    vector<r2> *(matrix<r1, r2> m, vector<r1> v);
+    vector<r2> *(matrix<r1, r2> m, direction<r1> v);
+    point<r2> *(matrix<r1, r2> m, point<r1> v);
+    matrix<r1, r2> +(matrix<r1, r2> m1, matrix<r1, r2> m2);
+    matrix<r1, r3> *(matrix<r1, r2> m1, matrix<r2, r3> m2);
 }
 
 coordinate cart3 : geometry {
@@ -31,31 +56,34 @@ coordinate cart3 : geometry {
     object matrix<r1, r2> is float[3][3];
 
     vector<r> +(vector<r> x, vector<r> y) {
-        return x + y;
+        return (x as! vec2 + y as! vec2) as! vector<r>;
     }
     vector<r> -(vector<r> x, vector<r> y) {
-        return x - y;
+        return (x as! vec2 - y as! vec2) as! vector<r>;
     }
-    vector<r> *(vector<r> v, scalar<r> s) {
-        return v * s;
+    vector<r> *(vector<r> v, scalar s) {
+        return (v as! vec2 * s) as! vector<r>;
     }
-    vector<r> *(scalar<r> s, vector<r> v) {
-        return s * v;
+    vector<r> *(scalar s, vector<r> v) {
+        return (s * v as! vec2) as! vector<r>;
     }
-    position<r> translate(position<r> p, vector<r> v) {
-        return p + v;
+    vector<r> -(vector<r> v) {
+        return (-v as! vec2) as! vector<r>;
+    }
+    point<r> translate(point<r> p, vector<r> v) {
+        return (p as! vec2 + v as! vec2) as! point<r>;
     }
     point<r> +(point<r> p, vector<r> v) {
-        return p + v;
+        return (p as! vec2 + v as! vec2) as! point<r>;
     }
-    point<r> +(point<r> p, vector<r> v) {
-        return p - v;
+    point<r> -(point<r> p, vector<r> v) {
+        return (p as! vec2 - v as! vec2) as! point<r>;
     }
     vector<r> -(point<r> x, point<r> y) {
-        return x - y;
+        return (x as! vec2 - y as! vec2) as! vector<r>;
     }
     vector<r> -(point<r> v) {
-        return -v;
+        return (-v as! vec2) as! vector<r>;
     }
 
     vector<r2> *(matrix<r1, r2> m, vector<r1> v) {
@@ -100,31 +128,31 @@ coordinate hom : geometry {
     }
 }
 
-frame model dimension 3;
-frame world dimension 3;
+frame model has dimension 3;
+frame world has dimension 3;
 
-declare with dimension(3) r,
-cart3.direction<r> normalize(cart3.vector<r> v);
-declare with dimension(3) r,
-float dot(cart3.direction<r> v1, cart3.direction<r> v2);
-declare float[4] vec4(float[3] v, float f);
+// declare with dimension(3) r,
+// cart3.direction<r> normalize(cart3.vector<r> v);
+// declare with dimension(3) r,
+// float dot(cart3.direction<r> v1, cart3.direction<r> v2);
+// declare float[4] vec4(float[3] v, float f);
 
-with dimension(3) r,
-hom.point<r> homify(cart3.point<r> v) {
-    return vec4(v, 1.) as hom.point<r>;
-}
-with dimension(3) r,
-hom.vector<r> homify(cart3.vector<r> v) {
-    return vec4(v, 1.) as hom.point<r>;
-}
-with dimension(3) r,
-cart3.point<r> reduce_hom(hom.point<r> v) {
-    return vec3(v) / v[3] as cart3.point<r>;
-}
-with dimension(2) r,
-cart3.vector<r> reduce_hom(hom.vector<r> v) {
-    return vec3(v) as cart3.vector<r>;
-}
+// with dimension(3) r,
+// hom.point<r> homify(cart3.point<r> v) {
+//     return vec4(v, 1.) as hom.point<r>;
+// }
+// with dimension(3) r,
+// hom.vector<r> homify(cart3.vector<r> v) {
+//     return vec4(v, 1.) as hom.point<r>;
+// }
+// with dimension(3) r,
+// cart3.point<r> reduce_hom(hom.point<r> v) {
+//     return vec3(v) / v[3] as cart3.point<r>;
+// }
+// with dimension(2) r,
+// cart3.vector<r> reduce_hom(hom.vector<r> v) {
+//     return vec3(v) as cart3.vector<r>;
+// }
 
 void main() {
     cart3.point<model> pos = [1., 2., 3.];

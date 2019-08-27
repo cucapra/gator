@@ -175,7 +175,7 @@ and typ_step (cx : contexts) (t : typ) : typ =
         let get_supertyp _ = (match find_safe cx s with
         | Some Tau _ -> tau_lookup cx s tl
         | Some Delta _ -> delta_lookup cx s
-        | _ -> debug_fail cx ("Invalid type " ^ string_of_typ t))
+        | _ -> error cx ("Unknown type " ^ string_of_typ t))
         in
         if Assoc.mem s cx.pm then get_pm cx s else
         (match cx.member with 
@@ -201,7 +201,7 @@ and primitive (cx : contexts) (t : typ) : typ =
     if is_primitive t then t else primitive cx (typ_step cx t)
 
 let rec greatest_common_child (cx: contexts) (t1: typ) (t2: typ): typ =
-    debug_print ">> greatest_common_child";    
+    debug_print ">> greatest_common_child";
     if is_subtype cx t1 t2 then t1 else 
     if is_subtype cx t2 t1 then t2 else 
     let top = primitive cx t1 in
