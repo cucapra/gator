@@ -37,7 +37,7 @@ and string_of_pml (p : typ list) : string =
 
 let string_of_modification (m: modification) : string =
     match m with
-    | With l -> string_of_list (fun (x, y) -> 
+    | With l -> "with " ^ string_of_list (fun (x, y) -> 
         "frame(" ^ string_of_int x ^ ") " ^ string_of_list (fun x -> x) y) l
     | Canon -> "canon"
 

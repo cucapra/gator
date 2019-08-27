@@ -172,17 +172,18 @@ and typ_step (cx : contexts) (t : typ) : typ =
     debug_print (">> typ_step " ^ string_of_typ t);
     match t with
     | ParTyp (s, tl) -> 
-        let get_supertyp _ = (match find_safe cx s with
+        (* Looks up the supertype of s -- note that the behavior differs when inside a definition, defined by 'fail' *)
+        let get_supertyp fail = (match find_safe cx s with
         | Some Tau _ -> tau_lookup cx s tl
         | Some Delta _ -> delta_lookup cx s
-        | _ -> error cx ("Unknown type " ^ string_of_typ t))
+        | _ -> fail ())
         in
         if Assoc.mem s cx.pm then get_pm cx s else
         (match cx.member with 
         | Some m -> (match get_typ_safe cx (m ^ "." ^ s) with
             | Some _ -> chi_object_lookup cx m s (as_fl cx tl)
-            | None -> get_supertyp ())
-        | None -> get_supertyp ())
+            | None -> get_supertyp (fun _ -> get_dimtyp cx (m ^ "." ^ s)))
+        | None -> get_supertyp (fun _ -> error cx ("Unknown type " ^ string_of_typ t)))
     | CoordTyp (c, ParTyp (o, f)) -> chi_object_lookup cx c o (as_fl cx f)
     (* Note that literals are always the first thing to be unwrapped *)
     | Literal t' -> t'
@@ -799,7 +800,7 @@ contexts * TypedAst.params * TypedAst.parameterization =
 (* Updates mu, phi, and psi from underlying calls *)
 let check_fn (cx: contexts) (f, cl: fn) 
 : contexts * TypedAst.fn = 
-    let ml, rt, id, pm, pr, meta = f in
+    (* let ml, rt, id, pm, pr, meta = f in *)
     debug_print (">> check_fn : " ^ id);
     (* update phi with function declaration *)
     let cx', tpr, tpm = check_fn_decl cx f in
