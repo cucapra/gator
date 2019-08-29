@@ -9,6 +9,7 @@ declare T -<T:vec3>(T v1, T v2);
 declare T -<T:vec3>(T v);
 declare T *<T:vec3,U:float>(T v, U f);
 declare T *<T:vec3,U:float>(U f, T v);
+declare T /<T:vec3,U:float>(T f1, U f2);
 
 declare T +<T:vec4>(T v1, T v2);
 declare T -<T:vec4>(T v1, T v2);
@@ -34,6 +35,8 @@ declare float cos(float f);
 declare float sqrt(float f);
 declare float acos(float f);
 
+declare vec4 vec4<t:float[3],u:float>(t v, u f);
+declare vec3 vec3<t:float[4]>(t v);
 
 prototype geometry {
     object point<r>;
@@ -48,7 +51,9 @@ prototype geometry {
     vector<r> *(scalar s, vector<r> v);
     point<r> translate(point<r> p, vector<r> v);
     point<r> +(point<r> p, vector<r> v);
+    point<r> +(vector<r> p, point<r> v);
     vector<r> -(point<r> x, point<r> y);
+    vector<r> -(point<r> x);
     vector<r2> *(matrix<r1, r2> m, vector<r1> v);
     vector<r2> *(matrix<r1, r2> m, direction<r1> v);
     point<r2> *(matrix<r1, r2> m, point<r1> v);
@@ -85,8 +90,8 @@ coordinate cart3 : geometry {
     point<r> +(point<r> p, vector<r> v) {
         return (p as! vec3 + v as! vec3) as! point<r>;
     }
-    point<r> -(point<r> p, vector<r> v) {
-        return (p as! vec3 - v as! vec3) as! point<r>;
+    point<r> +(vector<r> v, point<r> p) {
+        return (p as! vec3 + v as! vec3) as! point<r>;
     }
     vector<r> -(point<r> x, point<r> y) {
         return (x as! vec3 - y as! vec3) as! vector<r>;
@@ -94,7 +99,6 @@ coordinate cart3 : geometry {
     vector<r> -(point<r> v) {
         return (-v as! vec3) as! vector<r>;
     }
-
     vector<r2> *(matrix<r1, r2> m, vector<r1> v) {
         return (m as! mat3 * v as! vec3) as! vector<r2>;
     }
@@ -120,6 +124,15 @@ coordinate hom : geometry {
     object direction<r> is float[4];
     object matrix<r1, r2> is float[4][4];
 
+    point<r> +(point<r> p, vector<r> v) {
+        return (p as! vec4 + v as! vec4 * p[3]) as! point<r>;
+    }
+    point<r> +(vector<r> v, point<r> p) {
+        return (p as! vec4 + v as! vec4 * p[3]) as! point<r>;
+    }
+    vector<r> -(point<r> x, point<r> y) {
+        return (x as! vec4 * y[3] - y as! vec4 * x[3]) as! vector<r>;
+    }
     vector<r2> *(matrix<r1, r2> m, vector<r1> v) {
         return (m as! mat4 * v as! vec4) as! vector<r2>;
     }
@@ -150,18 +163,18 @@ with frame(3) r:
 hom.point<r> homify(cart3.point<r> v) {
     return vec4(v, 1.) as! hom.point<r>;
 }
-// with dimension(3) r,
-// hom.vector<r> homify(cart3.vector<r> v) {
-//     return vec4(v, 1.) as hom.point<r>;
-// }
-// with dimension(3) r,
-// cart3.point<r> reduce_hom(hom.point<r> v) {
-//     return vec3(v) / v[3] as cart3.point<r>;
-// }
-// with dimension(2) r,
-// cart3.vector<r> reduce_hom(hom.vector<r> v) {
-//     return vec3(v) as cart3.vector<r>;
-// }
+with frame(3) r:
+hom.vector<r> homify(cart3.vector<r> v) {
+    return vec4(v, 1.) as! hom.point<r>;
+}
+with frame(3) r:
+cart3.point<r> reduce_hom(hom.point<r> v) {
+    return (vec3(v) / v[3]) as! cart3.point<r>;
+}
+with frame(3) r:
+cart3.vector<r> reduce_hom(hom.vector<r> v) {
+    return vec3(v) as! cart3.vector<r>;
+}
 
 void main() {
     cart3.point<model> pos = [1., 2., 3.];
@@ -191,5 +204,5 @@ void main() {
 
     print (mtrans * hpos) + hoff;
     print mtrans * (hpos + (minv * hoff));  // Should be the same!
-    print reduce_hom<world>(hpos - homify<world>(light) + offet);
+    print reduce_hom<world>(hpos - homify<world>(light) + homify<world>(offset));
 }

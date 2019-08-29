@@ -198,7 +198,7 @@ coordinate hom : geometry {
         return (p as! vec4 - v as! vec4 * p[3]) as! point<r>;
     }
     vector<r> -(point<r> x, point<r> y) {
-        return (x as! vec4 * y[3] + y as! vec4 * x[3]) as! vector<r>;
+        return (x as! vec4 * y[3] - y as! vec4 * x[3]) as! vector<r>;
     }
     // We don't actually need to define every function, it will just fail if we try and call an undefined function
 }

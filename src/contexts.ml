@@ -37,13 +37,14 @@ type phi = fn_typ list
  * hence the typ list (which is empty for matrices) *)
 type psi = (typ * fn_inv) list
 
-(* Special contexts for  *)
+(* Special contexts for avoiding name duplication *)
 (* We maintain the invariant for a given set of contexts: 
  * if a string 'x' is in lookup
  * then 'x' is in exactly one of the variant types of lookup 
  * otherwise 'x' is in none of the variant types *)
 (* Note that the parameterization variable names are _not_ necessarily unique, so aren't tracked in the lookup *)
-type binding_context = | CTau | CGamma | CDelta | CChi | CPhi
+type exp_bindings = CGamma | CPhi
+type typ_bindings = CTau | CChi | CDelta
 
 (* Variant type for correctly abstracting storage of a new variable
  * Used with contexts to maintain the invariant described in 'lookup' *)
@@ -57,7 +58,8 @@ type binding_contexts = {
   d : delta Assoc.context;
   c : chi Assoc.context;
   p : phi Assoc.context;
-  l : binding_context Assoc.context;
+  el : exp_bindings Assoc.context;
+  tl : typ_bindings Assoc.context;
 }
 
 (* A type to contain every non-lookup context to simplify definitions *)

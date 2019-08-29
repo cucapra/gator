@@ -13,7 +13,8 @@ let debug_fail (cx : contexts) (s : string) =
 
 (* Produces an empty set of gator contexts with a starting metadata *)
 let init meta = let b = 
-  {t=Assoc.empty; g=Assoc.empty; d=Assoc.empty; c=Assoc.empty; p=Assoc.empty; l=Assoc.empty } in
+  {t=Assoc.empty; g=Assoc.empty; d=Assoc.empty; c=Assoc.empty; 
+    p=Assoc.empty; el=Assoc.empty; tl=Assoc.empty } in
   {m=Assoc.empty; ps=Assoc.empty; pm=Assoc.empty; member=None; meta=meta; _bindings=b }
 
 let with_m cx m' = {cx with m=m'}
@@ -30,85 +31,55 @@ let get_pm cx x = if Assoc.mem x cx.pm then Assoc.lookup x cx.pm else
   error cx (x ^ " not found in parameterization " ^ string_of_parameterization cx.pm)
 
 (* Finds which context in which to find the given string *)
-let find_safe cx x =
-  if Assoc.mem x cx._bindings.l then match Assoc.lookup x cx._bindings.l with
-  | CTau -> Some (Tau (Assoc.lookup x cx._bindings.t))
+let find_exp cx x =
+  if Assoc.mem x cx._bindings.el then match Assoc.lookup x cx._bindings.el with
   | CGamma -> Some (Gamma (Assoc.lookup x cx._bindings.g))
+  | CPhi -> Some (Phi (Assoc.lookup x cx._bindings.p))
+  else None
+
+let find_typ cx x =
+  if Assoc.mem x cx._bindings.tl then match Assoc.lookup x cx._bindings.tl with
+  | CTau -> Some (Tau (Assoc.lookup x cx._bindings.t))
   | CDelta -> Some (Delta (Assoc.lookup x cx._bindings.d))
   | CChi -> Some (Chi (Assoc.lookup x cx._bindings.c))
-  | CPhi -> Some (Phi (Assoc.lookup x cx._bindings.p))
   else None
 
 (* Binds a string with value to the correct lookup context *)
 let bind (cx : contexts) (x : string) (b : binding) : contexts =
-  if Assoc.mem x cx._bindings.l
-  then error cx ("Duplicate use of the name " ^ x) else 
+  let fail _ = error cx ("Duplicate use of the name " ^ x) in
+  let ce _ = if Assoc.mem x cx._bindings.el then fail () in
+  let ct _ = if Assoc.mem x cx._bindings.tl then fail () in
   let update_bindings b' = {cx with _bindings=b'} in
   let _b = cx._bindings in
   match b with
-  | Tau t' ->   update_bindings { _b with l=Assoc.update x CTau _b.l; t=Assoc.update x t' _b.t }
-  | Gamma g' -> update_bindings { _b with l=Assoc.update x CGamma _b.l; g=Assoc.update x g' _b.g }
-  | Delta d' -> update_bindings { _b with l=Assoc.update x CDelta _b.l; d=Assoc.update x d' _b.d }
-  | Chi c' ->   update_bindings { _b with l=Assoc.update x CChi _b.l; c=Assoc.update x c' _b.c }
-  | Phi p' ->   update_bindings { _b with l=Assoc.update x CPhi _b.l; p=Assoc.update x p' _b.p }
+  | Tau t' ->   ct(); update_bindings { _b with tl=Assoc.update x CTau _b.tl; t=Assoc.update x t' _b.t }
+  | Gamma g' -> ce(); update_bindings { _b with el=Assoc.update x CGamma _b.el; g=Assoc.update x g' _b.g }
+  | Delta d' -> ct(); update_bindings { _b with tl=Assoc.update x CDelta _b.tl; d=Assoc.update x d' _b.d }
+  | Chi c' ->   ct(); update_bindings { _b with tl=Assoc.update x CChi _b.tl; c=Assoc.update x c' _b.c }
+  | Phi p' ->   ce(); update_bindings { _b with el=Assoc.update x CPhi _b.el; p=Assoc.update x p' _b.p }
 
 (* Clears the given lookup context of elements *)
-let clear (cx : contexts) (b : binding_context) : contexts =
+let clear (cx : contexts) (b : exp_bindings) : contexts =
   let update_bindings b' = {cx with _bindings=b'} in
   let _b = cx._bindings in
   let build_l l xs = Assoc.create (List.fold_left (fun acc (x, v) -> 
     if List.mem x xs then acc else (x, v)::acc) [] l) in
-  let clear c = build_l (Assoc.bindings _b.l) (List.map fst (Assoc.bindings c)) in
+  let clear c = build_l (Assoc.bindings _b.el) (List.map fst (Assoc.bindings c)) in
   match b with
-  | CTau ->   update_bindings { _b with l=clear _b.t; t=Assoc.empty }
-  | CGamma -> update_bindings { _b with l=clear _b.g; g=Assoc.empty }
-  | CDelta -> update_bindings { _b with l=clear _b.d; d=Assoc.empty }
-  | CChi ->   update_bindings { _b with l=clear _b.c; c=Assoc.empty }
-  | CPhi ->   update_bindings { _b with l=clear _b.p; p=Assoc.empty }
+  | CGamma -> update_bindings { _b with el=clear _b.g; g=Assoc.empty }
+  | CPhi ->   update_bindings { _b with el=clear _b.p; p=Assoc.empty }
 
 let within cx s = 
-  match find_safe cx s with
+  match find_typ cx s with
   | Some Chi _
   | None -> {cx with member=Some s}
   | _ -> debug_fail cx ("Invalid use of member " ^ s ^ " (should be a coordinate or prototype)")
 
 let get_dimtyp (cx : contexts) (mem : string) =
-  match find_safe cx mem with
+  match find_typ cx mem with
   | Some Chi (_,d) -> FrameTyp d
   | None -> AnyFrameTyp
   | _ -> debug_fail cx ("Invalid use of member " ^ mem ^ " (should be a coordinate or prototype)")
-
-(* Adds the function 'f' to the context *)
-(* If we are in a declaration 'member', then also updates the declaration of the members of 'f' *)
-let add_function (cx : contexts) (f : fn_typ) : contexts =
-  debug_print (">> add_function " ^ string_of_fn_typ f);
-  let update_bindings b' = {cx with _bindings=b'} in
-  let _b = cx._bindings in
-  let ml,rt,id,pm,pr,meta = f in
-  let id', f' = match cx.member with
-  | None -> id,f
-  | Some m -> 
-    let lift s = m ^ "." ^ s in
-    let pmt = get_dimtyp cx m in
-    let rec replace t pm =
-      match t with
-      | ParTyp (s,pml) -> (match find_safe cx (lift s) with 
-        | Some _ -> CoordTyp (m, ParTyp(s, pml)), 
-          List.fold_right (fun x acc -> 
-            match x with | ParTyp (s, []) -> Assoc.update s pmt acc
-            | _ -> debug_fail cx ("Invalid frame typ " ^ string_of_typ x)) pml pm | None -> t,pm)
-      | ArrTyp (t',_) -> replace t' pm
-      | _ -> t,pm
-    in
-    let id' = lift id in
-    let rt',pm' = replace rt pm in
-    let pr',pm'' = List.fold_right (fun (t,x) (pr',pm'') -> let l,r = replace t pm'' in (l,x)::pr',r) 
-      pr ([], pm') in
-    id',(ml,rt',id',pm'',pr',meta)
-  in
-  if Assoc.mem id' _b.p
-  then let p' = f'::Assoc.lookup id' _b.p in update_bindings { _b with p=Assoc.update id' p' _b.p }
-  else bind cx id' (Phi [f'])
 
 let rename_fn (f : string -> string) (a,b,id,c,d,e:fn_typ) : fn_typ = a,b,f id,c,d,e
 
@@ -157,11 +128,42 @@ let print_context (cx : contexts) =
   print_string "mu:\t"      ; print_cxm cx;
   print_string "psi:\t"     ; print_cxps cx
 
+(* Adds the function 'f' to the context *)
+(* If we are in a declaration 'member', then also updates the declaration of the members of 'f' *)
+let add_function (cx : contexts) (f : fn_typ) : contexts =
+  debug_print (">> add_function " ^ string_of_fn_typ f);
+  let update_bindings b' = {cx with _bindings=b'} in
+  let _b = cx._bindings in
+  let ml,rt,id,pm,pr,meta = f in
+  let id', f' = match cx.member with
+  | None -> id,f
+  | Some m -> 
+    let lift s = m ^ "." ^ s in
+    let pmt = get_dimtyp cx m in
+    let rec replace t pm =
+      match t with
+      | ParTyp (s,pml) -> (match find_typ cx (lift s) with 
+        | Some _ -> print_endline "hi"; CoordTyp (m, ParTyp(s, pml)), 
+          List.fold_right (fun x acc -> 
+            match x with | ParTyp (s, []) -> Assoc.update s pmt acc
+            | _ -> debug_fail cx ("Invalid frame typ " ^ string_of_typ x)) pml pm | None -> t,pm)
+      | ArrTyp (t',_) -> replace t' pm
+      | _ -> t,pm
+    in
+    let rt',pm' = replace rt pm in
+    let pr',pm'' = List.fold_right (fun (t,x) (pr',pm'') -> let l,r = replace t pm'' in (l,x)::pr',r) 
+      pr ([], pm') in
+    id,(ml,rt',id,pm'',pr',meta)
+  in
+  if Assoc.mem id' _b.p
+  then let p' = f'::Assoc.lookup id' _b.p in update_bindings { _b with p=Assoc.update id' p' _b.p }
+  else bind cx id' (Phi [f'])
+
 let option_clean (x : 'a option) : 'a =
   match x with | Some x -> x | None -> failwith "Failed option assumption"
 
 let get_typ_safe (cx : contexts) (id : string) : tau option = 
-  match find_safe cx id with
+  match find_typ cx id with
   | Some Tau t -> Some t
   | _ -> None
 
@@ -171,22 +173,22 @@ let get_typ (cx : contexts) (id : string) : tau =
   | _ -> error cx ("Undefined type " ^ id)
 
 let get_var (cx : contexts) (x : string) : gamma =
-  match find_safe cx x with
+  match find_exp cx x with
   | Some Gamma g -> g
   | _ -> error cx ("Undefined variable " ^ x)
 
 let get_frame (cx : contexts) (x : string) : delta =
-  match find_safe cx x with
+  match find_typ cx x with
   | Some Delta d -> d
   | _ -> error cx ("Undefined frame " ^ x)
 
 let get_coordinate (cx : contexts) (x : string) : chi =
-  match find_safe cx x with
+  match find_typ cx x with
   | Some Chi c -> c
   | _ -> error cx ("Undefined coordinate scheme " ^ x)
 
 let get_functions_safe (cx : contexts) (id : string) : phi =
-  let get_fn x = match find_safe cx x with
+  let get_fn x = match find_exp cx x with
     | Some Phi p -> p | _ -> []
   in
   get_fn id @
