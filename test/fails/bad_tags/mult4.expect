@@ -1,1 +1,0 @@
-Fatal error: exception Lingl__Check.TypeException("Cannot apply a matrix of type b->a to a vector of type a")

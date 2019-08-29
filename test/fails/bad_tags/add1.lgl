@@ -1,8 +1,0 @@
-tag a is vec<2>;
-tag b is vec<2>;
-
-void main() {
-    a x = [1., 2.];
-    b y = [1., 2.];
-    a bad = x + y; // Addition goes to the most general type
-}

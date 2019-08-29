@@ -1,1 +1,1 @@
-Fatal error: exception Lingl__Check.TypeException("No overloaded function declaration of low_cast<vec2> matching types (vec2lit) found")
+Fatal error: exception Gatorl__Check.TypeException("No overloaded function declaration of low_cast<vec2> matching types (vec2lit) found")

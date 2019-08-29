@@ -123,14 +123,14 @@ def main():
             basename = filename[:-4]  # Remove the extension
             outname = basename + ".out"
             expectname = basename + ".expect"
-            ling_args = [] if path == "test/compiler" else \
+            gator_args = [] if path == "test/compiler" else \
                 ["-t"] if path == "test/compiler_ts" or use_typescript else ["-i"]
             compiler_test = path == "test/compiler" or path == "test/compiler_ts"
             with open(outname, "w") as f:
                 if use_typescript and not compiler_test:
                     # https://stackoverflow.com/questions/19020557/redirecting-output-of-pipe-to-a-file-in-python
                     p1 = subprocess.Popen(
-                        ["lingc"] + ling_args + [filename], 
+                        ["gatorc"] + gator_args + [filename], 
                         stdout=subprocess.PIPE, stderr=f
                     )
                     p2 = subprocess.Popen(
@@ -145,7 +145,7 @@ def main():
                         p2.kill()
                 else:
                     subprocess.call(
-                        ["lingc"] + ling_args + [filename],
+                        ["gatorc"] + gator_args + [filename],
                         stdout=f, stderr=f,
                     )
             # We write and then read to avoid memory shenanigans

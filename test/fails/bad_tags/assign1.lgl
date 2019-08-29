@@ -1,6 +1,0 @@
-tag a is vec<2>;
-
-void main() {
-    vec<2> x = [1., 2.]; 
-    a y = x; // No downcasting!
-}

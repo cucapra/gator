@@ -4,5 +4,5 @@
 (ocamllex lexer)
 
 (library
-  (name lingl)
+  (name gatorl)
   (libraries str))

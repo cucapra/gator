@@ -1,8 +1,0 @@
-tag a is vec<2>;
-tag b is vec<2>;
-
-void main() {
-    a->a x = [[1., 2.], [1., 2.]];
-    a->b y = [[1., 2.], [1., 2.]];
-    a->b bad = x + y; // Can't downcast after addition
-}
