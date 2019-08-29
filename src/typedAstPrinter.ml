@@ -5,18 +5,18 @@ open Util
 open TypedAst
 
 let rec string_of_typ (t: etyp) : string = 
-    match t with
-    | UnitTyp -> "void"
-    | BoolTyp -> "bool"
-    | IntTyp -> "int"
-    | FloatTyp -> "float"
-    | VecTyp v -> if v = 1 then "float" else "vec" ^ (string_of_int v)
-    | MatTyp (m1, m2) -> "mat" ^ (string_of_int m1) ^ "x" ^ (string_of_int m2)
-    | TransTyp (s1, s2) -> (string_of_typ s1) ^ "->" ^ (string_of_typ s2)
-    | AbsTyp (s, typ) -> "`" ^ s
-    | ArrTyp (t, c) -> string_of_typ t ^ "[" ^ string_of_constvar c ^ "]"
-    | AnyTyp -> "any"
-    | GenTyp -> "genType"
+  match t with
+  | UnitTyp -> "void"
+  | BoolTyp -> "bool"
+  | IntTyp -> "int"
+  | FloatTyp -> "float"
+  | ParTyp (s, tl) -> s ^ string_of_pml tl
+  | ArrTyp (t, c) -> string_of_typ t ^ "[" ^ string_of_constvar c ^ "]"
+  | AnyTyp -> "any"
+  | GenTyp -> "genType"
+  
+and string_of_pml (p : etyp list) : string =
+  if List.length p > 0 then "<" ^ string_of_list string_of_typ p ^ ">" else ""
 
 let string_of_parameterization (pm : parameterization) : string =
   if Assoc.size pm > 0 then "<" ^ Assoc.to_string string_of_typ pm  ^ ">" else ""
@@ -48,26 +48,23 @@ let string_of_parameterization (pm : parameterization) : string =
   Assoc.to_string string_of_typ pm
 
 let rec string_of_comm (c: comm) : string =
-    let block_string c = "{\n " ^ string_of_comm_list c ^ "}" in
-    match c with
-    | Skip -> "skip;"
-    | Print e -> "print " ^ string_of_texp e ^ ";"
-    | Inc (x, _) -> x ^ "++"
-    | Dec (x, _) -> x ^ "--"
-    | Decl (t, s, e) -> string_of_typ t ^ " " ^ s 
-      ^ " = " ^ string_of_texp e ^ ";"
-    | Assign (b, x) -> b ^ " = " ^ string_of_texp x ^ ";"
-    | AssignOp ((x, _), op, e) -> x ^ " " 
-      ^ op ^ "= " ^ (string_of_texp e)
-    | If ((b, c1), elif_list, c2) -> 
-      "if (" ^ string_of_texp b ^ ")" ^ block_string c1 
-      ^ string_of_list (fun (b, c) -> "elif (" ^ string_of_texp b ^ ")" ^ block_string c) elif_list
-      ^ string_of_option_removed (fun x -> "else " ^ block_string x) c2
-    | For (d, b, u, cl) -> "for (" ^ string_of_comm d ^ string_of_texp b ^ "; " 
-      ^ string_of_comm u ^ ") " ^ block_string cl
-    | Return x -> "return" ^ string_of_option_removed (fun x -> " " ^ string_of_texp x) x ^ ";"
-    | FnCall (id, tl, args) -> id ^ if nonempty tl then "<" ^ string_of_list string_of_typ tl ^ ">" else ""
-      ^ "(" ^ string_of_list string_of_texp args ^")"
+  let block_string c = "{\n " ^ string_of_comm_list c ^ "}" in
+  match c with
+  | Skip -> "skip;"
+  | Print e -> "print " ^ string_of_texp e ^ ";"
+  | Exp e -> string_of_texp e ^ ";"
+  | Decl (t, s, e) -> string_of_typ t ^ " " ^ s 
+    ^ " = " ^ string_of_texp e ^ ";"
+  | Assign (b, x) -> b ^ " = " ^ string_of_texp x ^ ";"
+  | AssignOp ((x, _), op, e) -> x ^ " " 
+    ^ op ^ "= " ^ (string_of_texp e)
+  | If ((b, c1), elif_list, c2) -> 
+    "if (" ^ string_of_texp b ^ ")" ^ block_string c1 
+    ^ string_of_list (fun (b, c) -> "elif (" ^ string_of_texp b ^ ")" ^ block_string c) elif_list
+    ^ string_of_option_removed (fun x -> "else " ^ block_string x) c2
+  | For (d, b, u, cl) -> "for (" ^ string_of_comm d ^ string_of_texp b ^ "; " 
+    ^ string_of_comm u ^ ") " ^ block_string cl
+  | Return x -> "return" ^ string_of_option_removed (fun x -> " " ^ string_of_texp x) x ^ ";"
  
 and string_of_comm_list (cl : comm list) : string = 
    string_of_separated_list "\n" string_of_comm cl

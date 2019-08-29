@@ -136,22 +136,7 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) (s_g : sigma) : sigma * sig
             | _ -> (string_of_value v)
             ) ^ "\n"));
         s, s_g
-    | Inc (x, t) -> (try let x_val = Assoc.lookup x s in (match (x_val, t) with
-            | (Num n, IntTyp) -> Assoc.update x (Num (n + 1)) s, s_g
-            | (Float f, FloatTyp) -> Assoc.update x (Float (f +. 1.)) s, s_g
-            | _ -> failwith "Typchecker error: cannot apply inc to a non-int/float type") with
-        _ -> let x_val = Assoc.lookup x s_g in (match (x_val, t) with
-            | (Num n, IntTyp) -> s, Assoc.update x (Num (n + 1)) s_g
-            | (Float f, FloatTyp) -> s, Assoc.update x (Float (f +. 1.)) s_g
-            | _ -> failwith "Typchecker error: cannot apply inc to a non-int/float type"))
-    | Dec (x, t) -> (try let x_val = Assoc.lookup x s in (match (x_val, t) with
-            | (Num n, IntTyp) -> Assoc.update x (Num (n - 1)) s, s_g
-            | (Float f, FloatTyp) -> Assoc.update x (Float (f -. 1.)) s, s_g
-            | _ -> failwith "Typchecker error: cannot apply inc to a non-int/float type") with
-        _ -> let x_val = Assoc.lookup x s_g in (match (x_val, t) with
-            | (Num n, IntTyp) -> s, Assoc.update x (Num (n - 1)) s_g
-            | (Float f, FloatTyp) -> s, Assoc.update x (Float (f -. 1.)) s_g
-            | _ -> failwith "Typchecker error: cannot apply inc to a non-int/float type"))
+    | Exp e -> failwith "wut"
     | Decl (_, x, (e, _))
     | Assign (x, (e, _)) -> let v, s_g' = eval_exp e fns s s_g in
         (try let _ = Assoc.lookup x s_g in s, Assoc.update x v s_g' with
@@ -182,7 +167,6 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) (s_g : sigma) : sigma * sig
         in
         loop (eval_comm c1 fns s s_g)
     | Return e -> s, s_g
-    | FnCall (id, tl, args) -> let v, s_g' = eval_exp (FnInv (id, tl, args)) fns s s_g  in s, s_g'
 
 and eval_cl (cl : comm list) (fns : fn list) (s : sigma) (s_g : sigma) : value * sigma * sigma =
     match cl with
@@ -203,10 +187,7 @@ let rec default_value (t : etyp) =
     | BoolTyp -> Bool false
     | IntTyp -> Num 0
     | FloatTyp -> Float 0.
-    | VecTyp n -> failwith "unsupported op"
-    | MatTyp (m, n) -> failwith "unsupported op"
-    | TransTyp (t1, t2) -> Unit
-    | AbsTyp _ -> Unit
+    | ParTyp _ -> Unit
     | ArrTyp _ -> Unit
     | AnyTyp | GenTyp -> Unit
     

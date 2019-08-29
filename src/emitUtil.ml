@@ -19,16 +19,16 @@ let rec replace_type (et : etyp) (t : etyp) (r : etyp) : etyp =
         | BoolTyp, BoolTyp -> true
         | IntTyp, IntTyp -> true
         | FloatTyp, FloatTyp -> true
-        | VecTyp m, VecTyp n -> m == n
+        (* | VecTyp m, VecTyp n -> m == n
         | MatTyp(k, l), MatTyp(m, n) -> k == m && l == n
         | TransTyp(et1, et2), TransTyp(et3, et4) -> eq et1 et3 && eq et2 et4
-        | AbsTyp(x, _), AbsTyp(y, _) -> debug_print (x ^ " " ^ y); debug_print (string_of_bool (x = y)); x = y
+        | AbsTyp(x, _), AbsTyp(y, _) -> debug_print (x ^ " " ^ y); debug_print (string_of_bool (x = y)); x = y *)
         | _, _ -> false
     in
     if eq et t
     then r
     else match et with
-    | TransTyp(t1, t2) -> TransTyp(replace_type t1 t r, replace_type t2 t r)
+    (* | TransTyp(t1, t2) -> TransTyp(replace_type t1 t r, replace_type t2 t r) *)
     | ArrTyp(t', c) -> ArrTyp(replace_type t' t r, c)
     | _ -> et
 
@@ -50,8 +50,6 @@ and replace_type_in_args (a : args) (t : etyp) (r : etyp) : args =
 let rec replace_type_in_comm (c : comm) (t : etyp) (r : etyp) : comm =
     match c with
     | Print te -> Print(replace_type_in_texp te t r)
-    | Inc(x, et) -> Inc(x, replace_type et t r)
-    | Dec(x, et) -> Dec(x, replace_type et t r)
     | Decl(et, x, te) -> Decl(replace_type et t r, x, replace_type_in_texp te t r)
     | Assign(x, te) -> Assign(x, replace_type_in_texp te t r)
     | AssignOp((x, et), o, te) -> AssignOp((x, replace_type et t r), o, replace_type_in_texp te t r)
@@ -73,7 +71,6 @@ let rec replace_type_in_comm (c : comm) (t : etyp) (r : etyp) : comm =
             | None -> Return None
             | Some te -> Return(Some(replace_type_in_texp te t r))
         end
-    | FnCall(x, tl, a) -> FnCall(x, List.map (fun pt -> replace_type pt t r) tl, replace_type_in_args a t r)
     | _ -> c
 
 and replace_type_in_comm_list (cl : comm list) (t : etyp) (r : etyp) : comm list =
@@ -88,7 +85,7 @@ let rec replace_type_in_params (p : params) (t : etyp) (r : etyp) : params =
 
 let rec replace_type_in_parameterization (pm : parameterization) (t : etyp) (r : etyp) : parameterization =
     let pm_list = Assoc.bindings pm in
-    Assoc.create (List.map (fun (n, c) -> match t with AbsTyp(x, _) -> if x = n then x, r 
+    Assoc.create (List.map (fun (n, c) -> match t with ParTyp(x, _) -> if x = n then x, r 
     else (n, c) | _ -> (n, c)) pm_list)
 
 let rec replace_type_in_fn (((n, (p, rt, pm)), cl) : fn) (t : etyp) (r : etyp) : fn =
@@ -117,14 +114,14 @@ let generate_generics_for_fn ((s, (p, rt, pm)), cl : fn) (int_and_float : bool) 
         | (s,c)::tl -> 
             let lst = list_of_constraint c int_and_float in
             let result = List.fold_left (fun acc t -> debug_print ((string_of_typ t));
-                replace_type_in_fn_list orig (AbsTyp(s,c)) t @ acc) [] lst in
+                replace_type_in_fn_list orig (ParTyp(s,[c])) t @ acc) [] lst in
             replace_generic result tl
     in replace_generic [((s, (p, rt, pm)), cl)] pm_list
 
-let rec generate_generics_in_prog (p : fn list) (int_and_float : bool) : prog =
+(* let rec generate_generics_in_prog (p : fn list) (int_and_float : bool) : prog =
     let p' = match p with
         | [] -> []
         | f :: tl -> generate_generics_for_fn f int_and_float @ generate_generics_in_prog tl int_and_float
     in
     let l = [2; 3; 4] in
-    List.fold_left (fun a m -> (List.fold_left (fun a n -> replace_type_in_fn_list a (TransTyp(VecTyp n, VecTyp m)) (MatTyp(m,n))) a l)) p' l
+    List.fold_left (fun a m -> (List.fold_left (fun a n -> replace_type_in_fn_list a (TransTyp(VecTyp n, VecTyp m)) (MatTyp(m,n))) a l)) p' l *)

@@ -86,6 +86,7 @@ exception ParseException of string
 %left AND OR
 %left NOT EQ LEQ GEQ LBRACK 
 %left LWICK RWICK 
+%left INC DEC
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
@@ -244,6 +245,8 @@ let comm_element ==
     { Skip }
   | (m, t) = terminated_list(modification, typ); x = ID; GETS; e = node(exp); 
     < Decl >
+  | e = node(exp);
+    < Exp >
   | x = ID; GETS; e = node(exp); 
     < Assign >
   | x = ID; a = assignop; e = node(exp); 
@@ -252,12 +255,6 @@ let comm_element ==
     < Print >
   | RETURN; e = node(exp)?;
     < Return >
-  | x = ID; INC; 
-    < Inc >
-  | x = ID; DEC; 
-    < Dec >
-  | x = ID; p = oplist(parameters(LWICK, typ, RWICK)); a = arguments;
-    < FnCall >
 
 let dexp :=
   | d1 = dexp; PLUS; d2 = dexp;
@@ -328,7 +325,9 @@ let exp:=
     <Val>
   | x = ID;
     <Var>
-  | op = unop; e = node(exp);
+  | op = unop_prefix; e = node(exp);
+    { FnInv(op, [], [e]) }
+  | e = node(exp); op = unop_postfix;
     { FnInv(op, [], [e]) }
   | e1 = node(exp); op = infix; e2 = node(exp);
     { FnInv(op, [], [e1; e2]) }
@@ -345,10 +344,14 @@ let exp:=
   | x = ID; LBRACK; e = node(exp); RBRACK;
     { Index((Var x, $startpos), e) }
 
-let unop ==
+let unop_prefix ==
   /* NOTE: if you update this, update id_extended to avoid MINUS conflicts */
   | NOT; { "!" }
   | MINUS; { "-" }
+
+let unop_postfix ==
+  | INC; {"++"}
+  | DEC; {"--"}
 
 let infix ==
   | PLUS; { "+" }

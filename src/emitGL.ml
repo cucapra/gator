@@ -34,9 +34,7 @@ and string_of_glsl_mat (m: texp list list) : string =
     "mat" ^ (string_of_int dim) ^ string_of_mat_padded tm dim
 
 and string_of_typ (t : etyp) : string =
-    match t with
-    | MatTyp (m, n) -> "mat" ^ string_of_int (max m n)
-    | _ -> TypedAstPrinter.string_of_typ t
+    TypedAstPrinter.string_of_typ t
 
 and attrib_type (var_name : string) : string =
     debug_print ">> attrib_type";
@@ -58,10 +56,10 @@ and op_wrap (op : exp) : string =
     | _ -> "(" ^ string_of_exp op ^ ")"
 
 (* Handles the string shenanigans for padding during multiplication *)
-and padded_mult (left : texp) (right : texp) : string =
-    debug_print ">> padded_mult";
+(* and padded_mult (left : texp) (right : texp) : string =
+    debug_print ">> padded_mult"; *)
     (* Printf.printf "\t\t\t%s\n" (string_of_exp e);  *)
-    match (left, right) with
+    (* match (left, right) with
     | ((le, lt), (re, rt)) -> (match (lt, rt) with
         | (MatTyp (ldim , _), VecTyp rdim) -> 
                     if ldim = rdim then  (
@@ -76,7 +74,7 @@ and padded_mult (left : texp) (right : texp) : string =
         | (MatTyp (ldim, _), MatTyp (_, rdim)) -> 
                 if ldim = rdim then ((op_wrap le) ^ " * " ^ (op_wrap re))
                 else (op_wrap le) ^ " * " ^ (string_of_exp re)
-        | _ -> (op_wrap le) ^ " * " ^ (string_of_exp re))
+        | _ -> (op_wrap le) ^ " * " ^ (string_of_exp re)) *)
 and string_of_texp ((e, _): texp) : string=
     string_of_exp e
 and string_of_exp (e : exp) : string =
@@ -88,11 +86,11 @@ and string_of_exp (e : exp) : string =
         | [] -> "vec0()"
         | (_, t)::_ -> (match t with
             | FloatTyp | IntTyp -> "vec" ^ (string_of_int (List.length a)) ^ "(" ^ string_of_list string_of_texp a ^ ")"
-            | VecTyp n -> let as_vec_list = (fun v -> (
+            (* | VecTyp n -> let as_vec_list = (fun v -> (
                 match v with 
                 | (Arr a', _) -> a'
                 | _ -> failwith "Typechecker error, a matrix must be a list of vectors")) in
-                string_of_glsl_mat (List.map as_vec_list a)
+                string_of_glsl_mat (List.map as_vec_list a) *)
             | _ -> failwith "Typechecker error, every array must be a list of ints, floats, or vectors"))
     | Index (l, r) -> string_of_texp l ^ "[" ^ string_of_texp r ^ "]"
     | FnInv (id, tl, args) -> id ^ "(" ^ string_of_list string_of_texp args ^ ")"
@@ -102,8 +100,7 @@ let rec string_of_comm (c: comm) : string =
     match c with
     | Skip -> "skip;"
     | Print e -> "print " ^ string_of_texp e ^ ";"
-    | Inc (x, _) -> x ^ "++"
-    | Dec (x, _) -> x ^ "--"
+    | Exp e -> string_of_texp e ^ ";"
     | Decl (t, s, e) -> string_of_typ t ^ " " ^ s 
         ^ " = " ^ string_of_texp e ^ ";"
     | Assign (b, x) -> b ^ " = " ^ string_of_texp x ^ ";"
@@ -116,8 +113,6 @@ let rec string_of_comm (c: comm) : string =
     | For (d, b, u, cl) -> "for (" ^ string_of_comm d ^ string_of_texp b ^ "; " 
         ^ string_of_comm u ^ ") " ^ block_string cl
     | Return x -> "return" ^ string_of_option_removed (fun x -> " " ^ string_of_texp x) x ^ ";"
-    | FnCall (id, tl, args) -> id ^ if nonempty tl then "<" ^ string_of_list string_of_typ tl ^ ">" else ""
-        ^ "(" ^ string_of_list string_of_texp args ^")"
 
 let comp_fn (f : fn) : string = 
     debug_print ">> comp_fn";
@@ -149,7 +144,7 @@ let decl_attribs (gv : global_vars) : string =
 
 let rec compile_program (prog : prog) (global_vars : global_vars) : string =
     debug_print ">> compile_program";
-    let prog' = generate_generics_in_prog prog true in
+    (* let prog' = generate_generics_in_prog prog true in *)
     "precision mediump float;" ^ (decl_attribs global_vars) ^ 
-     (comp_fn_lst prog')
+     (comp_fn_lst prog)
  

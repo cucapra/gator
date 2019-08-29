@@ -76,8 +76,7 @@ and string_of_comm (c: comm) : string =
     match c with
     | Skip -> "skip;"
     | Print e -> "print " ^ (string_of_aexp e) ^ ";"
-    | Inc x -> x ^ "++"
-    | Dec x -> x ^ "--"
+    | Exp e -> string_of_aexp e ^ ";"
     | Decl (ml, t, s, e) -> (string_of_typ t) ^ " " ^ s ^ " = " ^ (string_of_aexp e) ^ ";"
     | Assign (b, x) -> b ^ " = " ^ (string_of_aexp x) ^ ";"
     | AssignOp (x, op, e) -> x ^ " " ^ op ^ "= " ^ (string_of_aexp e)
@@ -89,8 +88,6 @@ and string_of_comm (c: comm) : string =
         ^ string_of_acomm u ^ ") " ^ block_string cl
     | Return None -> "return;"
     | Return Some e -> "return" ^ (string_of_aexp e) ^ ";"
-    | FnCall (s, tl, e) -> s ^ string_of_pml tl
-        ^ "(" ^ string_of_list string_of_aexp e ^ ");"
 
 let string_of_frame ((x, d) : frame) =
     "frame " ^ x ^ " is " ^ string_of_dexp d ^ ";"

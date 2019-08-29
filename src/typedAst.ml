@@ -7,11 +7,8 @@ type etyp =
     | BoolTyp
     | IntTyp
     | FloatTyp
-    | VecTyp of int
-    | MatTyp of int * int
-    | TransTyp of etyp * etyp
-    | AbsTyp of string * etyp
     | ArrTyp of etyp * constvar (* i.e. vec3[5] *)
+    | ParTyp of string * etyp list
     | AnyTyp
     | GenTyp
 
@@ -30,15 +27,13 @@ and args = texp list
 type comm =
     | Skip
     | Print of texp
-    | Inc of id * etyp
-    | Dec of id * etyp
+    | Exp of texp
     | Decl of etyp * id * texp
     | Assign of id * texp
     | AssignOp of (string * etyp) * string * texp
     | If of if_block * if_block list * (comm list) option  (* if - elif list - else *)
     | For of comm * texp * comm * comm list
     | Return of texp option
-    | FnCall of id * etyp list * args
 and if_block = texp * comm list
 
 type parameterization = etyp Assoc.context

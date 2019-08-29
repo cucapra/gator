@@ -49,17 +49,13 @@ type acomm = comm astNode
 and comm =
     | Skip
     | Print of aexp
-    | Inc of id
-    | Dec of id
+    | Exp of aexp
     | Decl of modification list * typ * string * aexp 
     | Assign of string * aexp
     | AssignOp of string * string * aexp
     | If of if_block * if_block list * acomm list option  (* if - elif list - else *)
     | For of acomm * aexp * acomm * acomm list
     | Return of aexp option
-    | FnCall of string * typ list * args (* Function invocation as a command *)
-    (* e.g. f<model>(position) -- note that 'f' must be a string, 
-    but we treat it as a type to allow parsing of parametrized types *)
 and if_block = aexp * acomm list
 
 (* function and type parameterization,

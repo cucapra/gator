@@ -245,16 +245,7 @@ let check_typ_valid (cx: contexts) (ogt: typ) : unit =
         | _ -> ()
     in check_typ_valid_rec ogt
 
-let rec typ_erase_param (cx: contexts) (t: typ) : TypedAst.etyp = 
-    debug_print (">> typ_erase_param " ^ string_of_typ t);
-    match t with
-    | ParTyp(s, tl) -> if Assoc.mem s cx.pm then 
-        let c = Assoc.lookup s cx.pm in 
-        TypedAst.AbsTyp (s, typ_erase cx c)
-        else error cx ("AbsTyp " ^ s ^ " was not found in function parameterization definition")
-    | _ -> typ_erase cx t
-
-and typ_erase (cx: contexts) (t : typ) : TypedAst.etyp =
+let rec typ_erase (cx: contexts) (t : typ) : TypedAst.etyp =
     debug_print (">> typ_erase " ^ string_of_typ t);
     let d_to_c opd = match opd with
     | DimNum i -> ConstInt(i) 
@@ -266,7 +257,8 @@ and typ_erase (cx: contexts) (t : typ) : TypedAst.etyp =
     | IntTyp -> TypedAst.IntTyp
     | FloatTyp -> TypedAst.FloatTyp
     | ArrTyp (t', d) -> TypedAst.ArrTyp (typ_erase cx t', d_to_c d) 
-    | CoordTyp _ | ParTyp _ | Literal _ -> typ_erase cx (primitive cx t)
+    | ParTyp (s, tl) -> TypedAst.ParTyp (s, List.map (typ_erase cx) tl)
+    | CoordTyp _ | Literal _ -> typ_erase cx (primitive cx t)
     | AutoTyp -> error cx ("Illegal use of auto (cannot use auto as part of a function call)")
     | AnyTyp -> TypedAst.AnyTyp
     | GenTyp -> TypedAst.GenTyp
@@ -279,10 +271,7 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     | TypedAst.BoolTyp -> BoolTyp
     | TypedAst.IntTyp -> IntTyp
     | TypedAst.FloatTyp -> FloatTyp
-    | TypedAst.VecTyp n -> ArrTyp (FloatTyp, DimNum n)
-    | TypedAst.MatTyp (n1, n2) -> ArrTyp(ArrTyp(FloatTyp, DimNum n1), DimNum n2)
-    | TypedAst.TransTyp (s1, s2) -> failwith "unimplemented removal of transtyp from typedast"
-    | TypedAst.AbsTyp (s, c) -> ParTyp(s, [])
+    | TypedAst.ParTyp (s, tl) -> ParTyp(s, List.map etyp_to_typ tl)
     | TypedAst.ArrTyp (t, c) -> ArrTyp (etyp_to_typ t, 
         match c with | ConstInt i -> DimNum i | ConstVar v -> DimVar v)
     | TypedAst.AnyTyp -> AnyTyp
@@ -335,7 +324,6 @@ let infer_pml (cx: contexts) (args : typ list) (target : params) : (typ list) op
 let check_fn_inv (cx: contexts) (x : id) (pml: typ list) (args : (TypedAst.exp * typ) list)
 : (string * TypedAst.etyp list * TypedAst.args) * typ = 
     debug_print (">> check_fn_inv " ^ x);
-    print_context cx;
     let arg_typs = List.map snd args in
     (* find definition for function in phi *)
     (* looks through all possible overloaded definitions of the function *)
@@ -636,11 +624,6 @@ let rec check_acomm (cx: contexts) ((c, meta): acomm) : contexts * TypedAst.comm
 (* Updates Gamma and Psi *)
 and check_comm (cx: contexts) (c: comm) : contexts * TypedAst.comm =
     debug_print (">> check_comm " ^ string_of_comm c);
-    let check_incdec te x = let xt = get_var cx x in
-        if is_subtype cx xt IntTyp then te x TypedAst.IntTyp
-        else if is_subtype cx xt FloatTyp then te x TypedAst.FloatTyp
-        else error cx ("++ and -- must be applied to an integer or float")
-    in
     match c with
     | Skip -> cx, TypedAst.Skip
     | Print e -> (
@@ -649,8 +632,7 @@ and check_comm (cx: contexts) (c: comm) : contexts * TypedAst.comm =
         | UnitTyp -> error cx ("Print function cannot print void types")
         | _ -> cx, TypedAst.Print (e, t)
     )
-    | Inc x -> cx,check_incdec (fun l r -> TypedAst.Inc (l, r)) x
-    | Dec x -> cx,check_incdec (fun l r -> TypedAst.Dec (l, r)) x
+    | Exp e -> cx, TypedAst.Exp(exp_to_texp cx (check_aexp cx e));
     | Decl (ml, t, s, e) -> 
         (check_typ_valid cx t; 
         let result = check_aexp cx e in
@@ -686,9 +668,6 @@ and check_comm (cx: contexts) (c: comm) : contexts * TypedAst.comm =
         cx, TypedAst.For (c1r, btexp, c2r, (snd (check_comm_lst cx'' cl)))
     | Return e ->
         cx, TypedAst.Return(option_map (exp_to_texp cx |- check_aexp cx) e)
-    | FnCall (x, pml, args) ->             
-        let ((i, tpl, args_exp), _) = check_fn_inv cx x pml (List.map (check_aexp cx) args) in 
-        cx, TypedAst.FnCall (i, tpl, args_exp)
 
 (* Updates Gamma and Psi *)
 and check_comm_lst (cx: contexts) (cl : acomm list) : contexts * TypedAst.comm list = 
