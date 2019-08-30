@@ -34,7 +34,10 @@ and string_of_glsl_mat (m: texp list list) : string =
     "mat" ^ (string_of_int dim) ^ string_of_mat_padded tm dim
 
 and string_of_typ (t : etyp) : string =
-    TypedAstPrinter.string_of_typ t
+    match t with
+    | ArrTyp (FloatTyp, d) -> "vec" ^ string_of_constvar d
+    | ArrTyp (ArrTyp (FloatTyp, _), d) -> "mat" ^ string_of_constvar d
+    | _ -> TypedAstPrinter.string_of_typ t
 
 and attrib_type (var_name : string) : string =
     debug_print ">> attrib_type";
@@ -85,15 +88,16 @@ and string_of_exp (e : exp) : string =
     | Arr a -> (match a with
         | [] -> "vec0()"
         | (_, t)::_ -> (match t with
-            | FloatTyp | IntTyp -> "vec" ^ (string_of_int (List.length a)) ^ "(" ^ string_of_list string_of_texp a ^ ")"
-            (* | VecTyp n -> let as_vec_list = (fun v -> (
+            | FloatTyp | IntTyp -> "vec" ^ (string_of_int (List.length a)) 
+                ^ "(" ^ string_of_list string_of_texp a ^ ")"
+            | ArrTyp (FloatTyp, d) -> let as_vec_list = (fun v -> (
                 match v with 
                 | (Arr a', _) -> a'
                 | _ -> failwith "Typechecker error, a matrix must be a list of vectors")) in
-                string_of_glsl_mat (List.map as_vec_list a) *)
+                string_of_glsl_mat (List.map as_vec_list a)
             | _ -> failwith "Typechecker error, every array must be a list of ints, floats, or vectors"))
     | Index (l, r) -> string_of_texp l ^ "[" ^ string_of_texp r ^ "]"
-    | FnInv (id, tl, args) -> id ^ "(" ^ string_of_list string_of_texp args ^ ")"
+    | FnInv (id, tl, args) -> string_of_fn_util id (List.map string_of_texp args)
 
 let rec string_of_comm (c: comm) : string =
     let block_string c = "{\n " ^ string_of_list string_of_comm c ^ "}" in
@@ -144,7 +148,6 @@ let decl_attribs (gv : global_vars) : string =
 
 let rec compile_program (prog : prog) (global_vars : global_vars) : string =
     debug_print ">> compile_program";
-    (* let prog' = generate_generics_in_prog prog true in *)
     "precision mediump float;" ^ (decl_attribs global_vars) ^ 
      (comp_fn_lst prog)
  

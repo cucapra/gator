@@ -3,15 +3,20 @@ open TypedAst
 open TypedAstPrinter
 open Util
 
-(* let as_vec (v : value list) : vec =
-    List.fold_right (fun x acc -> match x with 
-      | Float f -> f::acc 
-      | _ -> failwith "Expected float") v []
-  
-let as_mat (v : value list) : mat =
-List.fold_right (fun x acc -> match x with 
-    (* | ArrLit a -> as_vec a :: acc *)
-    | _ -> failwith "Expected float") v [] *)
+exception EmitException of string
+
+let error s = raise (EmitException s)
+
+(* Used in emitters for recovering infix notation of member function names *)
+let unop_list = ["-"]
+let binop_list = ["+"; "-"; "*"]
+
+let string_of_fn_util (id : string) (args : string list) : string =
+    let base = id ^ "(" ^ string_of_list (fun x -> x) args ^ ")" in
+    match args with
+    | [a] -> if List.mem id unop_list then id ^ a else base
+    | [a; b] -> if List.mem id binop_list then a ^ id ^ b else base
+    | _ -> base
 
 let rec replace_type (et : etyp) (t : etyp) (r : etyp) : etyp =
     let rec eq (et : etyp) (t : etyp) : bool = match et, t with
