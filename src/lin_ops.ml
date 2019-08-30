@@ -1,5 +1,5 @@
-type vec = CoreAst.vec
-type mat = CoreAst.mat
+type vec = float list
+type mat = float list list
 
 let option_map (f: 'a -> 'b) (o: 'a option) : 'b option =
   match o with

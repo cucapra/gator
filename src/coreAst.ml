@@ -1,7 +1,5 @@
 (* Standard type definitions*)
 type id = string
-type vec = float list
-type mat = vec list
 
 type constvar =
   | ConstInt of int

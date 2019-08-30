@@ -36,10 +36,6 @@ let string_of_bounded_list (f: 'a -> string) (lb : string) (rb : string) (l : 'a
   lb ^ string_of_list f l ^ rb
 let string_of_array (f : 'a -> string) (a: 'a list) =
   string_of_bounded_list f "[" "]" a
-let string_of_vec (v: vec) : string =
-  string_of_array string_of_float v
-let string_of_mat (m: mat) : string = 
-  string_of_array string_of_vec m
 
 let rec repeat (s : string) (count : int) : string = 
   if count <= 0 then "" else (if count > 1 then (s ^ (repeat s (count-1))) else s)
@@ -52,7 +48,7 @@ let rec transpose (m : 'a list) : 'a list =
   | (x::xs)::xss ->
       (x :: List.map List.hd xss) :: transpose (xs :: List.map List.tl xss)
 
-let get_mat_square_dim (m : mat) = 
+let get_mat_square_dim (m : float list list) = 
     (* Note the transpose to match the glsl column-oriented style *)
     let tm = transpose m in
     let r = (List.length tm) in

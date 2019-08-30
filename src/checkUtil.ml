@@ -143,7 +143,7 @@ let add_function (cx : contexts) (f : fn_typ) : contexts =
     let rec replace t pm =
       match t with
       | ParTyp (s,pml) -> (match find_typ cx (lift s) with 
-        | Some _ -> print_endline "hi"; CoordTyp (m, ParTyp(s, pml)), 
+        | Some _ -> CoordTyp (m, ParTyp(s, pml)), 
           List.fold_right (fun x acc -> 
             match x with | ParTyp (s, []) -> Assoc.update s pmt acc
             | _ -> debug_fail cx ("Invalid frame typ " ^ string_of_typ x)) pml pm | None -> t,pm)
