@@ -30,6 +30,10 @@ let get_ps cx x = if Assoc.mem x cx.ps then Assoc.lookup x cx.ps else
 let get_pm cx x = if Assoc.mem x cx.pm then Assoc.lookup x cx.pm else 
   error cx (x ^ " not found in parameterization " ^ string_of_parameterization cx.pm)
 
+let add_m cx x m = if Assoc.mem x cx.m 
+  then with_m cx (Assoc.update x (m::(Assoc.lookup x cx.m)) cx.m)
+  else with_m cx (Assoc.update x [m] cx.m)
+
 (* Finds which context in which to find the given string *)
 let find_exp cx x =
   if Assoc.mem x cx._bindings.el then match Assoc.lookup x cx._bindings.el with
@@ -201,3 +205,7 @@ let get_functions (cx : contexts) (id : string) : phi =
   | [] -> error cx ("No type definition for function " ^ id)
   | p -> p
   
+let is_external (cx : contexts) (id : string) : bool = 
+  if not (Assoc.mem id cx.m) then false
+  else List.fold_left (fun acc m -> acc || (match m with | External -> true | _ -> false)) 
+    false (Assoc.lookup id cx.m)

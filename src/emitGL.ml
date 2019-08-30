@@ -14,7 +14,7 @@ type ltyp_top =
 
 (* Don't write the type of gl_Position or gl_FragColor *)
 let is_core (var_name : string) : bool = 
-    var_name = "gl_Position" || var_name = "gl_FragColor"
+    String.length var_name > 3 && Str.string_before var_name 3 = "gl_"
 
 (* Note the column parameter for padding the matrix size *)
 let rec string_of_no_paren_vec (v: texp list) (padding: int) : string = 
@@ -45,11 +45,6 @@ and attrib_type (var_name : string) : string =
     if (String.get var_name 0) = 'v' then "varying" else
     if (String.get var_name 0) = 'u' then "uniform" else
     failwith "Not a supported glsl attribute"
-
-(* Don't write the type of gl_Position or gl_FragColor *)
-and is_core (var_name : string) : bool = 
-    debug_print ">> is_core";
-    var_name = "gl_Position" || var_name = "gl_FragColor"
 
 and op_wrap (op : exp) : string =
     debug_print ">> op_wrap";
@@ -105,8 +100,8 @@ let rec string_of_comm (c: comm) : string =
     | Skip -> "skip;"
     | Print e -> "print " ^ string_of_texp e ^ ";"
     | Exp e -> string_of_texp e ^ ";"
-    | Decl (t, s, e) -> string_of_typ t ^ " " ^ s 
-        ^ " = " ^ string_of_texp e ^ ";"
+    | Decl (t, s, e) -> let ts = (if is_core s then "" else string_of_typ t ^ " ") in
+        ts ^ s ^ " = " ^ string_of_texp e ^ ";"
     | Assign (b, x) -> b ^ " = " ^ string_of_texp x ^ ";"
     | AssignOp ((x, _), op, e) -> x ^ " " 
         ^ op ^ "= " ^ (string_of_texp e)
@@ -126,7 +121,7 @@ let comp_fn (f : fn) : string =
         | "main" -> "void main"
         | _ -> string_of_typ rt ^ " " ^ id
     in
-    type_id_string ^ "(" ^ param_string ^ "){" ^ string_of_list string_of_comm cl ^ "}"
+    type_id_string ^ "(" ^ param_string ^ "){" ^ string_of_separated_list "" string_of_comm cl ^ "}"
 
 let rec comp_fn_lst (f : fn list) : string =
     debug_print ">> comp_fn_lst";

@@ -257,7 +257,9 @@ let rec typ_erase (cx: contexts) (t : typ) : TypedAst.etyp =
     | IntTyp -> TypedAst.IntTyp
     | FloatTyp -> TypedAst.FloatTyp
     | ArrTyp (t', d) -> TypedAst.ArrTyp (typ_erase cx t', d_to_c d) 
-    | ParTyp (s, tl) -> TypedAst.ParTyp (s, List.map (typ_erase cx) tl)
+    | ParTyp (s, tl) -> 
+        if is_external cx s then TypedAst.ParTyp (s, List.map (typ_erase cx) tl)
+        else typ_erase cx (typ_step cx t)
     | CoordTyp _ | Literal _ -> typ_erase cx (primitive cx t)
     | AutoTyp -> error cx ("Illegal use of auto (cannot use auto as part of a function call)")
     | AnyTyp -> TypedAst.AnyTyp
@@ -749,6 +751,7 @@ let check_typ_decl (cx: contexts) (x : string) (pm,t : tau) : contexts =
     debug_print ">> check_tag_decl";
     let rec check_valid_supertype (t: typ) : typ =
         match t with
+        | AnyTyp
         | BoolTyp
         | IntTyp
         | FloatTyp -> t
@@ -810,6 +813,8 @@ let check_extern (cx: contexts) (e : extern_element) : contexts =
     match e with
     | ExternFn f -> fst (check_fn cx (f, []))
     | ExternVar (ml, t, x, meta) -> bind cx x (Gamma t)
+    | ExternTyp (id, pm, t) -> let t' = (match t with | None -> AnyTyp | Some t' -> t') in
+        add_m (check_typ_decl cx id (pm, t')) id External
 
 (* Type check global variable *)
 (* Updates gamma *)

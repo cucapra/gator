@@ -43,6 +43,7 @@ and args = aexp list
 type modification =
     | With of (int * (string list)) list
     | Canon
+    | External
 
 (* commands *)
 type acomm = comm astNode
@@ -91,6 +92,7 @@ type global_var = modification list * storage_qual * typ * id * aexp option
 type extern_element =
     | ExternFn of fn_typ
     | ExternVar of modification list * typ * id * metadata
+    | ExternTyp of id * parameterization * typ option
 
 (* Terms that make up a program *)
 (* In any order, we have:

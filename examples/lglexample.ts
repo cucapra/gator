@@ -77,6 +77,8 @@ export function createProgram(gl: WebGLRenderingContext, shaders: WebGLShader[])
  * Compile and link a vertex/fragment shader pair.
  */
 export function compileProgram(gl: WebGLRenderingContext, vtx: string, frag: string): WebGLProgram {
+  console.log(vtx)
+  console.log(frag)
   let vertexShader = compileShader(gl, gl.VERTEX_SHADER, vtx);
   let fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, frag);
   return createProgram(gl, [vertexShader, fragmentShader]);
@@ -246,7 +248,8 @@ export function load_obj(gl: WebGLRenderingContext, obj_src: string): Mesh {
   // StackGL.
   let cell = group_array(mesh.indices, 3) as Vec3Array;
   let position = group_array(mesh.vertices, 3) as Vec3Array;
-  let normal = normals.vertexNormals(cell, position);
+  // let normal = normals.vertexNormals(cell, position);
+  let normal = group_array(mesh.vertexNormals, 3) as Vec3Array;
   let out: Mesh = {
     positions: make_buffer(gl, position, 'float32', gl.ARRAY_BUFFER),
     cells: make_buffer(gl, cell, 'uint16', gl.ELEMENT_ARRAY_BUFFER),

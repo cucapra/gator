@@ -1,0 +1,72 @@
+type vec3 is float[3];
+type vec4 is float[4];
+type mat3 is float[3][3];
+type mat4 is float[4][4];
+type scalar is float;
+
+declare T +<T:vec3>(T v1, T v2);
+declare T -<T:vec3>(T v1, T v2);
+declare T -<T:vec3>(T v);
+declare T *<T:vec3,U:float>(T v, U f);
+declare T *<T:vec3,U:float>(U f, T v);
+declare T /<T:vec3,U:float>(T f1, U f2);
+
+declare T +<T:vec4>(T v1, T v2);
+declare T -<T:vec4>(T v1, T v2);
+declare T -<T:vec4>(T v);
+declare T *<T:vec4,U:float>(T v, U f);
+declare T *<T:vec4,U:float>(U f, T v);
+
+declare T +<T:float>(T f1, T f2);
+declare T -<T:float>(T f1, T f2);
+declare T -<T:float>(T f);
+declare T *<T:float>(T f1, T f2);
+declare T /<T:float>(T f1, T f2);
+
+declare vec3 *<T:mat3,U:vec3>(T m, U v);
+declare mat3 +<T:mat3,U:mat3>(T m, U v);
+declare mat3 *<T:mat3,U:mat3>(T m, U v);
+
+declare vec4 *<T:mat4,U:vec4>(T m, U v);
+declare T +<T:mat4>(T m1, T m2);
+declare mat4 *<T:mat4,U:mat4>(T m, U v);
+
+declare float cos(float f);
+declare float sqrt(float f);
+declare float acos(float f);
+
+declare vec4 vec4<T:float[3],U:float>(T v, U f);
+declare vec3 vec3<T:float[4]>(T v);
+
+declare float dot<T: vec3>(T v1, T v2);
+declare T normalize<T : genType>(T x);
+declare T max<T: float>(T f1, T f2);
+declare T reflect<T : vec3>(T v1, T v2);
+declare float pow(float f1, float f2);
+
+varying vec3 vPosition;
+uniform mat4 uModel;
+uniform mat4 uView;
+varying vec3 vNormal;
+uniform vec3 uLight;
+
+void main() {
+    vec3 ambient = [.1, 0., 0.];
+    vec3 diffColor = [0.4, 0.3, 0.9];
+    vec3 specColor = [1.0, 1.0, 1.0];
+
+    vec3 worldPos = vec3(uModel*vec4(vPosition, 1.0));
+    vec3 camPos = vec3(uView*vec4(worldPos, 1.));
+    vec3 worldNorm = normalize(vec3(uModel*vec4(vNormal, 0.0)));
+
+    vec3 lightDir = normalize(uLight - worldPos);
+    float lightWorldDot = dot(lightDir, worldNorm);
+    float diffuse = max(lightWorldDot, 0.0);
+
+    vec3 reflectDir = vec3(uView * vec4(reflect(-lightDir, worldNorm), 0.));
+
+    float specular = pow(max(-dot(normalize(camPos), reflectDir), 0.), 32.);
+
+    vec4 gl_FragColor = vec4(ambient + diffuse * diffColor + specular * specColor, 1.0);
+}
+

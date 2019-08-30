@@ -9,7 +9,7 @@ let error s = raise (EmitException s)
 
 (* Used in emitters for recovering infix notation of member function names *)
 let unop_list = ["-"]
-let binop_list = ["+"; "-"; "*"]
+let binop_list = ["+"; "-"; "*"; "/"]
 
 let string_of_fn_util (id : string) (args : string list) : string =
     let base = id ^ "(" ^ string_of_list (fun x -> x) args ^ ")" in

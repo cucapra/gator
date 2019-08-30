@@ -174,6 +174,8 @@ let extern_element ==
     { ExternVar(m, t, x, $startpos) }
   | f = fn_typ;
     <ExternFn>
+  | TYP; x = ID; pm = parameterization(constrained); t = snd(combined(IS, typ))?;
+    <ExternTyp>
 
 let constrained ==
   | t = ID;
@@ -196,6 +198,7 @@ let arguments ==
 let id_expanded ==
   | x = ID; <>
   | NOT; { "!" }
+  | x = unop_postfix; <>
   | x = infix; <>
 
 let fn_typ ==

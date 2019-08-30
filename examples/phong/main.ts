@@ -1,6 +1,8 @@
 import * as lgl from '../lglexample';
 import { mat4, vec3 } from 'gl-matrix';
 
+var __dirname : string;
+
 function main() {
   let gl = lgl.setup(render);
 
@@ -10,6 +12,9 @@ function main() {
     require('./fragment.lgl')
   );
 
+  const fs : any = require('fs');
+  let caiman = fs.readFileSync(__dirname + './../resources/OBJ/caiman.obj', 'utf8');
+
   // Uniform and attribute locations.
   let loc_uProjection = lgl.uniformLoc(gl, program, 'uProjection');
   let loc_uView = lgl.uniformLoc(gl, program, 'uView');
@@ -18,8 +23,9 @@ function main() {
   let loc_aPosition = lgl.attribLoc(gl, program, 'aPosition');
   let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
 
-  // We'll draw a teapot.
-  let mesh = lgl.getBunny(gl);
+  // We'll draw a gator
+  // let mesh = lgl.getBunny(gl);
+  let mesh = lgl.load_obj (gl, caiman);
 
   // Initialize the model position.
   let model = mat4.create();
@@ -43,6 +49,8 @@ function main() {
     // Set the attribute arrays.
     lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
+
+    gl.disable(gl.CULL_FACE);
 
     // Draw the object.
     lgl.drawMesh(gl, mesh);

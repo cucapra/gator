@@ -1,4 +1,4 @@
-type a is float[2];
+declare type a is float[2];
 type b is float[3];
 type c is b;
 type d is b;

@@ -1,8 +1,18 @@
 declare int +(int i1, int i2);
-// declare int -(int i1, int i2);
+declare int -(int i1, int i2);
 declare int *(int i1, int i2);
 declare int /(int i1, int i2);
 declare int -(int i);
+declare int ++(int i);
+declare int --(int i);
+
+declare float +(float i1, float i2);
+declare float -(float i1, float i2);
+declare float *(float i1, float i2);
+declare float /(float i1, float i2);
+declare float -(float i);
+declare float ++(float i);
+declare float --(float i);
 
 void main() {
     int r1 = 1 + 2;

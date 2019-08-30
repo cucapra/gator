@@ -23,7 +23,6 @@ function main() {
 
   // Initialize the model position.
   let model = mat4.create();
-  mat4.translate(model, model, [0., -7., 0.]);
 
   // Position the light source for the lighting effect.
   let light = vec3.fromValues(20., 0., 20.);

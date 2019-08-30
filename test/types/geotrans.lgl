@@ -35,8 +35,8 @@ declare float cos(float f);
 declare float sqrt(float f);
 declare float acos(float f);
 
-declare vec4 vec4<t:float[3],u:float>(t v, u f);
-declare vec3 vec3<t:float[4]>(t v);
+declare vec4 vec4<T:float[3],U:float>(T v, U f);
+declare vec3 vec3<T:float[4]>(T v);
 
 prototype geometry {
     object point<r>;

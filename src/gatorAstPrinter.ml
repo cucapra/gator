@@ -40,6 +40,7 @@ let string_of_modification (m: modification) : string =
     | With l -> "with " ^ string_of_list (fun (x, y) -> 
         "frame(" ^ string_of_int x ^ ") " ^ string_of_list (fun x -> x) y) l
     | Canon -> "canon"
+    | External -> "declare"
 
 let string_of_mod_list (m: modification list) : string =
     string_of_separated_list " " string_of_modification m
@@ -119,14 +120,16 @@ let string_of_global_var (ml, sq, t, x, e : global_var) : string =
 let string_of_extern (e : extern_element) : string = 
     match e with
     | ExternFn f -> "declare " ^ string_of_fn_typ f
-    | ExternVar (m, t, x, e) -> "declare " ^ string_of_mod_list m 
+    | ExternVar (m, t, x, e) -> "declare " ^ string_of_mod_list m
+    | ExternTyp (x, pm, t) -> "type " ^ x ^ string_of_parameterization pm ^ " is " ^ 
+        string_of_typ (match t with | None -> AnyTyp | Some t' -> t')
     
 let string_of_term (t : term) : string = 
     match t with
     | Prototype p -> string_of_prototype p
     | Coordinate c -> string_of_coordinate c
     | Frame f -> string_of_frame f
-    | Typ (x, p, t) -> "type " ^ x ^ " is " ^ string_of_typ t
+    | Typ (x, pm, t) -> "type " ^ x ^ " is " ^ string_of_parameterization pm ^ string_of_typ t
     | Extern e -> string_of_extern e
     | GlobalVar g -> string_of_global_var g
     | Fn f -> string_of_fn f
