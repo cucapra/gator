@@ -9,8 +9,8 @@ let set_program_file (arg : string) : unit =
     | Some _ -> ()  (* Don't overwrite program_file *)
 
 let run_interp : bool ref = ref false
-
 let emit_ts : bool ref = ref false
+let debug_flag : bool ref = ref false
 
 let usage_msg = "Gator Help Center\n"
 let spec_list : (Arg.key * Arg.spec * Arg.doc) list =
@@ -18,7 +18,9 @@ let spec_list : (Arg.key * Arg.spec * Arg.doc) list =
         ("-i", Arg.Set run_interp,
         "Runs the given file with the gator interpreter (replaces standard output)");
         ("-t", Arg.Set emit_ts,
-        "Emits Typescript (replaces standard output)")
+        "Emits Typescript (replaces standard output)");
+        ("-d", Arg.Set debug_flag,
+        "Enable debug output")
     ]
 
 let _ =
@@ -44,7 +46,8 @@ let _ =
                      ^ (string_of_int pos.Lexing.pos_lnum) ^ ", column " ^ string_of_int cnum)
                 end in
         close_in ch;
-    let (typedProg, params) = Check.check_prog prog in
+    Util.debug := !debug_flag;
+    let typedProg, params = Check.check_prog prog in
     if !run_interp then Ops.eval_prog typedProg params
     else if !emit_ts then print_string (EmitTS.compile_program typedProg params)
     else print_string (EmitGL.compile_program typedProg params)
