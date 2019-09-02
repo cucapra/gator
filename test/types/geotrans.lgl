@@ -165,7 +165,7 @@ hom.point<r> homify(cart3.point<r> v) {
 }
 with frame(3) r:
 hom.vector<r> homify(cart3.vector<r> v) {
-    return vec4(v, 1.) as! hom.point<r>;
+    return vec4(v, 1.) as! hom.vector<r>;
 }
 with frame(3) r:
 cart3.point<r> reduce_hom(hom.point<r> v) {
@@ -204,5 +204,5 @@ void main() {
 
     print (mtrans * hpos) + hoff;
     print mtrans * (hpos + (minv * hoff));  // Should be the same!
-    print reduce_hom<world>(hpos - homify<world>(light) + homify<world>(offset));
+    print reduce_hom<world>(homify<world>(light) + homify<world>(offset));
 }

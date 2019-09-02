@@ -41,8 +41,7 @@ type params = (etyp * string) list
 type global_var = storage_qual * etyp * string * texp option
 type global_vars = global_var list
 type ret_typ = etyp
-type fn_typ = params * ret_typ * parameterization
-type fn_decl = string * fn_typ
+type fn_decl = ret_typ * id * parameterization * params
 type fn = fn_decl * comm list
 
 type prog = fn list

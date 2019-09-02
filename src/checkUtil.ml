@@ -73,6 +73,12 @@ let clear (cx : contexts) (b : exp_bindings) : contexts =
   | CGamma -> update_bindings { _b with el=clear _b.g; g=Assoc.empty }
   | CPhi ->   update_bindings { _b with el=clear _b.p; p=Assoc.empty }
 
+(* Resets the contexts cx to the state provided by the reference contexts cx_ref *)
+let reset (cx : contexts) (cx_ref : contexts) (b : exp_bindings) : contexts =
+  match b with
+  | CGamma -> List.fold_left (fun acc (x, g) -> bind acc x (Gamma g)) (clear cx b) (Assoc.bindings cx_ref._bindings.g)
+  | CPhi ->   List.fold_left (fun acc (x, p) -> bind acc x (Phi p)) (clear cx b) (Assoc.bindings cx_ref._bindings.p)
+
 let within cx s = 
   match find_typ cx s with
   | Some Chi _
@@ -94,7 +100,7 @@ let string_of_fn_inv ((s, tl) : fn_inv) : string =
   s ^ "<" ^ string_of_list string_of_typ tl ^ ">"
 let string_of_tau (pm, t : tau) =
   string_of_parameterization pm ^ " " ^  string_of_typ t
-let string_of_mu (ml : mu) =  
+let string_of_mu (ml : mu) =
   string_of_mod_list ml
 let string_of_gamma (g : gamma) =
   string_of_typ g
@@ -103,7 +109,9 @@ let string_of_delta (f : delta) =
 let string_of_chi (p,d : chi) =
   "implements " ^ p ^ " with dimension " ^ string_of_dexp d
 let string_of_phi (p : phi) =
-  string_of_list string_of_fn_typ (List.map (rename_fn (fun x -> "%")) p)
+  string_of_list string_of_fn_typ (List.map 
+    (rename_fn (fun x -> "%" ^ let cut = String.rindex x '_' in
+      String.sub x cut (String.length x - cut))) p)
 let string_of_psi (ps : psi) : string =
   string_of_list (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_fn_inv p ^ ")") ps
 
@@ -134,7 +142,7 @@ let print_context (cx : contexts) =
 
 (* Adds the function 'f' to the context *)
 (* If we are in a declaration 'member', then also updates the declaration of the members of 'f' *)
-let add_function (cx : contexts) (f : fn_typ) : contexts =
+let add_function (cx : contexts) (f : fn_typ) : string * contexts =
   debug_print (">> add_function " ^ string_of_fn_typ f);
   let update_bindings b' = {cx with _bindings=b'} in
   let _b = cx._bindings in
@@ -159,9 +167,18 @@ let add_function (cx : contexts) (f : fn_typ) : contexts =
       pr ([], pm') in
     id,(ml,rt',id,pm'',pr',meta)
   in
+  (* Rename each function except main for overloading purposes -- this gives correct invocation behavior when rewriting *)
   if Assoc.mem id' _b.p
-  then let p' = f'::Assoc.lookup id' _b.p in update_bindings { _b with p=Assoc.update id' p' _b.p }
-  else bind cx id' (Phi [f'])
+  then
+    let fnl = Assoc.lookup id' _b.p in
+    let f_write = rename_fn (fun x -> x ^ "_" ^ string_of_int (List.length fnl)) f' in
+    let _,_,id_write,_,_,_ = f_write in
+    let p' = f_write::fnl in
+    id_write, update_bindings { _b with p=Assoc.update id' p' _b.p }
+  else 
+    let f_write = if id' = "main" then f' else rename_fn (fun x -> x ^ "_0") f' in
+    let _,_,id_write,_,_,_ = f_write in
+    id_write, bind cx id' (Phi [f_write])
 
 let option_clean (x : 'a option) : 'a =
   match x with | Some x -> x | None -> failwith "Failed option assumption"
@@ -204,8 +221,8 @@ let get_functions (cx : contexts) (id : string) : phi =
   match get_functions_safe cx id with
   | [] -> error cx ("No type definition for function " ^ id)
   | p -> p
-  
-let is_external (cx : contexts) (id : string) : bool = 
+
+let has_modification (cx : contexts) (id : string) (mo : modification) : bool = 
   if not (Assoc.mem id cx.m) then false
-  else List.fold_left (fun acc m -> acc || (match m with | External -> true | _ -> false)) 
+  else List.fold_left (fun acc m -> acc || m = mo) 
     false (Assoc.lookup id cx.m)

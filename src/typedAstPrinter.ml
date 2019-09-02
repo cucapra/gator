@@ -69,7 +69,7 @@ let rec string_of_comm (c: comm) : string =
 and string_of_comm_list (cl : comm list) : string = 
    string_of_separated_list "\n" string_of_comm cl
 
-let string_of_fn ((((id, (p, rt, pm)), cl)) : fn) : string = 
+let string_of_fn ((rt,id,pm,p), cl : fn) : string = 
     (string_of_typ rt) ^ " " ^ id ^ string_of_parameterization pm 
     ^ string_of_params p ^ string_of_comm_list cl
 

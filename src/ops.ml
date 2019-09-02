@@ -37,7 +37,7 @@ let wrap_mat (m : float list list) : ovalue =
 let rec fn_lookup (name : id) (fns : fn list) : (fn option * id list) =
     match fns with
     | [] -> (None, [])
-    | h::t -> match h with ((id, (p, _, _)), _) -> 
+    | h::t -> match h with (_, id, _, p), _ -> 
         (if name = id then (Some h, List.map snd p) else fn_lookup name t)
 
 and internal_fn (name : id) (args : ovalue list) : ovalue =
@@ -82,7 +82,7 @@ and eval_exp (e : exp) (t : etyp) (fns : fn list) (s : sigma) : ovalue * sigma =
             let v, s' = eval_texp e fns s in vl@[v], s) ([], s) args) in
         match fn with
         | None -> internal_fn id arg_vs, s'
-        | Some f -> (match f with (_, (names, _, _)), _ ->
+        | Some f -> (match f with (_, _, _, names), _ ->
             let add_arg = (fun acc (_, name) v -> Assoc.update name v acc) in
             eval_funct f fns (List.fold_left2 add_arg Assoc.empty names arg_vs))
 
@@ -132,7 +132,7 @@ and eval_cl (cl : comm list) (fns : fn list) (s : sigma) : ovalue * sigma =
         | _ -> let s' = eval_comm h fns s in
             eval_cl t fns s')
 
-and eval_funct (((p, rt), cl) : fn) (fns : fn list) (s : sigma) : ovalue * sigma =
+and eval_funct ((rt, _, _, _), cl : fn) (fns : fn list) (s : sigma) : ovalue * sigma =
     eval_cl cl fns s
 
 let rec default_value (t : etyp) : ovalue =

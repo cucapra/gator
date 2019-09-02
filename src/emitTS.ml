@@ -187,7 +187,7 @@ let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
         | Return None -> "return;" ^ (comp_comm_lst tl s)
 
 let comp_fn (f : fn) (s : SS.t) : string =
-    let ((id, (p, rt, pm)), cl) = f in
+    let (rt, id, pm, p), cl = f in
     debug_print (">> comp_fn" ^ id);
     let param_string = string_of_list (fun (t, i) -> i ^ ":" ^ comp_type t) p in
     (* let fn_name = id ^ "__" ^ (String.concat "__" (List.map (fun (_, t) -> comp_fn_arg_type t) (Assoc.bindings pm))) in *)
@@ -199,7 +199,8 @@ let rec comp_fn_lst (f : fn list) (s : SS.t) : string =
     debug_print ">> comp_fn_lst";
     match f with 
     | [] -> ""
-    | ((x, fd), cl)::t -> (comp_fn ((x, fd), cl) s) ^ (comp_fn_lst t (SS.add x s))
+    | f::t -> let (_,id,_,_),_ = f in
+        comp_fn f s ^ comp_fn_lst t (SS.add id s)
 
 let rec decl_attribs (gv : global_vars) : string = 
     debug_print ">> decl_attribs";

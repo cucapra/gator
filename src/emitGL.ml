@@ -115,11 +115,11 @@ let rec string_of_comm (c: comm) : string =
 
 let comp_fn (f : fn) : string = 
     debug_print ">> comp_fn";
-    let ((id, (p, rt, _)), cl) = f in
+    let (rt, id, _, p), cl = f in
     let param_string = string_of_list (fun (t, i) -> string_of_typ t ^ " " ^ i) p in
     let type_id_string = match id with
         | "main" -> "void main"
-        | _ -> string_of_typ rt ^ " " ^ id
+        | _ -> string_of_typ rt ^ " " ^ replace_all_in_name id
     in
     type_id_string ^ "(" ^ param_string ^ "){" ^ string_of_separated_list "" string_of_comm cl ^ "}"
 

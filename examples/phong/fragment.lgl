@@ -46,7 +46,8 @@ declare vec4 vec4<T:float[3],U:float>(T v, U f);
 declare vec3 vec3<T:float[4]>(T v);
 
 declare float dot<T: vec3>(T v1, T v2);
-declare T normalize<T : genType>(T x);
+// declare T normalize<T : vec3>(T x);
+declare vec3 normalize(vec3 x);
 declare T max<T: float>(T f1, T f2);
 declare T reflect<T : vec3>(T v1, T v2);
 declare T pow<T:float>(T f1, T f2);
@@ -62,6 +63,7 @@ prototype geometry {
     vector<r> +(vector<r> x, vector<r> y);
     vector<r> -(vector<r> x, vector<r> y);
     vector<r> -(vector<r> x);
+    direction<r> -(direction<r> x);
     vector<r> *(vector<r> v, scalar s);
     vector<r> *(scalar s, vector<r> v);
     point<r> +(point<r> p, vector<r> v);
@@ -77,7 +79,7 @@ prototype geometry {
     angle dot(direction<r> v1, direction<r> v2);
     direction<r> normalize(vector<r> v);
     direction<r> normalize(direction<r> v);
-    vector<r> reflect(vector<r> v1, vector<r> v2);
+    vector<r> reflect(direction<r> v1, direction<r> v2);
 }
 
 // Coordinate Scheme Definitions
@@ -104,6 +106,9 @@ coordinate cart3 : geometry {
     }
     vector<r> -(vector<r> v) {
         return (-v as! vec3) as! vector<r>;
+    }
+    direction<r> -(direction<r> v) {
+        return (-v as! vec3) as! direction<r>;
     }
     point<r> +(point<r> p, vector<r> v) {
         return (p as! vec3 + v as! vec3) as! point<r>;
@@ -142,7 +147,7 @@ coordinate cart3 : geometry {
     direction<r> normalize(direction<r> v) {
         return v;
     }
-    vector<r> reflect(vector<r> v1, vector<r> v2) {
+    vector<r> reflect(direction<r> v1, direction<r> v2) {
         return (reflect(v1 as! vec3, v2 as! vec3) as! vector<r>);
     }
 }
@@ -190,19 +195,19 @@ frame camera has dimension 3;
 // Transformation Functions
 
 with frame(3) r:
-hom.point<r> homify_point(cart3.point<r> v) {
+hom.point<r> homify(cart3.point<r> v) {
     return vec4(v, 1.) as! hom.point<r>;
 }
 with frame(3) r:
-hom.vector<r> homify_vector(cart3.vector<r> v) {
-    return vec4(v, 0.) as! hom.point<r>;
+hom.vector<r> homify(cart3.vector<r> v) {
+    return vec4(v, 0.) as! hom.vector<r>;
 }
 with frame(3) r:
-cart3.point<r> hom_red_point(hom.point<r> v) {
+cart3.point<r> hom_reduce(hom.point<r> v) {
     return (vec3(v) / v[3]) as! cart3.point<r>;
 }
 with frame(3) r:
-cart3.vector<r> hom_red_vector(hom.vector<r> v) {
+cart3.vector<r> hom_reduce(hom.vector<r> v) {
     return vec3(v) as! cart3.vector<r>;
 }
 alphaColor alpha<T:color>(T v) {
@@ -224,17 +229,17 @@ void main() {
     color diffColor = [0.2, 0.8, 0.4];
     color specColor = [1.0, 1.0, 1.0];
 
-    cart3.vector<world> worldPos = hom_red_point(uModel*homify_point(vPosition));
-    cart3.point<world> camPos = hom_red_point(uView*homify_point(worldPos));
-    cart3.direction<world> worldNorm = normalize(hom_red_vector(uModel*homify_vector(vNormal)));
+    auto worldPos = hom_reduce(uModel*homify(vPosition));
+    auto camPos = hom_reduce(uView*homify(worldPos));
+    auto worldNorm = normalize(hom_reduce(uModel*homify(vNormal)));
 
-    cart3.direction<world> lightDir = normalize(uLight - worldPos);
-    angle lightWorldDot = dot(lightDir, worldNorm);
+    auto lightDir = normalize(uLight - worldPos);
+    auto lightWorldDot = dot(lightDir, worldNorm);
     scalar diffuse = max(lightWorldDot, 0.0);
 
-    cart3.direction<world> reflectDir = hom_red_vector(uView * homify_vector(reflect(-lightDir, worldNorm)));
+    auto reflectDir = normalize(hom_reduce(uView * homify(reflect(-lightDir, worldNorm))));
 
-    scalar specular = pow(max(-dot(normalize(camPos), reflectDir), 0.), 32.);
+    scalar specular = pow(max(dot(normalize(-camPos), reflectDir), 0.), 32.);
 
     vec4 gl_FragColor = vec4(ambient + diffuse * diffColor + specular * specColor, 1.0);
 }

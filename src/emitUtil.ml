@@ -10,9 +10,14 @@ let error s = raise (EmitException s)
 (* Used in emitters for recovering infix notation of member function names *)
 let unop_list = ["-"]
 let binop_list = ["+"; "-"; "*"; "/"]
+let replace_list = [(Str.regexp "+", "_gator_plus"); 
+    (Str.regexp "-", "_gator_minus"); (Str.regexp "*", "_gator_times")]
+
+let replace_all_in_name id =
+    List.fold_left (fun acc (r, x) -> Str.global_replace r x acc) id replace_list
 
 let string_of_fn_util (id : string) (args : string list) : string =
-    let base = id ^ "(" ^ string_of_list (fun x -> x) args ^ ")" in
+    let base = (replace_all_in_name id) ^ "(" ^ string_of_list (fun x -> x) args ^ ")" in
     match args with
     | [a] -> if List.mem id unop_list then id ^ a else base
     | [a; b] -> if List.mem id binop_list then a ^ id ^ b else base
@@ -93,12 +98,12 @@ let rec replace_type_in_parameterization (pm : parameterization) (t : etyp) (r :
     Assoc.create (List.map (fun (n, c) -> match t with ParTyp(x, _) -> if x = n then x, r 
     else (n, c) | _ -> (n, c)) pm_list)
 
-let rec replace_type_in_fn (((n, (p, rt, pm)), cl) : fn) (t : etyp) (r : etyp) : fn =
+let rec replace_type_in_fn ((rt, n, pm, p), cl : fn) (t : etyp) (r : etyp) : fn =
     let p' = replace_type_in_params p t r in
     let rt' = replace_type rt t r in
     let cl' = replace_type_in_comm_list cl t r in
     let pm' = replace_type_in_parameterization pm t r in
-    (n, (p', rt', pm')), cl'
+    (rt', n, pm', p'), cl'
 
 let rec replace_type_in_fn_list (fl : fn list) (t : etyp) (r : etyp) : fn list =
     match fl with
@@ -111,7 +116,7 @@ let rec list_of_constraint (t : etyp) (int_and_float : bool) : etyp list =
     | GenTyp -> if int_and_float then [IntTyp; FloatTyp] else [IntTyp]
     | _ -> [t]
 
-let generate_generics_for_fn ((s, (p, rt, pm)), cl : fn) (int_and_float : bool) : fn list =
+let generate_generics_for_fn ((rt, s, pm, p), cl : fn) (int_and_float : bool) : fn list =
     let pm_list = List.rev (Assoc.bindings pm) in
     let rec replace_generic (orig: fn list) (pml : (string * etyp) list) : fn list =
         match pml with
@@ -121,7 +126,7 @@ let generate_generics_for_fn ((s, (p, rt, pm)), cl : fn) (int_and_float : bool) 
             let result = List.fold_left (fun acc t -> debug_print ((string_of_typ t));
                 replace_type_in_fn_list orig (ParTyp(s,[c])) t @ acc) [] lst in
             replace_generic result tl
-    in replace_generic [((s, (p, rt, pm)), cl)] pm_list
+    in replace_generic [(rt, s, pm, p), cl] pm_list
 
 (* let rec generate_generics_in_prog (p : fn list) (int_and_float : bool) : prog =
     let p' = match p with

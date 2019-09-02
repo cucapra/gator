@@ -26,7 +26,7 @@ type delta = dexp
 type chi = string * dexp
 
 (* Function definitions *)
-(* Stores the full type and parameterization of each function *)
+(* Stores the full type and parameterization of each function overload *)
 type phi = fn_typ list
 
 (* Transformation context *)

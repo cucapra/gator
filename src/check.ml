@@ -70,14 +70,6 @@ let delta_lookup (cx : contexts) (x : string) : typ =
     | DimVar v -> ParTyp (v, [])
     | d -> FrameTyp d
 
-let as_fl (cx : contexts) (tl : typ list) : string list = 
-    let rec lookup t =
-    match t with 
-    | ParTyp(s, []) -> s
-    | _ -> error cx ("Expected a frame, got " ^ string_of_typ t)
-    in
-    List.map lookup tl
-
 let rec is_subtype (cx: contexts) (to_check : typ) (target : typ) : bool =
     debug_print (">> is_subtype " ^ (string_of_pair (string_of_typ to_check) (string_of_typ target)));
     if is_typ_eq cx to_check target then true else
@@ -101,8 +93,8 @@ let rec is_subtype (cx: contexts) (to_check : typ) (target : typ) : bool =
         && is_subtype_list cx tl1 tl2)
         || is_subtype cx (typ_step cx to_check) target
     | CoordTyp (c1, ParTyp (o1, f1)), CoordTyp (c2, ParTyp (o2, f2)) ->
-        (c1 = c2 || (match find_typ cx c1 with | Some Chi (s,_) -> s = c2 | _ -> false) 
-        && is_subtype_list cx f1 f2)
+        ((c1 = c2 || match find_typ cx c1 with | Some Chi (s,_) -> s = c2 | _ -> false)
+        && o1 = o2 && is_subtype_list cx f1 f2)
         || is_subtype cx (chi_object_lookup cx c1 o1 f1) target
     | FrameTyp d1, FrameTyp d2 -> reduce_dexp cx d1 = reduce_dexp cx d1
     
@@ -128,8 +120,7 @@ and is_subtype_list (cx: contexts) (l1: typ list) (l2: typ list) : bool =
 
 (* Given a parameterization and a list of types being invoked on that parameterization *)
 (* Returns the appropriate concretized context if one exists *)
-and match_parameterization (cx: contexts) (pml : typ list)
-: typ Assoc.context =
+and match_parameterization (cx: contexts) (pml : typ list) : typ Assoc.context =
     debug_print ">> match_parameterization";
     let pmb = Assoc.bindings cx.pm in
     if List.length pmb == List.length pml
@@ -216,6 +207,12 @@ let rec least_common_parent (cx: contexts) (t1: typ) (t2: typ): typ =
     if is_subtype cx t1 t2 then t2 
     else if is_subtype cx t2 t1 then t1 
     else least_common_parent cx (typ_step cx t1) t2
+
+let least_common_parent_checked (cx : contexts) (t1: typ) (t2: typ): typ =
+    match least_common_parent cx t1 t2 with
+    | AnyTyp | FrameTyp _ | AnyFrameTyp
+        -> error cx ("Cannot unify " ^ string_of_typ t1 ^ " and " ^ string_of_typ t2)
+    | t -> t
     
 (* Checks that it is possible to resolve the dimension expression under the given context *)
 let rec check_dexp (cx: contexts) (d : dexp) : unit =
@@ -258,13 +255,13 @@ let rec typ_erase (cx: contexts) (t : typ) : TypedAst.etyp =
     | FloatTyp -> TypedAst.FloatTyp
     | ArrTyp (t', d) -> TypedAst.ArrTyp (typ_erase cx t', d_to_c d) 
     | ParTyp (s, tl) -> 
-        if is_external cx s then TypedAst.ParTyp (s, List.map (typ_erase cx) tl)
+        if has_modification cx s External then TypedAst.ParTyp (s, List.map (typ_erase cx) tl)
         else typ_erase cx (typ_step cx t)
     | CoordTyp _ | Literal _ -> typ_erase cx (primitive cx t)
-    | AutoTyp -> error cx ("Illegal use of auto (cannot use auto as part of a function call)")
+    | AutoTyp -> error cx ("Cannot infer the type of auto")
     | AnyTyp -> TypedAst.AnyTyp
     | GenTyp -> TypedAst.GenTyp
-    | _ -> debug_fail cx ("Cannot erase " ^ string_of_typ t)
+    | BotTyp | AnyFrameTyp | FrameTyp _ | GenArrTyp _ -> debug_fail cx ("Cannot erase " ^ string_of_typ t)
 
 let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     debug_print ">> etyp_to_typ";
@@ -298,7 +295,7 @@ let infer_pml (cx: contexts) (args : typ list) (target : params) : (typ list) op
     let update_inference (t : typ) (s : string) (fpm : typ Assoc.context option) : typ Assoc.context option =
         match fpm with | None -> None | Some p ->
         if Assoc.mem s p then match least_common_parent cx t (Assoc.lookup s p) with
-            | AnyTyp -> None
+            | AnyTyp | FrameTyp _ | AnyFrameTyp -> None
             | t' -> Some (Assoc.update s t' p)
         else Some (Assoc.update s t p)
     in
@@ -312,9 +309,9 @@ let infer_pml (cx: contexts) (args : typ list) (target : params) : (typ list) op
             (* Abstract params may have unspecified parameterizations provided by the arguments *)
             if List.length tl1 != List.length tl2 then new_fpm s else
             List.fold_left2 unify_param (new_fpm s) tl1 tl2
-        | _, ParTyp (s, _) -> new_fpm s
         | CoordTyp (_, t1), CoordTyp(s, t2) ->
             unify_param (new_fpm s) t1 t2
+        | _, ParTyp (s, _) -> new_fpm s
         | _ -> fpm
     in
     let inferred = List.fold_left2 unify_param (Some Assoc.empty) args (List.map fst target) in
@@ -383,27 +380,24 @@ let check_fn_inv (cx: contexts) (x : id) (pml: typ list) (args : (TypedAst.exp *
         else None
     in
     (* Check if this function should be treated as a scheme function *)
-    let rec coord_fn_rec a = match a with
-        | [] -> None
-        | (_,CoordTyp (c, _))::_ -> Some (c ^ "." ^ x)
-        | h::t -> coord_fn_rec t
-    in
-    let coord_fn = coord_fn_rec args in
-    let fn_invocated = get_functions_safe cx x @ 
-        (match cx.member with | None -> [] | Some m -> get_functions_safe cx (m ^ "." ^ x)) @
-        (match coord_fn with | Some s -> get_functions_safe cx s | None -> [])
-    in
+    let fn_invocated = get_functions_safe cx x in
     match List.fold_left (fun acc x -> 
-        match acc with | None -> try_fn_inv x | Some _ -> acc) None fn_invocated with
+        match acc, try_fn_inv x with | None, f -> f | Some _, None -> acc 
+        | Some (f1,_), Some (f2,_) -> error cx ("Ambiguous choice of functions to call " 
+        ^ string_of_fn_typ f1 ^ " and " ^ string_of_fn_typ f2)) None fn_invocated 
+    with
     | Some (fn_found, pmt) -> 
-        let (_, rt, _, _, _, _) = fn_found in
-        (* Hack to avoid writing frame parameters to the erased type *)
-        (* TODO: remove this when implementing hard rewrite of coordinate schemes *)
-        let pme = (match coord_fn with | Some _ -> [] | None ->
-            List.rev (List.map (fun p -> typ_erase cx (snd p)) (Assoc.bindings pmt))) in
-        (x, pme, List.map (exp_to_texp cx) args), replace_abstype pmt rt
+        let _,rt,x',_,_,_ = fn_found in
+        (* We fold_left both to reverse the list order and to avoid writing frame type parameters *)
+        let typ_erase_maybe acc (_,t) = 
+            let update () = typ_erase cx t::acc in match t with | ParTyp (s, _) -> 
+            (match find_typ cx s with | Some Delta _ -> acc | _ -> update()) 
+            | FrameTyp _ -> acc | _ -> update()  in
+        let pme = List.fold_left typ_erase_maybe [] (Assoc.bindings pmt) in
+        let xr = if has_modification cx x' External then x else x' in
+        (xr, pme, List.map (exp_to_texp cx) args), replace_abstype pmt rt
     | None -> error cx ("No overloaded function declaration of " ^ x
-    ^ if List.length pml > 0 then string_of_bounded_list string_of_typ "<" ">" pml else ""
+    ^ (if List.length pml > 0 then string_of_bounded_list string_of_typ "<" ">" pml else "")
     ^ " matching types " ^ string_of_bounded_list string_of_typ "(" ")" arg_typs ^ " found")
 
 (* Checks the validity of a parameterizations, and returns the contexts updated with that pm *)
@@ -416,52 +410,39 @@ let check_parameterization (cx: contexts) (pm: parameterization) : contexts =
     in
     ignore_typ_context (List.fold_left check_parameter Assoc.empty (Assoc.bindings pm));
     with_pm cx pm
-    
-let as_par_typ (cx : contexts) (t : typ) : string * typ list =
-    match t with
-    | ParTyp (s, t') -> s,t'
-    | _ -> debug_fail cx ("Invalid type " ^ string_of_typ t ^ " provided to updating psi")
 
-let update_psi (cx: contexts) (ml: modification list) (start: typ) 
-(target: typ) ((f, pml) : string * typ list) : psi Assoc.context =
+let update_psi (cx: contexts) (f : fn_typ) : contexts =
     (* Update psi, raising errors in case of a duplicate *)
     (* If the given type is not valid in psi, psi is returned unmodified *)
     (* Will raise a failure if a non-concrete vartyp is used *)
-    debug_print ">> update_psi";
-    let is_valid (t: typ) : bool =
+    let ml,rt,id,pm,pr,_ = f in
+    debug_print (">> update_psi " ^ string_of_fn_typ f);
+    let target = rt in
+    if List.length pr != 1 then cx else
+    let start = fst (List.hd pr) in
+    let is_valid (t: typ) : bool = match t with CoordTyp _ -> true | _ -> false in
+    if not (is_valid start) || not (is_valid target) then cx else
+    let as_geo_typ (t : typ) : (string * string * string) option =
         match t with
-        | ParTyp _ -> true
-        | _ -> false
+        | CoordTyp (c, (ParTyp (o, [ParTyp (f, [])]))) -> Some (c,o,f)
+        | _ -> None
     in
-    if not (is_valid start) || not (is_valid target) then cx.ps else
-    let rec check_var_typ_eq (t1: typ) (t2: typ) : bool =
-        match (t1, t2) with
-        | ParTyp (s1, tl1), ParTyp (s2, tl2) -> s1 = s2 && 
-            if List.length tl1 = List.length tl2
-            then List.fold_left2 (fun acc t1' t2' -> acc && check_var_typ_eq t1' t2') true tl1 tl2
-            else false
-        | _ -> false
-    in
-    let s1, tl1 = as_par_typ cx start in
-    let st, ttl = as_par_typ cx target in
-    let start_index = string_of_typ start in
-    let to_add = (target, (f, pml)) in
+    match as_geo_typ start with | None -> cx | Some (c1,o1,f1) ->
+    match as_geo_typ start with | None -> cx | Some (c2,o2,f2) ->
+    let start_string = string_of_typ start in
+    let to_add = (target, (id, Assoc.values pm)) in
     if List.mem Canon ml then
-        if Assoc.mem start_index cx.ps then 
-        (let start_list = Assoc.lookup start_index cx.ps in
+        if Assoc.mem start_string cx.ps then 
+        (let start_fns = Assoc.lookup start_string cx.ps in
             if (List.fold_left (fun acc (lt, (_, _)) -> acc ||
-                    (let (s2, tl2) = as_par_typ cx lt in
-                    if (List.length ttl = List.length tl2) 
-                    then List.fold_left2 (fun acc' t1 t2 -> acc' || (check_var_typ_eq t1 t2)) false ttl tl2
-                    else false))
-                false start_list)
+                    is_typ_eq cx lt target)) false start_fns
             then error cx ("Duplicate transformation for " ^ 
-                start_index ^ "->" ^ string_of_typ (ParTyp(s1, ttl)) ^
-                " in the declaration of " ^ f)
-            else Assoc.update start_index (to_add :: start_list) cx.ps
+                start_string ^ "->" ^ string_of_typ target ^
+                " in the declaration of " ^ string_of_fn_typ f)
+            else with_ps cx (Assoc.update start_string (to_add :: start_fns) cx.ps)
         )
-        else Assoc.update start_index [to_add] cx.ps
-    else cx.ps
+        else with_ps cx (Assoc.update start_string [to_add] cx.ps)
+    else cx
 
 (* Type check parameter; check parameter typ validity *)
 (* Returns gamma *)
@@ -485,9 +466,7 @@ let check_index_exp (cx : contexts) (t1 : typ)  (t2 : typ) : typ =
         ^ string_of_typ t1 ^ " and " ^ string_of_typ t2)
 
 let check_as_exp (cx: contexts) (start: typ) (target : typ) : typ =
-    match least_common_parent cx start target with 
-    | AnyTyp -> error cx ("Expected " ^ string_of_typ start ^ " to share a parent with " ^ string_of_typ target)
-    | _ -> target
+    ignore_typ (least_common_parent_checked cx start target); target
 
 (* Super expensive.  We're essentially relying on small contexts *)
 let check_in_exp (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : aexp = 
@@ -499,48 +478,51 @@ let check_in_exp (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
             (* If multiple functions are possible, then ambiguities are resolved with the following priorities *)
             (* 1. Minimize upcasting requirements (actually handled by use of this function) *)
             (* 2. Minimize number of type parameters *)
-            (* 3. Minimize constraint bounds *)            
-            let rec search_phi_rec (fns : (string * fn_typ list) list) : (typ * (id * typ list * typ list)) list =
+            (* 3. Minimize constraint bounds *)
+            let rec search_fns (fns : fn_typ list) : (typ * (id * typ list * typ list)) list =
                 match fns with
-                (* Note that matrices are always selected over canonical function invocations *)
-                | [] -> List.map (fun (t, (x, y)) -> (t, (x, y, []))) ps_lst 
-                | (id, fs) :: t -> 
-                    let (ml, rt, _, pr, params, meta') = List.hd fs in
-                    let cx' = with_meta cx meta' in
-                    if List.mem Canon (Assoc.lookup id cx.m) then
-                        let pt = match params with | [(pt,_)] -> pt 
-                        | _ -> debug_fail cx ("function " ^ id ^ " with non-one argument made canonical") in
-                        match infer_pml cx [tl] params with | None -> search_phi_rec t | Some pml ->
-                        let pr1 = List.map snd (Assoc.bindings pr) in
-                        let rtr = replace_abstype (match_parameterization (with_pm cx' pr) pml) rt in
-                        let ptr = replace_abstype (match_parameterization (with_pm cx' pr) pml) pt in
-                        let fail id2 s = error cx ("Ambiguity between viable canonical functions " 
-                            ^ id ^ " and " ^ id2 ^ " (" ^ s ^ ")") in
-                        let compare_parameterizations (acc : bool option) t1 t2 : bool option = 
-                            let result = is_subtype cx' t1 t2 in match acc with | None -> Some result
-                            | Some b -> if b = result then acc else error cx' 
-                            ("Ambiguous constraint ordering between " ^ string_of_typ t1
-                            ^ " and " ^ string_of_typ t2)
-                        in
-                        if not (is_subtype cx tl ptr) then search_phi_rec t else
-                        match rtr with
-                        | ParTyp (_, _) -> let rec_result = search_phi_rec t in
-                            if List.fold_left (fun acc (rt, _) -> is_typ_eq cx rt rtr || acc) false rec_result then
-                                List.map (fun (rt, (id2, pml2, pr2)) -> 
-                                if (List.length pr1 = List.length pr2) && (List.length pr1 = 0) then
-                                fail id2 ("duplicate concrete paths from " ^ string_of_typ tl ^ " to " ^ string_of_typ rtr)
-                                else if not (is_typ_eq cx' rt rtr) then (rt, (id2, pml2, pr2))
-                                else if List.length pr1 < List.length pr2 then (rt, (id, pml, pr1))
-                                else if List.length pr2 < List.length pr1 then (rt, (id2, pml2, pr2))
-                                else if (match List.fold_left2 compare_parameterizations None pr1 pr2 with
-                                    | None -> debug_fail cx "Unexpected concrete function type duplicates in phi" 
-                                    | Some b -> b) then (rt, (id2, pml2, pr2))
-                                else (rtr, (id, pml, pr1))) rec_result
-                            (* No duplicate type result found, just add this function to the list *)
-                            else (rtr, (id, pml, pr1)) :: rec_result
-                        | _ -> error cx ("Canonical function " ^ id ^ " resulted in type "
-                            ^ string_of_typ rtr ^ ", while canonical functions should always result in a partyp")
-                    else search_phi_rec t
+                | [] -> []
+                | (ml, rt, id, pm, params, _)::t ->
+                    let cxf = with_pm cx pm in
+                    if not (has_modification cx id Canon) then search_fns t else
+                    let pt = match params with | [pt,_] -> pt 
+                    | _ -> debug_fail cx ("function " ^ id ^ " with non-one argument made canonical") in
+                    match infer_pml cxf [tl] params with | None -> search_fns t | Some pml ->
+                    let pr1 = List.map snd (Assoc.bindings pm) in
+                    let rtr = replace_abstype (match_parameterization (with_pm cxf pm) pml) rt in
+                    let ptr = replace_abstype (match_parameterization (with_pm cxf pm) pml) pt in
+                    let fail id2 s = error cxf ("Ambiguity between viable canonical functions " 
+                        ^ id ^ " and " ^ id2 ^ " (" ^ s ^ ")") in
+                    let compare_parameterizations (acc : bool option) t1 t2 : bool option = 
+                        let result = is_subtype cxf t1 t2 in match acc with | None -> Some result
+                        | Some b -> if b = result then acc else error cxf
+                        ("Ambiguous constraint ordering between " ^ string_of_typ t1
+                        ^ " and " ^ string_of_typ t2)
+                    in
+                    if not (is_subtype cxf tl ptr) then search_fns t else
+                    match rtr with
+                    | CoordTyp _ -> let rec_result = search_fns t in
+                        if List.fold_left (fun acc (rt, _) -> is_typ_eq cx rt rtr || acc) false rec_result then
+                            List.map (fun (rt, (id2, pml2, pr2)) -> 
+                            if (List.length pr1 = List.length pr2) && (List.length pr1 = 0) then
+                            fail id2 ("duplicate concrete paths from " ^ string_of_typ tl ^ " to " ^ string_of_typ rtr)
+                            else if not (is_typ_eq cxf rt rtr) then (rt, (id2, pml2, pr2))
+                            else if List.length pr1 < List.length pr2 then (rt, (id, pml, pr1))
+                            else if List.length pr2 < List.length pr1 then (rt, (id2, pml2, pr2))
+                            else if (match List.fold_left2 compare_parameterizations None pr1 pr2 with
+                                | None -> debug_fail cxf "Unexpected concrete function type duplicates in phi" 
+                                | Some b -> b) then (rt, (id2, pml2, pr2))
+                            else (rtr, (id, pml, pr1))) rec_result
+                        (* No duplicate type result found, just add this function to the list *)
+                        else (rtr, (id, pml, pr1)) :: rec_result
+                    | _ -> debug_fail cxf ("Canonical function " ^ id ^ " resulted in type "
+                        ^ string_of_typ rtr ^ ", while canonical functions should always result in a coordtyp")
+            in
+            let rec search_phi_rec (fns : (string * fn_typ list) list) =
+            match fns with
+            | [] -> List.map (fun (t, (x, y)) -> (t, (x, y, []))) ps_lst 
+            | (_, fs) :: t ->
+                search_fns fs @ search_phi_rec t
             in
             (* TODO: using _bindings here is super janky, but it's hard to fix rn, so... *)
             List.map (fun (t, (x, y, z)) -> (t, (x, y))) (search_phi_rec (Assoc.bindings cx._bindings.p))
@@ -551,16 +533,16 @@ let check_in_exp (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
             let rec check_typ_ignore (t: typ) (count: int) : bool =
                 if count > 5 then true else
                 match t with
-                | ParTyp (_, tl) -> List.fold_left (fun acc t -> acc || check_typ_ignore t (count + 1)) false tl
+                | CoordTyp (_, ParTyp (_, tl)) -> List.fold_left (fun acc t -> acc || check_typ_ignore t (count + 1)) false tl
                 | _ -> false
             in
             if check_typ_ignore nt 0 then [] else
             let s_lookup = string_of_typ nt in
             let ps_lst = if Assoc.mem s_lookup cx.ps then Assoc.lookup s_lookup cx.ps else [] in
             let to_return = search_phi nt ps_lst in
-            let next_step = match nt with | ParTyp _ -> typ_step cx nt | _ -> nt in
+            let next_step = match nt with | CoordTyp _ -> typ_step cx nt | _ -> nt in
             match next_step with
-            | ParTyp _ -> 
+            | CoordTyp _ -> 
                 to_return @ psi_lookup_rec next_step
             | _ -> to_return
         in 
@@ -569,17 +551,15 @@ let check_in_exp (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
             | [] -> found
             | (t1, (v, pml))::t -> 
                 if List.fold_left (fun acc t2 -> acc || is_typ_eq cx t1 t2) false found 
-                then update_search_and_found t e 
-                else 
-                let e' = 
-                    match find_exp cx v with
-                    | Some Gamma _ -> FnInv ("*", [], [(Var v, snd e); e]), snd e
-                    | Some Phi _ -> FnInv (v, pml, [e]), snd e
-                    | _ -> debug_fail cx ("Typechecker error: unknown value " ^ v ^ " loaded into psi") in
+                then update_search_and_found t e else 
+                (* Erase the specific invocation found above for future typechecking *)
+                (* This is a hack that can probably get removed in favor of not typechecking the (already found) result *)
+                let v' = String.sub v 0 (String.rindex v '_') in
+                let e' = FnInv (v', pml, [e]), snd e in
                 (* Note the update to the stateful queue *)
                 (Queue.push (t1, e') to_search;  t1 :: update_search_and_found t e)
         in
-        let (nt, e) = if Queue.is_empty to_search 
+        let nt, e = if Queue.is_empty to_search 
             then error cx ("Cannot find a path from " ^
                 string_of_typ start ^ " to " ^ string_of_typ target)
             else Queue.pop to_search 
@@ -588,7 +568,7 @@ let check_in_exp (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
         if is_subtype cx nt target then e
         else psi_path_rec to_search (update_search_and_found (psi_lookup_rec nt) e)
     in	
-	if string_of_typ start = string_of_typ target then start_exp else
+    if string_of_typ start = string_of_typ target then start_exp else
 	let q = Queue.create () in Queue.push (start, start_exp) q;
 	psi_path_rec q []
 
@@ -616,7 +596,7 @@ and check_arr (cx: contexts) (a : aexp list) : TypedAst.exp * typ =
     debug_print ">> check_arr";
     let a' = List.map (check_aexp cx) a in
     TypedAst.Arr(List.map (exp_to_texp cx) a'),
-    Literal (ArrTyp (List.fold_left (fun acc (_,t) -> least_common_parent cx acc t) BotTyp a'
+    Literal (ArrTyp (List.fold_left (fun acc (_,t) -> least_common_parent_checked cx acc t) BotTyp a'
         , DimNum (List.length a)))
 
 (* Updates Gamma and Psi *)
@@ -636,10 +616,18 @@ and check_comm (cx: contexts) (c: comm) : contexts * TypedAst.comm =
     )
     | Exp e -> cx, TypedAst.Exp(exp_to_texp cx (check_aexp cx e));
     | Decl (ml, t, s, e) -> 
-        (check_typ_valid cx t; 
+        check_typ_valid cx t; 
         let result = check_aexp cx e in
-        check_assign cx t s (snd result);
-        bind cx s (Gamma t), TypedAst.Decl (typ_erase cx t, s, (exp_to_texp cx result)))
+        let t' = (match t with 
+            | AutoTyp -> (let t' = snd result in
+                match t' with
+                | FrameTyp _ | AnyFrameTyp -> error cx ("Cannot write " ^ string_of_typ t' ^ " to auto")
+                | Literal _ | BotTyp -> error cx ("Cannot infer the type of " ^ string_of_aexp e)
+                | _ -> t')
+            | _ -> t) in
+        check_assign cx t' s (snd result);
+        with_m (bind cx s (Gamma t')) (Assoc.update s ml cx.m),
+            TypedAst.Decl (typ_erase cx t', s, (exp_to_texp cx result))
     | Assign (s, e) ->
         let t = get_var cx s in
         let result = check_aexp cx e in
@@ -682,8 +670,7 @@ and check_comm_lst (cx: contexts) (cl : acomm list) : contexts * TypedAst.comm l
 
 (* Updates Gamma *)
 and check_assign (cx: contexts) (t: typ) (s: string) (etyp : typ) : unit =
-    debug_print (">> check_assign <<"^s^">>");
-    debug_print (string_of_typ t);
+    debug_print (">> check_assign " ^ string_of_typ t ^ " " ^ s ^ " assigned " ^ string_of_typ etyp);
     (* Check that t, if not a core type, is a registered tag *)
     let rec check_tag (t: typ) : unit =
         match t with
@@ -693,7 +680,7 @@ and check_assign (cx: contexts) (t: typ) (s: string) (etyp : typ) : unit =
     check_tag t;
     if is_subtype cx etyp t then ()
     else error cx ("Mismatched types for var decl for " ^ s ^
-        ": expected " ^ (string_of_typ t) ^ ", found " ^ (string_of_typ etyp))
+        ": expected " ^ string_of_typ t ^ ", found " ^ string_of_typ etyp)
 
 (* Helper function for type checking void functions. 
  * Functions that return void can have any number of void return statements 
@@ -720,11 +707,11 @@ let check_return (cx: contexts) (t: typ) (c: acomm) : unit =
     | _ -> ()
 
 (* Updates mu *)
-let include_function (cx: contexts) (f : fn_typ) : contexts =
+let include_function (cx: contexts) (f : fn_typ) : string * contexts =
     let fm,r,id,pmd,pr,meta = f in
     debug_print (">> include_function " ^ string_of_fn_typ f);
-    let cx' = add_function cx f in
-    let cxm = with_m cx (Assoc.update id fm cx.m) in
+    let id', cx' = add_function cx f in
+    let cxm = with_m cx' (Assoc.update id' fm cx.m) in
     if List.mem Canon fm then
         match pr with
         (* Only update if it is a canon function with exactly one argument *)
@@ -733,18 +720,18 @@ let include_function (cx: contexts) (f : fn_typ) : contexts =
             if is_typ_eq cx t r then error cx'
                 ("Canonical function " ^ id ^ " cannot be a map from a type to itself") else
             let fail _ = error cx'
-            ("Canonical functions must be between tag or abstract types") in
+            ("Canonical functions must be between geometricy types") in
             match t with
-            | ParTyp _ ->  
+            | CoordTyp _ ->  
             begin
                 match r with
-                | ParTyp _ -> cxm
+                | CoordTyp _ -> id', cxm
                 | _ -> fail ()
             end
             | _ -> fail ()
         end
         | _ -> error cx' ("Cannot have a canonical function with zero or more than one arguments")
-    else cx'
+    else id', cx'
 
 (* Updates Tau with new typing information *)
 let check_typ_decl (cx: contexts) (x : string) (pm,t : tau) : contexts =
@@ -801,18 +788,20 @@ let check_fn (cx: contexts) (f, cl: fn)
     let cx', tpr, tpm = check_fn_decl cx f in
     (* Note that we don't use our updated phi to avoid recursion *)
     let cx'', cl' = check_comm_lst cx' cl in
-    let cxr = include_function (clear cx'' CGamma) (read_with_mod cx f) in
+    let id', cxr = include_function (reset cx'' cx CGamma) (read_with_mod cx f) in
+    let cxrps = update_psi cxr (rename_fn (fun x -> id') f) in
     (* check that the last command is a return statement *)
     (* TODO: might want to check that there is exactly one return statement on each branch *)
     List.iter (check_return cx'' rt) cl; 
-        with_pm cxr Assoc.empty, ((id, (tpr, typ_erase cxr rt, tpm)), cl')
+    with_pm cxrps Assoc.empty, ((typ_erase cxr rt, id', tpm, tpr), cl')
 
 (* Updates gamma, mu, and phi from underlying calls *)
 let check_extern (cx: contexts) (e : extern_element) : contexts =
     debug_print (">> check_extern " ^ string_of_extern e);
     match e with
-    | ExternFn f -> fst (check_fn cx (f, []))
-    | ExternVar (ml, t, x, meta) -> bind cx x (Gamma t)
+    | ExternFn f -> let cx',((_,id,_,_),_) = check_fn cx (f, []) in
+        add_m cx' id External
+    | ExternVar (ml, t, x, meta) -> with_m (bind cx x (Gamma t)) (Assoc.update x ml cx.m)
     | ExternTyp (id, pm, t) -> let t' = (match t with | None -> AnyTyp | Some t' -> t') in
         add_m (check_typ_decl cx id (pm, t')) id External
 
@@ -841,12 +830,12 @@ let check_prototype_element (cx : contexts) (p : string) (pe : prototype_element
     | ProtoFn f -> let _,rt,_,_,pr,_ = f in
         let cx' = within cx p in
         check_typ_valid cx' rt; List.fold_left (fun acc -> check_typ_valid cx' |- fst) () pr;
-        clear_member (include_function cx' (rename_fn (fun x -> p ^ "." ^ x) f))
+        clear_member (snd (include_function cx' (rename_fn (fun x -> p ^ "." ^ x) f)))
 let check_aprototype_element cx p (pe, meta) : contexts = check_prototype_element (with_meta cx meta) p pe
 
 (* Updates tau or phi with the coordinate scheme element being checked *)
 (* We assume that  *)
-let check_coordinate_element (cx : contexts) (c: string) (ce : coordinate_element) : contexts =
+let check_coordinate_element (cx : contexts) (c: string) (ce : coordinate_element) : contexts * TypedAst.fn option =
     debug_print (">> check_coordinate_element " ^ string_of_coordinate_element ce);
     let proto,d = get_coordinate cx c in
     match ce with
@@ -859,13 +848,14 @@ let check_coordinate_element (cx : contexts) (c: string) (ce : coordinate_elemen
         (* Check that the object has a resolvable type *)
         let pm = Assoc.create (List.map (fun x -> x,FrameTyp d) fl) in
         check_typ_valid (with_pm cx pm) t;
-        bind cx (c ^ "." ^ id) (Tau (pm, t))
+        bind cx (c ^ "." ^ id) (Tau (pm, t)), None
     | CoordFn fn ->
-        let (ml, rt, id, pm, pr, meta), cl = fn in
+        let f, cl = fn in
+        let ml, rt, id, pm, pr, meta = f in
         let cxc = within (with_pm cx pm) c in
         (* Check associated functions in the prototype to see if any match *)
+        let fns = get_functions_safe cx (proto ^ "." ^ id) in
         let has_binding = 
-            let fns = get_functions_safe cx (proto ^ "." ^ id) in
             (* If there's no expected declaration, then this is an internal function *)
             List.length fns = 0 ||
             List.fold_left (fun acc (_,prt,_,_,ppr,_) -> 
@@ -875,8 +865,11 @@ let check_coordinate_element (cx : contexts) (c: string) (ce : coordinate_elemen
         in
         if not (has_binding) then error cx 
             ("The type of function " ^ c ^ "." ^ id ^ " does not match any prototype definition");
-        clear_member (fst (check_fn cxc fn))
-let check_acoordinate_element cx c (ce, meta) : contexts = 
+        (* Naming hack to make functions that aren't in the prototype 'internal' *)
+        let fn' = if List.length fns = 0 then (rename_fn (fun x -> c ^ "." ^ x) f),cl else fn in
+        let cx', tfn = check_fn cxc fn' in
+        clear_member (cx'), Some tfn
+let check_acoordinate_element cx c (ce, meta) : contexts * TypedAst.fn option = 
     check_coordinate_element (with_meta cx meta) c ce
 
 (* Returns the context with a checked prototype *)
@@ -885,28 +878,30 @@ let check_prototype (cx: contexts) ((id, p) : prototype) : contexts =
     List.fold_left (fun acc (pe, meta) -> check_aprototype_element acc id (pe, meta)) cx p
 
 (* Returns the context with a checked coordinate scheme *)
-let check_coordinate (cx: contexts) ((id,p,d,ce) : coordinate) : contexts =
+let check_coordinate (cx: contexts) ((id,p,d,ce) : coordinate) : contexts * TypedAst.fn list =
     debug_print (">> check_prototype " ^ id);
     let cx' = bind cx id (Chi (p, d)) in
-    List.fold_left (fun acc (ce, meta) -> check_acoordinate_element acc id (ce, meta)) cx' ce
+    List.fold_left (fun (cx', fnl) (ce, meta) -> let cx'', tf = check_acoordinate_element cx' id (ce, meta) in
+        cx'', (match tf with None -> fnl | Some f -> f::fnl)) (cx', []) ce
 
 let check_term (cx: contexts) (t: term) 
-: contexts * TypedAst.fn option * TypedAst.global_var option =
-    match t with    
-    | Prototype p -> check_prototype cx p, None, None
-    | Coordinate c -> check_coordinate cx c, None, None
-    | Frame f -> check_frame cx f, None, None
+: contexts * TypedAst.fn list * TypedAst.global_var option =
+    match t with
+    | Prototype p -> check_prototype cx p, [], None
+    | Coordinate c -> let cx',tf = check_coordinate cx c in
+        cx', tf, None
+    | Frame f -> check_frame cx f, [], None
     | Typ (id, pm, t) ->
-        check_typ_decl cx id (pm, t), None, None
+        check_typ_decl cx id (pm, t), [], None
     | Extern e -> let cx' = check_extern cx e in
-        cx', None, None
+        cx', [], None
     | GlobalVar gv -> let (cx', gv') = check_global_variable cx gv in
-        cx', None, Some gv'
+        cx', [], Some gv'
     | Fn f -> let (cx', f') = check_fn cx f in
-        cx', Some f', None
+        cx', [f'], None
     
 let check_aterm (cx: contexts) ((t, meta): aterm) 
-: contexts * TypedAst.fn option * TypedAst.global_var option =
+: contexts * TypedAst.fn list * TypedAst.global_var option =
     check_term (with_meta cx meta) t
 
 let rec check_term_list (tl: aterm list) :
@@ -915,7 +910,7 @@ contexts * TypedAst.prog * TypedAst.global_vars =
     (* Annoying bootstrapping hack *)
     let app_maybe o l = match o with | Some v -> v::l | None -> l in
     let cx, f, gv = List.fold_left (fun acc t -> let (cx', f', gv') = check_aterm (tr_fst acc) t in
-        (cx', app_maybe f' (tr_snd acc), app_maybe gv' (tr_thd acc)))
+        (cx', f'@(tr_snd acc), app_maybe gv' (tr_thd acc)))
         (init (snd (List.hd tl)), [], []) tl in
     cx, List.rev f, List.rev gv
 
