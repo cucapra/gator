@@ -1,1 +1,1 @@
-Fatal error: exception Lingl__Check.TypeException("mismatched types for var decl: expected vec3->vec3 e, found vec2lit")
+Fatal error: exception Gatorl__Check.TypeException("mismatched types for var decl: expected vec3->vec3 e, found vec2lit")

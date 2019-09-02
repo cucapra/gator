@@ -1,15 +1,10 @@
 
 %{
 open CoreAst
-open TagAst
+open GatorAst
 open Str
 
 exception ParseException of string
-
-(* let matr = Str.regexp "mat\\([0-9]+\\)x\\([0-9]+\\)" *)
-let vec = Str.regexp "vec\\([0-9]+\\)"
-let mat = Str.regexp "mat\\([0-9]+\\)"
-
 %}
 
 (* Tokens *)
@@ -17,10 +12,7 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token EOF
 %token <int> NUM
 %token <float> FLOAT
-%token <string> MATTYP
 %token <string> ID
-%token SAMPLERCUBE
-%token <string> SAMPLER
 %token PLUS
 %token MINUS
 %token TIMES
@@ -30,7 +22,6 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token RBRACK
 %token LPAREN
 %token RPAREN
-%token TRANS
 %token GETS
 %token IN
 %token OUT
@@ -50,9 +41,16 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token NOT
 %token COMMA
 %token DOT
-%token TAG
+%token PROTOTYPE
+%token OBJECT
+%token COORDINATE
+%token DIMENSION
+%token FRAME
+%token TYP
 %token CANON
 %token IS
+%token HAS
+%token WITH
 %token TRUE
 %token FALSE
 %token IF
@@ -72,7 +70,6 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token VOID
 %token DECLARE
 %token COLON
-%token BACKTICK
 %token GENTYPE
 %token LWICK
 %token RWICK
@@ -82,97 +79,135 @@ let mat = Str.regexp "mat\\([0-9]+\\)"
 %token ATTRIBUTE
 %token UNIFORM
 %token VARYING
-%token SPACE
 
 (* Precedences *)
 
 %left ID
-%left TRANS
-%left AS IN
 %left AND OR
 %left NOT EQ LEQ GEQ LBRACK 
 %left LWICK RWICK 
-%left LPAREN 
+%left INC DEC
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
+%left AS IN
 %left DOT
 
 (* After declaring associativity and precedence, we need to declare what
    the starting point is for parsing the language.  The following
    declaration says to start with a rule (defined below) named [prog].
    The declaration also says that parsing a [prog] will return an OCaml
-   value of type [TagAst.expr]. *)
+   value of type [GatorAst.expr]. *)
 
 %start main
 (* The explicit types of some key parser expressions to help with debugging *)
-%type <TagAst.prog> main
-%type <TagAst.exp> exp
-%type <TagAst.comm> comm  
-%type <TagAst.term> term 
+%type <GatorAst.prog> main
+%type <GatorAst.exp> exp
+%type <GatorAst.comm> comm  
+%type <GatorAst.term> term 
 
 (* The following %% ends the declarations section of the grammar definition. *)
 
 %%
 
 main:
-  | t = aterm+; EOF;
+  | t = node(term)+; EOF;
     { t }
 
-let aterm ==
-  | t = term;
-    { (t, $startpos) }
+let terminated_list(X, Y) ==
+  | y = Y;
+    { ([], y) }
+  | x = X+; y = Y;
+    <>
+
+let oplist(X) ==
+  | x = X?;
+    { match x with | Some y -> y | None -> [] }
+
+let combined(A, B) == a = A; b = B; { (a, b) }
+let fst(T) == (a, b) = T; { a }
+let snd(T) == (a, b) = T; { b }
+let node(T) == t = T; { (t, $startpos) }
 
 let term == 
-  | TAG; x = ID; IS; t = typ; SEMI; 
-    { TagDecl([], x, [], t) }
-  | TAG; x = ID; pt = par_decl; IS; t = typ; SEMI; 
-    { TagDecl([], x, pt, t) }
-  | SPACE; x = ID; IS; t = typ; SEMI; 
-    { TagDecl([Space], x, [], t) }
-  | SPACE; x = ID; pt = par_decl; IS; t = typ; SEMI; 
-    { TagDecl([Space], x, pt, t) }
-  | DECLARE; d = decl_extern; SEMI; 
-    <ExternDecl>
+  | PROTOTYPE; x = ID; LBRACE; p = list(node(prototype_element)); RBRACE;
+    <Prototype>
+  | COORDINATE; x = ID; COLON; p = ID;
+    LBRACE; DIMENSION; d = dexp; SEMI; c = list(node(coordinate_element)); RBRACE;
+    <Coordinate>
+  | FRAME; x = ID; HAS; DIMENSION; d = dexp; SEMI;
+    <Frame>
+  | TYP; x = ID; pm = parameterization(constrained); IS; t = typ; SEMI;
+    <Typ>
+  | DECLARE; d = extern_element; SEMI; 
+    <Extern>
   | m = modification*; sq = storage_qual; t = typ;
-    x = ID; v = preceded(GETS, value)?; SEMI; 
+    x = ID; v = preceded(GETS, node(exp))?; SEMI; 
     <GlobalVar>
-  | f = fn_decl; LBRACE; cl = list(acomm); RBRACE;
+  | f = fn;
     <Fn>
 
+let prototype_element ==
+  | OBJECT; x = ID; p = oplist(parameters(LWICK, ID, RWICK)); SEMI;
+    <ProtoObject>
+  | f = fn_typ; SEMI;
+    <ProtoFn>
+
 let modification ==
+  | WITH; w = with_statement+;
+    <With>
   | CANON;
-    { Canon } 
+    { Canon }
 
-let decl_extern == 
-  | m = modification*; t = typ; x = ID;
-    { ExternVar(m, t, (Var x, $startpos)) }
-  | m = modification*; t = typ; x = ID; (p1, p2, _) = fn_params; 
-    { ExternFn((m, x, (p1, t, p2))) }
-
-let params == 
-  | m = modification*; t = typ; x = ID;
+let with_statement ==
+  | FRAME; d = delimited(LPAREN, NUM, RPAREN); r = separated_list(COMMA, ID); COLON;
     <>
 
-let parameterization ==
-  | BACKTICK; t = ID;
+let coordinate_element ==
+  | OBJECT; x = ID; p = oplist(parameters(LWICK, ID, RWICK)); IS; t = typ; SEMI;
+    <CoordObjectAssign>
+  | f = fn;
+    <CoordFn>
+
+let extern_element == 
+  | (m, t) = terminated_list(modification, typ); x = ID;
+    { ExternVar(m, t, x, $startpos) }
+  | f = fn_typ;
+    <ExternFn>
+  | TYP; x = ID; pm = parameterization(constrained); t = snd(combined(IS, typ))?;
+    <ExternTyp>
+
+let constrained ==
+  | t = ID;
     { (t, AnyTyp) }
-  | BACKTICK; t = ID; COLON; c = constrain;
+  | t = ID; COLON; c = typ; <>
+
+let parameter == 
+  | t = typ; x = ID;
     <>
 
-let par_decl == 
-  | LWICK; pt = separated_list(COMMA, parameterization); RWICK;
-    <>
+let parameters(L, P, R) ==
+  | x = delimited(L, separated_list(COMMA, P), R); <>
 
-let fn_decl ==
-  | m = modification*; t = typ; x = ID; (p1, p2, _) = fn_params;
-    { (m, x, (p1, t, p2)) }
+let parameterization(T) ==
+  | pt = oplist(parameters(LWICK, T, RWICK)); { Assoc.create pt }
 
-let fn_params ==
-  | LPAREN; p = separated_list(COMMA, params); RPAREN;
-    { ([], p, $startpos) }
-  | pt = par_decl; LPAREN; p = separated_list(COMMA, params); RPAREN;
-    { (pt, p, $startpos) }
+let arguments ==
+  | x = parameters(LPAREN, node(exp), RPAREN); <>
+
+let id_expanded ==
+  | x = ID; <>
+  | NOT; { "!" }
+  | x = unop_postfix; <>
+  | x = infix; <>
+
+let fn_typ ==
+  | (m, t) = terminated_list(modification, typ); x = id_expanded; 
+    pm = parameterization(constrained); params = parameters(LPAREN, parameter, RPAREN);
+    { (m, t, x, pm, params, $startpos) }
+
+let fn ==
+  | f = fn_typ; LBRACE; cl = list(acomm); RBRACE; <>
 
 let acomm ==
   | c = comm;
@@ -185,126 +220,78 @@ let comm ==
     <>
 
 let if_block(delim) ==
-  | delim; LPAREN; b = aexp; RPAREN; LBRACE; c = acomm*; RBRACE;
+  | delim; LPAREN; b = node(exp); RPAREN; LBRACE; c = acomm*; RBRACE;
     <>
 
 let comm_block ==
   | i = if_block(IF); el = if_block(ELIF)*; 
     e = option(preceded(ELSE, delimited(LBRACE, list(acomm), RBRACE)));
     <If>
-  | FOR; LPAREN; c1 = acomm_element; SEMI; b = aexp; SEMI; c2 = acomm_element; RPAREN;
-    LBRACE; cl = acomm*; RBRACE; 
+  | FOR; LPAREN; c1 = node(comm_element); SEMI; b = node(exp); SEMI; c2 = node(comm_element); RPAREN;
+    LBRACE; cl = node(comm)*; RBRACE; 
     <For>
 
-let acomm_element ==
-  | ce = comm_element;
-    { (ce, $startpos) }
+let assignop ==
+  | PLUSEQ;
+    { "+" }
+  | MINUSEQ;
+    { "-" }
+  | TIMESEQ;
+    { "*" }
+  | DIVEQ;
+    { "/" }
+  | CTIMESEQ;
+    { ".*" }
 
 let comm_element == 
   | SKIP;
     { Skip }
-  /* | m = modification*; t = typ; x = ID; GETS; e1 = exp; 
-    < Decl > */
-  | t = typ; x = ID; GETS; e = aexp;
-    { Decl([], t, x, e) }
-  | m = modification+; t = typ; x = ID; GETS; e = aexp;
-    { Decl(m, t, x, e) }
-  | x = ID; GETS; e1 = aexp; 
+  | (m, t) = terminated_list(modification, typ); x = ID; GETS; e = node(exp); 
+    < Decl >
+  | e = node(exp);
+    < Exp >
+  | x = ID; GETS; e = node(exp); 
     < Assign >
-  | x = ID; PLUSEQ; e1 = aexp; 
-    { AssignOp(x, Plus, e1) }
-  | x = ID; MINUSEQ; e1 = aexp; 
-    { AssignOp(x, Minus, e1) }
-  | x = ID; TIMESEQ; e1 = aexp; 
-    { AssignOp(x, Times, e1) }
-  | x = ID; DIVEQ; e1 = aexp; 
-    { AssignOp(x, Div, e1) }
-  | x = ID; CTIMESEQ; e1 = aexp; 
-    { AssignOp(x, CTimes, e1) }
-  | PRINT; e = aexp; 
+  | x = ID; a = assignop; e = node(exp); 
+    < AssignOp >
+  | PRINT; e = node(exp); 
     < Print >
-  | RETURN; e = aexp?;
+  | RETURN; e = node(exp)?;
     < Return >
-  | x = ID; INC; 
-    < Inc >
-  | x = ID; DEC; 
-    < Dec >
-  | t = typ; LPAREN; a = separated_list(COMMA, aexp); RPAREN; 
-    { FnCall(t, [], a) }
-  | t = typ; LWICK; p = separated_list(COMMA, typ); RWICK; 
-    LPAREN; a = separated_list(COMMA, aexp); RPAREN; 
-    <FnCall>
 
-let constrain == 
-  | SPACE;
-    { GenSpaceTyp }
-  | VEC;
-    { GenVecTyp }
-  | MAT;
-    { GenMatTyp }
-  | GENTYPE; 
-    { GenTyp }
-  | t = typ;
-    <TypConstraint>
-
-dexp: 
+let dexp :=
   | d1 = dexp; PLUS; d2 = dexp;
-    { DimBinop(Plus, d1, d2) }
-  | d1 = dexp; MINUS; d2 = dexp; 
-    { DimBinop(Plus, d1, d2) }
+    <DimPlus>
   | n = NUM;
-    { DimNum n }
+    <DimNum>
   | x = ID;
-    { DimVar x }
-  
-typ:
+    <DimVar>
+
+let typ :=
   | AUTOTYP;
     { AutoTyp }
-  | BACKTICK; e = ID;
-    { AbsTyp(e) }
   | BOOLTYP;
     { BoolTyp }
   | FLOATTYP;
     { FloatTyp }
   | INTTYP;
     { IntTyp }
-  | t = typ; LBRACK; n = NUM; RBRACK;
-    { ArrTyp(t, ConstInt n) }
-  | t = typ; LBRACK; s = ID; RBRACK;
-    { ArrTyp(t, ConstVar s) }
-  | m = MATTYP;
-    { let len = String.length m in
-      let dim = String.sub m 3 (len-3) in
-      let dim_lst = Str.split_delim (regexp "x") dim in
-      TransTyp (UntaggedVecTyp (int_of_string(List.nth dim_lst 1)),
-      (UntaggedVecTyp (int_of_string(List.nth dim_lst 0))))}
-  | t1 = typ; TRANS; t2 = typ;
-    { TransTyp(t1,t2) }
-  | t = typ; LWICK; tl = separated_list(COMMA, typ); RWICK;
-    { ParTyp(t, tl) }
-  | VEC; LWICK; d = dexp; RWICK;
-    { TopVecTyp d } 
-  | x = ID;
-    { if (Str.string_match vec x 0) then (
-      let len = String.length x in 
-      let dim = int_of_string (String.sub x 3 (len-3)) in
-      UntaggedVecTyp dim
-      ) else
-      if (Str.string_match mat x 0) then (
-      let len = String.length x in 
-      let dim = int_of_string (String.sub x 3 (len-3)) in
-      TransTyp (UntaggedVecTyp dim, UntaggedVecTyp dim)
-      ) 
-      else (VarTyp x) }
-  | SAMPLERCUBE;
-    { SamplerCubeTyp }
-  | s = SAMPLER;
-    { let len = String.length s in
-      let dim = String.sub s 7 (len-7) in 
-      let dim_lst = Str.split_delim (regexp "D") dim in
-      SamplerTyp (int_of_string(List.nth dim_lst 0)) }
   | VOID;
     { UnitTyp }
+  | t = typ; LBRACK; dl = separated_list(combined(LBRACK, RBRACK), dexp); RBRACK;
+    { List.fold_right (fun d acc -> ArrTyp(acc, d)) dl t }
+  | x = ID; DOT; t = typ;
+    <CoordTyp>
+  | x = ID; pt = parameters(LWICK, typ, RWICK);
+    <ParTyp>
+  | x = ID; /* explicit for clarity and to help out the parser */
+    { ParTyp(x, []) }
+  | VEC;
+    { GenArrTyp(FloatTyp) }
+  | MAT;
+    { GenArrTyp(GenArrTyp(FloatTyp)) }
+  | GENTYPE; 
+    { GenTyp }
 
 let storage_qual ==
   | IN;
@@ -322,11 +309,11 @@ let storage_qual ==
 
 let value ==
   | b = bool;
-    { Bool b }
+    <Bool>
   | i = NUM;
-    { Num i }
+    <Num>
   | f = FLOAT;
-    { Float f }
+    <Float>
 
 let bool ==
   | TRUE;
@@ -334,59 +321,53 @@ let bool ==
   | FALSE;
     { false }
 
-let aexp ==
-  | e = exp;
-    { (e, $startpos) }
-
-exp:
+let exp:=
   | LPAREN; a = exp; RPAREN;
-    { a }
+    <>
   | v = value;
-    { Val v }
+    <Val>
   | x = ID;
-    { Var x }
-  | x = ID; LPAREN; a = separated_list(COMMA, aexp); RPAREN;
-    { FnInv(x, [], a) }
-  | e1 = aexp; LWICK; e2 = aexp;
-    { Binop(Lt,e1,e2) }
-  | e1 = aexp; RWICK; e2 = aexp;
-    { Binop(Gt,e1,e2) }
-  | x = ID; LWICK; t = separated_list(COMMA, typ); RWICK; 
-    LPAREN; a = separated_list(COMMA, aexp); RPAREN;
-    { FnInv(x, t, a) }
-  | LBRACK; e = separated_list(COMMA, aexp); RBRACK;
-    { Arr(e) }
-  | e1 = aexp; PLUS; e2 = aexp;
-    { Binop(Plus,e1,e2) }
-  | e1 = aexp; TIMES; e2 = aexp;
-    { Binop(Times,e1,e2) }
-  | e1 = aexp; MINUS; e2 = aexp;
-    { Binop(Minus,e1,e2) }
-  | e1 = aexp; DIV; e2 = aexp;
-    { Binop(Div,e1,e2) }
-  | e1 = aexp; CTIMES; e2 = aexp;
-    { Binop(CTimes,e1,e2) }
-  | e = aexp; AS; t = typ;
-    { As(e, t) }
-  | e = aexp; IN; t = typ;
-    { In(e, t) }
-  | MINUS; e1 = aexp;
-    { Unop(Neg,e1) }
-  | NOT; e1 = aexp;
-    { Unop(Not,e1) }
-  | e1 = aexp; EQ; e2 = aexp;
-    { Binop(Eq,e1,e2) }
-  | e1 = aexp; LEQ; e2 = aexp;
-    { Binop(Leq,e1,e2) }
-  | e1 = aexp; GEQ; e2 = aexp;
-    { Binop(Geq,e1,e2) }
-  | e1 = aexp; OR; e2 = aexp;
-    { Binop(Or,e1,e2) }
-  | e1 = aexp; AND; e2 = aexp;
-    { Binop(And,e1,e2) }
-  | e1 = aexp; DOT; s = ID;
-    { Unop(Swizzle s,e1) }
-  | x = ID; LBRACK; e2 = aexp; RBRACK;
-    { Binop(Index, (Var(x), $startpos), e2) }
+    <Var>
+  | op = unop_prefix; e = node(exp);
+    { FnInv(op, [], [e]) }
+  | e = node(exp); op = unop_postfix;
+    { FnInv(op, [], [e]) }
+  | e1 = node(exp); op = infix; e2 = node(exp);
+    { FnInv(op, [], [e1; e2]) }
+  | x = ID; p = oplist(parameters(LWICK, typ, RWICK)); a = arguments; 
+    <FnInv>
+  | LBRACK; e = separated_list(COMMA, node(exp)); RBRACK; 
+    <Arr>
+  | e = node(exp); AS; t = typ;
+    <As>
+  | e = node(exp); IN; t = typ;
+    <In>
+  | e = node(exp); DOT; s = ID;
+    { FnInv("swizzle",[],[Var s, $startpos; e]) }
+  | x = ID; LBRACK; e = node(exp); RBRACK;
+    { Index((Var x, $startpos), e) }
+
+let unop_prefix ==
+  /* NOTE: if you update this, update id_extended to avoid MINUS conflicts */
+  | NOT; { "!" }
+  | MINUS; { "-" }
+
+let unop_postfix ==
+  | INC; {"++"}
+  | DEC; {"--"}
+
+let infix ==
+  | PLUS; { "+" }
+  | TIMES; { "*" }
+  | MINUS; { "-" }
+  | DIV; { "/" }
+  | LWICK; { "<" }
+  | RWICK; { ">" }
+  | CTIMES; { ".*" }
+  | EQ; { "==" }
+  | LEQ; { "<=" }
+  | GEQ; { ">=" }
+  | OR; { "||" }
+  | AND; { "&&" }
 
 %%

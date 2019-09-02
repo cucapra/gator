@@ -15,7 +15,7 @@ class LinguineAsset extends Asset {
   async load() {
     // Compile the code. (Eventually, this should probably go in `parse`
     // instead, once the compiler supports reading code from stdin...)
-    let { stdout } = await execFile('lingc', [this.name]);
+    let { stdout } = await execFile('gatorc', [this.name]);
     return stdout;
   }
 

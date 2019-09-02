@@ -1,1 +1,1 @@
-Fatal error: exception Lingl__Check.TypeException("mismatched return types, expected: a, found: vec2")
+Fatal error: exception Gatorl__Check.TypeException("mismatched return types, expected: a, found: vec2")

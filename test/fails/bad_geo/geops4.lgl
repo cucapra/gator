@@ -1,0 +1,60 @@
+declare float cos(float f);
+declare float sqrt(float f);
+declare float acos(float f);
+
+prototype {
+    object point<r>;
+    object vector<r>;
+
+    vector<r> +(vector<r> x, vector<r> y);
+    vector<r> -(vector<r> x, vector<r> y);
+    vector<r> *(vector<r> v, scalar<r> s);
+    vector<r> *(scalar<r> s, vector<r> v);
+    vector<r> -(vector<r> v);
+    position<r> translate(position<r> p, vector<r> v);
+    point<r> +(point<r> p, vector<r> v);
+    point<r> -(point<r> p, vector<r> v);
+    vector<r> -(point<r> x, point<r> y);
+    vector<r> -(point<r> x);
+}
+coord hom {
+    dimension 3;
+    object point = float[4];
+    object vector = float[4];
+
+    vector<r> +(vector<r> x, vector<r> y) {
+        return [x[0] + y[0], x[1] + y[1], x[2] + y[2], 0.];
+    }
+    vector<r> -(vector<r> x, vector<r> y) {
+        return [x[0] - y[0], x[1] - y[1], x[2] - y[2], 0.];
+    }
+    vector<r> *(vector<r> v, scalar<r> s) {
+        return [x[0] * s, x[1] * s, x[2] * s, 0.];
+    }
+    vector<r> *(scalar<r> s, vector<r> v) {
+        return [s * x[0], s * x[1], s * x[2], 0.];
+    }
+    vector<r> -(vector<r> v) {
+        return [s * x[0], s * x[1], s * x[2], 0.];
+    }
+    point<r> translate(point<r> p, vector<r> v) {
+        return p + v * p[3];
+    }
+    point<r> +(point<r> p, vector<r> v) {
+        return p + v * p[3];
+    }
+    point<r> -(point<r> p, vector<r> v) {
+        return p - v * p[3];
+    }
+    vector<r> -(point<r> x, point<r> y) {
+        return x * y[3] + y * x[3];
+    }
+    // We don't actually need to define every function, it will just fail if we try and call an undefined function
+}
+
+frame world is float[3];
+
+void main() {
+    hom.point<world> v = [1., 2., 1., 1.];
+    print -v; // negative of a hom not defined
+}

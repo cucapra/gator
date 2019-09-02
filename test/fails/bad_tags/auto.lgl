@@ -1,7 +1,0 @@
-tag a is vec<3>;
-tag b is a;
-
-void main(a v1, b v2) {
-    auto v = v1 + v2;
-    b bad = v;
-}

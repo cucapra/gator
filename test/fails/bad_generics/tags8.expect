@@ -1,1 +1,1 @@
-Fatal error: exception Lingl__Check.TypeException("No overloaded function declaration of downcast2<a,e> matching types (a) found")
+Fatal error: exception Gatorl__Check.TypeException("No overloaded function declaration of downcast2<a,e> matching types (a) found")

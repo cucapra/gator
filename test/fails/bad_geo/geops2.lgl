@@ -1,0 +1,71 @@
+declare float cos(float f);
+declare float sqrt(float f);
+declare float acos(float f);
+
+prototype {
+    object point<r>;
+    object vector<r>;
+
+    vector<r> +(vector<r> x, vector<r> y);
+    vector<r> -(vector<r> x, vector<r> y);
+    vector<r> *(vector<r> v, scalar<r> s);
+    vector<r> *(scalar<r> s, vector<r> v);
+    vector<r> -(vector<r> v);
+    position<r> translate(position<r> p, vector<r> v);
+    point<r> +(point<r> p, vector<r> v);
+    point<r> -(point<r> p, vector<r> v);
+    vector<r> -(point<r> x, point<r> y);
+    vector<r> -(point<r> x);
+}
+coord polar {
+    dimension 2;
+
+    point = float[2];
+    vector = float[2];
+    float[2] __trans(float[2] x, float[2] y) {
+        // https://pritschet.me/wiki/physics/linear-translation-polar-coordinates/
+        float r1 = x[0];
+        float r2 = y[0];
+        float theta1 = x[1];
+        float theta2 = x[2];
+        float r = sqrt(r1 * r1 + r2 * r2 + 2 * r1 * r2 * cos(theta1 - theta2)); // Without the % type, this should fail
+        float theta = acos((r1 * cos(theta1) + r2 * cos(theta2)) / r);
+        return [r, theta];
+    }
+    vector<r> +(vector<r> x, vector<r> y) {
+        return __trans(x, y);
+    }
+    vector<r> -(vector<r> x, vector<r> y) {
+        return __trans(x, [-y[0], y[1]]);
+    }
+    vector<r> *(vector<r> v, scalar s) {
+        return [v[0] * s, v[1]];
+    }
+    vector<r> *(scalar s, vector v) {
+        return [s * v[0], v[1]];
+    }
+    vector<r> -(vector<r> v) {
+        return [-v[0], v[1]];
+    }
+    point<r> translate(point<r> p, vector<r> v) {
+        return __trans(p, v);
+    }
+    point<r> +(point<r> p, vector<r> v) {
+        return __trans(p, v);
+    }
+    point<r> +(point<r> p, vector<r> v) {
+        return p - v;
+    }
+    vector<r> -(point<r> x, point<r> y) {
+        return __trans(x, [-y[0], y[1]]);
+    }
+    vector<r> -(point<r> v) {
+        return [-v[0], v[1]];
+    }
+}
+
+frame world is float[3];
+frame plane is float[2];
+
+void main() {
+}

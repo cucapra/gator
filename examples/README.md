@@ -21,7 +21,7 @@ This will print out a URL you can open in a browser to view the output.
 
 This works by invoking our `start` script in `package.json`, which uses the `$SRC` environment variable to build and run a given example using [Parcel][].
 We have a Parcel plugin that compiles Linguine source code to GLSL and then allows our TypeScript host programs to import the result as a string.
-This pipeline requires the `lingc` compiler program to be available on your path, i.e., that you have run `dune install` already.
+This pipeline requires the `gatorc` compiler program to be available on your path, i.e., that you have run `dune install` already.
 
 The `raw` directory contains example code we're still working on.
 Eventually, all this code will migrate to individual complete examples and we will delete these old files.

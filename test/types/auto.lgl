@@ -1,0 +1,35 @@
+frame a is float[2];
+frame b is float[3];
+frame c is b;
+frame d is b;
+
+void main() {
+    auto s11 = 5;
+    auto s12 = 5. + .3;
+    auto s13 = 3 <= 5;
+    bool s14 = s13 || false;
+
+    a v1 = [1., 2.];
+    b v2 = [2., 1., 2.];
+    c v3 = [3., 3., 3.];
+    d v4 = [2., 2., 2.];
+
+    auto s21 = v1;
+    auto s22 = v3 + v4;
+    b s23 = s22;
+    auto s24 = 5. * v4;
+    d s25 = s24 + v4;
+
+    a->b a_b = [[1., 1.], [1., 1.], [1., 1.]];
+    b->c b_c = [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
+    c->d c_d = [[1., -1., 1.], [-1., 1., 1.], [1., 1., -1.]];
+
+    auto s31 = 2. * (a_b + a_b);
+    auto s32 = c_d * b_c * s31;
+    d s33 = s32 * v1;
+    auto s34 = c_d * v3 + v4;
+    d s35 = s33 + s34;
+
+    print 1;
+
+}

@@ -1,8 +1,8 @@
-# Blender MTL File: 'caiman texturizado.blend'
+# Blender MTL File: 'None'
 # Material Count: 5
 
-newmtl Material
-Ns 96.078431
+newmtl Material.016
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.500000 0.500000 0.500000
@@ -10,10 +10,10 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd C:\Users\Checkmate\Documents\linguine\examples\resources\caiman-alligator-lowpoly\source\Carpeta nueva\coloratlas.png
+map_Kd nueva\coloratlas.png
 
-newmtl Material.001
-Ns 96.078431
+newmtl Material.017
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.500000 0.500000 0.500000
@@ -21,10 +21,10 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd C:\Users\Checkmate\Documents\linguine\examples\resources\caiman-alligator-lowpoly\source\Carpeta nueva\coloratlas.png
+map_Kd nueva\coloratlas.png
 
-newmtl Material.002
-Ns 96.078431
+newmtl Material.018
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.500000 0.500000 0.500000
@@ -32,10 +32,10 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd C:\Users\Checkmate\Documents\linguine\examples\resources\caiman-alligator-lowpoly\source\Carpeta nueva\coloratlas.png
+map_Kd nueva\coloratlas.png
 
-newmtl Material.005
-Ns 96.078431
+newmtl Material.019
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.500000 0.500000 0.500000
@@ -43,10 +43,10 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd C:\Users\Checkmate\Documents\linguine\examples\resources\caiman-alligator-lowpoly\source\Carpeta nueva\coloratlas.png
+map_Kd nueva\coloratlas.png
 
-newmtl Material.006
-Ns 96.078431
+newmtl Material.020
+Ns 94.117647
 Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.500000 0.500000 0.500000
@@ -54,4 +54,4 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd C:\Users\Checkmate\Documents\linguine\examples\resources\caiman-alligator-lowpoly\source\Carpeta nueva\coloratlas.png
+map_Kd nueva\coloratlas.png

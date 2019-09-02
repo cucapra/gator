@@ -1,39 +1,5 @@
-type vec = CoreAst.vec
-type mat = CoreAst.mat
-
-let vec_to_mat (v : vec) : mat = [v]
-let mat_to_vec (m : mat) : vec = 
-  if (List.length m = 1) then (List.flatten m) else (failwith "Invalid Argument")
-
-let vec_add (v1 : vec) (v2 : vec) : vec =
-  List.map2 (fun x y -> x +. y) v1 v2
-
-let mat_add (m1 : mat) (m2 : mat) : mat = 
-  List.map2 (fun x y -> vec_add x y) m1 m2
-
-let vec_sub (v1 : vec) (v2 : vec) : vec =
-  List.map2 (fun x y -> x -. y) v1 v2
-
-let mat_sub (m1 : mat) (m2 : mat) : mat = 
-  List.map2 (fun x y -> vec_sub x y) m1 m2
-
-let sv_mult (s : float) (v : vec) : vec = 
-  List.map (fun x -> s *. x) v
-
-let iv_mult (s : int) (v : vec) : vec = 
-  List.map (fun x -> (float_of_int (s * (int_of_float x)))) v
-
-let sm_mult (s : float) (m : mat) : mat = 
-  List.map (fun x -> List.map (fun y -> s *. y) x) m
-
-let im_mult (s : int) (m : mat) : mat = 
-  List.map (fun x -> List.map (fun y -> float_of_int (s * (int_of_float y))) x) m
-
-let vc_mult (v1 : vec) (v2 : vec) : vec =
-  List.map2 (fun x y -> x *. y) v1 v2
-
-let mc_mult (m1 : mat) (m2 : mat) : mat =
-  List.map2 (fun x y -> vc_mult x y) m1 m2
+type vec = float list
+type mat = float list list
 
 let rec transpose (m : 'a list) : 'a list =
   (*https://stackoverflow.com/questions/3989776/transpose-of-a-list-of-lists*)
@@ -43,13 +9,13 @@ let rec transpose (m : 'a list) : 'a list =
   | (x::xs)::xss ->
       (x :: List.map List.hd xss) :: transpose (xs :: List.map List.tl xss)
 
-let vec_mult (v : vec) (m : mat) : vec =
+let vec_mult (m : mat) (v : vec) : vec =
   List.rev (List.fold_left
     (fun vacc mv -> (List.fold_left2 (fun acc x y -> acc +. (x *. y)) 0. v mv)::vacc)
     [] m)
 
 let mat_mult (m1 : mat) (m2 : mat) : mat =
-  List.rev (List.fold_left (fun acc v -> (vec_mult v (transpose m2))::acc) [] m1)
+  List.rev (List.fold_left (fun acc v -> (vec_mult (transpose m2) v)::acc) [] m1)
 
 let vec_eq (v1 : vec) (v2 : vec) : bool =
   List.fold_left2 (fun acc x y -> acc && (x = y)) true v1 v2

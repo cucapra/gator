@@ -1,6 +1,0 @@
-tag a is vec<2>;
-tag b is vec<3>;
-
-void main() {
-    a->b x = [[1., 1., 1.], [1., 1., 1.]]; // Reversed order
-}

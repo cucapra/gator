@@ -1,7 +1,0 @@
-tag a is vec<2>;
-
-void main() {
-    a x = [1., 1.];
-    a->vec2 a_v2 = [[1., 1.], [1., 1.]];
-    a bad = x * a_v2; // Bad result downcast
-}

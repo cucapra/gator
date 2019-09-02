@@ -1,4 +1,4 @@
 (executable
- (name lingc)
- (public_name lingc)
- (libraries lingl))
+ (name gatorc)
+ (public_name gatorc)
+ (libraries gatorl))

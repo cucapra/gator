@@ -211,12 +211,12 @@ $\Chi$ function definitions are more complicated, as we are required to actually
 		return s * x;
 	}
 	
-	hom<vector> -(hom<position> x, hom<position> y) {
+	hom.vector -(hom.position x, hom.position y) {
 		// We use n rather than n-1 since hom has dimension n+1
 		return x * y[n] - y * x[n]
 	}
 	
-	hom<position> +(hom<position> x, hom<vector> y) {
+	hom.position +(hom.position x, hom.vector y) {
 		return x + y * x[n]
 	}
 \end{lstlisting}

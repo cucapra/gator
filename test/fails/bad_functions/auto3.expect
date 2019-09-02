@@ -1,1 +1,1 @@
-Fatal error: exception Lingl__Check.TypeException("variable f has the name of a function")
+Fatal error: exception Gatorl__Check.TypeException("variable f has the name of a function")

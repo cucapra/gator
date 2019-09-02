@@ -1,5 +1,6 @@
+type vec4 is float[4];
+
 void main() { 
     vec4 color = [1., 0.4, 0.25, 1.];
     vec4 gl_FragColor = color;
-    print gl_FragColor;
 }

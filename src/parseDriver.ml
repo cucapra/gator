@@ -1,8 +1,8 @@
 (* Main driver for parsing, for unit testing*)
 
 open CoreAst
-open TagAst
-open TagAstPrinter
+open GatorAst
+open GatorAstPrinter
 
 (* Current program file and parsed program. *)
 let file : string option ref = ref None

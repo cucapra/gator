@@ -11,8 +11,6 @@ exception SyntaxError of string
 let white = [' ' '\t']
 let num = ['0'-'9']+
 let letter = ['a'-'z' 'A'-'Z']
-let mat = "mat" num ['x'] num
-let sampler = "sampler" num ['D']
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let floatval = ((['0'-'9']*['.']['0'-'9']+)|(['0'-'9']+['.']['0'-'9']*))
 let newline = ['\n' '\r']
@@ -28,8 +26,15 @@ rule read = parse
   | num as num      { NUM (int_of_string num) }
   | "vec"           { VEC }
   | "mat"           { MAT }
-  | "tag"           { TAG }
+  | "prototype"     { PROTOTYPE }
+  | "object"        { OBJECT }
+  | "coordinate"    { COORDINATE }
+  | "dimension"     { DIMENSION }  
+  | "frame"           { FRAME }
+  | "type"          { TYP }
   | "is"            { IS }
+  | "has"           { HAS }
+  | "with"          { WITH }
   | "canon"         { CANON }
   | "true"          { TRUE }
   | "false"         { FALSE }
@@ -42,17 +47,15 @@ rule read = parse
   | "int"           { INTTYP }
   | "float"         { FLOATTYP }
   | "auto"          { AUTOTYP }
-  | "samplerCube"   { SAMPLERCUBE }
-  | mat as mat      { MATTYP mat }
   | "bool"          { BOOLTYP }
   | "+"             { PLUS }
   | "-"             { MINUS }
   | "*"             { TIMES }
   | "/"             { DIV }
   | ".*"            { CTIMES }
-  | "as"            { AS }
+  | "as!"           { AS }
   | "in"            { IN }
-  | "out"            { OUT }
+  | "out"           { OUT }
   | "+="            { PLUSEQ }
   | "-="            { MINUSEQ }
   | "*="            { TIMESEQ }
@@ -68,7 +71,6 @@ rule read = parse
   | "}"             { RBRACE }
   | "("             { LPAREN }
   | ")"             { RPAREN }
-  | "->"            { TRANS }
   | "="             { GETS }
   | "=="            { EQ }
   | "<="            { LEQ }
@@ -80,8 +82,6 @@ rule read = parse
   | ";"             { SEMI }
   | "."             { DOT }
   | ":"             { COLON }
-  | "`"             { BACKTICK }
-  | sampler as sm   { SAMPLER sm }
   | "void"          { VOID }
   | "return"        { RETURN }
   | "declare"       { DECLARE }
@@ -90,7 +90,6 @@ rule read = parse
   | "attribute"     { ATTRIBUTE }
   | "uniform"       { UNIFORM }
   | "varying"       { VARYING }
-  | "space"         { SPACE }
   | "break"
   | "continue"
   | "do"
