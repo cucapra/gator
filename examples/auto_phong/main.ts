@@ -37,8 +37,8 @@ function main() {
 
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
-    // mat4.rotateY(model, model, .01);
-    mat4.rotateZ(lightTrans, lightTrans, .01);
+    mat4.rotateY(model, model, .01);
+    // mat4.rotateZ(lightTrans, lightTrans, .01);
 
     // Use our shader pair.
     gl.useProgram(program);

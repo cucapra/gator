@@ -248,7 +248,7 @@ canon hom.vector<world> app_uLightTrans(hom.vector<light> v) {
 
 void main() {
     color ambient = [.1, 0., 0.];
-    color diffColor = [0.2, 0.8, 0.4];
+    color diffColor = [0.5, 0.7, 0.2];
     color specColor = [1.0, 1.0, 1.0];
 
     // auto temp = vPosition in hom.point<model>;
