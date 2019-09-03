@@ -13,6 +13,7 @@ exception ParseException of string
 %token <int> NUM
 %token <float> FLOAT
 %token <string> ID
+%token <string> STR
 %token PLUS
 %token MINUS
 %token TIMES
@@ -79,6 +80,7 @@ exception ParseException of string
 %token ATTRIBUTE
 %token UNIFORM
 %token VARYING
+
 
 (* Precedences *)
 

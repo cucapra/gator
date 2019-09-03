@@ -1,0 +1,10 @@
+void main() {
+    string a = "abc";
+    string b = "def";
+
+    string concat = a + b; //TODO Change by concat syntax
+
+    print a;
+    print b;
+    print concat;
+}

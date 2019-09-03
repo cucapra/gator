@@ -7,6 +7,7 @@ type etyp =
     | BoolTyp
     | IntTyp
     | FloatTyp
+    | StrTyp
     | VecTyp of int
     | MatTyp of int * int
     | TransTyp of etyp * etyp
