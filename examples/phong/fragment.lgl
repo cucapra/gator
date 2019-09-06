@@ -225,7 +225,7 @@ uniform cart3.point<world> uLight;
 void main() {
     color ambient = [.1, 0., 0.];
     color diffColor = [0.2, 0.8, 0.4];
-    color specColor = [1.0, 1.0, 1.0];
+    color specColor = [0.0, 0.0, 0.0];
 
     auto worldPos = hom_reduce(uModel*homify(vPosition));
     auto camPos = hom_reduce(uView*homify(worldPos));

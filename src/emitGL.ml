@@ -95,7 +95,7 @@ and string_of_exp (e : exp) : string =
     | FnInv (id, tl, args) -> string_of_fn_util id (List.map string_of_texp args)
 
 let rec string_of_comm (c: comm) : string =
-    let block_string c = "{\n " ^ string_of_list string_of_comm c ^ "}" in
+    let block_string c = "{\n " ^ string_of_separated_list "" string_of_comm c ^ "}" in
     match c with
     | Skip -> "skip;"
     | Print e -> "print " ^ string_of_texp e ^ ";"
