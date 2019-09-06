@@ -222,8 +222,6 @@ uniform hom.transformation<world, camera> uView;
 varying cart3.vector<model> vNormal;
 uniform cart3.point<world> uLight;
 
-// Shader Code
-
 void main() {
     color ambient = [.1, 0., 0.];
     color diffColor = [0.2, 0.8, 0.4];
@@ -235,7 +233,7 @@ void main() {
 
     auto lightDir = normalize(uLight - worldPos);
     auto lightWorldDot = dot(lightDir, worldNorm);
-    scalar diffuse = max(lightWorldDot, 0.0);
+    scalar diffuse = max(lightWorldDot, 0.);
 
     auto reflectDir = normalize(hom_reduce(uView * homify(reflect(-lightDir, worldNorm))));
 

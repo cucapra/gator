@@ -31,7 +31,7 @@ function main() {
   let model = mat4.create();
 
   // Position the light source for the lighting effect.
-  let light = vec3.fromValues(20., 0., 20.);
+  let light = vec3.fromValues(3., 0., 20.);
 
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
