@@ -1,6 +1,8 @@
 import * as lgl from '../lglexample';
 import { mat4, vec3 } from 'gl-matrix';
 
+var __dirname : string;
+
 function main() {
   let gl = lgl.setup(render);
 
@@ -9,6 +11,9 @@ function main() {
     require('./vertex.lgl'),
     require('./fragment.lgl')
   );
+
+  const fs : any = require('fs');
+  let caiman = fs.readFileSync(__dirname + './../resources/OBJ/caiman.obj', 'utf8');
 
   // Uniform and attribute locations.
   let loc_uProjection = lgl.uniformLoc(gl, program, 'uProjection');
@@ -19,13 +24,14 @@ function main() {
   let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
 
   // We'll draw a teapot.
-  let mesh = lgl.getBunny(gl);
+  // let mesh = lgl.getBunny(gl);
+  let mesh = lgl.load_obj (gl, caiman);
 
   // Initialize the model position.
   let model = mat4.create();
 
   // Position the light source for the lighting effect.
-  let light = vec3.fromValues(20., 0., 20.);
+  let light = vec3.fromValues(3., 0., 20.);
 
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
@@ -43,6 +49,8 @@ function main() {
     // Set the attribute arrays.
     lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
+
+    gl.disable(gl.CULL_FACE);
 
     // Draw the object.
     lgl.drawMesh(gl, mesh);
