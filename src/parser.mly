@@ -13,6 +13,7 @@ exception ParseException of string
 %token <int> NUM
 %token <float> FLOAT
 %token <string> ID
+%token <string> STRING
 %token PLUS
 %token MINUS
 %token TIMES
@@ -41,6 +42,7 @@ exception ParseException of string
 %token NOT
 %token COMMA
 %token DOT
+%token USING
 %token PROTOTYPE
 %token OBJECT
 %token COORDINATE
@@ -61,7 +63,8 @@ exception ParseException of string
 %token PRINT
 %token SEMI
 %token INTTYP
-%token FLOATTYP 
+%token FLOATTYP
+%token STRINGTYP
 %token BOOLTYP
 %token AUTOTYP
 %token LBRACE
@@ -73,8 +76,6 @@ exception ParseException of string
 %token GENTYPE
 %token LWICK
 %token RWICK
-%token VEC
-%token MAT
 %token CONST
 %token ATTRIBUTE
 %token UNIFORM
@@ -129,7 +130,9 @@ let fst(T) == (a, b) = T; { a }
 let snd(T) == (a, b) = T; { b }
 let node(T) == t = T; { (t, $startpos) }
 
-let term == 
+let term ==
+  | USING; s = STRING; SEMI;
+    <Using>
   | PROTOTYPE; x = ID; LBRACE; p = list(node(prototype_element)); RBRACE;
     <Prototype>
   | COORDINATE; x = ID; COLON; p = ID;
@@ -276,6 +279,8 @@ let typ :=
     { FloatTyp }
   | INTTYP;
     { IntTyp }
+  | STRINGTYP;
+    { StringTyp }
   | VOID;
     { UnitTyp }
   | t = typ; LBRACK; dl = separated_list(combined(LBRACK, RBRACK), dexp); RBRACK;
@@ -286,10 +291,6 @@ let typ :=
     <ParTyp>
   | x = ID; /* explicit for clarity and to help out the parser */
     { ParTyp(x, []) }
-  | VEC;
-    { GenArrTyp(FloatTyp) }
-  | MAT;
-    { GenArrTyp(GenArrTyp(FloatTyp)) }
   | GENTYPE; 
     { GenTyp }
 
@@ -314,6 +315,8 @@ let value ==
     <Num>
   | f = FLOAT;
     <Float>
+  | s = STRING;
+    <StringVal>
 
 let bool ==
   | TRUE;

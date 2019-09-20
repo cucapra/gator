@@ -69,6 +69,7 @@ type contexts = {
   ps : psi Assoc.context;
   pm : parameterization;
   member : string option; (* Used for functions declared in prototypes or coordinate schemes *)
+  externs : prog Assoc.context;
   meta : metadata;
   _bindings : binding_contexts
 }

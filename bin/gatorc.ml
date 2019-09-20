@@ -23,10 +23,9 @@ let spec_list : (Arg.key * Arg.spec * Arg.doc) list =
         "Enable debug output")
     ]
 
-let _ =
-    Arg.parse spec_list set_program_file usage_msg;
-    match !program_file with
-    None -> print_string (Arg.usage_string spec_list usage_msg) | Some f ->
+let prog_path f = String.concat "/" (List.rev (List.tl (List.rev (String.split_on_char '/' f)))) ^ "/"
+
+let parse_prog f : GatorAst.prog =
     let ch =
         try open_in f
         with Sys_error s -> failwith ("Cannot open file: " ^ s) in
@@ -45,9 +44,25 @@ let _ =
                 failwith ("Parsing error at token '" ^ tok ^ "', line "
                      ^ (string_of_int pos.Lexing.pos_lnum) ^ ", column " ^ string_of_int cnum)
                 end in
-        close_in ch;
+    close_in ch; prog
+
+let rec search_progs path fs found : GatorAst.prog Assoc.context = 
+    match fs with
+    | [] -> Assoc.empty
+    | f::t -> 
+        let p = parse_prog (path ^ f) in
+        let to_search,found' = Check.search_prog p found in
+        Assoc.update f p (search_progs (path ^ (prog_path f)) to_search found')
+
+let _ =
+    Arg.parse spec_list set_program_file usage_msg;
     Util.debug := !debug_flag;
-    let typedProg, params = Check.check_prog prog in
+    match !program_file with
+    None -> print_string (Arg.usage_string spec_list usage_msg) | Some f ->
+    let prog = parse_prog f in
+    let progname = List.hd (String.split_on_char '.'  (List.hd (List.rev (String.split_on_char '/' f)))) in
+    let fs,found = Check.search_prog prog [progname] in
+    let typedProg, params = Check.check_prog prog (search_progs (prog_path f) fs found) in
     if !run_interp then Ops.eval_prog typedProg params
     else if !emit_ts then print_string (EmitTS.compile_program typedProg params)
     else print_string (EmitGL.compile_program typedProg params)

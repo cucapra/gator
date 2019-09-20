@@ -52,17 +52,20 @@ and internal_fn (name : id) (args : ovalue list) : ovalue =
         | ArrValue a -> ArrValue (List.map (fun x -> internal_fn name [x]) a)
         | _ -> fail()
     in
-    let num_binop (int_op : int -> int -> int) (float_op : float -> float -> float) : ovalue =
+    let num_binop   (int_op : int -> int -> int) 
+                    (float_op : float -> float -> float)
+                    (string_op : string -> string -> string) : ovalue =
         match as_binop () with
         | CoreValue Num n1, CoreValue Num n2 -> CoreValue (Num (int_op n1 n2))
         | CoreValue Float f1, CoreValue Float f2 -> CoreValue (Float (float_op f1 f2))
+        | CoreValue StringVal s1, CoreValue StringVal s2 -> CoreValue (StringVal (string_op s1 s2))
         | ArrValue a1, ArrValue a2 -> ArrValue (List.map2 (fun x y -> internal_fn name [x;y]) a1 a2)
         | _ -> fail()
     in
     match name with
-    | "+" -> num_binop (+) (+.)
+    | "+" -> num_binop (+) (+.) (fun s1 s2 -> String.concat "" [s1; s2])
     | "-" -> if List.length args == 1 then num_unop (~-) (~-.) 
-             else if List.length args == 2 then num_binop (-) (-.) 
+             else if List.length args == 2 then num_binop (-) (-.) (fun _ -> failwith "unsupported")
              else fail()
     | _ -> failwith ("Unsupported function " ^ name)
 
@@ -141,6 +144,7 @@ let rec default_value (t : etyp) : ovalue =
     | BoolTyp -> CoreValue (Bool false)
     | IntTyp -> CoreValue (Num 0)
     | FloatTyp -> CoreValue (Float 0.)
+    | StringTyp -> CoreValue (StringVal "")
     | ParTyp _ -> CoreValue Unit
     | ArrTyp (t', d) -> CoreValue Unit
     | AnyTyp | GenTyp -> CoreValue Unit

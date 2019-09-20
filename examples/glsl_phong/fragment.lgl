@@ -1,50 +1,10 @@
-declare type vec3 is float[3];
-declare type vec4 is float[4];
-declare type mat3 is float[3][3];
-declare type mat4 is float[4][4];
-type scalar is float;
+using "../glsl_defs.lgl";
 
-declare T +<T:vec3>(T v1, T v2);
-declare T -<T:vec3>(T v1, T v2);
-declare T -<T:vec3>(T v);
-declare T *<T:vec3,U:float>(T v, U f);
-declare T *<T:vec3,U:float>(U f, T v);
-declare T /<T:vec3,U:float>(T f1, U f2);
+// Reference Frame Declarations
 
-declare T +<T:vec4>(T v1, T v2);
-declare T -<T:vec4>(T v1, T v2);
-declare T -<T:vec4>(T v);
-declare T *<T:vec4,U:float>(T v, U f);
-declare T *<T:vec4,U:float>(U f, T v);
-
-declare T +<T:float>(T f1, T f2);
-declare T -<T:float>(T f1, T f2);
-declare T -<T:float>(T f);
-declare T *<T:float>(T f1, T f2);
-declare T /<T:float>(T f1, T f2);
-declare bool ==<T:float>(T f1, T f2);
-
-declare vec3 *<T:mat3,U:vec3>(T m, U v);
-declare mat3 +<T:mat3,U:mat3>(T m, U v);
-declare mat3 *<T:mat3,U:mat3>(T m, U v);
-
-declare vec4 *<T:mat4,U:vec4>(T m, U v);
-declare T +<T:mat4>(T m1, T m2);
-declare mat4 *<T:mat4,U:mat4>(T m, U v);
-
-declare float cos(float f);
-declare float sqrt(float f);
-declare float acos(float f);
-
-declare vec4 vec4<T:float[3],U:float>(T v, U f);
-declare vec3 vec3<T:float[4]>(T v);
-
-declare float dot<T: vec3>(T v1, T v2);
-declare T normalize<T : genType>(T x);
-declare T max<T: float>(T f1, T f2);
-declare T reflect<T : vec3>(T v1, T v2);
-declare float pow(float f1, float f2);
-declare mat3 mat3(mat4 m);
+frame model has dimension 3;
+frame world has dimension 3;
+frame camera has dimension 3;
 
 varying vec3 vPosition;
 uniform mat4 uModel;
@@ -61,7 +21,7 @@ void main() {
     if (uRef == 1.) {
         mat3 modelMatrix = mat3(uModel);
 
-        vec3 worldPos = vec3(uModel * vec4(vPosition, 1.));
+        vec3 worldPos = vec3(uModel * vec4(-vPosition, 1.));
         vec3 worldNorm = vec3(uModel * vec4(vNormal, 0.));
 
         vec3 lightDir = normalize(uLight - worldPos);
@@ -78,11 +38,11 @@ void main() {
     // Example phong model with errors
     else {        
         mat3 modelMatrix = mat3(uModel);
-        vec3 worldPos = modelMatrix * vPosition;
-        vec3 worldNorm = modelMatrix * vNormal;
+        // vec3 worldPos = modelMatrix * vPosition;
+        // vec3 worldNorm = modelMatrix * vNormal;
 
-        // vec3 worldPos = vec3(uModel * vec4(vPosition, 1.));
-        // vec3 worldNorm = vec3(uModel * vec4(vNormal, 0.));
+        vec3 worldPos = vec3(uModel * vec4(vPosition, 1.));
+        vec3 worldNorm = vec3(uModel * vec4(vNormal, 0.));
 
         vec3 lightDir = normalize(uLight - worldPos);
         float lightWorldDot = dot(lightDir, worldNorm);

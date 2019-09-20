@@ -51,7 +51,8 @@ let rec is_typ_eq (cx : contexts) (t1: typ) (t2: typ) : bool =
     | UnitTyp, UnitTyp
     | BoolTyp, BoolTyp
     | IntTyp, IntTyp
-    | FloatTyp, FloatTyp -> true
+    | FloatTyp, FloatTyp 
+    | StringTyp, StringTyp -> true
     | Literal t1, Literal t2 -> is_typ_eq cx t1 t2
     | ArrTyp (t1, d1), ArrTyp (t2, d2) -> is_typ_eq cx t1 t2 && reduce_dexp cx d1 = reduce_dexp cx d2
     | CoordTyp (c1, ParTyp (o1, f1)), CoordTyp(c2, ParTyp (o2, f2)) -> 
@@ -253,6 +254,7 @@ let rec typ_erase (cx: contexts) (t : typ) : TypedAst.etyp =
     | BoolTyp -> TypedAst.BoolTyp
     | IntTyp -> TypedAst.IntTyp
     | FloatTyp -> TypedAst.FloatTyp
+    | StringTyp -> TypedAst.StringTyp
     | ArrTyp (t', d) -> TypedAst.ArrTyp (typ_erase cx t', d_to_c d) 
     | ParTyp (s, tl) -> 
         if has_modification cx s External then TypedAst.ParTyp (s, List.map (typ_erase cx) tl)
@@ -270,6 +272,7 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     | TypedAst.BoolTyp -> BoolTyp
     | TypedAst.IntTyp -> IntTyp
     | TypedAst.FloatTyp -> FloatTyp
+    | TypedAst.StringTyp -> StringTyp
     | TypedAst.ParTyp (s, tl) -> ParTyp(s, List.map etyp_to_typ tl)
     | TypedAst.ArrTyp (t, c) -> ArrTyp (etyp_to_typ t, 
         match c with | ConstInt i -> DimNum i | ConstVar v -> DimVar v)
@@ -282,6 +285,7 @@ let rec check_val (cx: contexts) (v: value) : typ =
     | Bool b -> Literal BoolTyp
     | Num n -> Literal IntTyp
     | Float f -> Literal FloatTyp
+    | StringVal s -> Literal StringTyp
     | Unit -> error cx ("Unexpected value " ^ (string_of_value v))
 
 let exp_to_texp (cx: contexts) ((exp, t) : TypedAst.exp * typ) : TypedAst.texp = 
@@ -741,7 +745,8 @@ let check_typ_decl (cx: contexts) (x : string) (pm,t : tau) : contexts =
         | AnyTyp
         | BoolTyp
         | IntTyp
-        | FloatTyp -> t
+        | FloatTyp
+        | StringTyp -> t
         | ArrTyp (t', _) -> check_valid_supertype t'
         | ParTyp (s, pml) -> 
             let tpm,_ = get_typ cx s in
@@ -884,54 +889,84 @@ let check_coordinate (cx: contexts) ((id,p,d,ce) : coordinate) : contexts * Type
     List.fold_left (fun (cx', fnl) (ce, meta) -> let cx'', tf = check_acoordinate_element cx' id (ce, meta) in
         cx'', (match tf with None -> fnl | Some f -> f::fnl)) (cx', []) ce
 
-let check_term (cx: contexts) (t: term) 
-: contexts * TypedAst.fn list * TypedAst.global_var option =
-    match t with
-    | Prototype p -> check_prototype cx p, [], None
-    | Coordinate c -> let cx',tf = check_coordinate cx c in
-        cx', tf, None
-    | Frame f -> check_frame cx f, [], None
-    | Typ (id, pm, t) ->
-        check_typ_decl cx id (pm, t), [], None
-    | Extern e -> let cx' = check_extern cx e in
-        cx', [], None
-    | GlobalVar gv -> let (cx', gv') = check_global_variable cx gv in
-        cx', [], Some gv'
-    | Fn f -> let (cx', f') = check_fn cx f in
-        cx', [f'], None
-    
-let check_aterm (cx: contexts) ((t, meta): aterm) 
-: contexts * TypedAst.fn list * TypedAst.global_var option =
-    check_term (with_meta cx meta) t
-
-let rec check_term_list (tl: aterm list) :
-contexts * TypedAst.prog * TypedAst.global_vars =
-    debug_print ">> check_global_var_or_fn_lst";
-    (* Annoying bootstrapping hack *)
-    let app_maybe o l = match o with | Some v -> v::l | None -> l in
-    let cx, f, gv = List.fold_left (fun acc t -> let (cx', f', gv') = check_aterm (tr_fst acc) t in
-        (cx', f'@(tr_snd acc), app_maybe gv' (tr_thd acc)))
-        (init (snd (List.hd tl)), [], []) tl in
-    cx, List.rev f, List.rev gv
-
 (* Check that there is a void main() defined *)
 let check_main_fn (cx: contexts) : unit =
     debug_print ">> check_main_fn";
-    let (ml, rt, id, pm, pr, meta) = List.hd (get_functions cx "main") in 
+    let main_fns = get_functions cx "main" in
+    if List.length main_fns != 1 then error cx ("Multiple declarations of main") else
+    let ml, rt, id, pm, pr, meta = List.hd main_fns in 
     debug_print (">> check_main_fn_2" ^ (string_of_list string_of_param pr) ^ (string_of_parameterization pm));
     if (List.length pr) > 0 || (Assoc.size pm) > 0 then error cx ("Cannot provide parameters to main") else
     match rt with
         | UnitTyp -> ()
         | _ -> raise (TypeException "Expected main function to return void")
 
+let rec check_term (cx: contexts) (t: term) 
+: contexts * TypedAst.prog * TypedAst.global_vars =
+    match t with
+    | Using s -> check_exprog (get_prog cx s) cx
+    | Prototype p -> check_prototype cx p, [], []
+    | Coordinate c -> let cx',tf = check_coordinate cx c in
+        cx', tf, []
+    | Frame f -> check_frame cx f, [], []
+    | Typ (id, pm, t) ->
+        check_typ_decl cx id (pm, t), [], []
+    | Extern e -> let cx' = check_extern cx e in
+        cx', [], []
+    | GlobalVar gv -> let (cx', gv') = check_global_variable cx gv in
+        cx', [], [gv']
+    | Fn f -> let (cx', f') = check_fn cx f in
+        cx', [f'], []
+    
+and check_aterm (cx: contexts) ((t, meta): aterm) 
+: contexts * TypedAst.prog * TypedAst.global_vars =
+    check_term (with_meta cx meta) t
+
+(* This might end up being really bad -- there's no scoping management on external files *)
+and check_exprog (tl: prog) (cx : contexts) :
+contexts * TypedAst.prog * TypedAst.global_vars =
+    let cx', f, gv = List.fold_left (fun acc t -> let cx', f', gv' = check_aterm (tr_fst acc) t in
+    (cx', f'@(tr_snd acc), gv'@(tr_thd acc)))
+    (cx, [], []) tl in
+    cx', List.rev f, List.rev gv
+
+let rec check_term_list (tl: prog) (externs: prog Assoc.context) :
+contexts * TypedAst.prog * TypedAst.global_vars =
+    debug_print ">> check_global_var_or_fn_lst";
+    (* Annoying bootstrapping hack *)
+    let cx, f, gv = List.fold_left (fun acc t -> let cx', f', gv' = check_aterm (tr_fst acc) t in
+        (cx', f'@(tr_snd acc), gv'@(tr_thd acc)))
+        (init (snd (List.hd tl)) externs, [], []) tl in
+    cx, List.rev f, List.rev gv
+
 (* Returns the list of fn's which represent the program 
  * and params of the void main() fn *)
-let check_prog (tl: prog) : TypedAst.prog * TypedAst.global_vars =
+let check_prog (tl: prog) (externs: prog Assoc.context) : TypedAst.prog * TypedAst.global_vars =
     debug_print ">> check_prog";
-    let cx, typed_prog, typed_gvs = check_term_list tl in
+    let cx, typed_prog, typed_gvs = check_term_list tl externs in
     check_main_fn cx;
     debug_print "===================";
     debug_print "Type Check Complete";
     debug_print "===================\n";
     typed_prog, typed_gvs
-    
+
+(* Searches the program for files which need to be loaded *)
+(* If we have any duplicate names, throws an exception to avoid cycles *)
+let rec search_prog (p: prog) (found : string list) : string list * string list =
+    match p with
+    | [] -> [], found
+    | (Using s, meta)::t -> let name = String.split_on_char '.' 
+        (List.hd (List.rev (String.split_on_char '/' s))) in
+        if List.length name != 2 then
+            error_meta meta ("Imported filenames must only have one extension")
+        else 
+        let filename = List.hd name in
+        let extension = List.hd (List.tl name) in
+        if not (extension = "lgl") then
+            error_meta meta ("Extension " ^ extension ^ " not supported")
+        else if List.mem filename found then
+            error_meta meta ("Duplicate filename " ^ filename ^ " in import chain")
+        else
+            let tr,found' = search_prog t (filename::found) in
+            s::tr, found'
+    | _::t -> search_prog t found

@@ -1,0 +1,26 @@
+// Should fail until I comment out 'main' in import1
+using "../types/import1.lgl";
+
+void main() {
+    cart2.point<plane> ppos = [1., 1.];
+    cart2.vector<plane> poffset = [1., 2.];
+
+    print ppos + poffset;
+    print 2. * (ppos - (ppos + poffset));
+    
+    cart3.vector<world> mpos = [1., 2., 3.];
+    
+    print mpos - mpos * 2.;
+
+    polar.vector<plane> ppo = [1., 3.14159265];
+    polar.vector<plane> ppo2 = [1., 0.];
+    
+    print 3. * ppo * 2.;
+    print ppo + ppo2;
+
+    hom.point<world> hpos = [1., 2., 3., 2.];
+    hom.vector<world> hvec = [1., 1., 1., 0.];
+
+    print hpos + hvec * 2.;
+    print hpos - (hpos + hvec);
+}

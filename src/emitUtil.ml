@@ -25,10 +25,11 @@ let string_of_fn_util (id : string) (args : string list) : string =
 
 let rec replace_type (et : etyp) (t : etyp) (r : etyp) : etyp =
     let rec eq (et : etyp) (t : etyp) : bool = match et, t with
-        | UnitTyp, UnitTyp -> true
-        | BoolTyp, BoolTyp -> true
-        | IntTyp, IntTyp -> true
-        | FloatTyp, FloatTyp -> true
+        | UnitTyp, UnitTyp
+        | BoolTyp, BoolTyp
+        | IntTyp, IntTyp
+        | FloatTyp, FloatTyp
+        | StringTyp, StringTyp -> true
         (* | VecTyp m, VecTyp n -> m == n
         | MatTyp(k, l), MatTyp(m, n) -> k == m && l == n
         | TransTyp(et1, et2), TransTyp(et3, et4) -> eq et1 et3 && eq et2 et4

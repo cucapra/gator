@@ -66,6 +66,7 @@ let rec string_of_value (v: value) : string =
   | Bool b -> string_of_bool b
   | Num n -> string_of_int n
   | Float f -> string_of_float f
+  | StringVal s -> "\"" ^ s ^ "\""
 
 let string_of_storage_qual (s: storage_qual) : string =
   match s with

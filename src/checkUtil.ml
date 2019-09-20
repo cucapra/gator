@@ -7,15 +7,24 @@ exception TypeException of string
 
 let line_number (meta : metadata) : string = 
   ("Line: " ^ string_of_int(meta.pos_lnum))
-let error cx s = raise (TypeException(line_number cx.meta ^ " -- " ^ s))
+let error_meta meta s = raise (TypeException(line_number meta ^ " -- " ^ s))
+let error cx s = error_meta cx.meta s
 let debug_fail (cx : contexts) (s : string) =
   failwith (line_number cx.meta ^ "\t" ^ s)
 
-(* Produces an empty set of gator contexts with a starting metadata *)
-let init meta = let b = 
-  {t=Assoc.empty; g=Assoc.empty; d=Assoc.empty; c=Assoc.empty; 
+let with_extern cx externs' = {cx with externs=externs'}
+let add_prog cx x p = if Assoc.mem x cx.externs
+  then error cx ("Duplicate use of external filename " ^ x)
+  else with_extern cx (Assoc.update x p cx.externs)
+
+(* Produces an empty set of gator contexts with a starting metadata and external programs *)
+let init meta progs = 
+  let b = {t=Assoc.empty; g=Assoc.empty; d=Assoc.empty; c=Assoc.empty; 
     p=Assoc.empty; el=Assoc.empty; tl=Assoc.empty } in
-  {m=Assoc.empty; ps=Assoc.empty; pm=Assoc.empty; member=None; meta=meta; _bindings=b }
+  let cx = {m=Assoc.empty; ps=Assoc.empty; pm=Assoc.empty; externs=Assoc.empty; 
+    member=None; meta=meta; _bindings=b } in
+  List.fold_left (fun acc (x, p) -> add_prog acc x p) cx (Assoc.bindings progs)
+  
 
 let with_m cx m' = {cx with m=m'}
 let with_ps cx ps' = {cx with ps=ps'}
@@ -29,6 +38,8 @@ let get_ps cx x = if Assoc.mem x cx.ps then Assoc.lookup x cx.ps else
   error cx ("Undefined canonical item " ^ x)
 let get_pm cx x = if Assoc.mem x cx.pm then Assoc.lookup x cx.pm else 
   error cx (x ^ " not found in parameterization " ^ string_of_parameterization cx.pm)
+let get_prog cx x = if Assoc.mem x cx.externs then Assoc.lookup x cx.externs else 
+  debug_fail cx (x ^ " not found in the list of imported files")
 
 let add_m cx x m = if Assoc.mem x cx.m 
   then with_m cx (Assoc.update x (m::(Assoc.lookup x cx.m)) cx.m)

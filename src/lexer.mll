@@ -12,6 +12,7 @@ let white = [' ' '\t']
 let num = ['0'-'9']+
 let letter = ['a'-'z' 'A'-'Z']
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
+let s = ['"'] ['a'-'z' 'A'-'Z' '0'-'9' ' ' '\t' '-' '.' '_' '/']* ['"'] 
 let floatval = ((['0'-'9']*['.']['0'-'9']+)|(['0'-'9']+['.']['0'-'9']*))
 let newline = ['\n' '\r']
 let comment = "//" [^ '\r' '\n']* 
@@ -21,16 +22,13 @@ let comment = "//" [^ '\r' '\n']*
 rule read = parse
   | comment         { read lexbuf }
   | white           { read lexbuf }
-  (* | newline         { Lexing.new_line lexbuf; EOL } *)
   | newline         { Lexing.new_line lexbuf; read lexbuf }
-  | num as num      { NUM (int_of_string num) }
-  | "vec"           { VEC }
-  | "mat"           { MAT }
+  | "using"         { USING }
   | "prototype"     { PROTOTYPE }
   | "object"        { OBJECT }
   | "coordinate"    { COORDINATE }
   | "dimension"     { DIMENSION }  
-  | "frame"           { FRAME }
+  | "frame"         { FRAME }
   | "type"          { TYP }
   | "is"            { IS }
   | "has"           { HAS }
@@ -46,6 +44,7 @@ rule read = parse
   | "print"         { PRINT }
   | "int"           { INTTYP }
   | "float"         { FLOATTYP }
+  | "string"        { STRINGTYP }
   | "auto"          { AUTOTYP }
   | "bool"          { BOOLTYP }
   | "+"             { PLUS }
@@ -156,8 +155,9 @@ rule read = parse
   | "sizeof"
   | "cast"
   | "namespace"
-  | "using" 
   | "struct"        { raise (SyntaxError ("Cannot use reserved GLSL keyword " ^ Lexing.lexeme lexbuf)) }
+  | num as num      { NUM (int_of_string num) }
+  | s as s          { STRING (String.sub s 1 (String.length s - 2)) }
   | id as id        { ID id }
   | floatval as fl  { FLOAT (float_of_string fl) }
   | eof             { EOF }

@@ -13,6 +13,7 @@ let rec comp_type (t : etyp) : string =
     | BoolTyp -> "boolean"
     | IntTyp -> "number"
     | FloatTyp -> "number"
+    | StringTyp -> "string"
     | ParTyp (s, tl) -> failwith "unimplemented partyp writing"
     (* | VecTyp n -> "vec" ^ (string_of_int n)
     | MatTyp (m, n) -> "mat" ^ (string_of_int (max m n))
@@ -33,6 +34,7 @@ let rec comp_value (v : value) : string =
     | Bool b -> "<boolean>" ^ string_of_bool b
     | Num n -> "<number>" ^ string_of_int n
     | Float f -> string_of_float f
+    | StringVal s -> s
 
 (* Note the column parameter for padding the matrix size *)
 let rec string_of_no_paren_vec (v: exp list) (padding: int) (s : SS.t) : string = 
@@ -149,7 +151,7 @@ and comp_exp (e : exp) (s : SS.t) : string =
 
 let comp_assign (x : id) ((e, t) : texp) (s : SS.t) : string =
     match t with
-    | UnitTyp | BoolTyp | IntTyp | FloatTyp | ParTyp _ -> x ^ "=" ^ (comp_exp e s) ^ ";"
+    | UnitTyp | BoolTyp | IntTyp | FloatTyp | StringTyp | ParTyp _ -> x ^ "=" ^ (comp_exp e s) ^ ";"
     (* | VecTyp v -> "vec" ^ (string_of_int v) ^ ".copy(" ^ x ^ "," ^ (comp_exp e s) ^ ");"
     | MatTyp (m, n) -> "mat" ^ (string_of_int (max m n)) ^ ".copy(" ^ x ^ "," ^ (comp_exp e s) ^ ");" *)
     | ArrTyp _ | AnyTyp | GenTyp -> comp_type t

@@ -10,6 +10,7 @@ let rec string_of_typ (t: etyp) : string =
   | BoolTyp -> "bool"
   | IntTyp -> "int"
   | FloatTyp -> "float"
+  | StringTyp -> "string"
   | ParTyp (s, tl) -> s ^ string_of_pml tl
   | ArrTyp (t, c) -> string_of_typ t ^ "[" ^ string_of_constvar c ^ "]"
   | AnyTyp -> "any"

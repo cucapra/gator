@@ -22,6 +22,7 @@ let rec string_of_typ (t: typ) : string =
     | IntTyp -> "int"
     | FrameTyp d -> "frame<" ^ string_of_dexp d ^ ">"
     | FloatTyp -> "float"
+    | StringTyp -> "string"
     | Literal t -> "%(" ^ string_of_typ t ^ ")"
     | ArrTyp (t, d) -> string_of_typ t ^ "[" ^ string_of_dexp d ^ "]"
     (* Essentially the bottom type for all arrays *)
@@ -126,6 +127,7 @@ let string_of_extern (e : extern_element) : string =
     
 let string_of_term (t : term) : string = 
     match t with
+    | Using s -> "using " ^ s
     | Prototype p -> string_of_prototype p
     | Coordinate c -> string_of_coordinate c
     | Frame f -> string_of_frame f

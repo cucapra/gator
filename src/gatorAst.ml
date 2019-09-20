@@ -18,6 +18,7 @@ type typ =
     | BoolTyp
     | IntTyp
     | FloatTyp
+    | StringTyp
     | Literal of typ
     | ArrTyp of typ * dexp (* i.e. float[5] or bool[2][3] *)
     | CoordTyp of string * typ (* i.e. cart.point *)
@@ -103,6 +104,7 @@ type extern_element =
  *)
 type aterm = term astNode
 and term =
+    | Using of string
     | Prototype of prototype
     | Coordinate of coordinate
     | Frame of frame

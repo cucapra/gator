@@ -7,6 +7,7 @@ type etyp =
     | BoolTyp
     | IntTyp
     | FloatTyp
+    | StringTyp
     | ArrTyp of etyp * constvar (* i.e. vec3[5] *)
     | ParTyp of string * etyp list
     | AnyTyp
