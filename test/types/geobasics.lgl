@@ -1,42 +1,41 @@
 prototype geometry {
-    object point<r>;
-    object vector<r>;
+    object point;
+    object vector;
 }
 
+with frame(2) r:
 coordinate cart2 : geometry {
-    dimension 2;
-
-    object point<r> is float[2];
-    object vector<r> is float[2];
+    object point is float[2];
+    object vector is float[2];
 }
+
+with frame(3) r:
 coordinate cart3 : geometry {
-    dimension 3;
-
-    object point<r> is float[3];
-    object vector<r> is float[3];
+    object point is float[3];
+    object vector is float[3];
 }
+
+with frame(2) r:
 coordinate polar : geometry {
-    dimension 2;
-    
-    object point<r> is float[2];
-    object vector<r> is float[2];
+    object point is float[2];
+    object vector is float[2];
 }
-coordinate hom : geometry {
-    dimension 3;
 
-    object point<r> is float[4];
-    object vector<r> is float[3];
+with frame(3) r:
+coordinate hom : geometry {
+    object point is float[4];
+    object vector is float[3];
 }
 
 frame world has dimension 3;
 frame plane has dimension 2;
 
 void main() {
-    cart3.point<world> pos = [1., 2., 3.];
-    cart2.vector<plane> offset = [2., 2.];
-    polar.point<plane> ppos = [1., 0.];
-    hom.point<world> extended = [1., 2., 3., 1.];
-    hom.vector<world> poffset = [1., 3., 5.];
+    cart3<world>.point pos = [1., 2., 3.];
+    cart2<plane>.vector offset = [2., 2.];
+    polar<plane>.point ppos = [1., 0.];
+    hom<world>.point extended = [1., 2., 3., 1.];
+    hom<world>.vector poffset = [1., 3., 5.];
 
     print 1;
 }

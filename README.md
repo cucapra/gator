@@ -24,11 +24,11 @@ Build by typing:
     $ dune build bin/lingc.bc
 
 Now you can use `dune exec bin/lingc.bc` to run the compiler.
-Or you can install a `lingc` executable:
+Or you can install a `gatorc` executable:
 
     $ dune build && dune install
 
-Now `lingc` should be available on your path.
+Now `gatorc` should be available on your path.
 
 [dune]: https://github.com/ocaml/dune
 [menhir]: http://gallium.inria.fr/~fpottier/menhir/
@@ -44,7 +44,7 @@ For example:
 
     $ make run src=phong
 
-You can run the compiler by passing the `*.lgl` source file as an argument to `lingc`.
+You can run the compiler by passing the `*.lgl` source file as an argument to `gatorc`.
 For example:
 
     $ lingc example.lgl
