@@ -39,165 +39,176 @@ declare vec4 vec4<T:float[3],U:float>(T v, U f);
 declare vec3 vec3<T:float[4]>(T v);
 
 prototype geometry {
-    object point<r>;
-    object vector<r>;
-    object direction<r>;
+    object point;
+    object vector;
+    object direction;
     object matrix<r1, r2>;
 
-    vector<r> +(vector<r> x, vector<r> y);
-    vector<r> -(vector<r> x, vector<r> y);
-    vector<r> -(vector<r> x);
-    vector<r> *(vector<r> v, scalar s);
-    vector<r> *(scalar s, vector<r> v);
-    point<r> translate(point<r> p, vector<r> v);
-    point<r> +(point<r> p, vector<r> v);
-    point<r> +(vector<r> p, point<r> v);
-    vector<r> -(point<r> x, point<r> y);
-    vector<r> -(point<r> x);
-    vector<r2> *(matrix<r1, r2> m, vector<r1> v);
-    vector<r2> *(matrix<r1, r2> m, direction<r1> v);
-    point<r2> *(matrix<r1, r2> m, point<r1> v);
-    matrix<r1, r2> +(matrix<r1, r2> m1, matrix<r1, r2> m2);
-    matrix<r1, r3> *(matrix<r1, r2> m1, matrix<r2, r3> m2);
+    vector +(vector x, vector y);
+    vector -(vector x, vector y);
+    vector -(vector x);
+    vector *(vector v, scalar s);
+    vector *(scalar s, vector v);
+    point translate(point p, vector v);
+    point +(point p, vector v);
+    point +(vector p, point v);
+    vector -(point x, point y);
+    vector -(point x);
+    with frame target:
+    this<target>.vector *(matrix<target> m, vector v);
+
+    with frame target:
+    this<target>.vector *(matrix<target> m, direction v);
+
+    with frame target:
+    this<target>.point *(matrix<target> m, point v);
+
+    with frame target:
+    matrix<target> +(matrix<target> m1, matrix<target> m2);
+
+    with frame middle, target:
+    matrix<target> *(matrix<middle> m1, this<middle>.matrix<target> m2);
 }
 
+with frame(3) r:
 coordinate cart3 : geometry {
-    dimension 3;
+    object point is float[3];
+    object vector is float[3];
+    object direction is float[3];
+    object matrix<r2> is float[3][3];
 
-    object point<r> is float[3];
-    object vector<r> is float[3];
-    object direction<r> is float[3];
-    object matrix<r1, r2> is float[3][3];
-
-    vector<r> +(vector<r> x, vector<r> y) {
-        return (x as! vec3 + y as! vec3) as! vector<r>;
+    vector +(vector x, vector y) {
+        return (x as! vec3 + y as! vec3) as! vector;
     }
-    vector<r> -(vector<r> x, vector<r> y) {
-        return (x as! vec3 - y as! vec3) as! vector<r>;
+    vector -(vector x, vector y) {
+        return (x as! vec3 - y as! vec3) as! vector;
     }
-    vector<r> *(vector<r> v, scalar s) {
-        return (v as! vec3 * s) as! vector<r>;
+    vector *(vector v, scalar s) {
+        return (v as! vec3 * s) as! vector;
     }
-    vector<r> *(scalar s, vector<r> v) {
-        return (s * v as! vec3) as! vector<r>;
+    vector *(scalar s, vector v) {
+        return (s * v as! vec3) as! vector;
     }
-    vector<r> -(vector<r> v) {
-        return (-v as! vec3) as! vector<r>;
+    vector -(vector v) {
+        return (-v as! vec3) as! vector;
     }
-    point<r> translate(point<r> p, vector<r> v) {
-        return (p as! vec3 + v as! vec3) as! point<r>;
+    point translate(point p, vector v) {
+        return (p as! vec3 + v as! vec3) as! point;
     }
-    point<r> +(point<r> p, vector<r> v) {
-        return (p as! vec3 + v as! vec3) as! point<r>;
+    point +(point p, vector v) {
+        return (p as! vec3 + v as! vec3) as! point;
     }
-    point<r> +(vector<r> v, point<r> p) {
-        return (p as! vec3 + v as! vec3) as! point<r>;
+    point +(vector v, point p) {
+        return (p as! vec3 + v as! vec3) as! point;
     }
-    vector<r> -(point<r> x, point<r> y) {
-        return (x as! vec3 - y as! vec3) as! vector<r>;
+    vector -(point x, point y) {
+        return (x as! vec3 - y as! vec3) as! vector;
     }
-    vector<r> -(point<r> v) {
-        return (-v as! vec3) as! vector<r>;
+    vector -(point v) {
+        return (-v as! vec3) as! vector;
     }
-    vector<r2> *(matrix<r1, r2> m, vector<r1> v) {
-        return (m as! mat3 * v as! vec3) as! vector<r2>;
+    with frame(3) target:
+    this<target>.vector *(matrix<target> m, vector v) {
+        return (m as! mat3 * v as! vec3) as! this<r2>.vector;
     }
-    vector<r2> *(matrix<r1, r2> m, direction<r1> d) {
-        return (m as! mat3 * d as! vec3) as! vector<r2>;
+    with frame(3) target:
+    this<target>.vector *(matrix<target> m, direction d) {
+        return (m as! mat3 * d as! vec3) as! this<r2>.vector;
     }
-    point<r2> *(matrix<r1, r2> m, point<r1> p) {
-        return (m as! mat3 * p as! vec3) as! point<r2>;
+    with frame(3) target:
+    this<target>.point *(matrix<target> m, point p) {
+        return (m as! mat3 * p as! vec3) as! this<r2>.point;
     }
-    matrix<r1, r2> +(matrix<r1, r2> m1, matrix<r1, r2> m2) {
-        return (m1 as! mat3 + m2 as! mat3) as! matrix<r1, r2>;
+    with frame(3) target:
+    matrix<target> +(matrix<target> m1, matrix<target> m2) {
+        return (m1 as! mat3 + m2 as! mat3) as! matrix<r3>;
     }
-    matrix<r1, r3> *(matrix<r1, r2> m1, matrix<r2, r3> m2) {
-        return (m1 as! mat3 * m2 as! mat3) as! matrix<r1, r3>;
+    with frame(3) middle, target:
+    matrix<target> *(matrix<middle> m1, this<middle>.matrix<target> m2) {
+        return (m1 as! mat3 * m2 as! mat3) as! matrix<target>;
     }
 }
 
+with frame(3) r:
 coordinate hom : geometry {
-    dimension 3;
-
-    object point<r> is float[4];
-    object vector<r> is float[4];
-    object direction<r> is float[4];
+    object point is float[4];
+    object vector is float[4];
+    object direction is float[4];
     object matrix<r1, r2> is float[4][4];
 
-    point<r> +(point<r> p, vector<r> v) {
-        return (p as! vec4 + v as! vec4 * p[3]) as! point<r>;
+    point +(point p, vector v) {
+        return (p as! vec4 + v as! vec4 * p[3]) as! point;
     }
-    point<r> +(vector<r> v, point<r> p) {
-        return (p as! vec4 + v as! vec4 * p[3]) as! point<r>;
+    point +(vector v, point p) {
+        return (p as! vec4 + v as! vec4 * p[3]) as! point;
     }
-    vector<r> -(point<r> x, point<r> y) {
-        return (x as! vec4 * y[3] - y as! vec4 * x[3]) as! vector<r>;
+    vector -(point x, point y) {
+        return (x as! vec4 * y[3] - y as! vec4 * x[3]) as! vector;
     }
-    vector<r2> *(matrix<r1, r2> m, vector<r1> v) {
-        return (m as! mat4 * v as! vec4) as! vector<r2>;
+    with frame(3) target:
+    this<target>.vector *(matrix<target> m, vector v) {
+        return (m as! mat4 * v as! vec4) as! this<r2>.vector;
     }
-    vector<r2> *(matrix<r1, r2> m, direction<r1> d) {
-        return (m as! mat4 * d as! vec4) as! vector<r2>;
+    with frame(3) target:
+    this<target>.vector *(matrix<target> m, direction d) {
+        return (m as! mat4 * d as! vec4) as! this<r2>.vector;
     }
-    point<r2> *(matrix<r1, r2> m, point<r1> p) {
-        return (m as! mat4 * p as! vec4) as! point<r2>;
+    with frame(3) target:
+    this<target>.point *(matrix<target> m, point p) {
+        return (m as! mat4 * p as! vec4) as! this<r2>.point;
     }
-    matrix<r1, r2> +(matrix<r1, r2> m1, matrix<r1, r2> m2) {
-        return (m1 as! mat4 + m2 as! mat4) as! matrix<r1, r2>;
+    with frame(3) target:
+    matrix<target> +(matrix<target> m1, matrix<target> m2) {
+        return (m1 as! mat4 + m2 as! mat4) as! matrix<r3>;
     }
-    matrix<r1, r3> *(matrix<r1, r2> m1, matrix<r2, r3> m2) {
-        return (m1 as! mat4 * m2 as! mat4) as! matrix<r1, r3>;
+    with frame(3) middle, target:
+    matrix<target> *(matrix<middle> m1, this<middle>.matrix<target> m2) {
+        return (m1 as! mat4 * m2 as! mat4) as! matrix<target>;
     }
 }
 
 frame model has dimension 3;
 frame world has dimension 3;
 
-// declare with dimension(3) r,
-// cart3.direction<r> normalize(cart3.vector<r> v);
-// declare with dimension(3) r,
-// float dot(cart3.direction<r> v1, cart3.direction<r> v2);
-// declare float[4] vec4(float[3] v, float f);
-
 with frame(3) r:
-hom.point<r> homify(cart3.point<r> v) {
-    return vec4(v, 1.) as! hom.point<r>;
+hom<r>.point homify(cart3.point v) {
+    return vec4(v, 1.) as! hom<r>.point;
 }
 with frame(3) r:
-hom.vector<r> homify(cart3.vector<r> v) {
-    return vec4(v, 1.) as! hom.vector<r>;
+hom<r>.vector homify(cart3.vector v) {
+    return vec4(v, 1.) as! hom<r>.vector;
 }
 with frame(3) r:
-cart3.point<r> reduce_hom(hom.point<r> v) {
-    return (vec3(v) / v[3]) as! cart3.point<r>;
+cart3<r>.point reduce_hom(hom.point v) {
+    return (vec3(v) / v[3]) as! cart3<r>.point;
 }
 with frame(3) r:
-cart3.vector<r> reduce_hom(hom.vector<r> v) {
-    return vec3(v) as! cart3.vector<r>;
+cart3<r>.vector reduce_hom(hom.vector v) {
+    return vec3(v) as! cart3<r>.vector;
 }
 
 void main() {
-    cart3.point<model> pos = [1., 2., 3.];
-    cart3.point<world> light = [-1., -1., 0.];
-    cart3.vector<world> offset = [2., 2., 2.];
+    cart3<model>.point pos = [1., 2., 3.];
+    cart3<world>.point light = [-1., -1., 0.];
+    cart3<world>.vector offset = [2., 2., 2.];
 
     // Pure translation matrix
-    hom.matrix<model, world> mtrans = 
+    hom<model>.matrix<world> mtrans = 
         [[1., 0., 0., 1.], 
          [0., 1., 0., -1.],
          [0., 0., 1., 1.],
          [0., 0., 0., 1.]];
 
-    hom.matrix<world, model> minv = 
+    hom<world>.matrix<model> minv = 
         [[1., 0., 0., -1.], 
          [0., 1., 0., 1.],
          [0., 0., 1., -1.],
          [0., 0., 0., 1.]];
 
-    hom.matrix<model, model> mid = mtrans * minv;
+    hom<model>.matrix<model> mid = mtrans * minv;
 
-    hom.point<model> hpos = homify<model>(pos);
-    hom.vector<world> hoff = homify<world>(offset);
+    hom<model>.point hpos = homify<model>(pos);
+    hom<world>.vector hoff = homify<world>(offset);
 
     print hpos;
     print hoff;
