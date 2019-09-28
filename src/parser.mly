@@ -52,6 +52,7 @@ exception ParseException of string
 %token CANON
 %token IS
 %token HAS
+%token THIS
 %token WITH
 %token TRUE
 %token FALSE
@@ -135,8 +136,8 @@ let term ==
     <Using>
   | PROTOTYPE; x = ID; LBRACE; p = list(node(prototype_element)); RBRACE;
     <Prototype>
-  | COORDINATE; x = ID; COLON; p = ID;
-    LBRACE; DIMENSION; d = dexp; SEMI; c = list(node(coordinate_element)); RBRACE;
+  | m = modification*; COORDINATE; x = ID; COLON; p = ID;
+    LBRACE; SEMI; c = list(node(coordinate_element)); RBRACE;
     <Coordinate>
   | FRAME; x = ID; HAS; DIMENSION; d = dexp; SEMI;
     <Frame>

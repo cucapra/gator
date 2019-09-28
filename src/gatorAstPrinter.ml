@@ -26,8 +26,8 @@ let rec string_of_typ (t: typ) : string =
     | Literal t -> "%(" ^ string_of_typ t ^ ")"
     | ArrTyp (t, d) -> string_of_typ t ^ "[" ^ string_of_dexp d ^ "]"
     (* Essentially the bottom type for all arrays *)
-    | CoordTyp (s, t) -> s ^ "." ^ string_of_typ t
-    | ParTyp (s, tl) -> s ^ string_of_pml tl
+    | MemberTyp (c, t) -> string_of_typ c ^ "." ^ string_of_typ t
+    | ParTyp (t, tl) -> string_of_typ t ^ string_of_pml tl
     | GenTyp -> "genType"
     | GenArrTyp t' -> "arr of " ^ string_of_typ t'
     | AnyFrameTyp -> "frame"
@@ -110,9 +110,9 @@ let string_of_coordinate_element (ce : coordinate_element) : string =
     | CoordObjectAssign (x, p, t) -> x ^ string_of_list (fun x -> x) p ^ " = " ^ string_of_typ t ^ ";"
     | CoordFn f -> string_of_fn f
 
-let string_of_coordinate (x, p, d, cl : coordinate) : string =
-    "coordinate " ^ x ^ " : " ^ p ^ "{\n dimension " ^ string_of_dexp d ^ ";\n"
-    ^ string_of_list (fun ce -> string_of_coordinate_element ce ^ "\n") (List.map fst cl) ^ "}"
+let string_of_coordinate (ml, x, p, cl : coordinate) : string =
+    string_of_mod_list ml ^ "coordinate " ^ x ^ " : " ^ p ^ 
+    "{\n" ^ string_of_list (fun ce -> string_of_coordinate_element ce ^ "\n") (List.map fst cl) ^ "}"
 
 let string_of_global_var (ml, sq, t, x, e : global_var) : string =
     string_of_mod_list ml ^ " " ^ string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ x 

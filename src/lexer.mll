@@ -25,13 +25,14 @@ rule read = parse
   | newline         { Lexing.new_line lexbuf; read lexbuf }
   | "using"         { USING }
   | "prototype"     { PROTOTYPE }
-  | "object"        { OBJECT }
+  | "object"        { OBJECT }  
   | "coordinate"    { COORDINATE }
   | "dimension"     { DIMENSION }  
   | "frame"         { FRAME }
   | "type"          { TYP }
   | "is"            { IS }
   | "has"           { HAS }
+  | "this"          { THIS }
   | "with"          { WITH }
   | "canon"         { CANON }
   | "true"          { TRUE }
@@ -88,7 +89,7 @@ rule read = parse
   | "const"         { CONST }
   | "attribute"     { ATTRIBUTE }
   | "uniform"       { UNIFORM }
-  | "varying"       { VARYING }
+  | "varying"       { VARYING }  
   | "break"
   | "continue"
   | "do"
@@ -115,7 +116,6 @@ rule read = parse
   | "enum"
   | "typedef"
   | "template"
-  | "this"
   | "packed"
   | "goto"
   | "switch"

@@ -21,8 +21,8 @@ type typ =
     | StringTyp
     | Literal of typ
     | ArrTyp of typ * dexp (* i.e. float[5] or bool[2][3] *)
-    | CoordTyp of string * typ (* i.e. cart.point *)
-    | ParTyp of string * typ list (* i.e. color or matrix<model, world> *)
+    | MemberTyp of typ * typ (* i.e. cart.point *)
+    | ParTyp of typ * typ list (* i.e. color or matrix<model, world> *)
     | AnyTyp
     | AnyFrameTyp (* top type for frames (used in prototype declarations) *)
     | FrameTyp of dexp (* i.e. frame<3> or frame<n> *)
@@ -87,7 +87,7 @@ type coordinate_element =
     | CoordFn of fn
 (* Name, underlying prototype, dimension, and list of definitions *)
 type acoordinate_element = coordinate_element astNode
-type coordinate = id * string * dexp * acoordinate_element list
+type coordinate = modification list * id * string * acoordinate_element list
 
 type global_var = modification list * storage_qual * typ * id * aexp option
 type extern_element =

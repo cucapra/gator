@@ -165,8 +165,8 @@ let add_function (cx : contexts) (f : fn_typ) : string * contexts =
     let pmt = get_dimtyp cx m in
     let rec replace t pm =
       match t with
-      | ParTyp (s,pml) -> (match find_typ cx (lift s) with 
-        | Some _ -> CoordTyp (m, ParTyp(s, pml)), 
+      | ParTyp (f,pml) -> (match find_typ cx (lift f) with 
+        | Some _ -> MemberTyp (ParTyp(m, pml), f), 
           List.fold_right (fun x acc -> 
             match x with | ParTyp (s, []) -> Assoc.update s pmt acc
             | _ -> debug_fail cx ("Invalid frame typ " ^ string_of_typ x)) pml pm | None -> t,pm)
