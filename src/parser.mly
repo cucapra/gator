@@ -156,16 +156,12 @@ let prototype_element ==
     <ProtoFn>
 
 let modification ==
-  | WITH; w = with_statement+;
+  | WITH; t = typ; r = separated_list(COMMA, ID); COLON;
     <With>
   | CANON;
     { Canon }
   | DECLARE;
     { External }
-
-let with_statement ==
-  | t = typ; r = separated_list(COMMA, ID); COLON;
-    <>
 
 let coordinate_element ==
   | OBJECT; x = ID; p = oplist(parameters(LWICK, ID, RWICK)); IS; t = typ; SEMI;
@@ -196,7 +192,7 @@ let fn_typ ==
 
 let fn ==
   | f = fn_typ; LBRACE; cl = acomm*; RBRACE; <>
-  /* | f = fn_typ; SEMI; { (f, []) } */
+  | f = fn_typ; SEMI; { (f, []) }
 
 let acomm ==
   | c = comm;
@@ -237,7 +233,7 @@ let comm_element ==
     { Skip }
   | t = typ; x = ID; GETS; e = node(exp); 
     < Decl >
-  | e = node(exp);
+  | e = node(effectful_exp);
     < Exp >
   | x = ID; GETS; e = node(exp); 
     < Assign >
@@ -271,9 +267,9 @@ let typ :=
     { UnitTyp }
   | THIS;
     { ThisTyp }
-  | FRAME;
+  | FRAME; LPAREN; RPAREN;
     { AnyFrameTyp }
-  | FRAME; d = dexp;
+  | FRAME; LPAREN; d = dexp; RPAREN;
     <FrameTyp>
   | t = typ; LBRACK; dl = separated_list(combined(LBRACK, RBRACK), dexp); RBRACK;
     { List.fold_right (fun d acc -> ArrTyp(acc, d)) dl t }
@@ -329,8 +325,8 @@ let exp:=
     { FnInv(op, [], [e]) }
   | e1 = node(exp); op = infix; e2 = node(exp);
     { FnInv(op, [], [e1; e2]) }
-  | x = ID; p = oplist(parameters(LWICK, typ, RWICK)); a = arguments; 
-    <FnInv>
+  | e = effectful_exp;
+    <>
   | LBRACK; e = separated_list(COMMA, node(exp)); RBRACK; 
     <Arr>
   | e = node(exp); AS; t = typ;
@@ -341,6 +337,13 @@ let exp:=
     { FnInv("swizzle",[],[Var s, $startpos; e]) }
   | x = ID; LBRACK; e = node(exp); RBRACK;
     { Index((Var x, $startpos), e) }
+
+/* A strict subset of expressions that can have effects, separated to help parse commands */
+/* In other words, we syntactically reject commands that have no effect on the program */
+/* See comm_element for more details */
+let effectful_exp ==
+  | x = ID; p = oplist(parameters(LWICK, typ, RWICK)); a = arguments;
+    <FnInv>
 
 let unop_prefix ==
   /* NOTE: if you update this, update id_extended to avoid MINUS conflicts */

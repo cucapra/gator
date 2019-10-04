@@ -43,7 +43,7 @@ and exp =
 and args = aexp list
 
 type modification =
-    | With of (typ * (string list)) list
+    | With of typ * (string list)
     | Canon
     | External
 
