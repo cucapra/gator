@@ -19,10 +19,11 @@ type typ =
     | IntTyp
     | FloatTyp
     | StringTyp
+    | ThisTyp (* Used for coordinate/class declarations *)
     | Literal of typ
     | ArrTyp of typ * dexp (* i.e. float[5] or bool[2][3] *)
     | MemberTyp of typ * typ (* i.e. cart.point *)
-    | ParTyp of typ * typ list (* i.e. color or matrix<model, world> *)
+    | ParTyp of string * typ list (* i.e. color or matrix<model, world> *)
     | AnyTyp
     | AnyFrameTyp (* top type for frames (used in prototype declarations) *)
     | FrameTyp of dexp (* i.e. frame<3> or frame<n> *)
@@ -42,7 +43,7 @@ and exp =
 and args = aexp list
 
 type modification =
-    | With of (int * (string list)) list
+    | With of (typ * (string list)) list
     | Canon
     | External
 
@@ -52,7 +53,7 @@ and comm =
     | Skip
     | Print of aexp
     | Exp of aexp
-    | Decl of modification list * typ * string * aexp 
+    | Decl of typ * string * aexp 
     | Assign of string * aexp
     | AssignOp of string * string * aexp
     | If of if_block * if_block list * acomm list option  (* if - elif list - else *)
@@ -69,14 +70,14 @@ type parameterization = typ Assoc.context
 type params = (typ * string) list
 type ret_typ = typ
 (* function header -- our functions are not first-order! *)
-type fn_typ = modification list * ret_typ * id * parameterization * params * metadata
+type fn_typ = modification list * ret_typ * id * params * metadata
 
 (* General functions *)
 type fn = fn_typ * acomm list
 type frame = id * dexp
 
 type prototype_element =
-    | ProtoObject of id * string list
+    | ProtoObject of id * string list * typ option
     | ProtoFn of fn_typ
 (* Name and list of declarations *)
 type aprototype_element = prototype_element astNode
@@ -90,10 +91,6 @@ type acoordinate_element = coordinate_element astNode
 type coordinate = modification list * id * string * acoordinate_element list
 
 type global_var = modification list * storage_qual * typ * id * aexp option
-type extern_element =
-    | ExternFn of fn_typ
-    | ExternVar of modification list * typ * id * metadata
-    | ExternTyp of id * parameterization * typ option
 
 (* Terms that make up a program *)
 (* In any order, we have:
@@ -108,8 +105,7 @@ and term =
     | Prototype of prototype
     | Coordinate of coordinate
     | Frame of frame
-    | Typ of id * parameterization * typ
-    | Extern of extern_element
+    | Typ of modification list * id * typ
     | GlobalVar of global_var
     | Fn of fn
 

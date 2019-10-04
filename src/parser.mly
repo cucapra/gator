@@ -92,8 +92,8 @@ exception ParseException of string
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
-%left AS IN
 %left DOT
+%left AS IN
 
 (* After declaring associativity and precedence, we need to declare what
    the starting point is for parsing the language.  The following
@@ -141,10 +141,8 @@ let term ==
     <Coordinate>
   | FRAME; x = ID; HAS; DIMENSION; d = dexp; SEMI;
     <Frame>
-  | TYP; x = ID; pm = parameterization(constrained); IS; t = typ; SEMI;
+  | m = modification*; TYP; x = ID; IS; t = typ; SEMI;
     <Typ>
-  | DECLARE; d = extern_element; SEMI; 
-    <Extern>
   | m = modification*; sq = storage_qual; t = typ;
     x = ID; v = preceded(GETS, node(exp))?; SEMI; 
     <GlobalVar>
@@ -152,7 +150,7 @@ let term ==
     <Fn>
 
 let prototype_element ==
-  | OBJECT; x = ID; p = oplist(parameters(LWICK, ID, RWICK)); SEMI;
+  | OBJECT; x = ID; p = oplist(parameters(LWICK, ID, RWICK)); t = snd(combined(IS, typ))?;
     <ProtoObject>
   | f = fn_typ; SEMI;
     <ProtoFn>
@@ -162,9 +160,11 @@ let modification ==
     <With>
   | CANON;
     { Canon }
+  | DECLARE;
+    { External }
 
 let with_statement ==
-  | FRAME; d = delimited(LPAREN, NUM, RPAREN); r = separated_list(COMMA, ID); COLON;
+  | t = typ; r = separated_list(COMMA, ID); COLON;
     <>
 
 let coordinate_element ==
@@ -173,28 +173,12 @@ let coordinate_element ==
   | f = fn;
     <CoordFn>
 
-let extern_element == 
-  | (m, t) = terminated_list(modification, typ); x = ID;
-    { ExternVar(m, t, x, $startpos) }
-  | f = fn_typ;
-    <ExternFn>
-  | TYP; x = ID; pm = parameterization(constrained); t = snd(combined(IS, typ))?;
-    <ExternTyp>
-
-let constrained ==
-  | t = ID;
-    { (t, AnyTyp) }
-  | t = ID; COLON; c = typ; <>
-
 let parameter == 
   | t = typ; x = ID;
     <>
 
 let parameters(L, P, R) ==
   | x = delimited(L, separated_list(COMMA, P), R); <>
-
-let parameterization(T) ==
-  | pt = oplist(parameters(LWICK, T, RWICK)); { Assoc.create pt }
 
 let arguments ==
   | x = parameters(LPAREN, node(exp), RPAREN); <>
@@ -207,11 +191,12 @@ let id_expanded ==
 
 let fn_typ ==
   | (m, t) = terminated_list(modification, typ); x = id_expanded; 
-    pm = parameterization(constrained); params = parameters(LPAREN, parameter, RPAREN);
-    { (m, t, x, pm, params, $startpos) }
+    params = parameters(LPAREN, parameter, RPAREN);
+    { (m, t, x, params, $startpos) }
 
 let fn ==
-  | f = fn_typ; LBRACE; cl = list(acomm); RBRACE; <>
+  | f = fn_typ; LBRACE; cl = acomm*; RBRACE; <>
+  /* | f = fn_typ; SEMI; { (f, []) } */
 
 let acomm ==
   | c = comm;
@@ -250,7 +235,7 @@ let assignop ==
 let comm_element == 
   | SKIP;
     { Skip }
-  | (m, t) = terminated_list(modification, typ); x = ID; GETS; e = node(exp); 
+  | t = typ; x = ID; GETS; e = node(exp); 
     < Decl >
   | e = node(exp);
     < Exp >
@@ -284,10 +269,16 @@ let typ :=
     { StringTyp }
   | VOID;
     { UnitTyp }
+  | THIS;
+    { ThisTyp }
+  | FRAME;
+    { AnyFrameTyp }
+  | FRAME; d = dexp;
+    <FrameTyp>
   | t = typ; LBRACK; dl = separated_list(combined(LBRACK, RBRACK), dexp); RBRACK;
     { List.fold_right (fun d acc -> ArrTyp(acc, d)) dl t }
-  | x = ID; DOT; t = typ;
-    <CoordTyp>
+  | t1 = typ; DOT; t2 = typ;
+    <MemberTyp>
   | x = ID; pt = parameters(LWICK, typ, RWICK);
     <ParTyp>
   | x = ID; /* explicit for clarity and to help out the parser */
