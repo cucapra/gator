@@ -27,9 +27,7 @@ let rec replace_abstype (c: typ Assoc.context) (t: typ) : typ =
     | ParTyp (s, tl) -> 
         if is_abs s then Assoc.lookup s c
         else ParTyp (s, List.map (replace_abstype c) tl)
-    | CoordTyp (s, t') ->
-        if is_abs s then Assoc.lookup s c
-        else CoordTyp (s, replace_abstype c t')
+    | MemberTyp (t1, t2) -> MemberTyp (replace_abstype c t1, replace_abstype c t2)
     | ArrTyp (t', d) -> ArrTyp (replace_abstype c t', d)
     | _ -> t
 
@@ -43,7 +41,7 @@ let rec replace_absframe (c : dexp Assoc.context) (t: typ) : typ =
     in match t with
     | ArrTyp (t, d) -> ArrTyp(replace_absframe c t, replace_dexp d)
     | ParTyp (s, tl) -> ParTyp(s, List.map (replace_absframe c) tl)
-    | CoordTyp (s, t') -> CoordTyp(s, t')
+    | MemberTyp (t1, t2) -> MemberTyp(replace_absframe c t1, replace_absframe c t2)
     | _ -> t
 
 let rec is_typ_eq (cx : contexts) (t1: typ) (t2: typ) : bool =
@@ -55,8 +53,8 @@ let rec is_typ_eq (cx : contexts) (t1: typ) (t2: typ) : bool =
     | StringTyp, StringTyp -> true
     | Literal t1, Literal t2 -> is_typ_eq cx t1 t2
     | ArrTyp (t1, d1), ArrTyp (t2, d2) -> is_typ_eq cx t1 t2 && reduce_dexp cx d1 = reduce_dexp cx d2
-    | CoordTyp (c1, ParTyp (o1, f1)), CoordTyp(c2, ParTyp (o2, f2)) -> 
-        c1 = c2 && is_typ_eq cx (ParTyp (o1, f1)) (ParTyp (o2, f2))
+    | MemberTyp (t1, t2), MemberTyp(t3, t4) -> 
+        is_typ_eq cx t1 t3 && is_typ_eq cx t2 t4
     | ParTyp (s1, tl1), ParTyp (s2, tl2) -> s1 = s2 && 
         (if (List.length tl1 = List.length tl2) 
         then list_typ_eq cx tl1 tl2
@@ -93,10 +91,8 @@ let rec is_subtype (cx: contexts) (to_check : typ) (target : typ) : bool =
         (s1 = s2 && List.length tl1 = List.length tl2
         && is_subtype_list cx tl1 tl2)
         || is_subtype cx (typ_step cx to_check) target
-    | CoordTyp (c1, ParTyp (o1, f1)), CoordTyp (c2, ParTyp (o2, f2)) ->
-        ((c1 = c2 || match find_typ cx c1 with | Some Chi (s,_) -> s = c2 | _ -> false)
-        && o1 = o2 && is_subtype_list cx f1 f2)
-        || is_subtype cx (chi_object_lookup cx c1 o1 f1) target
+    | MemberTyp (t1, t2), MemberTyp (t3, t4) ->
+        is_subtype cx t1 t3 && is_subtype cx t2 t4
     | FrameTyp d1, FrameTyp d2 -> reduce_dexp cx d1 = reduce_dexp cx d1
     
     (* Type lookup cases *)

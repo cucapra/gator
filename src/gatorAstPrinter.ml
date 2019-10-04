@@ -23,11 +23,12 @@ let rec string_of_typ (t: typ) : string =
     | FrameTyp d -> "frame<" ^ string_of_dexp d ^ ">"
     | FloatTyp -> "float"
     | StringTyp -> "string"
+    | ThisTyp -> "this"
     | Literal t -> "%(" ^ string_of_typ t ^ ")"
     | ArrTyp (t, d) -> string_of_typ t ^ "[" ^ string_of_dexp d ^ "]"
     (* Essentially the bottom type for all arrays *)
     | MemberTyp (c, t) -> string_of_typ c ^ "." ^ string_of_typ t
-    | ParTyp (t, tl) -> string_of_typ t ^ string_of_pml tl
+    | ParTyp (s, tl) -> s ^ string_of_pml tl
     | GenTyp -> "genType"
     | GenArrTyp t' -> "arr of " ^ string_of_typ t'
     | AnyFrameTyp -> "frame"
@@ -38,8 +39,7 @@ and string_of_pml (p : typ list) : string =
 
 let string_of_modification (m: modification) : string =
     match m with
-    | With l -> "with " ^ string_of_list (fun (x, y) -> 
-        "frame(" ^ string_of_int x ^ ") " ^ string_of_list (fun x -> x) y) l
+    | With (t, pm) -> "with " ^ string_of_typ t ^ " " ^ string_of_list (fun x -> x) pm ^ ":\n"
     | Canon -> "canon"
     | External -> "declare"
 
@@ -52,8 +52,8 @@ let string_of_param ((t, s): typ * string) : string =
 let string_of_parameterization (pm : parameterization) : string =
     if Assoc.size pm != 0 then "<" ^ Assoc.to_string string_of_typ pm ^ ">" else ""
 
-let string_of_fn_typ (ml, r, x, pm, p, _ : fn_typ) : string = 
-    string_of_mod_list ml ^ " " ^ string_of_typ r ^ " " ^ x ^ string_of_parameterization pm
+let string_of_fn_typ (ml, r, x, p, _ : fn_typ) : string = 
+    string_of_mod_list ml ^ " " ^ string_of_typ r ^ " " ^ x
     ^ "(" ^ string_of_list string_of_param p ^ ")"
 
 let rec string_of_aexp ((e, m): aexp) : string =
@@ -79,7 +79,7 @@ and string_of_comm (c: comm) : string =
     | Skip -> "skip;"
     | Print e -> "print " ^ (string_of_aexp e) ^ ";"
     | Exp e -> string_of_aexp e ^ ";"
-    | Decl (ml, t, s, e) -> (string_of_typ t) ^ " " ^ s ^ " = " ^ (string_of_aexp e) ^ ";"
+    | Decl (t, s, e) -> (string_of_typ t) ^ " " ^ s ^ " = " ^ (string_of_aexp e) ^ ";"
     | Assign (b, x) -> b ^ " = " ^ (string_of_aexp x) ^ ";"
     | AssignOp (x, op, e) -> x ^ " " ^ op ^ "= " ^ (string_of_aexp e)
     | If ((b, c1), elif_list, c2) -> 
@@ -99,7 +99,8 @@ let string_of_fn (t, c : fn_typ * acomm list) : string =
 
 let string_of_prototype_element (pe : prototype_element) : string =
     match pe with
-    | ProtoObject (x, p) -> "Object " ^ x ^ "<" ^ string_of_list (fun x -> x) p ^ ">;"
+    | ProtoObject (x, p, t) -> "Object " ^ x ^ "<" ^ string_of_list (fun x -> x) p ^ ">;"
+        ^ string_of_option_removed (fun t' -> " is " ^ string_of_typ t') t
     | ProtoFn f -> string_of_fn_typ f ^ ";"
 
 let string_of_prototype (x, p : prototype) : string = 
@@ -117,13 +118,6 @@ let string_of_coordinate (ml, x, p, cl : coordinate) : string =
 let string_of_global_var (ml, sq, t, x, e : global_var) : string =
     string_of_mod_list ml ^ " " ^ string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ x 
     ^ string_of_option_removed (fun x -> "= " ^ string_of_aexp x) e
-
-let string_of_extern (e : extern_element) : string = 
-    match e with
-    | ExternFn f -> "declare " ^ string_of_fn_typ f
-    | ExternVar (m, t, x, e) -> "declare " ^ string_of_mod_list m
-    | ExternTyp (x, pm, t) -> "type " ^ x ^ string_of_parameterization pm ^ " is " ^ 
-        string_of_typ (match t with | None -> AnyTyp | Some t' -> t')
     
 let string_of_term (t : term) : string = 
     match t with
@@ -131,8 +125,7 @@ let string_of_term (t : term) : string =
     | Prototype p -> string_of_prototype p
     | Coordinate c -> string_of_coordinate c
     | Frame f -> string_of_frame f
-    | Typ (x, pm, t) -> "type " ^ x ^ " is " ^ string_of_parameterization pm ^ string_of_typ t
-    | Extern e -> string_of_extern e
+    | Typ (ml, x, t) -> string_of_mod_list ml ^ "type " ^ x ^ " is " ^ string_of_typ t
     | GlobalVar g -> string_of_global_var g
     | Fn f -> string_of_fn f
 let string_of_aterm (t, _ : aterm) : string = 

@@ -7,10 +7,6 @@ type fn_inv = string * typ list
 (* Stores supertype and possible parameterization information for the type *)
 type tau = parameterization * typ
 
-(* Type and function modifiers *)
-(* Specifically the canonical and with keywords *)
-type mu = modification list
-
 (* Variable definitions *)
 (* Maps from variable names to the type of that variable *)
 type gamma = typ
@@ -64,8 +60,8 @@ type binding_contexts = {
 
 (* A type to contain every non-lookup context to simplify definitions *)
 (* We use '_a' syntax to denote elements which shouldn't be accessed directly *)
+(* Kept separate from binding_contexts since name repetition is permitted *)
 type contexts = {
-  m : mu Assoc.context;
   ps : psi Assoc.context;
   pm : parameterization;
   member : string option; (* Used for functions declared in prototypes or coordinate schemes *)
