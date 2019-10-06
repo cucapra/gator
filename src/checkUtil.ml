@@ -21,29 +21,21 @@ let add_prog cx x p = if Assoc.mem x cx.externs
 let init meta progs = 
   let b = {t=Assoc.empty; g=Assoc.empty; d=Assoc.empty; c=Assoc.empty; 
     p=Assoc.empty; el=Assoc.empty; tl=Assoc.empty } in
-  let cx = {m=Assoc.empty; ps=Assoc.empty; pm=Assoc.empty; externs=Assoc.empty; 
+  let cx = {ps=Assoc.empty; pm=Assoc.empty; externs=Assoc.empty; 
     member=None; meta=meta; _bindings=b } in
   List.fold_left (fun acc (x, p) -> add_prog acc x p) cx (Assoc.bindings progs)
-  
 
-let with_m cx m' = {cx with m=m'}
 let with_ps cx ps' = {cx with ps=ps'}
 let with_pm cx pm' = {cx with pm=pm'}
 let with_meta cx meta' = {cx with meta=meta'}
 let clear_member cx = {cx with member=None}
 
-let get_m cx x = if Assoc.mem x cx.m then Assoc.lookup x cx.m else 
-  error cx ("Undefined modifiable item " ^ x)
 let get_ps cx x = if Assoc.mem x cx.ps then Assoc.lookup x cx.ps else 
   error cx ("Undefined canonical item " ^ x)
 let get_pm cx x = if Assoc.mem x cx.pm then Assoc.lookup x cx.pm else 
   error cx (x ^ " not found in parameterization " ^ string_of_parameterization cx.pm)
 let get_prog cx x = if Assoc.mem x cx.externs then Assoc.lookup x cx.externs else 
   debug_fail cx (x ^ " not found in the list of imported files")
-
-let add_m cx x m = if Assoc.mem x cx.m 
-  then with_m cx (Assoc.update x (m::(Assoc.lookup x cx.m)) cx.m)
-  else with_m cx (Assoc.update x [m] cx.m)
 
 (* Finds which context in which to find the given string *)
 let find_exp cx x =
@@ -96,12 +88,6 @@ let within cx s =
   | None -> {cx with member=Some s}
   | _ -> debug_fail cx ("Invalid use of member " ^ s ^ " (should be a coordinate or prototype)")
 
-let get_dimtyp (cx : contexts) (mem : string) =
-  match find_typ cx mem with
-  | Some Chi (_,d) -> FrameTyp d
-  | None -> AnyFrameTyp
-  | _ -> debug_fail cx ("Invalid use of member " ^ mem ^ " (should be a coordinate or prototype)")
-
 let rename_fn (f : string -> string) (a,b,id,c,d:fn_typ) : fn_typ = a,b,f id,c,d
 
 let ignore_typ (t : typ) : unit = ignore t
@@ -109,16 +95,14 @@ let ignore_dexp (d : dexp) : unit = ignore d
 let ignore_typ_context (t : typ Assoc.context) : unit = ignore t
 let string_of_fn_inv ((s, tl) : fn_inv) : string = 
   s ^ "<" ^ string_of_list string_of_typ tl ^ ">"
-let string_of_tau (pm, t : tau) =
-  string_of_parameterization pm ^ " " ^  string_of_typ t
-let string_of_mu (ml : mu) =
-  string_of_mod_list ml
+let string_of_tau (e, pm, t : tau) =
+  if e then "declare " else "" ^ string_of_parameterization pm ^ " " ^  string_of_typ t
 let string_of_gamma (g : gamma) =
   string_of_typ g
 let string_of_delta (f : delta) =
   string_of_dexp f
-let string_of_chi (p,d : chi) =
-  "implements " ^ p ^ " with dimension " ^ string_of_dexp d
+let string_of_chi (pm, p : chi) =
+  "implements " ^ p ^ string_of_parameterization pm
 let string_of_phi (p : phi) =
   string_of_list string_of_fn_typ (List.map 
     (rename_fn (fun x -> "%" ^ let cut = String.rindex x '_' in
@@ -131,7 +115,6 @@ let print_cxg   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_g
 let print_cxd   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_delta "\n" cx._bindings.d)
 let print_cxc   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_chi   "\n" cx._bindings.c)
 let print_cxp   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_phi   "\n" cx._bindings.p)
-let print_cxm   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_mu    "\n" cx.m)
 let print_cxps  (cx : contexts) = print_endline (Assoc.to_string_sep string_of_psi   "\n" cx.ps)
 let print_cxpm  (cx : contexts) = print_endline (string_of_parameterization cx.pm)
 let print_cxmem (cx : contexts) = print_endline (string_of_option_removed (fun x -> x) cx.member)
@@ -148,7 +131,6 @@ let print_context (cx : contexts) =
   print_string "member:\t"  ; print_cxmem cx;
   print_string "pm:\t"      ; print_cxpm cx;
   print_bindings cx;
-  print_string "mu:\t"      ; print_cxm cx;
   print_string "psi:\t"     ; print_cxps cx
 
 let get_ml_pm (cx : contexts) (ml : modification list) : parameterization =
@@ -178,7 +160,7 @@ let add_function (cx : contexts) (f : fn_typ) : string * contexts =
     let rec replace t pm =
       match t with
       | ParTyp (f,pml) -> (match find_typ cx (lift f) with 
-        | Some _ -> MemberTyp (ParTyp(m, pml), ParTyp(f, [])), 
+        | Some _ -> MemberTyp (ParTyp(m, []), ParTyp(f, pml)), 
           List.fold_right (fun x acc -> 
             match x with | ParTyp (s, []) -> Assoc.update s pmt acc
             | _ -> debug_fail cx ("Invalid frame typ " ^ string_of_typ x)) pml pm | None -> t,pm)
@@ -244,8 +226,3 @@ let get_functions (cx : contexts) (id : string) : phi =
   match get_functions_safe cx id with
   | [] -> error cx ("No type definition for function " ^ id)
   | p -> p
-
-let has_modification (cx : contexts) (id : string) (mo : modification) : bool = 
-  if not (Assoc.mem id cx.m) then false
-  else List.fold_left (fun acc m -> acc || m = mo) 
-    false (Assoc.lookup id cx.m)

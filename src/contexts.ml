@@ -5,7 +5,8 @@ type fn_inv = string * typ list
 
 (* Type definitions *)
 (* Stores supertype and possible parameterization information for the type *)
-type tau = parameterization * typ
+(* Also stores whether or not this type is external (the boolean value) *)
+type tau = bool * parameterization * typ
 
 (* Variable definitions *)
 (* Maps from variable names to the type of that variable *)
@@ -18,8 +19,8 @@ type delta = dexp
 (* Coordinate systems *)
 (* Stores the following information about the given coordinate scheme:
  * The prototype implemented
- * The require frame dimension *)
-type chi = string * dexp
+ * The reference frame parameterization *)
+type chi = parameterization * string
 
 (* Function definitions *)
 (* Stores the full type and parameterization of each function overload *)
