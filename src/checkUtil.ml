@@ -101,8 +101,8 @@ let string_of_gamma (g : gamma) =
   string_of_typ g
 let string_of_delta (f : delta) =
   string_of_dexp f
-let string_of_chi (pm, p : chi) =
-  "implements " ^ p ^ string_of_parameterization pm
+let string_of_chi (pm, c : chi) =
+  string_of_option_removed (fun p -> "implements " ^ p) c ^ string_of_parameterization pm
 let string_of_phi (p : phi) =
   string_of_list string_of_fn_typ (List.map 
     (rename_fn (fun x -> "%" ^ let cut = String.rindex x '_' in
@@ -144,47 +144,6 @@ let get_ml_pm (cx : contexts) (ml : modification list) : parameterization =
   in
   List.fold_left get_ml_pm_rec (Assoc.empty) ml
 
-(* Adds the function 'f' to the context *)
-(* If we are in a declaration 'member', then also updates the declaration of the members of 'f' *)
-let add_function (cx : contexts) (f : fn_typ) : string * contexts =
-  debug_print (">> add_function " ^ string_of_fn_typ f);
-  let update_bindings b' = {cx with _bindings=b'} in
-  let _b = cx._bindings in
-  let ml,rt,id,pr,meta = f in
-  let pm = get_ml_pm cx ml in
-  let id', f' = match cx.member with
-  | None -> id,f
-  | Some m -> 
-    let lift s = m ^ "." ^ s in
-    let pmt = get_dimtyp cx m in
-    let rec replace t pm =
-      match t with
-      | ParTyp (f,pml) -> (match find_typ cx (lift f) with 
-        | Some _ -> MemberTyp (ParTyp(m, []), ParTyp(f, pml)), 
-          List.fold_right (fun x acc -> 
-            match x with | ParTyp (s, []) -> Assoc.update s pmt acc
-            | _ -> debug_fail cx ("Invalid frame typ " ^ string_of_typ x)) pml pm | None -> t,pm)
-      | ArrTyp (t',_) -> replace t' pm
-      | _ -> t,pm
-    in
-    let rt',pm' = replace rt pm in
-    let pr',pm'' = List.fold_right (fun (t,x) (pr',pm'') -> let l,r = replace t pm'' in (l,x)::pr',r) 
-      pr ([], pm') in
-    id,(ml,rt',id,pr',meta)
-  in
-  (* Rename each function except main for overloading purposes -- this gives correct invocation behavior when rewriting *)
-  if Assoc.mem id' _b.p
-  then
-    let fnl = Assoc.lookup id' _b.p in
-    let f_write = rename_fn (fun x -> x ^ "_" ^ string_of_int (List.length fnl)) f' in
-    let _,_,id_write,_,_ = f_write in
-    let p' = f_write::fnl in
-    id_write, update_bindings { _b with p=Assoc.update id' p' _b.p }
-  else 
-    let f_write = if id' = "main" then f' else rename_fn (fun x -> x ^ "_0") f' in
-    let _,_,id_write,_,_ = f_write in
-    id_write, bind cx id' (Phi [f_write])
-
 let option_clean (x : 'a option) : 'a =
   match x with | Some x -> x | None -> failwith "Failed option assumption"
 
@@ -208,7 +167,7 @@ let get_frame (cx : contexts) (x : string) : delta =
   | Some Delta d -> d
   | _ -> error cx ("Undefined frame " ^ x)
 
-let get_coordinate (cx : contexts) (x : string) : chi =
+let get_scheme (cx : contexts) (x : string) : chi =
   match find_typ cx x with
   | Some Chi c -> c
   | _ -> error cx ("Undefined coordinate scheme " ^ x)
@@ -226,3 +185,23 @@ let get_functions (cx : contexts) (id : string) : phi =
   match get_functions_safe cx id with
   | [] -> error cx ("No type definition for function " ^ id)
   | p -> p
+
+(* Adds the function 'f' to the context *)
+(* If we are in a declaration 'member', then also updates the declaration of the members of 'f' *)
+let bind_function (cx : contexts) (f : fn_typ) : string * contexts =
+  debug_print (">> bind_function " ^ string_of_fn_typ f);
+  let update_bindings b' = {cx with _bindings=b'} in
+  let _b = cx._bindings in
+  let _,_,id,_,_ = f in
+  (* Rename each function except main for overloading purposes -- this gives correct invocation behavior when rewriting *)
+  if Assoc.mem id _b.p
+  then
+    let fnl = Assoc.lookup id _b.p in
+    let f_write = rename_fn (fun x -> x ^ "_" ^ string_of_int (List.length fnl)) f in
+    let _,_,id_write,_,_ = f_write in
+    let p' = f_write::fnl in
+    id_write, update_bindings { _b with p=Assoc.update id p' _b.p }
+  else 
+    let f_write = if id = "main" then f else rename_fn (fun x -> x ^ "_0") f in
+    let _,_,id_write,_,_ = f_write in
+    id_write, bind cx id (Phi [f_write])

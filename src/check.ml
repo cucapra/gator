@@ -708,9 +708,29 @@ let check_return (cx: contexts) (t: typ) (c: acomm) : unit =
 
 (* Updates mu *)
 let include_function (cx: contexts) (f : fn_typ) : string * contexts =
-    let fm,r,id,pmd,pr,meta = f in
     debug_print (">> include_function " ^ string_of_fn_typ f);
-    let id', cx' = add_function cx f in
+    let fm,r,id,pmd,pr,meta = f in
+    let id', f' = match cx.member with
+    | None -> id,f
+    | Some m -> 
+      let spm, simpl = get_scheme cx m in
+      let lift s = m ^ "." ^ s in
+      let rec replace t pm =
+        match t with
+        | ParTyp (f,pml) -> (match find_typ cx (lift f) with 
+          | Some _ -> MemberTyp (ParTyp(m, []), ParTyp(f, pml)), 
+            List.fold_right (fun x acc -> 
+              match x with | ParTyp (s, []) -> Assoc.update s pmt acc
+              | _ -> debug_fail cx ("Invalid frame typ " ^ string_of_typ x)) pml pm | None -> t,pm)
+        | ArrTyp (t',_) -> replace t' pm
+        | _ -> t,pm
+      in
+      let rt',pm' = replace rt pm in
+      let pr',pm'' = List.fold_right (fun (t,x) (pr',pm'') -> let l,r = replace t pm'' in (l,x)::pr',r) 
+        pr ([], pm') in
+      id,(ml,rt',id,pr',meta)
+    in
+    let id', cx' = bind_function cx f in
     let cxm = with_m cx' (Assoc.update id' fm cx.m) in
     if List.mem Canon fm then
         match pr with

@@ -17,10 +17,10 @@ type gamma = typ
 type delta = dexp
 
 (* Coordinate systems *)
-(* Stores the following information about the given coordinate scheme:
- * The prototype implemented
+(* Stores the following information about the given prototype or coordinate scheme:
+ * If a coordinate scheme, the prototype implemented
  * The reference frame parameterization *)
-type chi = parameterization * string
+type chi = parameterization * string option
 
 (* Function definitions *)
 (* Stores the full type and parameterization of each function overload *)
