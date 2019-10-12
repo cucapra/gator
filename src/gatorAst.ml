@@ -78,14 +78,14 @@ type fn = fn_typ * acomm list
 type frame = id * dexp
 
 type prototype_element =
-    | ProtoObject of id * string list * typ option
+    | ProtoObject of modification list * id * typ option
     | ProtoFn of fn_typ
 (* Name and list of declarations *)
 type aprototype_element = prototype_element astNode
 type prototype = id * aprototype_element list
 
 type coordinate_element =
-    | CoordObjectAssign of id * string list * typ
+    | CoordObjectAssign of modification list * id * typ
     | CoordFn of fn
 (* Name, underlying prototype, dimension, and list of definitions *)
 type acoordinate_element = coordinate_element astNode

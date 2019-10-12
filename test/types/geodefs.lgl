@@ -3,130 +3,129 @@ type vec3 is float[3];
 type vec4 is float[4];
 type scalar is float;
 
-declare T +<T:vec2>(T v1, T v2);
-declare T -<T:vec2>(T v1, T v2);
-declare T -<T:vec2>(T v);
-declare T *<T:vec2,U:float>(T v, U f);
-declare T *<T:vec2,U:float>(U f, T v);
+with vec2 T: declare T +(T v1, T v2);
+with vec2 T: declare T -(T v1, T v2);
+with vec2 T: declare T -(T v);
+with vec2 T: with float U: declare T *(T v, U f);
+with vec2 T: with float U: declare T *(U f, T v);
 
-declare T +<T:vec3>(T v1, T v2);
-declare T -<T:vec3>(T v1, T v2);
-declare T -<T:vec3>(T v);
-declare T *<T:vec3,U:float>(T v, U f);
-declare T *<T:vec3,U:float>(U f, T v);
+with vec3 T: declare T +(T v1, T v2);
+with vec3 T: declare T -(T v1, T v2);
+with vec3 T: declare T -(T v);
+with vec3 T: with float U: declare T *(T v, U f);
+with vec3 T: with float U: declare T *(U f, T v);
 
-declare T +<T:vec4>(T v1, T v2);
-declare T -<T:vec4>(T v1, T v2);
-declare T -<T:vec4>(T v);
-declare T *<T:vec4,U:float>(T v, U f);
-declare T *<T:vec4,U:float>(U f, T v);
+with vec4 T: declare T +(T v1, T v2);
+with vec4 T: declare T -(T v1, T v2);
+with vec4 T: declare T -(T v);
+with vec4 T: with float U: declare T *(T v, U f);
+with vec4 T: with float U: declare T *(U f, T v);
 
-declare T +<T:float>(T f1, T f2);
-declare T -<T:float>(T f1, T f2);
-declare T -<T:float>(T f);
-declare T *<T:float>(T f1, T f2);
-declare T /<T:float>(T f1, T f2);
+with float T: declare T +(T f1, T f2);
+with float T: declare T -(T f1, T f2);
+with float T: declare T -(T f);
+with float T: declare T *(T f1, T f2);
+with float T: declare T /(T f1, T f2);
 
 declare float cos(float f);
 declare float sqrt(float f);
 declare float acos(float f);
 
 prototype geometry {
-    object point<r>;
-    object vector<r>;
+    object point;
+    object vector;
 
-    vector<r> +(vector<r> x, vector<r> y);
-    vector<r> -(vector<r> x, vector<r> y);
-    vector<r> *(vector<r> v, scalar s);
-    vector<r> *(scalar s, vector<r> v);
-    vector<r> -(vector<r> v);
-    point<r> translate(point<r> p, vector<r> v);
-    point<r> +(point<r> p, vector<r> v);
-    point<r> -(point<r> p, vector<r> v);
-    vector<r> -(point<r> x, point<r> y);
-    vector<r> -(point<r> x);
+    this.vector +(vector x, vector y);
+    vector -(vector x, vector y);
+    vector *(vector v, scalar s);
+    vector *(scalar s, vector v);
+    vector -(vector v);
+    point translate(point p, vector v);
+    point +(point p, vector v);
+    point -(point p, vector v);
+    vector -(point x, point y);
+    vector -(point x);
 }
+with frame(2) r:
 coordinate cart2 : geometry {
-    dimension 2; // i.e. all type parameterizations are implicitly frames of dimension 2
 
-    object point<r> is float[2];
-    object vector<r> is float[2];
+    object point is float[2];
+    object vector is float[2];
 
-    vector<r> +(vector<r> x, vector<r> y) {
-        return (x as! vec2 + y as! vec2) as! vector<r>;
+    vector +(vector x, vector y) {
+        return (x as! vec2 + y as! vec2) as! vector;
     }
-    vector<r> -(vector<r> x, vector<r> y) {
-        return (x as! vec2 - y as! vec2) as! vector<r>;
+    vector -(vector x, vector y) {
+        return (x as! vec2 - y as! vec2) as! vector;
     }
-    vector<r> *(vector<r> v, scalar s) {
-        return (v as! vec2 * s) as! vector<r>;
+    vector *(vector v, scalar s) {
+        return (v as! vec2 * s) as! vector;
     }
-    vector<r> *(scalar s, vector<r> v) {
-        return (s * v as! vec2) as! vector<r>;
+    vector *(scalar s, vector v) {
+        return (s * v as! vec2) as! vector;
     }
-    vector<r> -(vector<r> v) {
-        return (-v as! vec2) as! vector<r>;
+    vector -(vector v) {
+        return (-v as! vec2) as! vector;
     }
-    point<r> translate(point<r> p, vector<r> v) {
-        return (p as! vec2 + v as! vec2) as! point<r>;
+    point translate(point p, vector v) {
+        return (p as! vec2 + v as! vec2) as! point;
     }
-    point<r> +(point<r> p, vector<r> v) {
-        return (p as! vec2 + v as! vec2) as! point<r>;
+    point +(point p, vector v) {
+        return (p as! vec2 + v as! vec2) as! point;
     }
-    point<r> -(point<r> p, vector<r> v) {
-        return (p as! vec2 - v as! vec2) as! point<r>;
+    point -(point p, vector v) {
+        return (p as! vec2 - v as! vec2) as! point;
     }
-    vector<r> -(point<r> x, point<r> y) {
-        return (x as! vec2 - y as! vec2) as! vector<r>;
+    vector -(point x, point y) {
+        return (x as! vec2 - y as! vec2) as! vector;
     }
-    vector<r> -(point<r> v) {
-        return (-v as! vec2) as! vector<r>;
+    vector -(point v) {
+        return (-v as! vec2) as! vector;
     }
 }
+with frame(3) r:
 coordinate cart3 : geometry {
-    dimension 3;
+    object point is float[3];
+    object vector is float[3];
 
-    object point<r> is float[3];
-    object vector<r> is float[3];
-
-    vector<r> +(vector<r> x, vector<r> y) {
-        return (x as! vec3 + y as! vec3) as! vector<r>;
+    vector +(vector x, vector y) {
+        return (x as! vec3 + y as! vec3) as! vector;
     }
-    vector<r> -(vector<r> x, vector<r> y) {
-        return (x as! vec3 - y as! vec3) as! vector<r>;
+    vector -(vector x, vector y) {
+        return (x as! vec3 - y as! vec3) as! vector;
     }
-    vector<r> *(vector<r> v, scalar s) {
-        return (v as! vec3 * s) as! vector<r>;
+    vector *(vector v, scalar s) {
+        return (v as! vec3 * s) as! vector;
     }
-    vector<r> *(scalar s, vector<r> v) {
-        return (s * v as! vec3) as! vector<r>;
+    vector *(scalar s, vector v) {
+        return (s * v as! vec3) as! vector;
     }
-    vector<r> -(vector<r> v) {
-        return (-v as! vec3) as! vector<r>;
+    vector -(vector v) {
+        return (-v as! vec3) as! vector;
     }
-    point<r> translate(point<r> p, vector<r> v) {
-        return (p as! vec3 + v as! vec3) as! point<r>;
+    point translate(point p, vector v) {
+        return (p as! vec3 + v as! vec3) as! point;
     }
-    point<r> +(point<r> p, vector<r> v) {
-        return (p as! vec3 + v as! vec3) as! point<r>;
+    point +(point p, vector v) {
+        return (p as! vec3 + v as! vec3) as! point;
     }
-    point<r> -(point<r> p, vector<r> v) {
-        return (p as! vec3 - v as! vec3) as! point<r>;
+    point -(point p, vector v) {
+        return (p as! vec3 - v as! vec3) as! point;
     }
-    vector<r> -(point<r> x, point<r> y) {
-        return (x as! vec3 - y as! vec3) as! vector<r>;
+    vector -(point x, point y) {
+        return (x as! vec3 - y as! vec3) as! vector;
     }
-    vector<r> -(point<r> v) {
-        return (-v as! vec3) as! vector<r>;
+    vector -(point v) {
+        return (-v as! vec3) as! vector;
     }
 }
+with frame(2) r:
 coordinate polar : geometry {
-    dimension 2;
+    object point is float[2];
+    object vector is float[2];
 
-    object point<r> is float[2];
-    object vector<r> is float[2];
-
-    T __trans<T : float[2]>(T x, T y) {
+    with float[2] T:
+    T __trans(T x, T y) {
         // https://pritschet.me/wiki/physics/linear-translation-polar-coordinates/
         float r1 = x[0];
         float r2 = y[0];
@@ -136,69 +135,68 @@ coordinate polar : geometry {
         float theta = acos((r1 * cos(theta1) + r2 * cos(theta2)) / r);
         return [r, theta];
     }
-    vector<r> +(vector<r> x, vector<r> y) {
+    vector +(vector x, vector y) {
         return __trans(x, y);
     }
-    vector<r> -(vector<r> x, vector<r> y) {
+    vector -(vector x, vector y) {
         return __trans(x, [-y[0], y[1]]);
     }
-    vector<r> *(vector<r> v, scalar s) {
+    vector *(vector v, scalar s) {
         return [v[0] * s, v[1]];
     }
-    vector<r> *(scalar s, vector<r> v) {
+    vector *(scalar s, vector v) {
         return [s * v[0], v[1]];
     }
-    vector<r> -(vector<r> v) {
+    vector -(vector v) {
         return [-v[0], v[1]];
     }
-    point<r> translate(point<r> p, vector<r> v) {
-        return __trans(p, v) as! point<r>;
+    point translate(point p, vector v) {
+        return __trans(p, v) as! point;
     }
-    point<r> +(point<r> p, vector<r> v) {
-        return __trans(p, v) as! point<r>;
+    point +(point p, vector v) {
+        return __trans(p, v) as! point;
     }
-    point<r> +(point<r> p, vector<r> v) {
-        return (p as! vec2 - v as! vec2) as! point<r>;
+    point +(point p, vector v) {
+        return (p as! vec2 - v as! vec2) as! point;
     }
-    vector<r> -(point<r> x, point<r> y) {
-        return __trans(x, [-y[0], y[1]]) as! vector<r>;
+    vector -(point x, point y) {
+        return __trans(x, [-y[0], y[1]]) as! vector;
     }
-    vector<r> -(point<r> v) {
+    vector -(point v) {
         return [-v[0], v[1]];
     }
 }
+with frame(3) r:
 coordinate hom : geometry {
-    dimension 3;
+    object point is float[4];
+    object vector is float[4];
 
-    object point<r> is float[4];
-    object vector<r> is float[4];
-
-    vector<r> +(vector<r> x, vector<r> y) {
+    vector +(vector x, vector y) {
         return [x[0] + y[0], x[1] + y[1], x[2] + y[2], 0.];
     }
-    vector<r> -(vector<r> x, vector<r> y) {
+    vector -(vector x, vector y) {
         return [x[0] - y[0], x[1] - y[1], x[2] - y[2], 0.];
     }
-    vector<r> *(vector<r> v, scalar s) {
+    vector *(vector v, scalar s) {
         return [v[0] * s, v[1] * s, v[2] * s, 0.];
     }
-    vector<r> *(scalar s, vector<r> v) {
+    vector *(scalar s, vector v) {
         return [s * v[0], s * v[1], s * v[2], 0.];
     }
-    vector<r> -(vector<r> v) {
+    vector -(vector v) {
         return [-v[0], -v[1], -v[2], 0.];
     }
-    point<r> translate(point<r> p, vector<r> v) {
-        return (p as! vec4 + v as! vec4 * p[3]) as! point<r>;
+    point translate(point p, vector v) {
+        return (p as! vec4 + v as! vec4 * p[3]) as! point;
     }
-    point<r> +(point<r> p, vector<r> v) {
-        return (p as! vec4 + v as! vec4 * p[3]) as! point<r>;
+    point +(point p, vector v) {
+        return (p as! vec4 + v as! vec4 * p[3]) as! point;
     }
-    point<r> -(point<r> p, vector<r> v) {
-        return (p as! vec4 - v as! vec4 * p[3]) as! point<r>;
+    point -(point p, vector v) {
+        return (p as! vec4 - v as! vec4 * p[3]) as! point;
     }
-    vector<r> -(point<r> x, point<r> y) {
-        return (x as! vec4 * y[3] - y as! vec4 * x[3]) as! vector<r>;
+    vector -(point x, point y) {
+        return (x as! vec4 * y[3] - y as! vec4 * x[3]) as! vector;
     }
     // We don't actually need to define every function, it will just fail if we try and call an undefined function
 }

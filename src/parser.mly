@@ -84,11 +84,10 @@ exception ParseException of string
 
 (* Precedences *)
 
-%left ID
+%left ID THIS
 %left AND OR
 %left NOT EQ LEQ GEQ LBRACK 
 %left LWICK RWICK 
-%left INC DEC
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
@@ -137,7 +136,7 @@ let term ==
   | PROTOTYPE; x = ID; LBRACE; p = list(node(prototype_element)); RBRACE;
     <Prototype>
   | m = modification*; COORDINATE; x = ID; COLON; p = ID;
-    LBRACE; SEMI; c = list(node(coordinate_element)); RBRACE;
+    LBRACE; c = list(node(coordinate_element)); RBRACE;
     <Coordinate>
   | FRAME; x = ID; HAS; DIMENSION; d = dexp; SEMI;
     <Frame>
@@ -150,7 +149,7 @@ let term ==
     <Fn>
 
 let prototype_element ==
-  | OBJECT; x = ID; p = oplist(parameters(LWICK, ID, RWICK)); t = snd(combined(IS, typ))?;
+  | m = modification*; OBJECT; x = ID; t = snd(combined(IS, typ))?; SEMI;
     <ProtoObject>
   | f = fn_typ; SEMI;
     <ProtoFn>
@@ -164,7 +163,7 @@ let modification ==
     { External }
 
 let coordinate_element ==
-  | OBJECT; x = ID; p = oplist(parameters(LWICK, ID, RWICK)); IS; t = typ; SEMI;
+  | m = modification*; OBJECT; x = ID; IS; t = typ; SEMI;
     <CoordObjectAssign>
   | f = fn;
     <CoordFn>
@@ -182,7 +181,7 @@ let arguments ==
 let id_expanded ==
   | x = ID; <>
   | NOT; { "!" }
-  | x = unop_postfix; <>
+  | x = unop_effectful; <>
   | x = infix; <>
 
 let fn_typ ==
@@ -277,6 +276,8 @@ let typ :=
     <MemberTyp>
   | x = ID; pt = parameters(LWICK, typ, RWICK);
     <ParTyp>
+  | THIS; pt = parameters(LWICK, typ, RWICK);
+    { ParTyp("this", pt) }
   | x = ID; /* explicit for clarity and to help out the parser */
     { ParTyp(x, []) }
   | GENTYPE; 
@@ -319,9 +320,7 @@ let exp:=
     <Val>
   | x = ID;
     <Var>
-  | op = unop_prefix; e = node(exp);
-    { FnInv(op, [], [e]) }
-  | e = node(exp); op = unop_postfix;
+  | op = unop; e = node(exp);
     { FnInv(op, [], [e]) }
   | e1 = node(exp); op = infix; e2 = node(exp);
     { FnInv(op, [], [e1; e2]) }
@@ -344,13 +343,17 @@ let exp:=
 let effectful_exp ==
   | x = ID; p = oplist(parameters(LWICK, typ, RWICK)); a = arguments;
     <FnInv>
+  | op = unop_effectful; x = node(ID);
+    { FnInv(op, [], [(Var (fst x), snd x)]) }
+  | x = node(ID); op = unop_effectful;
+    { FnInv(op, [], [(Var (fst x), snd x)]) }
 
-let unop_prefix ==
-  /* NOTE: if you update this, update id_extended to avoid MINUS conflicts */
+let unop ==
+  /* NOTE: if you update this, update id_extended, which is built to avoid MINUS conflicts */
   | NOT; { "!" }
   | MINUS; { "-" }
 
-let unop_postfix ==
+let unop_effectful ==
   | INC; {"++"}
   | DEC; {"--"}
 

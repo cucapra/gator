@@ -1,12 +1,13 @@
 type vec2 is float[2];
 type vec3 is float[3];
-declare float dot<t:vec2>(t x, t y);
-declare t normalize<t:vec2>(t x);
-declare t -<t>(t f);
-declare t +<t:vec2>(t v1, t v2);
-declare t *<t:vec3,u:float>(t v, u f);
-declare t *<t:vec3,u:float>(u f, t v);
-declare t .*<t:vec2>(t v1, t v2);
+with vec2 T:    declare float dot(T x, T y);
+with vec2 T:    declare T normalize(T x);
+with vec2 T:    declare T -(T f);
+with float T:   declare T -(T f);
+with vec2 T:    declare T +(T v1, T v2);
+with vec2 T:    declare T .*(T v1, T v2);
+with vec3 T: with float U:  declare T *(T v, U f);
+with vec3 T: with float U:  declare T *(U f, T v);
 
 void main() {
     vec2 r1 = [1., 2.] + [-2.,-3.];

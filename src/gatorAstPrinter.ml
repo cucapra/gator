@@ -99,7 +99,7 @@ let string_of_fn (t, c : fn_typ * acomm list) : string =
 
 let string_of_prototype_element (pe : prototype_element) : string =
     match pe with
-    | ProtoObject (x, p, t) -> "Object " ^ x ^ "<" ^ string_of_list (fun x -> x) p ^ ">;"
+    | ProtoObject (ml, x, t) -> string_of_mod_list ml ^ "Object " ^ x
         ^ string_of_option_removed (fun t' -> " is " ^ string_of_typ t') t
     | ProtoFn f -> string_of_fn_typ f ^ ";"
 
@@ -108,7 +108,7 @@ let string_of_prototype (x, p : prototype) : string =
 
 let string_of_coordinate_element (ce : coordinate_element) : string = 
     match ce with
-    | CoordObjectAssign (x, p, t) -> x ^ string_of_list (fun x -> x) p ^ " = " ^ string_of_typ t ^ ";"
+    | CoordObjectAssign (ml, x, t) -> string_of_mod_list ml ^ x ^ " = " ^ string_of_typ t ^ ";"
     | CoordFn f -> string_of_fn f
 
 let string_of_coordinate (ml, x, p, cl : coordinate) : string =
