@@ -92,7 +92,7 @@ let rec is_subtype (cx: contexts) (to_check : typ) (target : typ) : bool =
         && is_subtype_list cx tl1 tl2)
         || is_subtype cx (typ_step cx to_check) target
     | MemberTyp (t1, t2), MemberTyp (t3, t4) ->
-        is_typ_eq cx t1 t3 && is_subtype cx t2 t4
+        is_subtype cx t1 t2 && is_subtype cx t2 t4
     | FrameTyp d1, FrameTyp d2 -> reduce_dexp cx d1 = reduce_dexp cx d1
     
     (* Type lookup cases *)
@@ -152,6 +152,7 @@ and typ_step (cx : contexts) (t : typ) : typ =
         let get_supertyp fail = (match find_typ cx s with
         | Some Tau _ -> tau_lookup cx s tl
         | Some Delta _ -> delta_lookup cx s
+        | Some Chi (_, s) -> (match s with | Some p -> ParTyp(p, []) | None -> AnyTyp) 
         | _ -> fail ())
         in
         if Assoc.mem s cx.pm then get_pm cx s else
@@ -754,34 +755,50 @@ let check_frame (cx : contexts) ((id, d) : frame) : contexts =
 
 let rewrite_scheme_typ (cx : contexts) (scheme : id) : typ -> typ =
     let f (st : id) (spm : typ list) (t : typ) : typ = 
-        map_typ_rec cx (fun t' -> (match t' with 
+        let rec map_typ_rec t' = 
+        match t' with 
         | ParTyp (s, pm) -> 
-            if s = "this" then ParTyp(st, pm) else
+            let pm' = List.map map_typ_rec pm in
             (match get_typ_safe cx s with 
-            | Some _ -> t'
+            | Some _ -> ParTyp(s, pm')
             | None -> 
-                let s' = st ^ "." ^ s in
-                (match get_typ_safe cx s' with 
-                | Some _ -> MemberTyp(ParTyp (st, spm), ParTyp(s', pm))
+                (match get_typ_safe cx (st ^ "." ^ s) with 
+                | Some _ -> 
+                    MemberTyp(ParTyp (st, spm), ParTyp(s, pm'))
                 | None -> error cx ("Unknown type " ^ string_of_typ t)))
-        | ThisTyp -> ParTyp (st, spm)
-        | _ -> t')) t
+        | MemberTyp(ThisTyp, t2) -> MemberTyp (ParTyp(st, spm), t2)
+        | MemberTyp(ParTyp(s, pm), t2) -> 
+            if s = "this" then MemberTyp (ParTyp(st, spm), t2) else t
+        | MemberTyp(t1, t2) -> MemberTyp (map_typ_rec t1, map_typ_rec t2)
+        | ArrTyp (tl, a) -> ArrTyp(map_typ_rec tl, a)
+        | GenArrTyp t'' -> GenArrTyp(map_typ_rec t'')
+        | _ -> t' in
+        map_typ_rec t
     in match get_scheme cx scheme with
     | pm,None -> f scheme []
     | pm,Some _ -> f scheme (List.map (fun s -> ParTyp (s, [])) (Assoc.keys pm))
+
+let rewrite_scheme_fn_inv (cx : contexts) (scheme : id) (s : string) : string =
+    match find_exp cx s with
+    | Some _ -> s
+    | None -> (match find_typ cx s with 
+        | Some _ -> s
+        | None -> scheme ^ "." ^ s)
 
 (* Updates tau or phi with the prototype element being checked *)
 let check_prototype_element (cx : contexts) (p : string) (pe : prototype_element) : contexts =
     debug_print (">> check_prototype_element " ^ string_of_prototype_element pe);
     match pe with
-    | ProtoObject (ml, id, pm) -> bind cx (p ^ "." ^ id)
-        (Tau (false, Assoc.create (List.map (fun x -> (x, AnyFrameTyp)) []), AnyTyp))
+    | ProtoObject (ml, id, t) -> 
+        let pm = get_ml_pm cx ml in
+        bind cx (p ^ "." ^ id) (Tau (false, pm, match t with | Some t' -> t' | None -> AnyTyp))
     (* We don't actually generate erased prototype functions, just typecheck them *)
     | ProtoFn f -> let _,rt,_,pr,_ = f in
         check_typ_valid cx rt; List.fold_left (fun acc -> check_typ_valid cx |- fst) () pr;
         snd (bind_function cx (rename_fn (fun x -> p ^ "." ^ x) f))
 let check_aprototype_element cx p ape : contexts = 
-    let pe', meta = map_typ_aprototype_element cx (rewrite_scheme_typ cx p) ape in
+    let pe', meta = map_aprototype_element cx (rewrite_scheme_fn_inv cx p)
+        (fun x -> x) (rewrite_scheme_typ cx p) ape in
     check_prototype_element (with_meta cx meta) p pe'
 
 (* Updates tau or phi with the coordinate scheme element being checked *)
@@ -820,25 +837,27 @@ let check_coordinate_element (cx : contexts) (c: string) (ce : coordinate_elemen
             is_subtype_list cxpm (List.map fst pr) (List.map fst ppr)))
             false fns
         in
-        if not (has_binding) then error cx 
+        if not has_binding then error cx 
             ("The type of function " ^ c ^ "." ^ id ^ " does not match any prototype definition");
         (* Naming hack to make functions that aren't in the prototype 'internal' *)
         let fn' = if List.length fns = 0 then (rename_fn (fun x -> c ^ "." ^ x) f),cl else fn in
         let cx', tfn = check_fn cxpm fn' in
         cx', Some tfn
-let check_acoordinate_element cx c ace : contexts * TypedAst.fn option = 
-    let ce',meta = map_typ_acoordinate_element cx (rewrite_scheme_typ cx c) ace in
+let check_acoordinate_element cx c ace : contexts * TypedAst.fn option =
+    let ce',meta = map_acoordinate_element cx (rewrite_scheme_fn_inv cx c)
+    (fun x -> x) (rewrite_scheme_typ cx c) ace in
     check_coordinate_element (with_meta cx meta) c ce'
 
 (* Returns the context with a checked prototype *)
 let check_prototype (cx: contexts) ((id, p) : prototype) : contexts =
     debug_print (">> check_prototype " ^ id);
     let cx' = bind cx id (Chi (Assoc.empty, None)) in
-    List.fold_left (fun acc (pe, meta) -> check_aprototype_element acc id (pe, meta)) cx' p
+    List.fold_left (fun acc (pe, meta) -> 
+        check_aprototype_element acc id (pe, meta)) cx' p
 
 (* Returns the context with a checked coordinate scheme *)
 let check_coordinate (cx: contexts) ((ml,id,p,ce) : coordinate) : contexts * TypedAst.fn list =
-    debug_print (">> check_prototype " ^ id);
+    debug_print (">> check_coordinate " ^ id);
     let pm = get_ml_pm cx ml in
     let cx' = bind cx id (Chi (pm, Some p)) in
     List.fold_left (fun (cx', fnl) (ce, meta) -> let cx'', tf = check_acoordinate_element cx' id (ce, meta) in

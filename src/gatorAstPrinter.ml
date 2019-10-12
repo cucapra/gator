@@ -108,7 +108,7 @@ let string_of_prototype (x, p : prototype) : string =
 
 let string_of_coordinate_element (ce : coordinate_element) : string = 
     match ce with
-    | CoordObjectAssign (ml, x, t) -> string_of_mod_list ml ^ x ^ " = " ^ string_of_typ t ^ ";"
+    | CoordObjectAssign (ml, x, t) -> string_of_mod_list ml ^ x ^ " is " ^ string_of_typ t ^ ";"
     | CoordFn f -> string_of_fn f
 
 let string_of_coordinate (ml, x, p, cl : coordinate) : string =

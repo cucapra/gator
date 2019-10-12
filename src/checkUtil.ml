@@ -5,11 +5,57 @@ open Contexts
 
 exception TypeException of string
 
+let rename_fn (f : string -> string) (a,b,id,c,d:fn_typ) : fn_typ = a,b,f id,c,d
+
+let ignore_typ (t : typ) : unit = ignore t
+let ignore_dexp (d : dexp) : unit = ignore d
+let ignore_typ_context (t : typ Assoc.context) : unit = ignore t
+let string_of_fn_inv ((s, tl) : fn_inv) : string = 
+  s ^ "<" ^ string_of_list string_of_typ tl ^ ">"
+let string_of_tau (e, pm, t : tau) =
+  if e then "declare " else "" ^ string_of_parameterization pm ^ " " ^  string_of_typ t
+let string_of_gamma (g : gamma) =
+  string_of_typ g
+let string_of_delta (f : delta) =
+  string_of_dexp f
+let string_of_chi (pm, c : chi) =
+  string_of_option_removed (fun p -> "implements " ^ p) c ^ string_of_parameterization pm
+let string_of_phi (p : phi) =
+  string_of_list string_of_fn_typ (List.map 
+    (rename_fn (fun x -> "%" ^ let cut = if String.contains x '_' then String.rindex x '_' else 0 in
+      String.sub x cut (String.length x - cut))) p)
+let string_of_psi (ps : psi) : string =
+  string_of_list (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_fn_inv p ^ ")") ps
+
+let print_cxt   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_tau   "\n" cx._bindings.t)
+let print_cxg   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_gamma "\n" cx._bindings.g)
+let print_cxd   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_delta "\n" cx._bindings.d)
+let print_cxc   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_chi   "\n" cx._bindings.c)
+let print_cxp   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_phi   "\n" cx._bindings.p)
+let print_cxps  (cx : contexts) = print_endline (Assoc.to_string_sep string_of_psi   "\n" cx.ps)
+let print_cxpm  (cx : contexts) = print_endline (string_of_parameterization cx.pm)
+
+let print_bindings (cx : contexts) =
+  print_endline "Bindings:";
+  print_endline "tau:"     ; print_cxt cx;
+  print_endline "gamma:"   ; print_cxg cx;
+  print_endline "delta:"   ; print_cxd cx;
+  print_endline "chi:"     ; print_cxc cx;
+  print_endline "phi:"     ; print_cxp cx
+let print_context (cx : contexts) = 
+  print_endline "Current context:";
+  print_string "pm:\t"  ; print_cxpm cx; print_endline "";
+  print_bindings cx;
+  print_string "psi:\t" ; print_cxps cx
+
 let line_number (meta : metadata) : string = 
   ("Line: " ^ string_of_int(meta.pos_lnum))
 let error_meta meta s = raise (TypeException(line_number meta ^ " -- " ^ s))
-let error cx s = error_meta cx.meta s
+let error cx s = 
+  if !debug then print_context cx;
+  error_meta cx.meta s
 let debug_fail (cx : contexts) (s : string) =
+  if !debug then print_context cx;
   failwith (line_number cx.meta ^ "\t" ^ s)
 
 let with_extern cx externs' = {cx with externs=externs'}
@@ -78,51 +124,10 @@ let clear (cx : contexts) (b : exp_bindings) : contexts =
 (* Resets the contexts cx to the state provided by the reference contexts cx_ref *)
 let reset (cx : contexts) (cx_ref : contexts) (b : exp_bindings) : contexts =
   match b with
-  | CGamma -> List.fold_left (fun acc (x, g) -> bind acc x (Gamma g)) (clear cx b) (Assoc.bindings cx_ref._bindings.g)
-  | CPhi ->   List.fold_left (fun acc (x, p) -> bind acc x (Phi p)) (clear cx b) (Assoc.bindings cx_ref._bindings.p)
-
-let rename_fn (f : string -> string) (a,b,id,c,d:fn_typ) : fn_typ = a,b,f id,c,d
-
-let ignore_typ (t : typ) : unit = ignore t
-let ignore_dexp (d : dexp) : unit = ignore d
-let ignore_typ_context (t : typ Assoc.context) : unit = ignore t
-let string_of_fn_inv ((s, tl) : fn_inv) : string = 
-  s ^ "<" ^ string_of_list string_of_typ tl ^ ">"
-let string_of_tau (e, pm, t : tau) =
-  if e then "declare " else "" ^ string_of_parameterization pm ^ " " ^  string_of_typ t
-let string_of_gamma (g : gamma) =
-  string_of_typ g
-let string_of_delta (f : delta) =
-  string_of_dexp f
-let string_of_chi (pm, c : chi) =
-  string_of_option_removed (fun p -> "implements " ^ p) c ^ string_of_parameterization pm
-let string_of_phi (p : phi) =
-  string_of_list string_of_fn_typ (List.map 
-    (rename_fn (fun x -> "%" ^ let cut = if String.contains x '_' then String.rindex x '_' else 0 in
-      String.sub x cut (String.length x - cut))) p)
-let string_of_psi (ps : psi) : string =
-  string_of_list (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_fn_inv p ^ ")") ps
-
-let print_cxt   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_tau   "\n" cx._bindings.t)
-let print_cxg   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_gamma "\n" cx._bindings.g)
-let print_cxd   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_delta "\n" cx._bindings.d)
-let print_cxc   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_chi   "\n" cx._bindings.c)
-let print_cxp   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_phi   "\n" cx._bindings.p)
-let print_cxps  (cx : contexts) = print_endline (Assoc.to_string_sep string_of_psi   "\n" cx.ps)
-let print_cxpm  (cx : contexts) = print_endline (string_of_parameterization cx.pm)
-
-let print_bindings (cx : contexts) =
-  print_endline "Bindings:";
-  print_endline "tau:"     ; print_cxt cx;
-  print_endline "gamma:"   ; print_cxg cx;
-  print_endline "delta:"   ; print_cxd cx;
-  print_endline "chi:"     ; print_cxc cx;
-  print_endline "phi:"     ; print_cxp cx
-let print_context (cx : contexts) = 
-  print_endline "Current context:";
-  print_string "pm:\t"  ; print_cxpm cx; print_endline "";
-  print_bindings cx;
-  print_string "psi:\t" ; print_cxps cx
+  | CGamma -> List.fold_left 
+    (fun acc (x, g) -> bind acc x (Gamma g)) (clear cx b) (Assoc.bindings cx_ref._bindings.g)
+  | CPhi ->   List.fold_left 
+    (fun acc (x, p) -> bind acc x (Phi p)) (clear cx b) (Assoc.bindings cx_ref._bindings.p)
 
 let has_modification (cx : contexts) (ml : modification list) (m : modification) : bool =
   List.fold_right (fun mc acc -> mc = m || acc) ml false 
@@ -197,65 +202,68 @@ let bind_function (cx : contexts) (f : fn_typ) : string * contexts =
     let _,_,id_write,_,_ = f_write in
     id_write, bind cx id (Phi [f_write])
 
-let rec map_typ_rec (cx : contexts) (f : typ -> typ) (t : typ) : typ =
-  let tt = map_typ_rec cx f in
-  f (match t with
-  | ArrTyp (t1, a) -> ArrTyp(tt t1, a)
-  | MemberTyp (t1, t2) -> MemberTyp(tt t1, tt t2)
-  | GenArrTyp t1 -> GenArrTyp (tt t1)
-  | ParTyp (a, tl) -> ParTyp(a, List.map tt tl)
-  | _ -> t)
-
-let rec map_typ_aexp (cx : contexts) (f : typ -> typ) (ae : aexp) : aexp =
-  let mt = map_typ_aexp cx f in
+let rec map_aexp (cx : contexts) (fs : string -> string) (f : typ -> typ) (ae : aexp) : aexp =
+  debug_print (">> map_aexp " ^ string_of_aexp ae);
+  let mt = map_aexp cx fs f in
   let e,meta = ae in
   match e with 
   | Arr l -> Arr (List.map mt l), meta
   | Index (e1, e2) -> Index (mt e1, mt e2),meta
   | As (e1, t) -> As (mt e1, f t), meta
   | In (e1, t) -> In (mt e1, f t), meta
-  | FnInv(a, tl, b) -> FnInv(a, List.map f tl, b),meta
+  | FnInv(s, tl, ael) -> FnInv(fs s, List.map f tl, List.map mt ael),meta
   | _ -> ae
 
-let map_typ_mod (cx : contexts) (f : typ -> typ) (m : modification) : modification =
+let map_mod (cx : contexts) (f : typ -> typ) (m : modification) : modification =
+  debug_print (">> map_mod " ^ string_of_modification m);
   match m with
   | With(t, b) -> With(f t, b)
   | _ -> m
 
-let rec map_typ_acomm (cx : contexts) (f : typ -> typ) (ac : acomm) : acomm =
+let rec map_acomm (cx : contexts) (fs : string -> string) (fe : exp -> exp) (ft : typ -> typ) (ac : acomm) 
+  : acomm =
+  debug_print (">> map_acomm " ^ string_of_acomm ac);
   let c,meta = ac in
-  let map_typ_if_block (cx : contexts) (f : typ -> typ) (e, c : aexp * acomm list) : aexp * acomm list =
-    map_typ_aexp cx f e, List.map (map_typ_acomm cx f) c 
+  let map_if_block (cx : contexts) (fe : exp -> exp) (ft : typ -> typ) (e, c : aexp * acomm list) 
+    : aexp * acomm list =
+    map_aexp cx fs ft e, List.map (map_acomm cx fs fe ft) c 
   in
-  let et = map_typ_aexp cx f in
-  let it = map_typ_if_block cx f in
-  let ct = map_typ_acomm cx f in
+  let et = map_aexp cx fs ft in
+  let it = map_if_block cx fe ft in
+  let ct = map_acomm cx fs fe ft in
   match c with
   | Skip -> ac
   | Print e -> Print(et e),meta
   | Exp e -> Exp(et e),meta
-  | Decl (t, a, e) -> Decl(f t, a, et e),meta
-  | Assign (a, e) -> Assign(a, et e),meta
-  | AssignOp (a, b, e) -> AssignOp(a, b, et e),meta
+  | Decl (t, s, e) -> Decl(ft t, s, et e),meta
+  | Assign (s, e) -> Assign(fs s, et e),meta
+  | AssignOp (s1, s2, e) -> AssignOp(fs s1, fs s2, et e),meta
   | If (i, il, clo) -> If (it i, List.map it il, option_map (List.map ct) clo),meta
   | For (c1, e, c2, cl) -> For (ct c1, et e, ct c2, List.map ct cl),meta
   | Return e -> Return(option_map et e),meta
 
-let map_typ_fn_typ (cx : contexts) (f : typ -> typ) (fn : fn_typ) : fn_typ =
+let map_fn_typ (cx : contexts) (fs : string -> string) (fe : exp -> exp) (ft : typ -> typ) (fn : fn_typ) 
+  : fn_typ =
+  debug_print (">> map_fn_typ " ^ string_of_fn_typ fn);
   let ml,rt,id,pr,m = fn in
-  List.map (map_typ_mod cx f) ml,f rt,id,List.map (fun (t,s)->(f t,s)) pr,m
+  List.map (map_mod cx ft) ml,ft rt,id,List.map (fun (t,s)->(ft t,s)) pr,m
 
-let map_typ_fn (cx : contexts) (f : typ -> typ) (fnt,cl : fn) : fn =
-  map_typ_fn_typ cx f fnt,List.map (map_typ_acomm cx f) cl
+let map_fn (cx : contexts) (fs : string -> string) (fe : exp -> exp) (ft : typ -> typ) (fnt,cl : fn) : fn =
+  debug_print (">> map_fn " ^ string_of_fn (fnt, cl));
+  map_fn_typ cx fs fe ft fnt,List.map (map_acomm cx fs fe ft) cl
 
-let map_typ_aprototype_element (cx : contexts) (f : typ -> typ) (ap : aprototype_element) : aprototype_element =
+let map_aprototype_element (cx : contexts) (fs : string -> string) (fe : exp -> exp) (ft : typ -> typ) 
+  (ap : aprototype_element)  : aprototype_element =
   let p, meta = ap in
+  debug_print (">> map_aprototype_element " ^ string_of_prototype_element p);
   match p with
-  | ProtoObject(ml, a, t) -> ProtoObject(List.map (map_typ_mod cx f) ml, a, option_map f t), meta
-  | ProtoFn(fn) -> ProtoFn(map_typ_fn_typ cx f fn), meta
+  | ProtoObject(ml, s, t) -> ProtoObject(List.map (map_mod cx ft) ml, s, option_map ft t), meta
+  | ProtoFn(fn) -> ProtoFn(map_fn_typ cx fs fe ft fn), meta
 
-let map_typ_acoordinate_element (cx : contexts) (f : typ -> typ) (ac : acoordinate_element) : acoordinate_element =
-  let p, meta = ac in
-  match p with
-  | CoordObjectAssign (ml, a, t) -> CoordObjectAssign(List.map (map_typ_mod cx f) ml, a, f t), meta
-  | CoordFn (fn) -> CoordFn(map_typ_fn cx f fn), meta
+let map_acoordinate_element (cx : contexts) (fs : string -> string) (fe : exp -> exp) (ft : typ -> typ) 
+  (ac : acoordinate_element) : acoordinate_element =
+  let c, meta = ac in
+  debug_print (">> map_acoordinate_element " ^ string_of_coordinate_element c);
+  match c with
+  | CoordObjectAssign (ml, s, t) -> CoordObjectAssign(List.map (map_mod cx ft) ml, s, ft t), meta
+  | CoordFn (fn) -> CoordFn(map_fn cx fs fe ft fn), meta
