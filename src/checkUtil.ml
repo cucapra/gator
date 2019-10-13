@@ -21,9 +21,9 @@ let string_of_delta (f : delta) =
 let string_of_chi (pm, c : chi) =
   string_of_option_removed (fun p -> "implements " ^ p) c ^ string_of_parameterization pm
 let string_of_phi (p : phi) =
-  string_of_list string_of_fn_typ (List.map 
-    (rename_fn (fun x -> "%" ^ let cut = if String.contains x '_' then String.rindex x '_' else 0 in
-      String.sub x cut (String.length x - cut))) p)
+  string_of_list (fun (c, f) -> string_of_option_removed (fun x -> x ^ "->") c ^ string_of_fn_typ f) (List.map 
+    (fun (c, f) -> c, rename_fn (fun x -> "%" ^ let cut = if String.contains x '_' then String.rindex x '_' else 0 in
+      String.sub x cut (String.length x - cut)) f) p)
 let string_of_psi (ps : psi) : string =
   string_of_list (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_fn_inv p ^ ")") ps
 
@@ -183,8 +183,9 @@ let get_functions (cx : contexts) (id : string) : phi =
   | p -> p
 
 (* Adds the function 'f' to the context *)
-(* If we are in a declaration 'member', then also updates the declaration of the members of 'f' *)
-let bind_function (cx : contexts) (f : fn_typ) : string * contexts =
+(* Requires information on the declaraing class name if applicable *)
+(* Note that we do not update the string, as with types, to help with the search algorithm *)
+let bind_function (cx : contexts) (f : fn_typ) (scheme : string option) : string * contexts =
   debug_print (">> bind_function " ^ string_of_fn_typ f);
   let update_bindings b' = {cx with _bindings=b'} in
   let _b = cx._bindings in
@@ -195,12 +196,12 @@ let bind_function (cx : contexts) (f : fn_typ) : string * contexts =
     let fnl = Assoc.lookup id _b.p in
     let f_write = rename_fn (fun x -> x ^ "_" ^ string_of_int (List.length fnl)) f in
     let _,_,id_write,_,_ = f_write in
-    let p' = f_write::fnl in
+    let p' = (scheme, f_write)::fnl in
     id_write, update_bindings { _b with p=Assoc.update id p' _b.p }
   else 
     let f_write = if id = "main" then f else rename_fn (fun x -> x ^ "_0") f in
     let _,_,id_write,_,_ = f_write in
-    id_write, bind cx id (Phi [f_write])
+    id_write, bind cx id (Phi [scheme, f_write])
 
 let rec map_aexp (cx : contexts) (fs : string -> string) (f : typ -> typ) (ae : aexp) : aexp =
   debug_print (">> map_aexp " ^ string_of_aexp ae);

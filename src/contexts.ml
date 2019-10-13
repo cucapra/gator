@@ -23,8 +23,9 @@ type delta = dexp
 type chi = parameterization * string option
 
 (* Function definitions *)
-(* Stores the full type and parameterization of each function overload *)
-type phi = fn_typ list
+(* Stores the full type each function overload *)
+(* Also stores the name of the invoking class *)
+type phi = (string option * fn_typ) list
 
 (* Transformation context *)
 (* Effectively has the type 'start->(target, f<pml>) list' for types start and target 

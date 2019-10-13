@@ -2,30 +2,33 @@ type vec2 is float[2];
 type vec3 is float[3];
 type vec4 is float[4];
 type scalar is float;
+with float T:
+type test is float[2];
 
-declare T +<T:vec2>(T v1, T v2);
-declare T -<T:vec2>(T v1, T v2);
-declare T -<T:vec2>(T v);
-declare T *<T:vec2,U:float>(T v, U f);
-declare T *<T:vec2,U:float>(U f, T v);
+with vec2 T: declare T +(T v1, T v2);
+with vec2 T: declare T -(T v1, T v2);
+with vec2 T: declare T -(T v);
+with vec2 T: with float U: declare T *(T v, U f);
+with vec2 T: with float U: declare T *(U f, T v);
 
-declare T +<T:vec3>(T v1, T v2);
-declare T -<T:vec3>(T v1, T v2);
-declare T -<T:vec3>(T v);
-declare T *<T:vec3,U:float>(T v, U f);
-declare T *<T:vec3,U:float>(U f, T v);
+with vec3 T: declare T +(T v1, T v2);
+with float T: declare test<T> +(test<T> v1, test<T> v2);
+with vec3 T: declare T -(T v1, T v2);
+with vec3 T: declare T -(T v);
+with vec3 T: with float U: declare T *(T v, U f);
+with vec3 T: with float U: declare T *(U f, T v);
 
-declare T +<T:vec4>(T v1, T v2);
-declare T -<T:vec4>(T v1, T v2);
-declare T -<T:vec4>(T v);
-declare T *<T:vec4,U:float>(T v, U f);
-declare T *<T:vec4,U:float>(U f, T v);
+with vec4 T: declare T +(T v1, T v2);
+with vec4 T: declare T -(T v1, T v2);
+with vec4 T: declare T -(T v);
+with vec4 T: with float U: declare T *(T v, U f);
+with vec4 T: with float U: declare T *(U f, T v);
 
-declare T +<T:float>(T f1, T f2);
-declare T -<T:float>(T f1, T f2);
-declare T -<T:float>(T f);
-declare T *<T:float>(T f1, T f2);
-declare T /<T:float>(T f1, T f2);
+with float T: declare T +(T f1, T f2);
+with float T: declare T -(T f1, T f2);
+with float T: declare T -(T f);
+with float T: declare T *(T f1, T f2);
+with float T: declare T /(T f1, T f2);
 
 declare float cos(float f);
 declare float sqrt(float f);
@@ -46,17 +49,14 @@ prototype geometry {
     vector -(point x, point y);
     vector -(point x);
 }
-with frame(2):
-with frame(3) r:
+with frame(2) r:
 coordinate cart2 : geometry {
-    dimension 2; // i.e. all type parameterizations are implicitly frames of dimension 2
-
     object point is float[2];
     object vector is float[2];
 
-    vector +(vector x, vector y) {
-        return (x as! vec2 + y as! vec2) as! vector;
-    }
+    // vector +(vector x, vector y) {
+    //     return (x as! vec2 + y as! vec2) as! vector;
+    // }
     vector -(vector x, vector y) {
         return (x as! vec2 - y as! vec2) as! vector;
     }
@@ -121,14 +121,17 @@ coordinate cart3 : geometry {
         return (-v as! vec3) as! vector;
     }
 }
-with frame(3) r:with frame(3) r:
+with frame(2) r:
 coordinate polar : geometry {
-    dimension 2;
 
     object point is float[2];
     object vector is float[2];
 
-    T __trans<T : float[2]>(T x, T y) {
+    vector *(vector v, scalar s) {
+        return [v[0] * s, v[1]];
+    }
+    with float[2] T:
+    T __trans(T x, T y) {
         // https://pritschet.me/wiki/physics/linear-translation-polar-coordinates/
         float r1 = x[0];
         float r2 = y[0];
@@ -143,9 +146,6 @@ coordinate polar : geometry {
     }
     vector -(vector x, vector y) {
         return __trans(x, [-y[0], y[1]]);
-    }
-    vector *(vector v, scalar s) {
-        return [v[0] * s, v[1]];
     }
     vector *(scalar s, vector v) {
         return [s * v[0], v[1]];
@@ -171,8 +171,6 @@ coordinate polar : geometry {
 }
 with frame(3) r:
 coordinate hom : geometry {
-    dimension 3;
-
     object point is float[4];
     object vector is float[4];
 
@@ -212,6 +210,8 @@ frame plane has dimension 2;
 void main() {
     cart2<plane>.point ppos = [1., 1.];
     cart2<plane>.vector poffset = [1., 2.];
+    test<scalar> val = [1., 2.];
+    print val + val;
 
     print ppos + poffset;
     print 2. * (ppos - (ppos + poffset));
