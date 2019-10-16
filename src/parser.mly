@@ -91,8 +91,8 @@ exception ParseException of string
 
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
-%left DOT
 %left AS IN
+%left DOT
 
 (* After declaring associativity and precedence, we need to declare what
    the starting point is for parsing the language.  The following

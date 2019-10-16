@@ -6,7 +6,7 @@ type 'a context = (string * 'a) list
 let empty = []
 
 (* Left-biased merge of two contexts *)
-let merge c1 c2 = c1 @ c2
+let union c1 c2 = c1 @ c2
 
 (* Look up a variable by name and return the associated letue. *)
 (* Raises Not_found if no binding *)

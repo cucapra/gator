@@ -5,7 +5,7 @@ type 'a context
 val empty : 'a context
 
 (* Left-biased merge of two contexts *)
-val merge : 'a context -> 'a context -> 'a context
+val union : 'a context -> 'a context -> 'a context
 
 (* Checks if variable is in context *)
 val mem : string -> 'a context -> bool

@@ -67,12 +67,13 @@ let add_prog cx x p = if Assoc.mem x cx.externs
 let init meta progs = 
   let b = {t=Assoc.empty; g=Assoc.empty; d=Assoc.empty; c=Assoc.empty; 
     p=Assoc.empty; el=Assoc.empty; tl=Assoc.empty } in
-  let cx = {ps=Assoc.empty; pm=Assoc.empty; externs=Assoc.empty; 
-    meta=meta; _bindings=b } in
+  let cx = {ps=Assoc.empty; pm=Assoc.empty; scheme_pm=Assoc.empty; 
+    externs=Assoc.empty; meta=meta; _bindings=b } in
   List.fold_left (fun acc (x, p) -> add_prog acc x p) cx (Assoc.bindings progs)
 
 let with_ps cx ps' = {cx with ps=ps'}
 let with_pm cx pm' = {cx with pm=pm'}
+let with_scheme cx pm' = {cx with scheme_pm=pm'}
 let with_meta cx meta' = {cx with meta=meta'}
 
 let get_ps cx x = if Assoc.mem x cx.ps then Assoc.lookup x cx.ps else 

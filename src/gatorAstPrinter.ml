@@ -53,7 +53,7 @@ let string_of_parameterization (pm : parameterization) : string =
     if Assoc.size pm != 0 then "<" ^ Assoc.to_string string_of_typ pm ^ ">" else ""
 
 let string_of_fn_typ (ml, r, x, p, _ : fn_typ) : string = 
-    string_of_mod_list ml ^ if List.length ml > 0 then " " else "" ^ string_of_typ r ^ " " ^ x
+    string_of_mod_list ml ^ (if List.length ml > 0 then " " else "") ^ string_of_typ r ^ " " ^ x
     ^ "(" ^ string_of_list string_of_param p ^ ")"
 
 let rec string_of_aexp ((e, m): aexp) : string =
@@ -89,7 +89,7 @@ and string_of_comm (c: comm) : string =
     | For (d, b, u, cl) -> "for (" ^ string_of_acomm d ^ "; " ^ string_of_aexp b ^ "; " 
         ^ string_of_acomm u ^ ") " ^ block_string cl
     | Return None -> "return;"
-    | Return Some e -> "return" ^ (string_of_aexp e) ^ ";"
+    | Return Some e -> "return " ^ (string_of_aexp e) ^ ";"
 
 let string_of_frame ((x, d) : frame) =
     "frame " ^ x ^ " is " ^ string_of_dexp d ^ ";"

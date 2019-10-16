@@ -66,6 +66,8 @@ type binding_contexts = {
 type contexts = {
   ps : psi Assoc.context;
   pm : parameterization;
+  (* parameterization of the wrapping scheme declaration *)
+  scheme_pm : parameterization;
   externs : prog Assoc.context;
   meta : metadata;
   _bindings : binding_contexts
