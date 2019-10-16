@@ -1,12 +1,4 @@
-type vec3 is float[3];
-type vec4 is float[4];
-type mat4 is float[4][4];
-
-declare T *<T:mat4>(T m1, T m2);
-declare U *<T:mat4,U:vec4>(T m, U v);
-
-declare vec4 vec4(vec3 v, float f);
-declare vec3 vec3(vec4 v);
+using "../glsl_defs.lgl";
 
 attribute vec3 aPosition;
 attribute vec3 aNormal;

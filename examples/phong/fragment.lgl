@@ -1,5 +1,8 @@
 using "../glsl_defs.lgl";
 
+type color is vec3;
+type alphaColor is vec4;
+
 // Reference Frame Declarations
 
 frame model has dimension 3;
@@ -7,13 +10,14 @@ frame world has dimension 3;
 frame camera has dimension 3;
 
 // Global Variables
-varying cart3.point<model> vPosition;
-uniform hom.transformation<model, world> uModel;
-uniform hom.transformation<world, camera> uView;
-varying cart3.vector<model> vNormal;
-uniform cart3.point<world> uLight;
+varying cart3<model>.point vPosition;
+uniform hom<model>.transformation<world> uModel;
+uniform hom<world>.transformation<camera> uView;
+varying cart3<model>.vector vNormal;
+uniform cart3<world>.point uLight;
 
 void main() {
+    // vec4 gl_FragColor = vec4(uLight, .9);
     color ambient = [.1, 0., 0.];
     color diffColor = [0.2, 0.8, 0.4];
     color specColor = [1.0, 1.0, 1.0];

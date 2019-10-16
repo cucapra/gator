@@ -1,10 +1,10 @@
-lingl
+Gator
 =====
 
 [![CircleCI](https://circleci.com/gh/cucapra/linguine.svg?style=svg)](https://circleci.com/gh/cucapra/linguine)
 
 
-This is a language with a type system that enforces the correctness of linear algebra operations.
+This is a flexible language built around geometric types for tracking the geometry of a run program.
 There is a compiler, pretty printer, and interpreter.
 
 OCaml 4.04 or higher required
@@ -21,12 +21,12 @@ We need [Dune][] and [Menhir][]:
 
 Build by typing:
 
-    $ dune build bin/lingc.bc
+    $ make
 
-Now you can use `dune exec bin/lingc.bc` to run the compiler.
+Now you can use `dune exec bin/gatorc.bc` to run the compiler.
 Or you can install a `gatorc` executable:
 
-    $ dune build && dune install
+    $ make build
 
 Now `gatorc` should be available on your path.
 
@@ -36,28 +36,23 @@ Now `gatorc` should be available on your path.
 Run
 ---
 
-To simulate a Linguine-compiled shader on your browser:
+To simulate a Linguine-compiled shader on your browser, view the README in the `example` folder.
 
-    $ make run src='example_directory_name'
-
+You can run the compiler directly by passing a `*.lgl` source file as an argument to `gatorc`.
 For example:
 
-    $ make run src=phong
+    $ gatorc example.lgl
 
-You can run the compiler by passing the `*.lgl` source file as an argument to `gatorc`.
-For example:
+To run our house interpreter, simply include the argument `-i`:
 
-    $ lingc example.lgl
-
-To also print interpreter output, include an additional argument v
-
-    $ lingc example.lgl v
+    $ gatorc -i example.lgl
 
 Tests
 -----
 
 There are a bunch of tests under the `test` directory.
 Use the `test.py` script to run them.
+Many tests are currently broken; so instead run `gatorc test/tyupes/geops.lgl` to ensure installation worked correctly
 
 Technical Details
 -----------------

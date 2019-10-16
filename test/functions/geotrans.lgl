@@ -180,7 +180,7 @@ hom<q>.point homify(cart3<q>.point v) {
 }
 with frame(3) r:
 hom<r>.vector homify(cart3<r>.vector v) {
-    return vec4(v, 1.) as! hom<r>.vector;
+    return vec4(v, 0.) as! hom<r>.vector;
 }
 with frame(3) r:
 cart3<r>.point reduce_hom(hom<r>.point v) {

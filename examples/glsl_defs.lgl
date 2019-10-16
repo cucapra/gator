@@ -4,205 +4,241 @@ declare type vec4 is float[4];
 declare type mat3 is float[3][3];
 declare type mat4 is float[4][4];
 
-// Local Type Declarations
 type scalar is float;
 type angle is scalar;
-type color is vec3;
-type alphaColor is vec4;
 
-// GLSL Function Types
-declare T +<T:vec3>(T v1, T v2);
-declare T -<T:vec3>(T v1, T v2);
-declare T -<T:vec3>(T v);
-declare T *<T:vec3,U:float>(T v, U f);
-declare T *<T:vec3,U:float>(U f, T v);
-declare T /<T:vec3,U:float>(T f1, U f2);
+// Numeric Operator Types
+with float T: declare T +(T f1, T f2);
+with float T: declare T -(T f1, T f2);
+with float T: declare T *(T f1, T f2);
+with float T: declare T /(T f1, T f2);
+with float T: declare bool ==(T f1, T f2);
+with float T: declare bool >=(T f1, T f2);
+with float T: declare bool <=(T f1, T f2);
+with float T: declare bool >(T f1, T f2);
+with float T: declare bool <(T f1, T f2);
 
-declare T +<T:vec4>(T v1, T v2);
-declare T -<T:vec4>(T v1, T v2);
-declare T -<T:vec4>(T v);
-declare T *<T:vec4,U:float>(T v, U f);
-declare T *<T:vec4,U:float>(U f, T v);
+with int T: declare T +(T f1, T f2);
+with int T: declare T -(T f1, T f2);
+with int T: declare T *(T f1, T f2);
+with int T: declare T /(T f1, T f2);
+with int T: declare bool ==(T f1, T f2);
+with int T: declare bool >=(T f1, T f2);
+with int T: declare bool <=(T f1, T f2);
+with int T: declare bool >(T f1, T f2);
+with int T: declare bool <(T f1, T f2);
 
-declare T +<T:float>(T f1, T f2);
-declare T -<T:float>(T f1, T f2);
-declare T -<T:float>(T f);
-declare T *<T:float>(T f1, T f2);
-declare T /<T:float>(T f1, T f2);
-declare bool ==<T:float>(T f1, T f2);
+// GLSL Vector/Matrix Types
+with vec3 T: declare T +(T v1, T v2);
+with vec3 T: declare T -(T v1, T v2);
+with vec3 T: declare T -(T v);
+with vec3 T: with float U: declare T *(T v, U f);
+with vec3 T: with float U: declare T *(U f, T v);
+with vec3 T: with float U: declare T /(T f1, U f2);
 
-declare vec3 *<T:mat3,U:vec3>(T m, U v);
-declare mat3 +<T:mat3,U:mat3>(T m, U v);
-declare mat3 *<T:mat3,U:mat3>(T m, U v);
-declare mat3 mat3<T:mat4>(T m);
+with vec4 T: declare T +(T v1, T v2);
+with vec4 T: declare T -(T v1, T v2);
+with vec4 T: declare T -(T v);
+with vec4 T: with float U: declare T *(T v, U f);
+with vec4 T: with float U: declare T *(U f, T v);
 
-declare vec4 *<T:mat4,U:vec4>(T m, U v);
-declare T +<T:mat4>(T m1, T m2);
-declare mat4 *<T:mat4,U:mat4>(T m, U v);
+with float T: declare T +(T f1, T f2);
+with float T: declare T -(T f1, T f2);
+with float T: declare T -(T f);
+with float T: declare T *(T f1, T f2);
+with float T: declare T /(T f1, T f2);
 
+with mat3 T: with vec3 U: declare vec3 *(T m, U v);
+with mat3 T: with mat3 U: declare mat3 +(T m, U v);
+with mat3 T: with mat3 U: declare mat3 *(T m, U v);
+
+with mat4 T: with vec4 U: declare vec4 *(T m, U v);
+with mat4 T: with mat4 U: declare mat4 +(T m, U v);
+with mat4 T: with mat4 U: declare mat4 *(T m, U v);
+
+
+// GLSL function types
 declare float cos(float f);
 declare float sqrt(float f);
 declare float acos(float f);
 
-declare vec4 vec4<T:float[3],U:float>(T v, U f);
-declare vec3 vec3<T:float[4]>(T v);
+with float[3] T: with float U: declare vec4 vec4(T v, U f);
+with float[4] T: declare vec3 vec3(T v);
+with float[4][4] T: declare mat3 mat3(T v);
+with float[3][3] T: declare mat4 mat4(T v);
 
-declare float dot<T: vec3>(T v1, T v2);
+with vec3 T: declare float dot(T v1, T v2);
 // declare T normalize<T : vec3>(T x);
 declare vec3 normalize(vec3 x);
-declare T max<T: float>(T f1, T f2);
-declare T reflect<T : vec3>(T v1, T v2);
-declare T pow<T:float>(T f1, T f2);
+with float T: declare T max(T f1, T f2);
+with vec3 T: declare T reflect(T v1, T v2);
+with float T: declare T pow(T f1, T f2);
 
 // Geometric Objects and Operations
 
 prototype geometry {
-    object point<r>;
-    object vector<r>;
-    object direction<r>;
-    object transformation<r1, r2>;
+    object point;
+    object vector;
+    object direction;
+    with frame() r: object transformation;
 
-    vector<r> +(vector<r> x, vector<r> y);
-    vector<r> -(vector<r> x, vector<r> y);
-    vector<r> -(vector<r> x);
-    direction<r> -(direction<r> x);
-    vector<r> *(vector<r> v, scalar s);
-    vector<r> *(scalar s, vector<r> v);
-    point<r> +(point<r> p, vector<r> v);
-    point<r> +(vector<r> p, point<r> v);
-    vector<r> -(point<r> x, point<r> y);
-    vector<r> -(point<r> x);
-    vector<r2> *(transformation<r1, r2> m, vector<r1> v);
-    vector<r2> *(transformation<r1, r2> m, direction<r1> v);
-    point<r2> *(transformation<r1, r2> m, point<r1> v);
-    transformation<r1, r2> +(transformation<r1, r2> m1, transformation<r1, r2> m2);
-    transformation<r1, r3> *(transformation<r1, r2> m1, transformation<r2, r3> m2);
+    vector +(vector x, vector y);
+    vector -(vector x, vector y);
+    vector -(vector x);
+    direction -(direction x);
+    vector *(vector v, scalar s);
+    vector *(scalar s, vector v);
+    point +(point p, vector v);
+    point +(vector p, point v);
+    vector -(point x, point y);
+    vector -(point x);
+    with frame() target:
+    this<target>.vector *(transformation<target> m, vector v);
 
-    angle dot(direction<r> v1, direction<r> v2);
-    direction<r> normalize(vector<r> v);
-    direction<r> normalize(direction<r> v);
-    vector<r> reflect(direction<r> v1, direction<r> v2);
+    with frame() target:
+    this<target>.vector *(transformation<target> m, direction d);
+
+    with frame() target:
+    this<target>.point *(transformation<target> m, point p);
+
+    with frame() target:
+    transformation<target> +(transformation<target> m1, transformation<target> m2);
+
+    with frame() middle, target:
+    transformation<target> *(transformation<middle> m1, this<middle>.transformation<target> m2);
+
+    angle dot(direction v1, direction v2);
+    direction normalize(vector v);
+    direction normalize(direction v);
+    vector reflect(direction v1, direction v2);
 }
 
 // Coordinate Scheme Definitions
 
+with frame(3) r:
 coordinate cart3 : geometry {
-    dimension 3;
+    object point is float[3];
+    object vector is float[3];
+    object direction is float[3];
+    with frame(3) r2: object transformation is float[3][3];
 
-    object point<r> is float[3];
-    object vector<r> is float[3];
-    object direction<r> is float[3];
-    object transformation<r1, r2> is float[3][3];
+    vector +(vector x, vector y) {
+        return (x as! vec3 + y as! vec3) as! vector;
+    }
+    vector -(vector x, vector y) {
+        return (x as! vec3 - y as! vec3) as! vector;
+    }
+    vector *(vector v, scalar s) {
+        return (v as! vec3 * s) as! vector;
+    }
+    vector *(scalar s, vector v) {
+        return (s * v as! vec3) as! vector;
+    }
+    vector -(vector v) {
+        return (-v as! vec3) as! vector;
+    }
+    direction -(direction v) {
+        return (-v as! vec3) as! direction;
+    }
+    point +(point p, vector v) {
+        return (p as! vec3 + v as! vec3) as! point;
+    }
+    point +(vector v, point p) {
+        return (p as! vec3 + v as! vec3) as! point;
+    }
+    vector -(point x, point y) {
+        return (x as! vec3 - y as! vec3) as! vector;
+    }
+    vector -(point v) {
+        return (-v as! vec3) as! vector;
+    }
+    with frame(3) target:
+    this<target>.vector *(transformation<target> m, vector v) {
+        return (m as! mat3 * v as! vec3) as! this<target>.vector;
+    }
+    with frame(3) target:
+    this<target>.vector *(transformation<target> m, direction d) {
+        return (m as! mat3 * d as! vec3) as! this<target>.vector;
+    }
+    with frame(3) target:
+    this<target>.point *(transformation<target> m, point p) {
+        return (m as! mat3 * p as! vec3) as! this<target>.point;
+    }
+    with frame(3) target:
+    transformation<target> +(transformation<target> m1, transformation<target> m2) {
+        return (m1 as! mat3 + m2 as! mat3) as! transformation<target>;
+    }
+    with frame(3) middle, target:
+    transformation<target> *(transformation<middle> m1, this<middle>.transformation<target> m2) {
+        return (m1 as! mat3 * m2 as! mat3) as! transformation<target>;
+    }
 
-    vector<r> +(vector<r> x, vector<r> y) {
-        return (x as! vec3 + y as! vec3) as! vector<r>;
-    }
-    vector<r> -(vector<r> x, vector<r> y) {
-        return (x as! vec3 - y as! vec3) as! vector<r>;
-    }
-    vector<r> *(vector<r> v, scalar s) {
-        return (v as! vec3 * s) as! vector<r>;
-    }
-    vector<r> *(scalar s, vector<r> v) {
-        return (s * v as! vec3) as! vector<r>;
-    }
-    vector<r> -(vector<r> v) {
-        return (-v as! vec3) as! vector<r>;
-    }
-    direction<r> -(direction<r> v) {
-        return (-v as! vec3) as! direction<r>;
-    }
-    point<r> +(point<r> p, vector<r> v) {
-        return (p as! vec3 + v as! vec3) as! point<r>;
-    }
-    point<r> +(vector<r> v, point<r> p) {
-        return (p as! vec3 + v as! vec3) as! point<r>;
-    }
-    vector<r> -(point<r> x, point<r> y) {
-        return (x as! vec3 - y as! vec3) as! vector<r>;
-    }
-    vector<r> -(point<r> v) {
-        return (-v as! vec3) as! vector<r>;
-    }
-    vector<r2> *(transformation<r1, r2> m, vector<r1> v) {
-        return (m as! mat3 * v as! vec3) as! vector<r2>;
-    }
-    vector<r2> *(transformation<r1, r2> m, direction<r1> d) {
-        return (m as! mat3 * d as! vec3) as! vector<r2>;
-    }
-    point<r2> *(transformation<r1, r2> m, point<r1> p) {
-        return (m as! mat3 * p as! vec3) as! point<r2>;
-    }
-    transformation<r1, r3> *(transformation<r1, r2> m1, transformation<r2, r3> m2) {
-        return (m1 as! mat3 * m2 as! mat3) as! transformation<r1, r3>;
-    }
-
-    angle dot(direction<r> v1, direction<r> v2) {
+    angle dot(direction v1, direction v2) {
         return (dot(v1 as! vec3, v2 as! vec3) as! angle);
     }
-    direction<r> normalize(vector<r> v) {
-        return (normalize(v as! vec3) as! direction<r>);
+    direction normalize(vector v) {
+        return (normalize(v as! vec3) as! direction);
     }
-    direction<r> normalize(direction<r> v) {
+    direction normalize(direction v) {
         return v;
     }
-    vector<r> reflect(direction<r> v1, direction<r> v2) {
-        return (reflect(v1 as! vec3, v2 as! vec3) as! vector<r>);
+    vector reflect(direction v1, direction v2) {
+        return (reflect(v1 as! vec3, v2 as! vec3) as! vector);
     }
 }
 
+with frame(3) r:
 coordinate hom : geometry {
-    dimension 3;
+    object point is float[4];
+    object vector is float[4];
+    object direction is float[4];
+    with frame(3) r2: object transformation is float[4][4];
 
-    object point<r> is float[4];
-    object vector<r> is float[4];
-    object direction<r> is float[4];
-    object transformation<r1, r2> is float[4][4];
-
-    point<r> +(point<r> p, vector<r> v) {
-        return (p as! vec4 + v as! vec4 * p[3]) as! point<r>;
+    point +(point p, vector v) {
+        return (p as! vec4 + v as! vec4 * p[3]) as! point;
     }
-    point<r> +(vector<r> v, point<r> p) {
-        return (p as! vec4 + v as! vec4 * p[3]) as! point<r>;
+    point +(vector v, point p) {
+        return (p as! vec4 + v as! vec4 * p[3]) as! point;
     }
-    vector<r> -(point<r> x, point<r> y) {
-        return (x as! vec4 * y[3] - y as! vec4 * x[3]) as! vector<r>;
+    vector -(point x, point y) {
+        return (x as! vec4 * y[3] - y as! vec4 * x[3]) as! vector;
     }
-    vector<r2> *(transformation<r1, r2> m, vector<r1> v) {
-        return (m as! mat4 * v as! vec4) as! vector<r2>;
+    with frame(3) target:
+    this<target>.vector *(transformation<target> m, vector v) {
+        return (m as! mat4 * v as! vec4) as! this<target>.vector;
     }
-    vector<r2> *(transformation<r1, r2> m, direction<r1> d) {
-        return (m as! mat4 * d as! vec4) as! vector<r2>;
+    with frame(3) target:
+    this<target>.vector *(transformation<target> m, direction d) {
+        return (m as! mat4 * d as! vec4) as! this<target>.vector;
     }
-    point<r2> *(transformation<r1, r2> m, point<r1> p) {
-        return (m as! mat4 * p as! vec4) as! point<r2>;
+    with frame(3) target:
+    this<target>.point *(transformation<target> m, point p) {
+        return (m as! mat4 * p as! vec4) as! this<target>.point;
     }
-    transformation<r1, r2> +(transformation<r1, r2> m1, transformation<r1, r2> m2) {
-        return (m1 as! mat4 + m2 as! mat4) as! transformation<r1, r2>;
+    with frame(3) target:
+    transformation<target> +(transformation<target> m1, transformation<target> m2) {
+        return (m1 as! mat4 + m2 as! mat4) as! transformation<target>;
     }
-    transformation<r1, r3> *(transformation<r1, r2> m1, transformation<r2, r3> m2) {
-        return (m1 as! mat4 * m2 as! mat4) as! transformation<r1, r3>;
+    with frame(3) middle, target:
+    transformation<target> *(transformation<middle> m1, this<middle>.transformation<target> m2) {
+        return (m1 as! mat4 * m2 as! mat4) as! transformation<target>;
     }
 }
 
 // Transformation Functions
-
 with frame(3) r:
-canon hom.point<r> homify(cart3.point<r> v) {
-    return vec4(v, 1.) as! hom.point<r>;
+hom<r>.point homify(cart3<r>.point v) {
+    return vec4(v, 1.) as! hom<r>.point;
 }
 with frame(3) r:
-canon hom.vector<r> homify(cart3.vector<r> v) {
-    return vec4(v, 0.) as! hom.vector<r>;
+hom<r>.vector homify(cart3<r>.vector v) {
+    return vec4(v, 0.) as! hom<r>.vector;
 }
 with frame(3) r:
-canon cart3.point<r> hom_reduce(hom.point<r> v) {
-    return (vec3(v) / v[3]) as! cart3.point<r>;
+cart3<r>.point hom_reduce(hom<r>.point v) {
+    return (vec3(v) / v[3]) as! cart3<r>.point;
 }
 with frame(3) r:
-canon cart3.vector<r> hom_reduce(hom.vector<r> v) {
-    return vec3(v) as! cart3.vector<r>;
-}
-alphaColor alpha<T:color>(T v) {
-    return vec4(v, 1.) as! alphaColor;
+cart3<r>.vector hom_reduce(hom<r>.vector v) {
+    return vec3(v) as! cart3<r>.vector;
 }

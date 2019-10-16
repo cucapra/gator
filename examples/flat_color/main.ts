@@ -13,7 +13,7 @@ function main() {
   );
   
   const fs : any = require('fs');
-  let caiman = fs.readFileSync(__dirname + './../resources/OBJ/caiman.obj', 'utf8');
+  // let caiman = fs.readFileSync(__dirname + './../resources/OBJ/caiman.obj', 'utf8');
 
   // Uniform and attribute locations.
   let loc_uProjection = lgl.uniformLoc(gl, program, 'uProjection');
@@ -23,8 +23,8 @@ function main() {
   // let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
 
   // We'll draw a teapot.
-  // let mesh = lgl.getTeapot(gl);
-  let mesh = lgl.load_obj (gl, caiman);
+  let mesh = lgl.getTeapot(gl);
+  // let mesh = lgl.load_obj (gl, caiman);
 
   // Initialize the model position.
   let model = mat4.create();

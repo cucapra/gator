@@ -5,12 +5,14 @@ The examples currently consist of:
 
 * **flat_color:** The simplest possible shader! Just draws an object with every pixel set to a constant color.
 * **phong:** The [Phong lighting model][phong].
-* **blinn_phong:** The [Blinn-Phong shading model][blinn-phong].
-* **texture_pkg:** Demonstrates texture mapping on models loaded through yarnpkg (bunny/teapot).
-* **texture_obj:** Demonstrates texture mapping on models loaded through OBJ files. Can find LPSHead rendering here.
 
 [phong]: https://en.wikipedia.org/wiki/Phong_reflection_model
 [blinn-phong]: https://en.wikipedia.org/wiki/Blinn%E2%80%93Phong_shading_model
+
+To get setup, first install [npm][] and [yarn][].  Then run `npm install` and `yarn install` in this folder.
+
+[npm]: https://www.npmjs.com/get-npm
+[yarn]: https://yarnpkg.com/lang/en/docs/install/
 
 To run an example, type:
 

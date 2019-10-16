@@ -132,8 +132,10 @@ and chi_object_lookup (cx: contexts) (c : typ) (o : typ) : typ =
             ^ "(Note that all geometric types must be of the form scheme<frame>.object)")
     in
     (* For now, we just check that the parameterization on c is valid; it doesn't mean anything when looking up the supertype *)
-    match_parameterization (with_pm cx (fst (get_scheme cx cn))) f1 |> ignore;
-    tau_lookup cx (cn ^ "." ^ on) f2
+    let stc = match_parameterization (with_pm cx (fst (get_scheme cx cn))) f1 in
+    let _,pmd,t = get_typ cx (cn ^ "." ^ on) in
+    let tc = match_parameterization (with_pm cx pmd) f2 in
+    replace_abstype stc (replace_abstype tc t)
 
 (* Looks up a supertype of the given partyp *)
 and tau_lookup (cx: contexts) (x: id) (pml: typ list) : typ =
@@ -703,7 +705,7 @@ let check_typ_decl (cx: contexts) (x : string) (ext,pm,t : tau) : contexts =
 
 (* Updates Phi, and internal calls update gamma and psi *)
 let check_fn_decl (cx: contexts) (f : fn_typ) : 
-contexts * TypedAst.params * TypedAst.parameterization =
+contexts * (TypedAst.params * TypedAst.parameterization) option =
     let ml,rt,id,pl,meta = f in
     let pm = get_ml_pm cx ml in
     debug_print (">> check_fn_decl : " ^ id ^ string_of_parameterization pm);
@@ -714,22 +716,22 @@ contexts * TypedAst.params * TypedAst.parameterization =
         else Assoc.update s (typ_erase cx t) acc) (Assoc.bindings pm) Assoc.empty 
     in
     (* Don't return the parameterization used here *)
-    cx'', pr, pme
+    if has_modification cx ml External then cx'', None else cx'', Some (pr, pme)
 
 (* Updates phi and psi *)
 let check_fn (cx: contexts) (f, cl: fn) (scheme : string option)
-: contexts * TypedAst.fn = 
+: contexts * TypedAst.fn option = 
     let ml,rt,id,pl,meta = f in
     debug_print (">> check_fn : " ^ id);
     (* update phi with function declaration *)
-    let cx', tpr, tpm = check_fn_decl cx f in
+    let cx', ft = check_fn_decl cx f in
     (* Note that we don't use our updated phi to avoid recursion *)
     let cx'', cl' = check_comm_lst cx' cl in
     let id', cxr = bind_function cx f scheme in
     (* check that the last command is a return statement *)
     (* TODO: might want to check that there is exactly one return statement on each branch *)
     List.iter (check_return cx'' rt) cl;
-    cxr, ((typ_erase cx' rt, id', tpm, tpr), cl')
+    cxr, option_map (fun (tpm, tpr) -> (typ_erase cx' rt, id', tpr, tpm), cl') ft
 
 (* Type check global variable *)
 (* Updates gamma *)
@@ -839,7 +841,7 @@ let check_coordinate_element (cx : contexts) (c: string) (ce : coordinate_elemen
         (* Naming hack to make functions that aren't in the prototype 'internal' *)
         let fn' = if List.length fns = 0 then (rename_fn (fun x -> c ^ "." ^ x) (ml,rt,id,pr,meta)),cl else fn in
         let cx', tfn = check_fn cxpm fn' (Some c) in
-        cx', Some tfn
+        cx', tfn
 let check_acoordinate_element cx c ace : contexts * TypedAst.fn option =
     let ce',meta = map_acoordinate_element cx (rewrite_scheme_fn_inv cx c)
     (fun x -> x) (rewrite_scheme_typ cx c) ace in
@@ -891,7 +893,7 @@ let rec check_term (cx: contexts) (t: term)
     | GlobalVar gv -> let (cx', gv') = check_global_variable cx gv in
         cx', [], [gv']
     | Fn f -> let (cx', f') = check_fn cx f None in
-        cx', [f'], []
+        cx', (match f' with | None -> [] | Some f' -> [f']), []
     
 and check_aterm (cx: contexts) ((t, meta): aterm) 
 : contexts * TypedAst.prog * TypedAst.global_vars =
