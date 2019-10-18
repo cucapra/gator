@@ -140,6 +140,8 @@ let term ==
     <Coordinate>
   | FRAME; x = ID; HAS; DIMENSION; d = dexp; SEMI;
     <Frame>
+  | m = modification*; TYP; x = ID; SEMI;
+    { Typ(m, x, AnyTyp) }
   | m = modification*; TYP; x = ID; IS; t = typ; SEMI;
     <Typ>
   | m = modification*; sq = storage_qual; t = typ;

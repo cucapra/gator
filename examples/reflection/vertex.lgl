@@ -1,22 +1,4 @@
-space model is vec<3>;
-space world is vec<3>;
-space camera is vec<3>;
-tag projective is vec<3>;
-space hom<`t : vec<n>> is vec<n+1>;
-
-declare vec4 vec4<`t : vec<3>>(`t v, float f);
-declare vec3 vec3<`t : vec<4>>(`t v);
-
-attribute model aPosition;
-attribute model aNormal;
-varying model vPosition;
-varying model vNormal;
-canon uniform hom<camera>->hom<projective> uProjection;
-canon uniform hom<world>->hom<camera> uView;
-canon uniform hom<model>->hom<world> uModel;
-
-canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
-canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }
+using "shared.lgl";
 
 void main() {
   vNormal = aNormal;

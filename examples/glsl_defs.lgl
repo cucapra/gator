@@ -1,8 +1,14 @@
 // GLSL Type Declarations
+declare type vec2 is float[2];
 declare type vec3 is float[3];
 declare type vec4 is float[4];
+declare type mat2 is float[2][2];
 declare type mat3 is float[3][3];
 declare type mat4 is float[4][4];
+with float[4] T:
+declare type sampler2D;
+with float[4] T:
+declare type samplerCube;
 
 type scalar is float;
 type angle is scalar;
@@ -61,6 +67,11 @@ with mat4 T: with mat4 U: declare mat4 *(T m, U v);
 declare float cos(float f);
 declare float sqrt(float f);
 declare float acos(float f);
+
+with float[4] T:
+declare T texture2D(sampler2D<T> texture, float[2] coord);
+with float[4] T:
+declare T textureCube(samplerCube<T> texture, float[2] coord);
 
 with float[3] T: with float U: declare vec4 vec4(T v, U f);
 with float[4] T: declare vec3 vec3(T v);

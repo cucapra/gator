@@ -37,6 +37,7 @@ and string_of_typ (t : etyp) : string =
     match t with
     | ArrTyp (FloatTyp, d) -> "vec" ^ string_of_constvar d
     | ArrTyp (ArrTyp (FloatTyp, _), d) -> "mat" ^ string_of_constvar d
+    | ParTyp (s, _) -> s
     | _ -> TypedAstPrinter.string_of_typ t
 
 and attrib_type (var_name : string) : string =

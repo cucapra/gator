@@ -1,0 +1,20 @@
+using "../glsl_defs.lgl"
+
+type color is vec3;
+type alphaColor is vec4;
+
+frame model has dimension 3;
+frame world has dimension 3;
+frame camera has dimension 3;
+frame projection has dimension 3;
+
+attribute model aPosition;
+attribute model aNormal;
+varying model vPosition;
+varying model vNormal;
+uniform hom<camera>->hom<projective> uProjection;
+uniform hom<world>->hom<camera> uView;
+uniform hom<model>->hom<world> uModel;
+uniform dir<model>->view uNormalMatrix;
+uniform view->model uInverseViewTransform;
+uniform samplerCube<alpha<color>> uSkybox;

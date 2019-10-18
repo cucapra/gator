@@ -1,23 +1,28 @@
-space coord model is vec<3>;
-space coord world is vec<3>;
-space coord camera is vec<3>;
-tag coord projective is vec<3>;
-space coord hom<`t : vec<n>> is vec<n+1>;
+using "../glsl_defs.lgl";
 
-declare vec4 vec4<`t : vec<3>>(`t v, float f);
-declare vec3 vec3<`t : vec<4>>(`t v);
+frame model has dimension 3;
+frame world has dimension 3;
+frame camera has dimension 3;
+frame projective has dimension 3;
 
-attribute model aPosition;
-uniform hom<camera>->hom<projective> uProjection;
-uniform hom<world>->hom<camera> uView;
-uniform hom<model>->hom<world> uModel;
+attribute cart3<model>.point aPosition;
+uniform hom<camera>.transformation<projective> uProjection;
+uniform hom<world>.transformation<camera> uView;
+uniform hom<model>.transformation<world> uModel;
 attribute vec2 aTexCoord;
 varying vec2 vTexCoord;
 
-canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
-canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }
+canon hom<world>.point app_uModel(hom<model>.point v) {
+    return uModel * v;
+}
+canon hom<camera>.point app_uView(hom<world>.point v) {
+    return uView * v;
+}
+canon hom<projective>.point app_uLightTrans(hom<camera>.point v) {
+    return uProjection * v;
+}
 
 void main() {
   vTexCoord = aTexCoord;
-  hom<projective> gl_Position = aPosition in hom<projective>;
+  auto gl_Position = aPosition in hom<projective>;
 }

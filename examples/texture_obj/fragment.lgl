@@ -1,12 +1,10 @@
-tag color is vec<4>;
-tag alpha<`t : color> is vec<4>;
+using "../glsl_defs.lgl";
 
+type alphaColor is vec4;
 
-declare `t texture2D<`t : vec<4>>(sampler2D<`t> texture, vec2 cor);
-
-uniform sampler2D<alpha<color>> uTexture;
+uniform sampler2D<alphaColor> uTexture;
 varying vec2 vTexCoord;
 
 void main() {
-  alpha<color> gl_FragColor = texture2D(uTexture, vTexCoord);
+  alphaColor gl_FragColor = texture2D(uTexture, vTexCoord);
 }

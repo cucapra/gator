@@ -1,7 +1,0 @@
-declare vec4 vec4(vec3 v, float s);
-
-void main(vec3 aPosition, vec3 aNormal, vec3 vPosition, vec3 vNormal, vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel) {
-  vNormal = aNormal;
-  vPosition = aPosition;
-  vec4 gl_Position = uProjection * uView * uModel * vec4(vPosition, 1.);
-}
