@@ -227,18 +227,18 @@ coordinate hom : geometry {
 
 // Transformation Functions
 with frame(3) r:
-hom<r>.point homify(cart3<r>.point v) {
+canon hom<r>.point homify(cart3<r>.point v) {
     return vec4(v, 1.) as! hom<r>.point;
 }
 with frame(3) r:
-hom<r>.vector homify(cart3<r>.vector v) {
+canon hom<r>.vector homify(cart3<r>.vector v) {
     return vec4(v, 0.) as! hom<r>.vector;
 }
 with frame(3) r:
-cart3<r>.point hom_reduce(hom<r>.point v) {
+canon cart3<r>.point hom_reduce(hom<r>.point v) {
     return (vec3(v) / v[3]) as! cart3<r>.point;
 }
 with frame(3) r:
-cart3<r>.vector hom_reduce(hom<r>.vector v) {
+canon cart3<r>.vector hom_reduce(hom<r>.vector v) {
     return vec3(v) as! cart3<r>.vector;
 }

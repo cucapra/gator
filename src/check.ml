@@ -7,6 +7,12 @@ open Str
 open CheckUtil
 open Contexts
 
+(* The set of types that can't be written down shouldn't be inferred by things like 'auto' *)
+let is_illegal_typ (cx: contexts) (t : typ) : bool = 
+    match t with
+    | AnyTyp | AnyFrameTyp | FrameTyp _ -> true
+    | _ -> false
+
 let rec reduce_dexp (cx: contexts) (d : dexp) : int =
     debug_print (">> reduce_dexp " ^ string_of_dexp d);
     match d with
@@ -192,10 +198,10 @@ let rec least_common_parent (cx: contexts) (t1: typ) (t2: typ): typ =
     else least_common_parent cx (typ_step cx t1) t2
 
 let least_common_parent_checked (cx : contexts) (t1: typ) (t2: typ): typ =
-    match least_common_parent cx t1 t2 with
-    | AnyTyp | FrameTyp _ | AnyFrameTyp
-        -> error cx ("Cannot unify " ^ string_of_typ t1 ^ " and " ^ string_of_typ t2)
-    | t -> t
+    let t = least_common_parent cx t1 t2 in
+    if is_illegal_typ cx t then 
+        error cx ("Cannot unify " ^ string_of_typ t1 ^ " and " ^ string_of_typ t2)
+    else t
     
 (* Checks that it is possible to resolve the dimension expression under the given context *)
 let rec check_dexp (cx: contexts) (d : dexp) : unit =
@@ -277,9 +283,8 @@ let infer_pml (cx: contexts) (args : typ list) (target : params) : (typ list) op
     debug_print ">> infer_pml";
     let update_inference (t : typ) (s : string) (fpm : typ Assoc.context option) : typ Assoc.context option =
         match fpm with | None -> None | Some p ->
-        if Assoc.mem s p then match least_common_parent cx t (Assoc.lookup s p) with
-            | AnyTyp -> None
-            | t' -> Some (Assoc.update s t' p)
+        if Assoc.mem s p then let t' = least_common_parent cx t (Assoc.lookup s p) in 
+            if is_illegal_typ cx t' then None else Some (Assoc.update s t' p)
         else Some (Assoc.update s t p)
     in
     let rec unify_param (fpm : (typ Assoc.context) option) (arg_typ : typ) (par_typ : typ) 
@@ -384,34 +389,33 @@ let update_psi (cx: contexts) (f : fn_typ) : contexts =
     (* If the given type is not valid in psi, psi is returned unmodified *)
     (* Will raise a failure if a non-concrete vartyp is used *)
     let ml,rt,id,pr,_ = f in
+    if not (has_modification cx ml Canon) then cx else
+    let fail _ = error cx ("Invalid canonical function " ^ string_of_fn_typ f) in
     let pm = get_ml_pm cx ml in
     debug_print (">> update_psi " ^ string_of_fn_typ f);
     let target = rt in
-    if List.length pr != 1 then cx else
+    if List.length pr != 1 then fail () else
     let start = fst (List.hd pr) in
     let is_valid (t: typ) : bool = match t with MemberTyp _ -> true | _ -> false in
-    if not (is_valid start) || not (is_valid target) then cx else
+    if not (is_valid start) || not (is_valid target) then fail () else
     let as_geo_typ (t : typ) : (string * string) option =
         match t with
         | MemberTyp (ParTyp(c, _), ParTyp(o, _)) -> Some (c,o)
         | _ -> None
     in
-    match as_geo_typ start with | None -> cx | Some (c1,o1) ->
-    match as_geo_typ target with | None -> cx | Some (c2,o2) ->
+    match as_geo_typ start with | None -> fail () | Some (c1,o1) ->
+    match as_geo_typ target with | None -> fail () | Some (c2,o2) ->
     let start_string = string_of_typ start in
     let to_add = (target, (id, Assoc.values pm)) in
-    if List.mem Canon ml then
-        if Assoc.mem start_string cx.ps then 
-        (let start_fns = Assoc.lookup start_string cx.ps in
-            if (List.fold_left (fun acc (lt, (_, _)) -> acc ||
-                    is_typ_eq cx lt target)) false start_fns
-            then error cx ("Duplicate transformation for " ^ 
-                start_string ^ "->" ^ string_of_typ target ^
-                " in the declaration of " ^ string_of_fn_typ f)
-            else with_ps cx (Assoc.update start_string (to_add :: start_fns) cx.ps)
-        )
-        else with_ps cx (Assoc.update start_string [to_add] cx.ps)
-    else cx
+    if Assoc.mem start_string cx.ps then 
+    (let start_fns = Assoc.lookup start_string cx.ps in
+        if (List.fold_left (fun acc (lt, (_, _)) -> acc ||
+                is_typ_eq cx lt target)) false start_fns
+        then error cx ("Duplicate transformation for " ^ 
+            start_string ^ "->" ^ string_of_typ target ^
+            " in the declaration of " ^ string_of_fn_typ f)
+        else with_ps cx (Assoc.update start_string (to_add :: start_fns) cx.ps))
+    else with_ps cx (Assoc.update start_string [to_add] cx.ps)
 
 (* Type check parameter; check parameter typ validity *)
 (* Returns gamma *)
@@ -438,8 +442,8 @@ let check_as_exp (cx: contexts) (start: typ) (target : typ) : typ =
     ignore_typ (least_common_parent_checked cx start target); target
 
 (* Super expensive.  We're essentially relying on small contexts *)
-let check_in_exp (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : aexp = 
-    debug_print ">> check_in_exp";
+let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : aexp = 
+    debug_print (">> find_in_path" ^ string_of_typ start ^ " " ^ string_of_typ target);
     let rec psi_path_rec (to_search: (typ * aexp) Queue.t) (found: typ list) : aexp =
         let search_phi (tl: typ) (ps_lst : (typ * fn_inv) list) : (typ * fn_inv) list =
             (* This function searches phi for canonical abstract functions that map from the given type *)
@@ -539,9 +543,27 @@ let check_in_exp (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
         if is_subtype cx nt target then e
         else psi_path_rec to_search (update_search_and_found (psi_lookup_rec nt) e)
     in	
-    if string_of_typ start = string_of_typ target then start_exp else
+    if is_typ_eq cx start target then start_exp else
 	let q = Queue.create () in Queue.push (start, start_exp) q;
-	psi_path_rec q []
+    psi_path_rec q []
+    
+let check_in_exp (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : aexp = 
+    debug_print ">> check_in_exp";
+    let fail _ = error cx ("Invalid type as 'in' target " ^ string_of_typ target
+        ^ ", expected a scheme or frame") in
+    let c, o = match start with
+        | MemberTyp (ParTyp(c, _), o) -> c, o
+        | _ -> error cx ("Invalid application of 'in' to type " ^ string_of_typ start
+            ^ ", expected a geometric type")
+    in    
+    let target' = match target with
+    | ParTyp (s, tl) -> (match find_typ cx s with
+        | Some (Delta _) -> MemberTyp(ParTyp (c, [target]), o)
+        | Some (Chi _) -> MemberTyp(target, o)
+        | _ -> fail())
+    | _ -> fail ()
+    in
+    find_in_path cx start_exp start target'
 
 let rec check_aexp (cx: contexts) ((e, meta) : aexp) : TypedAst.exp * typ =
     check_exp (with_meta cx meta) e
@@ -711,11 +733,9 @@ contexts * (TypedAst.params * TypedAst.parameterization) option =
     debug_print (">> check_fn_decl : " ^ id ^ string_of_parameterization pm);
     let cx' = check_parameterization cx pm in
     let cx'',pr = check_params cx' pl in
-    check_typ_valid cx' rt;
     let pme = List.fold_right (fun (s, t) acc -> if is_subtype cx t AnyFrameTyp then acc 
         else Assoc.update s (typ_erase cx t) acc) (Assoc.bindings pm) Assoc.empty 
     in
-    (* Don't return the parameterization used here *)
     if has_modification cx ml External then cx'', None else cx'', Some (pr, pme)
 
 (* Updates phi and psi *)
@@ -727,7 +747,8 @@ let check_fn (cx: contexts) (f, cl: fn) (scheme : string option)
     let cx', ft = check_fn_decl cx f in
     (* Note that we don't use our updated phi to avoid recursion *)
     let cx'', cl' = check_comm_lst cx' cl in
-    let id', cxr = bind_function cx f scheme in
+    let id', cxf = bind_function cx f scheme in
+    let cxr = update_psi cxf f in
     (* check that the last command is a return statement *)
     (* TODO: might want to check that there is exactly one return statement on each branch *)
     List.iter (check_return cx'' rt) cl;

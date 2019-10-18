@@ -1,5 +1,8 @@
 using "../glsl_defs.lgl";
 
+type color is vec3;
+type alphaColor is vec4;
+
 // Reference Frame Declarations
 
 frame model has dimension 3;
@@ -9,30 +12,30 @@ frame light has dimension 3;
 
 // Global Variables
 
-varying cart3.point<model> vPosition;
-uniform hom.transformation<model, world> uModel;
-uniform hom.transformation<world, camera> uView;
-varying cart3.vector<model> vNormal;
-uniform cart3.point<light> uLight;
-uniform hom.transformation<light, world> uLightTrans;
+varying cart3<model>.point vPosition;
+uniform hom<model>.transformation<world> uModel;
+uniform hom<world>.transformation<camera> uView;
+varying cart3<model>.vector vNormal;
+uniform cart3<light>.point uLight;
+uniform hom<light>.transformation<world> uLightTrans;
 
 // Can't canonicalize matrices for now, so we do this
-canon hom.point<world> app_uModel(hom.point<model> v) {
+canon hom<world>.point app_uModel(hom<model>.point v) {
     return uModel * v;
 }
-canon hom.vector<world> app_uModel(hom.vector<model> v) {
+canon hom<world>.vector app_uModel(hom<model>.vector v) {
     return uModel * v;
 }
-canon hom.point<camera> app_uView(hom.point<world> v) {
+canon hom<camera>.point app_uView(hom<world>.point v) {
     return uView * v;
 }
-canon hom.vector<camera> app_uView(hom.vector<world> v) {
+canon hom<camera>.vector app_uView(hom<world>.vector v) {
     return uView * v;
 }
-canon hom.point<world> app_uLightTrans(hom.point<light> v) {
+canon hom<world>.point app_uLightTrans(hom<light>.point v) {
     return uLightTrans * v;
 }
-canon hom.vector<world> app_uLightTrans(hom.vector<light> v) {
+canon hom<world>.vector app_uLightTrans(hom<light>.vector v) {
     return uLightTrans * v;
 }
 
@@ -44,15 +47,15 @@ void main() {
     color specColor = [1.0, 1.0, 1.0];
 
     // auto temp = vPosition in hom.point<model>;
-    auto worldPos = vPosition in cart3.point<world>;
-    auto camPos = worldPos in cart3.point<camera>;
-    auto worldNorm = normalize(vNormal in cart3.vector<world>);
+    auto worldPos = vPosition in world;
+    auto camPos = worldPos in camera;
+    auto worldNorm = normalize(vNormal in world);
 
-    auto lightDir = normalize((uLight in cart3.point<world>) - worldPos);
+    auto lightDir = normalize((uLight in world) - worldPos);
     auto lightWorldDot = dot(lightDir, worldNorm);
     scalar diffuse = max(lightWorldDot, 0.0);
 
-    auto reflectDir = normalize(reflect(-lightDir, worldNorm) in cart3.vector<camera>);
+    auto reflectDir = normalize(reflect(-lightDir, worldNorm) in camera);
 
     scalar specular = pow(max(dot(normalize(-camPos), reflectDir), 0.), 32.);
 
