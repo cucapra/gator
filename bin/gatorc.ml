@@ -23,7 +23,8 @@ let spec_list : (Arg.key * Arg.spec * Arg.doc) list =
         "Enable debug output")
     ]
 
-let prog_path f = String.concat "/" (List.rev (List.tl (List.rev (String.split_on_char '/' f)))) ^ "/"
+let prog_path f = if not (String.contains f '/') then "" else
+    String.concat "/" (List.rev (List.tl (List.rev (String.split_on_char '/' f)))) ^ "/"
 
 let parse_prog f : GatorAst.prog =
     let ch =
