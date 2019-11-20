@@ -9,7 +9,7 @@ let error s = raise (EmitException s)
 
 (* Used in emitters for recovering infix notation of member function names *)
 let unop_list = ["-"]
-let binop_list = ["+"; "-"; "*"; "/"; "=="; "&&"; "||"]
+let binop_list = ["+"; "-"; "*"; "/"; "=="; "&&"; "||"; ">="; "<="; ">"; "<"]
 let replace_list = [(Str.regexp "+", "_gator_plus"); 
     (Str.regexp "-", "_gator_minus"); (Str.regexp "*", "_gator_times")]
 
