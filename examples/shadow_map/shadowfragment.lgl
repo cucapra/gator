@@ -1,6 +1,6 @@
-declare vec4 vec4(vec3 v, float f);
-declare vec4 gl_FragCoord;
-declare `t fract<`t : genType>(`t v);
+using "../glsl_defs.lgl";
+
+declare varying float[4] gl_FragCoord;
 
 vec4 encodeFloat (float depth) {
   vec4 bitShift = [
@@ -10,16 +10,17 @@ vec4 encodeFloat (float depth) {
     1.0
   ];
   vec4 bitMask = [
-    0,
+    0.,
     1.0 / 256.0,
     1.0 / 256.0,
     1.0 / 256.0
   ];
   vec4 comp = fract(depth * bitShift);
-  comp -= comp.xxyz .* bitMask;
+  vec4 temp = [comp[0], comp[0], comp[1], comp[2]];
+  comp -= temp * bitMask;
   return comp;
 }
 
 void main() {
-    vec4 gl_FragColor = encodeFloat(gl_FragCoord.z);
+    vec4 gl_FragColor = encodeFloat(gl_FragCoord[2]);
 }

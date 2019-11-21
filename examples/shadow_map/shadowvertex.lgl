@@ -1,26 +1,34 @@
-space model is vec<3>;
-space world is vec<3>;
-tag viewport is vec<3>;
-tag camera is viewport;
-tag light is viewport;
-space view<`t : viewport> is `t;
-tag proj<`t : viewport> is `t;
-space hom<`t : vec<n>> is vec<n+1>;
+using "../glsl_defs.lgl";
 
-declare vec4 vec4<`t : vec<3>>(`t v, float f);
-declare vec3 vec3<`t : vec<4>>(`t v);
+frame model has dimension 3;
+frame world has dimension 3;
+frame light has dimension 3;
+frame lightProjective has dimension 3;
 
-attribute model aPosition;
-canon uniform hom<model>->hom<world> uModel;
-canon uniform hom<world>->hom<view<light>> uLightView;
-canon uniform hom<view<light>>->hom<proj<light>> uLightProjection;
+attribute cart3<model>.point aPosition;
+uniform hom<model>.transformation<world> uModel;
+uniform hom<world>.transformation<light> uLightView;
+uniform hom<light>.transformation<lightProjective> uLightProjection;
 
-canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
-canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }
+canon hom<world>.point app_uModel(hom<model>.point v) {
+    return uModel * v;
+}
+canon hom<world>.vector app_uModel(hom<model>.vector v) {
+    return uModel * v;
+}
+canon hom<light>.point app_uView(hom<world>.point v) {
+    return uLightView * v;
+}
+canon hom<light>.vector app_uView(hom<world>.vector v) {
+    return uLightView * v;
+}
+canon hom<lightProjective>.point app_uProj(hom<light>.point v) {
+    return uLightProjection * v;
+}
+canon hom<lightProjective>.vector app_uProj(hom<light>.vector v) {
+    return uLightProjection * v;
+}
 
 void main() {
-    hom<proj<light>> gl_Position = 
-      uLightProjection * uLightView * uModel * homify(aPosition);
-
-    // auto gl_Position = aPosition in hom<proj<light>>;
+    auto gl_Position = aPosition in hom<lightProjective>;
 }

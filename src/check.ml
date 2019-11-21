@@ -757,13 +757,14 @@ let check_fn (cx: contexts) (f, cl: fn) (scheme : string option)
 (* Type check global variable *)
 (* Updates gamma *)
 let check_global_variable (cx: contexts) (ml, sq, t, id, e: global_var) 
-: contexts * TypedAst.global_var =
+: contexts * TypedAst.global_var option =
     debug_print ">> check_global_variable";
     check_typ_valid cx t;
     let e' = option_map (fun x -> check_aexp cx x) e in
     (match e' with | Some (_,te) -> check_assign cx t id te | None -> ());
-        bind cx id (Gamma t),
-        (sq, typ_erase cx t, id, option_map (fun x -> exp_to_texp cx x) e')
+    let gvr = if has_modification cx ml External then None else
+        Some (sq, typ_erase cx t, id, option_map (fun x -> exp_to_texp cx x) e') in
+    bind cx id (Gamma t), gvr
 
 let check_frame (cx : contexts) ((id, d) : frame) : contexts =
     debug_print (">> check_frame " ^ id);
@@ -912,7 +913,7 @@ let rec check_term (cx: contexts) (t: term)
         let ext = has_modification cx ml External in
         check_typ_decl cx id (ext, pm, t), [], []
     | GlobalVar gv -> let (cx', gv') = check_global_variable cx gv in
-        cx', [], [gv']
+        cx', [], (match gv' with | None -> [] | Some gv'' -> [gv''])
     | Fn f -> let (cx', f') = check_fn cx f None in
         cx', (match f' with | None -> [] | Some f' -> [f']), []
     
