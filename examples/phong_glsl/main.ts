@@ -35,7 +35,7 @@ function main() {
   let ref_model = mat4.create();
 
   // Position the light source for the lighting effect.
-  let light = vec3.fromValues(-20., -40., 20.);
+  let light = vec3.fromValues(20., -10.5, 40.);
 
   // Set up user movement commands
   let rotateFlag = true;
