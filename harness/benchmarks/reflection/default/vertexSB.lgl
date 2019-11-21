@@ -1,23 +1,37 @@
-space coord model is vec<3>;
-space coord world is vec<3>;
-space coord camera is vec<3>;
-tag coord projective is vec<3>;
-space coord hom<`t : vec<n>> is vec<n+1>;
+using "../../glsl_defs.lgl";
 
-declare vec4 vec4<`t : vec<3>>(`t v, float f);
-declare vec3 vec3<`t : vec<4>>(`t v);
+frame model has dimension 3;
+frame world has dimension 3;
+frame camera has dimension 3;
+frame projective has dimension 3;
 
-attribute model aPosition;
-attribute model aNormal;
-varying model vPosition;
-uniform hom<camera>->hom<projective> uProjection;
-uniform hom<world>->hom<camera> uView;
-uniform hom<model>->hom<world> uModel;
 
-canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
-canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }
+attribute cart3<model>.point aPosition;
+varying cart3<model>.point vPosition;
+uniform hom<camera>.transformation<projective> uProjection;
+uniform hom<world>.transformation<camera> uView;
+uniform hom<model>.transformation<world> uModel;
+
+canon hom<world>.point app_uModel(hom<model>.point v) {
+    return uModel * v;
+}
+canon hom<world>.vector app_uModel(hom<model>.vector v) {
+    return uModel * v;
+}
+canon hom<camera>.point app_uView(hom<world>.point v) {
+    return uView * v;
+}
+canon hom<camera>.vector app_uView(hom<world>.vector v) {
+    return uView * v;
+}
+canon hom<projective>.point app_uView(hom<camera>.point v) {
+    return uProjection * v;
+}
+canon hom<projective>.vector app_uView(hom<camera>.vector v) {
+    return uProjection * v;
+}
 
 void main() {
   vPosition = aPosition;
-  hom<projective> gl_Position = aPosition in hom<projective>;
+  auto gl_Position = aPosition in hom<projective>;
 }
