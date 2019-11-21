@@ -50,7 +50,7 @@ synthetic = {'name': 'synthetic',
 # }
 
 # benchmarks = [shadow_map]*3 + [synthetic]*2
-benchmarks = [reflection]
+benchmarks = [shadow_map]
 shuffle(benchmarks)
 browser = webdriver.Chrome()
 for bench in benchmarks:

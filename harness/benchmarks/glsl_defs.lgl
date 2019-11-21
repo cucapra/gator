@@ -16,6 +16,7 @@ type angle is scalar;
 // Numeric Operator Types
 with float T: declare T +(T f1, T f2);
 with float T: declare T -(T f1, T f2);
+with float T: declare T -(T f);
 with float T: declare T *(T f1, T f2);
 with float T: declare T /(T f1, T f2);
 with float T: declare bool ==(T f1, T f2);
@@ -23,9 +24,11 @@ with float T: declare bool >=(T f1, T f2);
 with float T: declare bool <=(T f1, T f2);
 with float T: declare bool >(T f1, T f2);
 with float T: declare bool <(T f1, T f2);
+// with float T: declare T ++(T f);
 
 with int T: declare T +(T f1, T f2);
 with int T: declare T -(T f1, T f2);
+with int T: declare T -(T f);
 with int T: declare T *(T f1, T f2);
 with int T: declare T /(T f1, T f2);
 with int T: declare bool ==(T f1, T f2);
@@ -33,8 +36,16 @@ with int T: declare bool >=(T f1, T f2);
 with int T: declare bool <=(T f1, T f2);
 with int T: declare bool >(T f1, T f2);
 with int T: declare bool <(T f1, T f2);
+// with int T: declare T ++(T f);
 
 // GLSL Vector/Matrix Types
+with vec2 T: declare T +(T v1, T v2);
+with vec2 T: declare T -(T v1, T v2);
+with vec2 T: declare T -(T v);
+with vec2 T: with float U: declare T *(T v, U f);
+with vec2 T: with float U: declare T *(U f, T v);
+with vec2 T: with float U: declare T /(T f1, U f2);
+
 with vec3 T: declare T +(T v1, T v2);
 with vec3 T: declare T -(T v1, T v2);
 with vec3 T: declare T -(T v);
@@ -47,12 +58,7 @@ with vec4 T: declare T -(T v1, T v2);
 with vec4 T: declare T -(T v);
 with vec4 T: with float U: declare T *(T v, U f);
 with vec4 T: with float U: declare T *(U f, T v);
-
-with float T: declare T +(T f1, T f2);
-with float T: declare T -(T f1, T f2);
-with float T: declare T -(T f);
-with float T: declare T *(T f1, T f2);
-with float T: declare T /(T f1, T f2);
+with vec4 T: declare vec4 *(T v1, T v2);
 
 with mat3 T: with vec3 U: declare vec3 *(T m, U v);
 with mat3 T: with mat3 U: declare mat3 +(T m, U v);
@@ -62,11 +68,12 @@ with mat4 T: with vec4 U: declare vec4 *(T m, U v);
 with mat4 T: with mat4 U: declare mat4 +(T m, U v);
 with mat4 T: with mat4 U: declare mat4 *(T m, U v);
 
-
 // GLSL function types
 declare float cos(float f);
 declare float sqrt(float f);
 declare float acos(float f);
+with vec4 T:
+declare T fract(T v);
 
 with float[4] T:
 declare T texture2D(sampler2D<T> texture, float[2] coord);
@@ -83,6 +90,9 @@ with float[4][4] T: declare mat3 mat3(T v);
 with float[3][3] T: declare mat4 mat4(T v);
 
 with vec3 T: declare float dot(T v1, T v2);
+with vec4 T: declare float dot(T v1, T v2);
+with vec3 T: declare float length(T v);
+with vec4 T: declare float length(T v);
 // declare T normalize<T : vec3>(T x);
 declare vec3 normalize(vec3 x);
 with float T: declare T max(T f1, T f2);
@@ -123,6 +133,7 @@ prototype geometry {
     transformation<target> *(transformation<middle> m1, this<middle>.transformation<target> m2);
 
     angle dot(direction v1, direction v2);
+    scalar length(vector v);
     direction normalize(vector v);
     direction normalize(direction v);
     vector reflect(direction v1, direction v2);
@@ -191,6 +202,9 @@ coordinate cart3 : geometry {
 
     angle dot(direction v1, direction v2) {
         return (dot(v1 as! vec3, v2 as! vec3) as! angle);
+    }
+    scalar length(vector v) {
+        return (length(v as! vec3) as! scalar);
     }
     direction normalize(vector v) {
         return (normalize(v as! vec3) as! direction);
