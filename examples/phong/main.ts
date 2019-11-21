@@ -24,14 +24,14 @@ function main() {
   let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
 
   // We'll draw a gator
-  // let mesh = lgl.getBunny(gl);
-  let mesh = lgl.load_obj (gl, caiman);
+  let mesh = lgl.getBunny(gl);
+  // let mesh = lgl.load_obj (gl, caiman);
 
   // Initialize the model position.
   let model = mat4.create();
 
   // Position the light source for the lighting effect.
-  let light = vec3.fromValues(3., 0., 20.);
+  let light = vec3.fromValues(20., 0., 20.);
 
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
