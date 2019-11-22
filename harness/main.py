@@ -19,7 +19,7 @@ def openNode():
 node_thread = Thread(target=openNode)
 node_thread.start()
 
-default_args = {'time': 100}
+default_args = {'time': 300}
 phong = {'name': 'phong',
          'shaders': ['default', 'raw', 'raw', 'default'],
          'args': {
@@ -50,7 +50,7 @@ synthetic = {'name': 'synthetic',
 # }
 
 # benchmarks = [shadow_map]*3 + [synthetic]*2
-benchmarks = [shadow_map]
+benchmarks = ([phong] + [texture] + [shadow_map] + [reflection]) * 3
 shuffle(benchmarks)
 browser = webdriver.Chrome()
 for bench in benchmarks:
