@@ -1,0 +1,3 @@
+alphaColor gl_FragColor = texture2D(uTexture, vTexCoord);
+vTexCoord = aTexCoord;
+auto gl_Position = aPosition in hom<projective>;
