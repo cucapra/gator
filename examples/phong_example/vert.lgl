@@ -1,0 +1,30 @@
+using "lib.lgl";
+
+attribute cart3<model>.point aPos;
+attribute cart3<model>.vector aNormal;
+
+// Can't canonicalize matrices for now, so we do this
+canon hom<world>.point app_uModel(hom<model>.point v) {
+    return uModel * v;
+}
+canon hom<world>.vector app_uModel(hom<model>.vector v) {
+    return uModel * v;
+}
+canon hom<view>.point app_uView(hom<world>.point v) {
+    return uView * v;
+}
+canon hom<view>.vector app_uView(hom<world>.vector v) {
+    return uView * v;
+}
+canon hom<projection>.point app_uMVP(hom<model>.point v) {
+    return uMVP * v;
+}
+canon hom<projection>.vector app_uMVP(hom<model>.vector v) {
+    return uMVP * v;
+}
+
+void main() {
+  vPos = aPos;
+  vNormal = aNormal;
+  auto gl_Position = aPos in hom<projection>;
+}

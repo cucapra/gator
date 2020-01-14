@@ -16,7 +16,7 @@ uniform float uRef;
 void main() {
     vec3 ambient = [.1, 0., 0.];
     vec3 diffColor = [0.2, 0.8, 0.4];
-    vec3 specColor = [0.0, 0.0, 0.0];
+    vec3 specColor = [1.0, 1.0, 1.0];
     // Correct phong model for reference
     if (uRef == 1.) {
         mat3 modelMatrix = mat3(uModel);
