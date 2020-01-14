@@ -19,7 +19,7 @@ varying cart3<model>.vector vNormal;
 uniform cart3<light>.point uLight;
 uniform hom<light>.transformation<world> uLightTrans;
 
-// Can't canonicalize matrices for now, so we do this
+// Boilerplate application definitions to help in expressions
 canon hom<world>.point app_uModel(hom<model>.point v) {
     return uModel * v;
 }
@@ -46,7 +46,6 @@ void main() {
     color diffColor = [0.2, 0.8, 0.4];
     color specColor = [1.0, 1.0, 1.0];
 
-    // auto temp = vPosition in hom.point<model>;
     auto worldPos = vPosition in world;
     auto camPos = worldPos in camera;
     auto worldNorm = normalize(vNormal in world);

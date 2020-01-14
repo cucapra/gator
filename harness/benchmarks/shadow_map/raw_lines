@@ -1,0 +1,37 @@
+vec3 ambient = vec3(.1, 0., 0.);
+float texelSize = (1. / 1024.);
+vec4 v = texture2D(uTexture, vShadowPos.xy);
+float amountInLight = 0.;
+for (int x = -1; x <= 1; x++){
+    for (int y = -1; y <= 1; y++){
+        float texelDepth = decodeFloat(texture2D(uTexture, vShadowPos.xy + vec2(x, y) * texelSize));
+        if (vShadowPos.z - 0.007 <= texelDepth){
+            amountInLight += 1.;
+        }
+    }
+}
+amountInLight /= 9.;
+vec3 phong_color = phong_light(uLight, (uModel * homify(vPosition)).xyz, normalize((uModel * homify_normal(vNormal)).xyz), uBaseColor, uSpecStrength, 0.08, 0.0001);
+gl_FragColor = extendColor(ambient + phong_color * amountInLight);
+vec3 normLightPos = normalize(lightPos);
+float lambertian = max(0., dot(normalDir, normLightPos));
+vec3 reflectDir = reflect(-normLightPos, normalDir);
+float specular = 0.;
+if (0. <= lambertian){
+    specular = pow(max(0., -dot(normalize(fragPos), reflectDir)), 32.);
+}
+float distance = length(lightPos - fragPos);
+float attenuation = 1. / (linear * distance + quad * distance * distance);
+return (lambertian*baseColor + specStrength * specular * vec3(1., 1., 1.)) * attenuation;
+vec4 bitShift = vec4(256. * 256. * 256., 256. * 256., 256., 1.);
+vec4 bitMask = vec4(0, 1.,1, 1.) / 256.;
+vec4 comp = fract(depth * bitShift);
+comp -= comp.xxyz * bitMask;
+return comp;
+gl_FragColor = encodeFloat(gl_FragCoord.z);
+gl_Position = uLightProjection * uLightView * uModel * vec4(aPosition, 1);
+mat4 texUnitConverter = mat4(0.5, 0., 0., 0., 0., 0.5, 0., 0., 0., 0., 0.5, 0., 0.5, 0.5, 0.5, 1.);
+vShadowPos = (texUnitConverter * uLightProjection * uLightView * uModel*vec4(aPosition, 1.)).xyz;
+vPosition = aPosition;
+vNormal = aNormal;
+gl_Position = uProjection * uCamera * uModel * vec4(aPosition, 1.);

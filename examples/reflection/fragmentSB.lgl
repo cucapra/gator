@@ -1,5 +1,11 @@
-using "shared.lgl";
+using "../glsl_defs.lgl";
 
+frame model has dimension 3;
+
+type alphaColor is vec4;
+
+varying cart3<model>.point vPosition;
+uniform samplerCube<alphaColor> uSkybox;
 void main() {
-    alphaColor gl_FragColor = textureCube(uSkybox, vPosition);
+    auto gl_FragColor = textureCube(uSkybox, vPosition);
 }

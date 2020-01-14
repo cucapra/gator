@@ -1,37 +1,43 @@
-space coord model is vec<3>;
-space coord world is vec<3>;
-space coord view is vec<3>;
-tag coord hom<`t : vec<n>> is vec<n+1>;
-tag dir<`t : vec<n>> is vec<n>;
-space color is vec<3>;
-tag alpha<`t : color> is vec<4>;
+using "../../glsl_defs.lgl";
 
-declare dir<`t> normalize<`t : vec>(`t x);
-declare float dot<`t: vec>(dir<`t> v1, dir<`t> v2);
-declare `t textureCube<`t : vec<4>>(samplerCube<`t> sc, model m);
-declare vec4 vec4<`t : vec<3>>(`t v, float f);
-declare vec3 vec3<`t : vec<4>>(`t v);
-declare float min(float f1, float f2);
-declare float max(float f1, float f2);
-declare `t reflect<`t : vec>(`t v1, dir<`t> v2);
-declare float pow(float f1, float f2);
+frame model has dimension 3;
+frame world has dimension 3;
+frame view has dimension 3;
 
-varying model vPosition;
-varying dir<model> vNormal;
-uniform samplerCube<alpha<color>> uSkybox;
-uniform hom<world>->hom<view> uView;
-uniform hom<model>->hom<world> uModel;
-uniform dir<model>->view uNormalMatrix;
-uniform view->model uInverseViewTransform;
+type color is vec3;
+type alphaColor is vec4;
 
-canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
-canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return v.xyz as `t; }
-canon hom<`t> homify_dir<`t : vec<3>>(dir<`t> v) { return vec4(v, 0.) as hom<`t>; }
-canon alpha<`t> extendColor<`t : color>(`t c) { return vec4(c, 1.) as alpha<`t>; }
+varying cart3<model>.point vPosition;
+varying cart3<model>.direction vNormal;
+uniform samplerCube<alphaColor> uSkybox;
+uniform hom<world>.transformation<view> uView;
+uniform hom<model>.transformation<world> uModel;
+uniform cart3<model>.transformation<view> uNormalMatrix;
+uniform cart3<view>.transformation<model> uInverseViewTransform;
+
+
+canon hom<world>.point app_uModel(hom<model>.point v) {
+    return uModel * v;
+}
+canon hom<world>.vector app_uModel(hom<model>.vector v) {
+    return uModel * v;
+}
+canon hom<view>.point app_uView(hom<world>.point v) {
+    return uView * v;
+}
+canon hom<view>.vector app_uView(hom<world>.vector v) {
+    return uView * v;
+}
+canon cart3<model>.point app_uView(cart3<view>.point v) {
+    return uInverseViewTransform * v;
+}
+canon cart3<model>.vector app_uView(cart3<view>.vector v) {
+    return uInverseViewTransform * v;
+}
 
 void main() {
-    dir<view> N = normalize(uNormalMatrix * vNormal);
-    view V = -(vPosition in view);
-    view R = -reflect(V,N);
-    alpha<color> gl_FragColor = textureCube(uSkybox, R in model);
+    auto N = normalize(uNormalMatrix * vNormal);
+    auto V = -(vPosition in view);
+    auto R = -reflect(V,N);
+    auto gl_FragColor = textureCube(uSkybox, R in model);
 }

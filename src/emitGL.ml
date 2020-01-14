@@ -105,13 +105,14 @@ let rec string_of_comm (c: comm) : string =
         ts ^ s ^ " = " ^ string_of_texp e ^ ";"
     | Assign (b, x) -> b ^ " = " ^ string_of_texp x ^ ";"
     | AssignOp ((x, _), op, e) -> x ^ " " 
-        ^ op ^ "= " ^ (string_of_texp e)
+        ^ op ^ "= " ^ (string_of_texp e) ^ ";"
     | If ((b, c1), elif_list, c2) -> 
         "if (" ^ string_of_texp b ^ ")" ^ block_string c1 
         ^ string_of_list (fun (b, c) -> "elif (" ^ string_of_texp b ^ ")" ^ block_string c) elif_list
         ^ string_of_option_removed (fun x -> "else " ^ block_string x) c2
-    | For (d, b, u, cl) -> "for (" ^ string_of_comm d ^ string_of_texp b ^ "; " 
-        ^ string_of_comm u ^ ") " ^ block_string cl
+    | For (d, b, u, cl) -> let us = string_of_comm u in (* Hack to get rid of the semicolon at the end of the for loop *)
+        "for (" ^ string_of_comm d ^ string_of_texp b ^ "; " 
+        ^ String.sub us 0 (String.length us - 1) ^ ") " ^ block_string cl
     | Return x -> "return" ^ string_of_option_removed (fun x -> " " ^ string_of_texp x) x ^ ";"
 
 let comp_fn (f : fn) : string = 
@@ -136,9 +137,9 @@ let decl_attribs (gv : global_vars) : string =
         match gv with
         | [] -> ""
         | (sq, et, x, e)::t -> 
-            (string_of_storage_qual sq) ^ " " ^ (string_of_typ et)
+            string_of_storage_qual sq ^ " " ^ string_of_typ et
             ^ " " ^ x ^ string_of_option_removed (fun x -> " = " ^ string_of_texp x) e ^
-            ";" ^ (decl_attribs_list t) 
+            ";" ^ decl_attribs_list t
     in
     decl_attribs_list gv
 

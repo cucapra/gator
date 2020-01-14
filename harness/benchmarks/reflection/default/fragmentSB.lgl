@@ -1,11 +1,11 @@
-tag model is vec<3>;
-tag alphaColor is vec<4>;
+using "../../glsl_defs.lgl";
 
-declare alphaColor textureCube(samplerCube sc, model m);
+frame model has dimension 3;
 
-varying model vPosition;
-uniform samplerCube uSkybox;
+type alphaColor is vec4;
 
+varying cart3<model>.point vPosition;
+uniform samplerCube<alphaColor> uSkybox;
 void main() {
-    alphaColor gl_FragColor = textureCube(uSkybox, vPosition);
+    auto gl_FragColor = textureCube(uSkybox, vPosition);
 }

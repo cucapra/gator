@@ -43,6 +43,9 @@ void main() {
 
         vec3 worldPos = vec3(uModel * vec4(vPosition, 1.));
         vec3 worldNorm = vec3(uModel * vec4(vNormal, 0.));
+        // Uncomment for failing example
+        // vec3 worldPos = vPosition;
+        // vec3 worldNorm = vNormal;
 
         vec3 lightDir = normalize(uLight - worldPos);
         float lightWorldDot = dot(lightDir, worldNorm);
