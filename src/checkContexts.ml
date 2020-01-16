@@ -6,8 +6,8 @@ type fn_inv = string * typ list
 (* Type definitions *)
 (* Stores modification, supertype, 
  * and possible parameterization information for the type *)
-(* type tau = modification list * parameterization * typ *)
-type tau = bool * parameterization * typ
+type tau = modification list * parameterization * typ
+(* type tau = bool * parameterization * typ *)
 
 (* Variable definitions *)
 (* Maps from variable names to the type of that variable *)
@@ -30,8 +30,8 @@ type phi = (string option * fn_typ) list
 
 (* Transformation context *)
 (* Provides a map from a given type to all functions that  *)
-(* type psi = string list *)
-type psi = (typ * fn_inv) list
+type psi = string list
+(* type psi = (typ * fn_inv) list *)
 
 (* Special contexts for avoiding name duplication *)
 (* We maintain the invariant for a given set of contexts: 

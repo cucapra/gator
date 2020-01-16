@@ -12,8 +12,8 @@ let ignore_dexp (d : dexp) : unit = ignore d
 let ignore_typ_context (t : typ Assoc.context) : unit = ignore t
 let string_of_fn_inv ((s, tl) : fn_inv) : string = 
   s ^ "<" ^ string_of_list string_of_typ tl ^ ">"
-let string_of_tau (e, pm, t : tau) =
-  if e then "declare " else "" ^ string_of_parameterization pm ^ " " ^  string_of_typ t
+let string_of_tau (ml, pm, t : tau) =
+  string_of_mod_list ml ^ string_of_parameterization pm ^ " " ^  string_of_typ t
 let string_of_gamma (g : gamma) =
   string_of_typ g
 let string_of_delta (f : delta) =
@@ -25,7 +25,7 @@ let string_of_phi (p : phi) =
     (fun (c, f) -> c, rename_fn (fun x -> "%" ^ let cut = if String.contains x '_' then String.rindex x '_' else 0 in
       String.sub x cut (String.length x - cut)) f) p)
 let string_of_psi (ps : psi) : string =
-  string_of_list (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_fn_inv p ^ ")") ps
+  string_of_list (fun x -> x) ps
 
 let print_cxt   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_tau   "\n" cx._bindings.t)
 let print_cxg   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_gamma "\n" cx._bindings.g)
@@ -132,6 +132,12 @@ let reset (cx : contexts) (cx_ref : contexts) (b : exp_bindings) : contexts =
 
 let has_modification (cx : contexts) (ml : modification list) (m : modification) : bool =
   List.fold_right (fun mc acc -> mc = m || acc) ml false 
+
+(* Returns an unordered list of all types with the given modification *)
+let get_with_modification (cx : contexts) (m : modification) : string list =
+  List.fold_right (fun (s, (ml, _, _)) acc -> 
+    if has_modification cx ml m then s::acc else acc)
+    (Assoc.bindings cx._bindings.t) ["start"]
 
 let get_ml_pm (cx : contexts) (ml : modification list) : parameterization =
   let get_ml_pm_rec (pm : parameterization) (m : modification) =
