@@ -54,7 +54,7 @@ and comm =
     | Skip
     | Print of aexp
     | Exp of aexp
-    | Decl of typ * string * aexp 
+    | Decl of modification list * typ * string * aexp 
     | Assign of string * aexp
     | AssignOp of string * string * aexp
     | If of if_block * if_block list * acomm list option  (* if - elif list - else *)

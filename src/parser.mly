@@ -232,8 +232,8 @@ let assignop ==
 let comm_element == 
   | SKIP;
     { Skip }
-  | t = typ; x = ID; GETS; e = node(exp); 
-    < Decl >
+  | (m, t) = terminated_list(modification, typ); x = ID; GETS; e = node(exp); 
+    { Decl(m, t, x, e) }
   | e = node(effectful_exp);
     < Exp >
   | x = ID; GETS; e = node(exp); 

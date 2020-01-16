@@ -1,7 +1,7 @@
 open Util
 open GatorAst
 open GatorAstPrinter
-open Contexts
+open CheckContexts
 
 exception TypeException of string
 
@@ -237,7 +237,7 @@ let rec map_acomm (cx : contexts) (fs : string -> string) (fe : exp -> exp) (ft 
   | Skip -> ac
   | Print e -> Print(et e),meta
   | Exp e -> Exp(et e),meta
-  | Decl (t, s, e) -> Decl(ft t, s, et e),meta
+  | Decl (ml, t, s, e) -> Decl(ml, ft t, s, et e),meta
   | Assign (s, e) -> Assign(fs s, et e),meta
   | AssignOp (s1, s2, e) -> AssignOp(fs s1, fs s2, et e),meta
   | If (i, il, clo) -> If (it i, List.map it il, option_map (List.map ct) clo),meta

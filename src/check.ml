@@ -5,7 +5,7 @@ open Util
 open Printf
 open Str
 open CheckUtil
-open Contexts
+open CheckContexts
 
 (* The set of types that can't be written down shouldn't be inferred by things like 'auto' *)
 let is_illegal_typ (cx: contexts) (t : typ) : bool = 
@@ -513,7 +513,8 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
             in
             if check_typ_ignore nt 0 then [] else
             let s_lookup = string_of_typ nt in
-            let ps_lst = if Assoc.mem s_lookup cx.ps then Assoc.lookup s_lookup cx.ps else [] in
+            let ps_lst = if Assoc.mem s_lookup cx.ps 
+                then Assoc.lookup s_lookup cx.ps else [] in
             let to_return = search_phi nt ps_lst in
             let next_step = match nt with | MemberTyp _ -> typ_step cx nt | _ -> nt in
             match next_step with
@@ -608,7 +609,7 @@ and check_comm (cx: contexts) (c: comm) : contexts * TypedAst.comm =
         | _ -> cx, TypedAst.Print (e, t)
     )
     | Exp e -> cx, TypedAst.Exp(exp_to_texp cx (check_aexp cx e));
-    | Decl (t, s, e) -> 
+    | Decl (ml, t, s, e) -> 
         check_typ_valid cx t; 
         let result = check_aexp cx e in
         let t' = (match t with 
