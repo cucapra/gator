@@ -303,7 +303,8 @@ let infer_pml (cx: contexts) (args : typ list) (target : params) : (typ list) op
         | ArrTyp (t1, _), ArrTyp (t2, _) -> unify_param fpm t1 t2
         | _ -> fpm
     in
-    let inferred = List.fold_left2 unify_param (Some Assoc.empty) args (List.map fst target) in
+    let inferred = List.fold_left2 unify_param (Some Assoc.empty) 
+        args (List.map tr_snd target) in
     (* Correctly sort the produced parameter list *)
     match inferred with | None -> None | Some inf ->
         (List.fold_right (fun x a -> match a with | None -> None | Some acc ->
@@ -341,7 +342,7 @@ let check_fn_inv (cx: contexts) (x : id) (pml: typ list) (args : (TypedAst.exp *
         in
         match param_check with | None -> None | Some pm_map ->
         (* Get the parameters types and replace them in params_typ *)
-        let param_typs = List.map fst params in
+        let param_typs = List.map tr_snd params in
         let param_typs' = List.map (replace_abstype pm_map) param_typs in
         let param_typs'' = (match scheme_check with | None -> param_typs' 
             | Some spm_map -> List.map (replace_abstype spm_map) param_typs') in
@@ -393,8 +394,12 @@ let update_psi (cx: contexts) (f : fn_typ) : contexts =
     let fail _ = error cx ("Invalid canonical function " ^ string_of_fn_typ f) in
     debug_print (">> update_psi " ^ string_of_fn_typ f);
     let target = rt in
-    if List.length pr != 1 then fail () else
-    let start = fst (List.hd pr) in
+    let prc = List.fold_right 
+        (fun (ml,t,_) acc -> if not (has_modification cx ml Canon)
+            then t::acc else acc) pr []
+    in
+    if List.length prc != 1 then fail () else
+    let start = List.hd prc in
     let is_valid (t: typ) : bool = match t with MemberTyp _ -> true | _ -> false in
     if not (is_valid start) || not (is_valid target) then fail () else
     let as_geo_typ (t : typ) : (string * string) option =
@@ -412,7 +417,7 @@ let update_psi (cx: contexts) (f : fn_typ) : contexts =
 
 (* Type check parameter; check parameter typ validity *)
 (* Returns gamma *)
-let check_param (cx: contexts) (t, id: typ * string) : contexts = 
+let check_param (cx: contexts) (ml, t, id: modification list * typ * string) : contexts = 
     debug_print ">> check_param";
     check_typ_valid cx t;
     bind cx id (Gamma t)
@@ -422,7 +427,7 @@ let check_param (cx: contexts) (t, id: typ * string) : contexts =
 let check_params (cx: contexts) (pl : params) : contexts * TypedAst.params = 
     debug_print ">> check_params";
     let cx' = List.fold_left check_param cx pl in 
-    let p = (List.map (fun (t, x) -> typ_erase cx t, x) pl) in 
+    let p = (List.map (fun (ml, t, x) -> typ_erase cx t, x) pl) in 
     cx', p
 
 let check_index_exp (cx : contexts) (t1 : typ)  (t2 : typ) : typ =
@@ -438,7 +443,7 @@ let check_as_exp (cx: contexts) (start: typ) (target : typ) : typ =
 let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : aexp = 
     debug_print (">> find_in_path" ^ string_of_typ start ^ " " ^ string_of_typ target);
     let rec psi_path_rec (to_search: (typ * aexp) Queue.t) (found: typ list) : aexp =
-        let search_phi (tl: typ) (ps_lst : string list) : string list =
+        let search_phi (tl: typ) (ps_lst : string list) : (typ * fn_inv) list =
             (* This function searches phi for canonical abstract functions that map from the given type *)
             (* A list of the types these functions map with the inferred type parameters is returned *)
             (* If multiple functions are possible, then ambiguities are resolved with the following priorities *)
@@ -452,8 +457,12 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
                     let pm = get_ml_pm cx ml in
                     let cxf = with_pm cx pm in
                     if not (has_modification cx ml Canon) then search_fns t else
-                    let pt = match params with | [pt,_] -> pt 
-                    | _ -> debug_fail cx ("function " ^ id ^ " with non-one argument made canonical") in
+                    let prc = List.fold_right 
+                        (fun (ml,t,_) acc -> if not (has_modification cx ml Canon)
+                        then t::acc else acc) params []
+                    in
+                    let pt = if List.length prc == 1 then List.hd prc else 
+                        debug_fail cx ("function " ^ id ^ " with non-one argument made canonical") in
                     match infer_pml cxf [tl] params with | None -> search_fns t | Some pml ->
                     let pr1 = List.map snd (Assoc.bindings pm) in
                     let rtr = replace_abstype (match_parameterization (with_pm cxf pm) pml) rt in
@@ -485,17 +494,22 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
                     | _ -> debug_fail cxf ("Canonical function " ^ id ^ " resulted in type "
                         ^ string_of_typ rtr ^ ", while canonical functions should always result in a coordtyp")
             in
+            let rec get_valid_fn (fns : (string option * fn_typ) list) : fn_typ =
+                snd (List.hd fns)
+            in
             let rec search_phi_rec (fns : (string * fn_typ list) list) =
             match fns with
-            | [] -> List.map (fun (t, (x, y)) -> (t, (x, y, []))) ps_lst 
+            | [] -> List.map (fun s -> 
+                let ml,rt,id,pr,_ = get_valid_fn (get_functions_safe cx s) in
+                (rt, (id, Assoc.values (get_ml_pm cx ml), []))) ps_lst 
             | (_, fs) :: t ->
                 search_fns fs @ search_phi_rec t
             in
-            (* TODO: using _bindings here is super janky, but it's hard to fix rn, so... *)
+            (* TODO: using _bindings here is kinda janky, but it's hard to fix rn, so... *)
             List.map (fun (t, (x, y, z)) -> (t, (x, y))) (search_phi_rec 
                 (List.map (fun (x, y) -> x, List.map snd y) (Assoc.bindings cx._bindings.p)))
         in
-        let rec psi_lookup_rec (nt: typ) : string list =
+        let rec psi_lookup_rec (nt: typ) : (typ * fn_inv) list =
             (* NOTE: paths which would send to a type with more than 
              * 5 generic levels are rejected to avoid infinite spirals *)
             let rec check_typ_ignore (t: typ) (count: int) : bool =
@@ -515,10 +529,10 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
                 to_return @ psi_lookup_rec next_step
             | _ -> to_return
         in 
-        let rec update_search_and_found (vals: string list) (e: aexp) : typ list =
+        let rec update_search_and_found (vals: (typ * fn_inv) list) (e: aexp) : typ list =
             match vals with
             | [] -> found
-            | f::t -> 
+            | (t1, (v, pml))::t -> 
                 if List.fold_left (fun acc t2 -> acc || is_typ_eq cx t1 t2) false found 
                 then update_search_and_found t e else 
                 (* Erase the specific invocation found above for future typechecking *)
@@ -808,7 +822,8 @@ let check_prototype_element (cx : contexts) (p : string) (pe : prototype_element
     (* We don't actually generate erased prototype functions, just typecheck them *)
     | ProtoFn f -> let ml,rt,_,pr,_ = f in
         let cx' = with_pm cx (get_ml_pm cx ml) in
-        check_typ_valid cx' rt; List.fold_left (fun acc -> check_typ_valid cx' |- fst) () pr;
+        check_typ_valid cx' rt; List.fold_left 
+            (fun acc -> check_typ_valid cx' |- tr_snd) () pr;
         snd (bind_function cx (rename_fn (fun x -> p ^ "." ^ x) f) (Some p))
 let check_aprototype_element cx p ape : contexts = 
     let pe', meta = map_aprototype_element cx (rewrite_scheme_fn_inv cx p)

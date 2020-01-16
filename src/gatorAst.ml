@@ -68,7 +68,7 @@ type parameterization = typ Assoc.context
 
 (* function parameters *)
 (* arguments may have an optional parameterization *)
-type params = (typ * string) list
+type params = (modification list * typ * string) list
 type ret_typ = typ
 (* function header -- our functions are not first-order! *)
 type fn_typ = modification list * ret_typ * id * params * metadata

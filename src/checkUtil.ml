@@ -137,7 +137,7 @@ let has_modification (cx : contexts) (ml : modification list) (m : modification)
 let get_with_modification (cx : contexts) (m : modification) : string list =
   List.fold_right (fun (s, (ml, _, _)) acc -> 
     if has_modification cx ml m then s::acc else acc)
-    (Assoc.bindings cx._bindings.t) ["start"]
+    (Assoc.bindings cx._bindings.t) []
 
 let get_ml_pm (cx : contexts) (ml : modification list) : parameterization =
   let get_ml_pm_rec (pm : parameterization) (m : modification) =
@@ -254,7 +254,7 @@ let map_fn_typ (cx : contexts) (fs : string -> string) (fe : exp -> exp) (ft : t
   : fn_typ =
   debug_print (">> map_fn_typ " ^ string_of_fn_typ fn);
   let ml,rt,id,pr,m = fn in
-  List.map (map_mod cx ft) ml,ft rt,id,List.map (fun (t,s)->(ft t,s)) pr,m
+  List.map (map_mod cx ft) ml,ft rt,id,List.map (fun (ml,t,s)->(ml,ft t,s)) pr,m
 
 let map_fn (cx : contexts) (fs : string -> string) (fe : exp -> exp) (ft : typ -> typ) (fnt,cl : fn) : fn =
   debug_print (">> map_fn " ^ string_of_fn (fnt, cl));

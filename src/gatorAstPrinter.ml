@@ -46,8 +46,8 @@ let string_of_modification (m: modification) : string =
 let string_of_mod_list (m: modification list) : string =
     string_of_separated_list " " string_of_modification m
 
-let string_of_param ((t, s): typ * string) : string =
-    string_of_typ t ^ " " ^ s
+let string_of_param ((ml, t, s): modification list * typ * string) : string =
+    string_of_mod_list ml ^ string_of_typ t ^ " " ^ s
 
 let string_of_parameterization (pm : parameterization) : string =
     if Assoc.size pm != 0 then "<" ^ Assoc.to_string string_of_typ pm ^ ">" else ""

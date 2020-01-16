@@ -171,8 +171,8 @@ let coordinate_element ==
     <CoordFn>
 
 let parameter == 
-  | t = typ; x = ID;
-    <>
+  | (ml, t) = terminated_list (modification, typ); x = ID;
+    { (ml, t, x) }
 
 let parameters(L, P, R) ==
   | x = delimited(L, separated_list(COMMA, P), R); <>
