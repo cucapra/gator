@@ -1,0 +1,55 @@
+// TODO: fix later
+// with float[2] T: with float[2][2] U: declare float[2] *(U x, T y);
+declare float[3] *(float[3][3] x, float[3] y);
+declare float[2] *(float[2][2] x, float[2] y);
+
+prototype test {
+  object a;
+  with frame() r: object t;
+
+  with frame() target:
+  canon this<target>.a trans(canon t<target> x, a y);
+}
+
+with frame(3) r:
+coordinate impl1 : test {
+  object a is float[3];
+  with frame(3) r2: object t is float[3][3];
+
+  with frame(3) target:
+  canon this<target>.a trans(canon t<target> x, a y) {
+    return (x * y) as! this<target>.a;
+  }
+}
+
+with frame(3) r:
+coordinate impl2 : test {
+  object a is float[2];
+  with frame(3) r2: object t is float[2][2];
+
+  with frame(3) target:
+  canon this<target>.a trans(canon t<target> x, a y) {
+    return (x * y) as! this<target>.a;
+  }
+}
+
+frame f1 has dimension 3;
+frame f2 has dimension 3;
+
+with frame(3) r:
+canon impl2<r>.a lower(impl1<r>.a x) {
+  return [x[0], x[1]];
+}
+
+void main() {
+  impl1<f2>.a x = [1., 2., 3.];
+  canon impl1<f1>.t<f2> m = [[0., 1., 0.], [1., 0., 0.], [0., 0., 1.]];
+
+  auto res1 = x in impl2;
+  auto res2 = x in f2;
+  auto res3 = x in impl2<f2>;
+
+  //should fail
+  auto resf1 = (x in impl2) in impl1;
+  auto resf2 = (x in f2) in f1;
+}

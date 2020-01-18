@@ -4,14 +4,15 @@ open GatorAst
 type fn_inv = string * typ list 
 
 (* Type definitions *)
-(* Stores modification, supertype, 
- * and possible parameterization information for the type *)
-type tau = modification list * parameterization * typ
+(* Stores supertype and possible parameterization information for the type *)
+(* Also stores whether or not the type is external *)
+type tau = bool * parameterization * typ
 (* type tau = bool * parameterization * typ *)
 
 (* Variable definitions *)
 (* Maps from variable names to the type of that variable *)
-type gamma = typ
+(* Also stores whether the variable is canonical *)
+type gamma = bool * typ
 
 (* Dimension definitions *)
 (* Stores dimension information for reference frames *)

@@ -12,10 +12,10 @@ let ignore_dexp (d : dexp) : unit = ignore d
 let ignore_typ_context (t : typ Assoc.context) : unit = ignore t
 let string_of_fn_inv ((s, tl) : fn_inv) : string = 
   s ^ "<" ^ string_of_list string_of_typ tl ^ ">"
-let string_of_tau (ml, pm, t : tau) =
-  string_of_mod_list ml ^ string_of_parameterization pm ^ " " ^  string_of_typ t
-let string_of_gamma (g : gamma) =
-  string_of_typ g
+let string_of_tau (b, pm, t : tau) =
+  if b then "declare " else "" ^ string_of_parameterization pm ^ " " ^  string_of_typ t
+let string_of_gamma ((b, t) : gamma) =
+  if b then "canon " else "" ^ string_of_typ t
 let string_of_delta (f : delta) =
   string_of_dexp f
 let string_of_chi (pm, c : chi) =
@@ -133,11 +133,8 @@ let reset (cx : contexts) (cx_ref : contexts) (b : exp_bindings) : contexts =
 let has_modification (cx : contexts) (ml : modification list) (m : modification) : bool =
   List.fold_right (fun mc acc -> mc = m || acc) ml false 
 
-(* Returns an unordered list of all types with the given modification *)
-let get_with_modification (cx : contexts) (m : modification) : string list =
-  List.fold_right (fun (s, (ml, _, _)) acc -> 
-    if has_modification cx ml m then s::acc else acc)
-    (Assoc.bindings cx._bindings.t) []
+let bind_typ (cx : contexts) (id : string) (ml : modification list) (t : typ) : contexts = 
+  bind cx id (Gamma ((has_modification cx ml Canon), t))
 
 let get_ml_pm (cx : contexts) (ml : modification list) : parameterization =
   let get_ml_pm_rec (pm : parameterization) (m : modification) =
@@ -163,10 +160,19 @@ let get_typ (cx : contexts) (id : string) : tau =
   | Some t -> t
   | _ -> error cx ("Undefined type " ^ id)
 
-let get_var (cx : contexts) (x : string) : gamma =
+let get_var (cx : contexts) (x : string) : typ =
   match find_exp cx x with
-  | Some Gamma g -> g
+  | Some Gamma (_,g) -> g
   | _ -> error cx ("Undefined variable " ^ x)
+
+let get_if_canonical_var (cx : contexts) (x : string) : bool = 
+  match find_exp cx x with
+  | Some Gamma (c,_) -> c
+  | _ -> error cx ("Undefined variable " ^ x)
+
+let get_canonical_vars (cx : contexts) : string list = 
+  List.fold_right (fun (s, (b,_)) acc -> if b then s::acc else acc) 
+    (Assoc.bindings cx._bindings.g) []
 
 let get_frame (cx : contexts) (x : string) : delta =
   match find_typ cx x with
