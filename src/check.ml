@@ -486,10 +486,15 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
             let rec search_fn (ft : fn_typ) (args : string list) 
             : (typ * (id * typ list * typ list) * string list) list =
                 let ml,rt,id,params,_ = ft in
-                let pr = List.nth params 0 in
-                if has_modification cx (tr_fst pr) Canon
-                    then debug_fail cx 
-                    ("Attempting to infer canonical parameter " ^ string_of_param pr) else
+                debug_print (">> search_fn" ^ id);
+                print_endline (string_of_list (fun x -> x) args);
+                print_endline (string_of_list string_of_param params);
+                if List.fold_left2 (fun acc (ml,_,_) arg ->
+                    has_modification cx ml Canon && String.length arg != 0)
+                    false params args
+                then failwith "unimplemented"
+                else
+                let pr = List.hd params in
                 let pt = tr_snd pr in
                 let pm = get_ml_pm cx ml in
                 let cxf = with_pm cx pm in

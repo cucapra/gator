@@ -45,6 +45,7 @@ let string_of_modification (m: modification) : string =
 
 let string_of_mod_list (m: modification list) : string =
     string_of_separated_list " " string_of_modification m
+    ^ if List.length m > 0 then " " else ""
 
 let string_of_param ((ml, t, s): modification list * typ * string) : string =
     string_of_mod_list ml ^ string_of_typ t ^ " " ^ s
@@ -53,7 +54,7 @@ let string_of_parameterization (pm : parameterization) : string =
     if Assoc.size pm != 0 then "<" ^ Assoc.to_string string_of_typ pm ^ ">" else ""
 
 let string_of_fn_typ (ml, r, x, p, _ : fn_typ) : string = 
-    string_of_mod_list ml ^ (if List.length ml > 0 then " " else "") ^ string_of_typ r ^ " " ^ x
+    string_of_mod_list ml ^ string_of_typ r ^ " " ^ x
     ^ "(" ^ string_of_list string_of_param p ^ ")"
 
 let rec string_of_aexp ((e, m): aexp) : string =
@@ -117,7 +118,7 @@ let string_of_coordinate (ml, x, p, cl : coordinate) : string =
     "{\n" ^ string_of_list (fun ce -> string_of_coordinate_element ce ^ "\n") (List.map fst cl) ^ "}"
 
 let string_of_global_var (ml, sq, t, x, e : global_var) : string =
-    string_of_mod_list ml ^ " " ^ string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ x 
+    string_of_mod_list ml ^ string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ x 
     ^ string_of_option_removed (fun x -> "= " ^ string_of_aexp x) e
     
 let string_of_term (t : term) : string = 
