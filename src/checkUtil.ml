@@ -15,7 +15,7 @@ let string_of_fn_inv ((s, tl) : fn_inv) : string =
 let string_of_tau (b, pm, t : tau) =
   if b then "declare " else "" ^ string_of_parameterization pm ^ " " ^  string_of_typ t
 let string_of_gamma ((b, t) : gamma) =
-  if b then "canon " else "" ^ string_of_typ t
+  (if b then "canon " else "") ^ string_of_typ t
 let string_of_delta (f : delta) =
   string_of_dexp f
 let string_of_chi (pm, c : chi) =

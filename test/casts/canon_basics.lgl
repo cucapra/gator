@@ -46,10 +46,10 @@ void main() {
   canon impl1<f1>.t<f2> m = [[0., 1., 0.], [1., 0., 0.], [0., 0., 1.]];
 
   auto res1 = x in impl2;
-  auto res2 = x in f2;
-  auto res3 = x in impl2<f2>;
+  // auto res2 = x in f2;
+  // auto res3 = x in impl2<f2>;
 
   //should fail
-  auto resf1 = (x in impl2) in impl1;
-  auto resf2 = (x in f2) in f1;
+  // auto resf1 = (x in impl2) in impl1;
+  // auto resf2 = (x in f2) in f1;
 }
