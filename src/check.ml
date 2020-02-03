@@ -99,7 +99,7 @@ let rec is_subtype (cx: contexts) (to_check : typ) (target : typ) : bool =
         && is_subtype_list cx tl1 tl2)
         || is_subtype cx (typ_step cx to_check) target
     | MemberTyp (t1, t2), MemberTyp (t3, t4) ->
-        (is_typ_eq cx t2 t4 && is_subtype cx t1 t3)
+        (is_subtype cx t2 t4 && is_typ_eq cx t1 t3)
         || is_subtype cx (typ_step cx to_check) target
     | FrameTyp d1, FrameTyp d2 -> reduce_dexp cx d1 = reduce_dexp cx d1
     
@@ -115,7 +115,7 @@ let rec is_subtype (cx: contexts) (to_check : typ) (target : typ) : bool =
 and is_subtype_list (cx: contexts) (l1: typ list) (l2: typ list) : bool =
     debug_print ">> is_subtype_list";
     if List.length l1 != List.length l2 then false else
-    List.fold_left2 (fun acc t1 t2 -> acc && (is_subtype cx t1 t2)) true l1 l2
+    List.for_all2 (is_subtype cx) l1 l2
 
 and match_parameterization_safe (cx : contexts) (pml : typ list) 
     : typ Assoc.context option = 
@@ -138,7 +138,6 @@ and match_parameterization (cx: contexts) (pml : typ list) : typ Assoc.context =
 and chi_object_lookup (cx: contexts) (c : typ) (o : typ) : typ =
     let mstr = string_of_typ (MemberTyp(c, o)) in
     debug_print (">> chi_object_lookup " ^ mstr);
-    print_endline (">> chi_object_lookup " ^ mstr);
     let cn, f1, on, f2 = match (c, o) with | ParTyp(c, f1), ParTyp(o, f2) -> c,f1,o,f2
         | _ -> error cx ("Invalid geometric type " 
             ^ string_of_typ c ^ "." ^ string_of_typ o
@@ -149,7 +148,6 @@ and chi_object_lookup (cx: contexts) (c : typ) (o : typ) : typ =
     let stc = match_parameterization (with_pm cx (fst (get_scheme cx cn))) f1 in
     let _,pmd,t = get_typ cx (cn ^ "." ^ on) in
     let tc = match_parameterization (with_pm cx pmd) f2 in
-    print_endline (string_of_typ t);
     replace_abstype stc (replace_abstype tc t)
 
 (* Looks up a supertype of the given partyp *)
@@ -518,13 +516,9 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
                     ("Ambiguous constraint ordering between " ^ string_of_typ t1
                     ^ " and " ^ string_of_typ t2)
                 in
-                print_endline "---";
-                print_endline (string_of_list string_of_typ args');
-                print_endline (string_of_list string_of_typ ptr);
-                if not (List.for_all2 (is_subtype cxf) args' ptr) then [] else
+                if not (is_subtype_list cxf args' ptr) then [] else
                 match rtr with
                 | MemberTyp _ -> let rec_result = [] in
-                    print_endline ("hello?");
                     if List.fold_left (fun acc (rt, _, _) -> is_typ_eq cx rt rtr || acc) false rec_result then
                         List.map (fun (rt, (id2, pml2, pr2), args) -> 
                         if (List.length pr1 = List.length pr2) && (List.length pr1 = 0) then
@@ -556,6 +550,7 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
                     let start_args = List.fold_right 
                           (fun _ -> List.cons None) params []
                     in
+                    (* print_endline (string_of_list (tr_fst |- tr_snd) (search_fn fn start_args)); *)
                     search_fn fn start_args @ search_fns t
             in
             let rec get_valid_fn (fns : (string option * fn_typ) list) : fn_typ =
@@ -590,6 +585,7 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
             let ps_lst = if Assoc.mem s_lookup cx.ps 
                 then Assoc.lookup s_lookup cx.ps else [] in
             let to_return = search_phi nt ps_lst in
+            print_endline (string_of_list (string_of_typ |- tr_fst) to_return);
             let next_step = match nt with | MemberTyp _ -> typ_step cx nt | _ -> nt in
             match next_step with
             | MemberTyp _ -> 
@@ -616,7 +612,9 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
             then error cx ("Cannot find a path from " ^
                 string_of_typ start ^ " to " ^ string_of_typ target)
             else Queue.pop to_search 
-        in 
+        in
+        print_endline (string_of_typ nt);
+        print_endline (string_of_typ target);
         if is_subtype cx nt target then e
         else psi_path_rec to_search (update_search_and_found (psi_lookup_rec nt) e)
     in	
@@ -628,15 +626,15 @@ let check_in_exp (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
     debug_print ">> check_in_exp";
     let fail _ = error cx ("Invalid type as 'in' target " ^ string_of_typ target
         ^ ", expected a scheme or frame") in
-    let c, o = match start with
-        | MemberTyp (ParTyp(c, _), o) -> c, o
+    let c, p, o = match start with
+        | MemberTyp (ParTyp(c, p), o) -> c, p, o
         | _ -> error cx ("Invalid application of 'in' to type " ^ string_of_typ start
             ^ ", expected a geometric type")
     in    
     let target' = match target with
     | ParTyp (s, tl) -> (match find_typ cx s with
         | Some (Delta _) -> MemberTyp(ParTyp (c, [target]), o)
-        | Some (Chi _) -> MemberTyp(target, o)
+        | Some (Chi _) -> MemberTyp(ParTyp (s, p), o)
         | _ -> fail())
     | _ -> fail ()
     in
