@@ -99,7 +99,7 @@ let rec is_subtype (cx: contexts) (to_check : typ) (target : typ) : bool =
         && is_subtype_list cx tl1 tl2)
         || is_subtype cx (typ_step cx to_check) target
     | MemberTyp (t1, t2), MemberTyp (t3, t4) ->
-        (is_subtype cx t2 t4 && is_typ_eq cx t1 t3)
+        (is_typ_eq cx t2 t4 && is_typ_eq cx t1 t3)
         || is_subtype cx (typ_step cx to_check) target
     | FrameTyp d1, FrameTyp d2 -> reduce_dexp cx d1 = reduce_dexp cx d1
     
@@ -585,7 +585,6 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
             let ps_lst = if Assoc.mem s_lookup cx.ps 
                 then Assoc.lookup s_lookup cx.ps else [] in
             let to_return = search_phi nt ps_lst in
-            print_endline (string_of_list (string_of_typ |- tr_fst) to_return);
             let next_step = match nt with | MemberTyp _ -> typ_step cx nt | _ -> nt in
             match next_step with
             | MemberTyp _ -> 
@@ -613,8 +612,6 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
                 string_of_typ start ^ " to " ^ string_of_typ target)
             else Queue.pop to_search 
         in
-        print_endline (string_of_typ nt);
-        print_endline (string_of_typ target);
         if is_subtype cx nt target then e
         else psi_path_rec to_search (update_search_and_found (psi_lookup_rec nt) e)
     in	
