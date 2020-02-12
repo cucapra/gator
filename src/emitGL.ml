@@ -114,16 +114,20 @@ let rec string_of_comm (c: comm) : string =
         "for (" ^ string_of_comm d ^ string_of_texp b ^ "; " 
         ^ String.sub us 0 (String.length us - 1) ^ ") " ^ block_string cl
     | Return x -> "return" ^ string_of_option_removed (fun x -> " " ^ string_of_texp x) x ^ ";"
+    | ExactCodeComm ec -> ec
 
 let comp_fn (f : fn) : string = 
     debug_print ">> comp_fn";
     let (rt, id, _, p), cl = f in
-    let param_string = string_of_list (fun (t, i) -> string_of_typ t ^ " " ^ i) p in
-    let type_id_string = match id with
-        | "main" -> "void main"
-        | _ -> string_of_typ rt ^ " " ^ replace_all_in_name id
-    in
-    type_id_string ^ "(" ^ param_string ^ "){" ^ string_of_separated_list "" string_of_comm cl ^ "}"
+    match rt with
+        | ExactCodeTyp -> id ^ " "
+        | _ ->
+            let param_string = string_of_list (fun (t, i) -> string_of_typ t ^ " " ^ i) p in
+            let type_id_string = match id with
+                | "main" -> "void main"
+                | _ -> string_of_typ rt ^ " " ^ replace_all_in_name id
+            in
+            type_id_string ^ "(" ^ param_string ^ "){" ^ string_of_separated_list "" string_of_comm cl ^ "}"
 
 let rec comp_fn_lst (f : fn list) : string =
     debug_print ">> comp_fn_lst";

@@ -263,6 +263,7 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
         match c with | ConstInt i -> DimNum i | ConstVar v -> DimVar v)
     | TypedAst.AnyTyp -> AnyTyp
     | TypedAst.GenTyp -> GenTyp
+    | TypedAst.ExactCodeTyp -> ExactCodeTyp
 
 let rec check_val (cx: contexts) (v: value) : typ = 
     debug_print (">> check_val " ^ string_of_value v);
@@ -650,6 +651,8 @@ and check_comm (cx: contexts) (c: comm) : contexts * TypedAst.comm =
         cx, TypedAst.For (c1r, btexp, c2r, (snd (check_comm_lst cx'' cl)))
     | Return e ->
         cx, TypedAst.Return(option_map (exp_to_texp cx |- check_aexp cx) e)
+    | ExactCodeComm ec ->
+        cx, TypedAst.ExactCodeComm(ec)
 
 (* Updates Gamma and Psi *)
 and check_comm_lst (cx: contexts) (cl : acomm list) : contexts * TypedAst.comm list = 
@@ -900,10 +903,16 @@ let check_main_fn (cx: contexts) : unit =
         | UnitTyp -> ()
         | _ -> raise (TypeException "Expected main function to return void")
 
+let check_exactCode (ec: string) : TypedAst.prog =
+    let test = Assoc.empty in
+    [((ExactCodeTyp, ec, test, []), [])]
+
 let rec check_term (cx: contexts) (t: term) 
 : contexts * TypedAst.prog * TypedAst.global_vars =
     match t with
     | Using s -> check_exprog (get_prog cx s) cx
+    | ExactCode ec -> 
+        cx, (check_exactCode ec), []
     | Prototype p -> check_prototype cx p, [], []
     | Coordinate c -> let cx',tf = check_coordinate cx c in
         cx', tf, []
