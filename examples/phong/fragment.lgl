@@ -20,7 +20,7 @@ void main() {
     // vec4 gl_FragColor = vec4(uLight, .9);
     color ambient = [0.1, 0., 0.];
     color diffColor = [0.4, 0.3, 0.9];
-    color specColor = [0.0, 0.0, 0.0];
+    color specColor = [1.0, 1.0, 1.0];
 
     auto worldPos = hom_reduce(uModel*homify(vPosition));
     auto camPos = hom_reduce(uView*homify(worldPos));
