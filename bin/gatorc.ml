@@ -66,4 +66,4 @@ let _ =
     let typedProg, params = Check.check_prog prog (search_progs (prog_path f) fs found) in
     if !run_interp then Ops.eval_prog typedProg params
     else if !emit_ts then print_string (EmitTS.compile_program typedProg params)
-    else print_string (EmitGL.compile_program typedProg params)
+    else print_string (EmitGL.compile_program typedProg params);
