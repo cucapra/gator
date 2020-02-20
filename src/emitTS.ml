@@ -22,6 +22,7 @@ let rec comp_type (t : etyp) : string =
     | ArrTyp _ -> failwith "Cannot represent ArrTyp in Javascript"
     | AnyTyp -> failwith "unimplemented anytyp in Javascript"
     | GenTyp -> failwith "unimplemented gentyp in Javascript"
+    | ExactCodeTyp -> failwith "unimplemented ExactCodeTyp in Javascript"
 
 (* let comp_fn_arg_type (t : etyp) : string =
     match t with
@@ -151,7 +152,7 @@ and comp_exp (e : exp) (s : SS.t) : string =
 
 let comp_assign (x : id) ((e, t) : texp) (s : SS.t) : string =
     match t with
-    | UnitTyp | BoolTyp | IntTyp | FloatTyp | StringTyp | ParTyp _ -> x ^ "=" ^ (comp_exp e s) ^ ";"
+    | UnitTyp | BoolTyp | IntTyp | FloatTyp | StringTyp | ExactCodeTyp | ParTyp _ -> x ^ "=" ^ (comp_exp e s) ^ ";"
     (* | VecTyp v -> "vec" ^ (string_of_int v) ^ ".copy(" ^ x ^ "," ^ (comp_exp e s) ^ ");"
     | MatTyp (m, n) -> "mat" ^ (string_of_int (max m n)) ^ ".copy(" ^ x ^ "," ^ (comp_exp e s) ^ ");" *)
     | ArrTyp _ | AnyTyp | GenTyp -> comp_type t
@@ -187,6 +188,7 @@ let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
             ^ "{ " ^ (comp_comm_lst cl s) ^ " }" ^ (comp_comm_lst tl s))
         | Return Some (e, _) -> "return " ^ (comp_exp e s) ^ ";" ^ (comp_comm_lst tl s)
         | Return None -> "return;" ^ (comp_comm_lst tl s)
+        | ExactCodeComm ec -> ec
 
 let comp_fn (f : fn) (s : SS.t) : string =
     let (rt, id, pm, p), cl = f in

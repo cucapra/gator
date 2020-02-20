@@ -33,6 +33,7 @@ let rec string_of_typ (t: typ) : string =
     | GenArrTyp t' -> "arr of " ^ string_of_typ t'
     | AnyFrameTyp -> "frame"
     | AnyTyp -> "anyType"
+    | ExactCodeTyp -> "ExactCodeTyp"
 
 and string_of_pml (p : typ list) : string =
     if List.length p > 0 then "<" ^ string_of_list string_of_typ p ^ ">" else ""
