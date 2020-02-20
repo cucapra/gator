@@ -149,6 +149,7 @@ let decl_attribs (gv : global_vars) : string =
 
 let rec compile_program (prog : prog) (global_vars : global_vars) : string =
     debug_print ">> compile_program";
-    "precision mediump float;" ^ (decl_attribs global_vars) ^ 
+    (* "precision mediump float;" ^  *)
+     (decl_attribs global_vars) ^ 
      (comp_fn_lst prog)
  
