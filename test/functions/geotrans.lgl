@@ -81,56 +81,56 @@ coordinate cart3 : geometry {
     object direction is float[3];
     with frame(3) r2: object matrix is float[3][3];
 
-    // vector +(vector x, vector y) {
-    //     return (x as! vec3 + y as! vec3) as! vector;
-    // }
-    // vector -(vector x, vector y) {
-    //     return (x as! vec3 - y as! vec3) as! vector;
-    // }
-    // vector *(vector v, scalar s) {
-    //     return (v as! vec3 * s) as! vector;
-    // }
-    // vector *(scalar s, vector v) {
-    //     return (s * v as! vec3) as! vector;
-    // }
-    // vector -(vector v) {
-    //     return (-v as! vec3) as! vector;
-    // }
-    // point translate(point p, vector v) {
-    //     return (p as! vec3 + v as! vec3) as! point;
-    // }
-    // point +(point p, vector v) {
-    //     return (p as! vec3 + v as! vec3) as! point;
-    // }
-    // point +(vector v, point p) {
-    //     return (p as! vec3 + v as! vec3) as! point;
-    // }
-    // vector -(point x, point y) {
-    //     return (x as! vec3 - y as! vec3) as! vector;
-    // }
-    // vector -(point v) {
-    //     return (-v as! vec3) as! vector;
-    // }
-    // with frame(3) target:
-    // this<target>.vector *(matrix<target> m, vector v) {
-    //     return (m as! mat3 * v as! vec3) as! this<target>.vector;
-    // }
-    // with frame(3) target:
-    // this<target>.vector *(matrix<target> m, direction d) {
-    //     return (m as! mat3 * d as! vec3) as! this<target>.vector;
-    // }
-    // with frame(3) target:
-    // this<target>.point *(matrix<target> m, point p) {
-    //     return (m as! mat3 * p as! vec3) as! this<target>.point;
-    // }
-    // with frame(3) target:
-    // matrix<target> +(matrix<target> m1, matrix<target> m2) {
-    //     return (m1 as! mat3 + m2 as! mat3) as! matrix<target>;
-    // }
-    // with frame(3) middle, target:
-    // matrix<target> *(matrix<middle> m1, this<middle>.matrix<target> m2) {
-    //     return (m1 as! mat3 * m2 as! mat3) as! matrix<target>;
-    // }
+    vector +(vector x, vector y) {
+        return (x as! vec3 + y as! vec3) as! vector;
+    }
+    vector -(vector x, vector y) {
+        return (x as! vec3 - y as! vec3) as! vector;
+    }
+    vector *(vector v, scalar s) {
+        return (v as! vec3 * s) as! vector;
+    }
+    vector *(scalar s, vector v) {
+        return (s * v as! vec3) as! vector;
+    }
+    vector -(vector v) {
+        return (-v as! vec3) as! vector;
+    }
+    point translate(point p, vector v) {
+        return (p as! vec3 + v as! vec3) as! point;
+    }
+    point +(point p, vector v) {
+        return (p as! vec3 + v as! vec3) as! point;
+    }
+    point +(vector v, point p) {
+        return (p as! vec3 + v as! vec3) as! point;
+    }
+    vector -(point x, point y) {
+        return (x as! vec3 - y as! vec3) as! vector;
+    }
+    vector -(point v) {
+        return (-v as! vec3) as! vector;
+    }
+    with frame(3) target:
+    this<target>.vector *(matrix<target> m, vector v) {
+        return (m as! mat3 * v as! vec3) as! this<target>.vector;
+    }
+    with frame(3) target:
+    this<target>.vector *(matrix<target> m, direction d) {
+        return (m as! mat3 * d as! vec3) as! this<target>.vector;
+    }
+    with frame(3) target:
+    this<target>.point *(matrix<target> m, point p) {
+        return (m as! mat3 * p as! vec3) as! this<target>.point;
+    }
+    with frame(3) target:
+    matrix<target> +(matrix<target> m1, matrix<target> m2) {
+        return (m1 as! mat3 + m2 as! mat3) as! matrix<target>;
+    }
+    with frame(3) middle, target:
+    matrix<target> *(matrix<middle> m1, this<middle>.matrix<target> m2) {
+        return (m1 as! mat3 * m2 as! mat3) as! matrix<target>;
+    }
 }
 
 with frame(3) r:
@@ -140,35 +140,35 @@ coordinate hom : geometry {
     object direction is float[4];
     with frame(3) r2: object matrix is float[4][4];
 
-    // point +(point p, vector v) {
-    //     return (p as! vec4 + v as! vec4 * p[3]) as! point;
-    // }
-    // point +(vector v, point p) {
-    //     return (p as! vec4 + v as! vec4 * p[3]) as! point;
-    // }
-    // vector -(point x, point y) {
-    //     return (x as! vec4 * y[3] - y as! vec4 * x[3]) as! vector;
-    // }
-    // with frame(3) target:
-    // this<target>.vector *(matrix<target> m, vector v) {
-    //     return (m as! mat4 * v as! vec4) as! this<target>.vector;
-    // }
-    // with frame(3) target:
-    // this<target>.vector *(matrix<target> m, direction d) {
-    //     return (m as! mat4 * d as! vec4) as! this<target>.vector;
-    // }
-    // with frame(3) target:
-    // this<target>.point *(matrix<target> m, point p) {
-    //     return (m as! mat4 * p as! vec4) as! this<target>.point;
-    // }
-    // with frame(3) target:
-    // matrix<target> +(matrix<target> m1, matrix<target> m2) {
-    //     return (m1 as! mat4 + m2 as! mat4) as! matrix<target>;
-    // }
-    // with frame(3) middle, target:
-    // matrix<target> *(matrix<middle> m1, this<middle>.matrix<target> m2) {
-    //     return (m1 as! mat4 * m2 as! mat4) as! matrix<target>;
-    // }
+    point +(point p, vector v) {
+        return (p as! vec4 + v as! vec4 * p[3]) as! point;
+    }
+    point +(vector v, point p) {
+        return (p as! vec4 + v as! vec4 * p[3]) as! point;
+    }
+    vector -(point x, point y) {
+        return (x as! vec4 * y[3] - y as! vec4 * x[3]) as! vector;
+    }
+    with frame(3) target:
+    this<target>.vector *(matrix<target> m, vector v) {
+        return (m as! mat4 * v as! vec4) as! this<target>.vector;
+    }
+    with frame(3) target:
+    this<target>.vector *(matrix<target> m, direction d) {
+        return (m as! mat4 * d as! vec4) as! this<target>.vector;
+    }
+    with frame(3) target:
+    this<target>.point *(matrix<target> m, point p) {
+        return (m as! mat4 * p as! vec4) as! this<target>.point;
+    }
+    with frame(3) target:
+    matrix<target> +(matrix<target> m1, matrix<target> m2) {
+        return (m1 as! mat4 + m2 as! mat4) as! matrix<target>;
+    }
+    with frame(3) middle, target:
+    matrix<target> *(matrix<middle> m1, this<middle>.matrix<target> m2) {
+        return (m1 as! mat4 * m2 as! mat4) as! matrix<target>;
+    }
 }
 
 frame model has dimension 3;

@@ -99,7 +99,8 @@ let rec is_subtype (cx: contexts) (to_check : typ) (target : typ) : bool =
         && is_subtype_list cx tl1 tl2)
         || is_subtype cx (typ_step cx to_check) target
     | MemberTyp (t1, t2), MemberTyp (t3, t4) ->
-        (is_typ_eq cx t2 t4 && is_typ_eq cx t1 t3)
+        (* Note that we use is_subtype cx t1 t3 to account for potential parameterization *)
+        (is_typ_eq cx t2 t4 && is_subtype cx t1 t3)
         || is_subtype cx (typ_step cx to_check) target
     | FrameTyp d1, FrameTyp d2 -> reduce_dexp cx d1 = reduce_dexp cx d1
     
@@ -374,7 +375,7 @@ let check_fn_inv (cx: contexts) (x : id)
         if List.length arg_typs == List.length param_typs then
             option_map (fun x -> (scheme_check, f, x))
             (List.fold_left2 (fun acc arg param -> 
-            if (is_subtype cx arg param) then acc else None)
+            if is_subtype cx arg param then acc else None)
             param_check arg_typs param_typs'')
         else None
     in
@@ -469,9 +470,10 @@ let check_as_exp (cx: contexts) (start: typ) (target : typ) : typ =
 
 (* Super expensive.  We're essentially relying on small contexts *)
 let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : aexp = 
-    debug_print (">> find_in_path" ^ string_of_typ start ^ " " ^ string_of_typ target);
+    debug_print (">> find_in_path " ^ string_of_typ start ^ " " ^ string_of_typ target);
+    print_endline (">> find_in_path " ^ string_of_typ start ^ " " ^ string_of_typ target);
     let rec psi_path_rec (to_search: (typ * aexp) Queue.t) (found: typ list) : aexp =
-        (* Given a type and psi *)
+        (* Given a type and the psi elements associated with that type *)
         (* Returns a list of types reachable by using available canonical functions *)
         (* Note that the string list give the arguments to the canonical function,
          * where the empty string is a special case for the previous in-expression value *)
@@ -487,6 +489,7 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
             : (typ * (id * typ list * typ list) * string option list) list =
                 let ml,rt,id,params,_ = ft in
                 debug_print (">> search_fn " ^ id);
+                print_endline (">> search_fn " ^ id);
                 (* Get the next index to modify *)
                 (* Is a negative number if all non-canon elements are already set *)
                 let next_index = (List.fold_left2 (fun acc (ml,_,_) arg ->
@@ -584,6 +587,7 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
             let s_lookup = string_of_typ nt in
             let ps_lst = if Assoc.mem s_lookup cx.ps 
                 then Assoc.lookup s_lookup cx.ps else [] in
+            print_endline (string_of_int (List.length ps_lst));
             let to_return = search_phi nt ps_lst in
             let next_step = match nt with | MemberTyp _ -> typ_step cx nt | _ -> nt in
             match next_step with

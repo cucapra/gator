@@ -13,31 +13,31 @@ frame light has dimension 3;
 // Global Variables
 
 varying cart3<model>.point vPosition;
-uniform hom<model>.transformation<world> uModel;
-uniform hom<world>.transformation<camera> uView;
+canon uniform hom<model>.transformation<world> uModel;
+canon uniform hom<world>.transformation<camera> uView;
 varying cart3<model>.vector vNormal;
 uniform cart3<light>.point uLight;
-uniform hom<light>.transformation<world> uLightTrans;
+canon uniform hom<light>.transformation<world> uLightTrans;
 
 // Boilerplate application definitions to help in expressions
-canon hom<world>.point app_uModel(hom<model>.point v) {
-    return uModel * v;
-}
-canon hom<world>.vector app_uModel(hom<model>.vector v) {
-    return uModel * v;
-}
-canon hom<camera>.point app_uView(hom<world>.point v) {
-    return uView * v;
-}
-canon hom<camera>.vector app_uView(hom<world>.vector v) {
-    return uView * v;
-}
-canon hom<world>.point app_uLightTrans(hom<light>.point v) {
-    return uLightTrans * v;
-}
-canon hom<world>.vector app_uLightTrans(hom<light>.vector v) {
-    return uLightTrans * v;
-}
+// canon hom<world>.point app_uModel(hom<model>.point v) {
+//     return uModel * v;
+// }
+// canon hom<world>.vector app_uModel(hom<model>.vector v) {
+//     return uModel * v;
+// }
+// canon hom<camera>.point app_uView(hom<world>.point v) {
+//     return uView * v;
+// }
+// canon hom<camera>.vector app_uView(hom<world>.vector v) {
+//     return uView * v;
+// }
+// canon hom<world>.point app_uLightTrans(hom<light>.point v) {
+//     return uLightTrans * v;
+// }
+// canon hom<world>.vector app_uLightTrans(hom<light>.vector v) {
+//     return uLightTrans * v;
+// }
 
 // Shader Code
 

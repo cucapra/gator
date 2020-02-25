@@ -42,7 +42,7 @@ canon impl2<r>.a lower(impl1<r>.a x) {
 }
 
 void main() {
-  impl1<f2>.a x = [1., 2., 3.];
+  impl1<f1>.a x = [1., 2., 3.];
   canon impl1<f1>.t<f2> m = [[0., 1., 0.], [1., 0., 0.], [0., 0., 1.]];
 
   auto res1 = x in impl2;
