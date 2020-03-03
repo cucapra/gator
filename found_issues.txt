@@ -1,0 +1,36 @@
+Issues with Gator:
+
+1. Miscallaneous QoL Updates (good first issue, testing):
+
+The following is a list of small languages updates that would help with converting existing code to Gator.  Each should be fairly straightforward to add, but make sure to add or update an associated test case!
+
+--Multiline comments of the following form:
+
+```
+/* This is a comment
+ * It should end here: */
+```
+
+--Scientific notation (should be syntactically built-in and should always produce a float literal imo):
+
+`xey` where `1.3e5=13000` and `2e-1=.2`
+
+--Indexing doesn't work with function invocations; for example, the following fails to parse:
+
+`pow(p as! vec3,dot(n,l) * 0.4 + 0.6)[0]`
+
+This issue might actually be super tricky, since I used a 'hack' to help with function invocation reductions.
+
+2. Literal Operations Failing
+
+Our current type system does not allow array literal addition!  For example, the following code produces a 'ambiguous choice of functions' error:
+
+```
+[0.8,0.9,0.6]+[.1, .2, .3];
+```
+
+I'm not sure there's a clean solution to this issue; most likely we will need to resort to using the 'built-in' operation by default in these cases or another such hack.
+
+3. Frames are lost during generic Invocation
+
+Whenever you invoke a function parameterized on a frame (such as how I've written `abs` in `glsl_defs`), the frame is inferred as a generic frame (`e.g. frame<3>`).  Gator should instead retain the original frame when doing inference.
