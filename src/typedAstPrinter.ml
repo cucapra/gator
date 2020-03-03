@@ -56,8 +56,8 @@ let rec string_of_comm (c: comm) : string =
   | Exp e -> string_of_texp e ^ ";"
   | Decl (t, s, e) -> string_of_typ t ^ " " ^ s 
     ^ " = " ^ string_of_texp e ^ ";"
-  | Assign (b, x) -> b ^ " = " ^ string_of_texp x ^ ";"
-  | AssignOp ((x, _), op, e) -> x ^ " " 
+  | Assign (b, x) -> string_of_texp b ^ " = " ^ string_of_texp x ^ ";"
+  | AssignOp (x, op, e) -> string_of_texp x ^ " " 
     ^ op ^ "= " ^ (string_of_texp e)
   | If ((b, c1), elif_list, c2) -> 
     "if (" ^ string_of_texp b ^ ")" ^ block_string c1 

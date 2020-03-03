@@ -80,8 +80,8 @@ and string_of_comm (c: comm) : string =
     | Print e -> "print " ^ (string_of_aexp e) ^ ";"
     | Exp e -> string_of_aexp e ^ ";"
     | Decl (t, s, e) -> (string_of_typ t) ^ " " ^ s ^ " = " ^ (string_of_aexp e) ^ ";"
-    | Assign (b, x) -> b ^ " = " ^ (string_of_aexp x) ^ ";"
-    | AssignOp (x, op, e) -> x ^ " " ^ op ^ "= " ^ (string_of_aexp e)
+    | Assign (b, x) -> (string_of_aexp b) ^ " = " ^ (string_of_aexp x) ^ ";"
+    | AssignOp (x, op, e) -> (string_of_aexp x) ^ " " ^ op ^ "= " ^ (string_of_aexp e)
     | If ((b, c1), elif_list, c2) -> 
         "if (" ^ string_of_aexp b ^ ")" ^ block_string c1 
         ^ string_of_list (fun (b, c) -> "elif (" ^ string_of_aexp b ^ ")" ^ block_string c) elif_list

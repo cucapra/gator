@@ -30,8 +30,8 @@ type comm =
     | Print of texp
     | Exp of texp
     | Decl of etyp * id * texp
-    | Assign of id * texp
-    | AssignOp of (string * etyp) * string * texp
+    | Assign of texp * texp
+    | AssignOp of texp * string * texp
     | If of if_block * if_block list * (comm list) option  (* if - elif list - else *)
     | For of comm * texp * comm * comm list
     | Return of texp option

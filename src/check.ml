@@ -618,19 +618,19 @@ and check_comm (cx: contexts) (c: comm) : contexts * TypedAst.comm =
                 | Literal _ | BotTyp -> error cx ("Cannot infer the type of " ^ string_of_aexp e)
                 | _ -> t')
             | _ -> t) in
-        check_assign cx t' s (snd result);
+        check_assign cx t' (Var s) (snd result);
         bind cx s (Gamma t'), TypedAst.Decl (typ_erase cx t', s, (exp_to_texp cx result))
     | Assign (s, e) ->
-        let t = get_var cx s in
+        let x,t = check_aexp cx s in
         let result = check_aexp cx e in
-        check_assign cx t s (snd result);
-        cx, TypedAst.Assign (s, (exp_to_texp cx result))
+        check_assign cx t (fst s) (snd result);
+        cx, TypedAst.Assign (exp_to_texp cx (x,t), (exp_to_texp cx result))
     | AssignOp (s, b, e) -> 
         let cx', c' = check_acomm cx 
-            (Assign (s, (FnInv(b, [], [Var s, snd e; e]), cx.meta)), cx.meta) in
+            (Assign (s, (FnInv(b, [], [fst s, snd e; e]), cx.meta)), cx.meta) in
         (match c' with
-        | TypedAst.Assign (_, (TypedAst.FnInv (_, _, [_, st; e]), _)) -> 
-            cx', TypedAst.AssignOp((s, st), b, e)
+        | TypedAst.Assign (s', (TypedAst.FnInv (_, _, [_, st; e]), _)) -> 
+            cx', TypedAst.AssignOp(s', b, e)
         | _ -> debug_fail cx "Assign must return an assign?")
     | If ((b, c1), el, c2) ->
         let check_if b c =
@@ -661,8 +661,9 @@ and check_comm_lst (cx: contexts) (cl : acomm list) : contexts * TypedAst.comm l
         cx'', c' :: cl'
 
 (* Updates Gamma *)
-and check_assign (cx: contexts) (t: typ) (s: string) (etyp : typ) : unit =
-    debug_print (">> check_assign " ^ string_of_typ t ^ " " ^ s ^ " assigned " ^ string_of_typ etyp);
+and check_assign (cx: contexts) (t: typ) (x: exp) (etyp : typ) : unit =
+    debug_print (">> check_assign " ^ string_of_typ t ^ " " 
+        ^ string_of_exp x ^ " assigned " ^ string_of_typ etyp);
     (* Check that t, if not a core type, is a registered tag *)
     let rec check_tag (t: typ) : unit =
         match t with
@@ -671,7 +672,7 @@ and check_assign (cx: contexts) (t: typ) (s: string) (etyp : typ) : unit =
     in
     check_tag t;
     if is_subtype cx etyp t then ()
-    else error cx ("Mismatched types for var decl for " ^ s ^
+    else error cx ("Mismatched types for var decl for " ^ string_of_exp x ^
         ": expected " ^ string_of_typ t ^ ", found " ^ string_of_typ etyp)
 
 (* Helper function for type checking void functions. 
@@ -761,7 +762,7 @@ let check_global_variable (cx: contexts) (ml, sq, t, id, e: global_var)
     debug_print ">> check_global_variable";
     check_typ_valid cx t;
     let e' = option_map (fun x -> check_aexp cx x) e in
-    (match e' with | Some (_,te) -> check_assign cx t id te | None -> ());
+    (match e' with | Some (_,te) -> check_assign cx t (Var id) te | None -> ());
     let gvr = if has_modification cx ml External then None else
         Some (sq, typ_erase cx t, id, option_map (fun x -> exp_to_texp cx x) e') in
     bind cx id (Gamma t), gvr

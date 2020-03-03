@@ -149,9 +149,10 @@ and comp_exp (e : exp) (s : SS.t) : string =
         fn_name ^ "(" ^ (String.concat "," (List.map (fun (e, _) -> comp_exp e s) args)) ^ ")" *)
         failwith "unimplemented function invocation writing"
 
-let comp_assign (x : id) ((e, t) : texp) (s : SS.t) : string =
+let comp_assign (x : texp) ((e, t) : texp) (s : SS.t) : string =
     match t with
-    | UnitTyp | BoolTyp | IntTyp | FloatTyp | StringTyp | ParTyp _ -> x ^ "=" ^ (comp_exp e s) ^ ";"
+    | UnitTyp | BoolTyp | IntTyp | FloatTyp | StringTyp | ParTyp _ -> 
+        comp_exp (fst x) s ^ "=" ^ comp_exp e s ^ ";"
     (* | VecTyp v -> "vec" ^ (string_of_int v) ^ ".copy(" ^ x ^ "," ^ (comp_exp e s) ^ ");"
     | MatTyp (m, n) -> "mat" ^ (string_of_int (max m n)) ^ ".copy(" ^ x ^ "," ^ (comp_exp e s) ^ ");" *)
     | ArrTyp _ | AnyTyp | GenTyp -> comp_type t

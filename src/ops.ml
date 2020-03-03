@@ -95,10 +95,8 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) : sigma =
     | Print e -> let v, s' = eval_texp e fns s in
         print_string (string_of_ovalue v ^ "\n"); s'
     | Exp e -> snd (eval_texp e fns s)
-    | Decl (_, x, e)
-    | Assign (x, e) -> let v, s' = eval_texp e fns s in
-        (try let _ = Assoc.lookup x s in Assoc.update x v s' with
-        _ -> Assoc.update x v s')
+    | Decl (_, x, e) -> failwith "unimplemented op"
+    | Assign (x, e) -> failwith "unimplemented op"
     | AssignOp (x, op, e) -> failwith "unimplemented op"
     | If ((b, c1), el, c2) ->
         let check_if b s = (match (eval_texp b fns s) with
