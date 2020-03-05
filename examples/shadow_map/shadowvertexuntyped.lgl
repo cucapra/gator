@@ -1,3 +1,5 @@
+#"precision mediump float;";
+
 declare vec4 vec4<`t : vec<3>>(`t v, float f);
 declare vec3 vec3<`t : vec<4>>(`t v);
 

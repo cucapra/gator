@@ -1,3 +1,5 @@
+#"precision mediump float;";
+
 using "../glsl_defs.lgl";
 
 type color is vec3;

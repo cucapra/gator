@@ -149,12 +149,13 @@ let rec default_value (t : etyp) : ovalue =
     | AnyTyp | GenTyp -> CoreValue Unit
     | ExactCodeTyp -> CoreValue Unit
     
-let start_eval (fns : fn list) (gv : global_vars) : unit =
-    let add_arg = fun acc (_, t, name, _) -> Assoc.update name (default_value t) acc in
+let start_eval (fns : term list) : unit =
+    failwith "unimplemented"
+    (* let add_arg = fun acc (_, t, name, _) -> Assoc.update name (default_value t) acc in
     let s = List.fold_left add_arg Assoc.empty gv in
     match fst (fn_lookup "main" fns) with
     | None -> failwith "Typechecker failed to find lack of main"
-    | Some main -> eval_funct main fns s |> ignore
+    | Some main -> eval_funct main fns s |> ignore *)
 
-let eval_prog (p : prog) (gv : global_vars) : unit =
-    start_eval p gv
+let eval_prog (p : prog) : unit =
+    start_eval p

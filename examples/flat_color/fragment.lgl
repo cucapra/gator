@@ -1,3 +1,5 @@
+#"precision mediump float;";
+
 type vec4 is float[4];
 
 void main() { 

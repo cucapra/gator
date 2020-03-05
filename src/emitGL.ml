@@ -129,27 +129,16 @@ let comp_fn (f : fn) : string =
             in
             type_id_string ^ "(" ^ param_string ^ "){" ^ string_of_separated_list "" string_of_comm cl ^ "}"
 
-let rec comp_fn_lst (f : fn list) : string =
+let rec comp_prog (f : term list) : string =
     debug_print ">> comp_fn_lst";
     match f with 
     | [] -> ""
-    | h::t -> (comp_fn h) ^ (comp_fn_lst t)
+    | Fn h::t -> comp_fn h ^ comp_prog t
+    | GlobalVar (sq, et, x, e)::t -> string_of_storage_qual sq ^ " " ^ string_of_typ et
+        ^ " " ^ x ^ string_of_option_removed (fun x -> " = " ^ string_of_texp x) e ^
+        ";" ^ comp_prog t
 
-let decl_attribs (gv : global_vars) : string = 
-    debug_print ">> decl_attribs";
-    let rec decl_attribs_list (gv : global_vars) : string =
-        match gv with
-        | [] -> ""
-        | (sq, et, x, e)::t -> 
-            string_of_storage_qual sq ^ " " ^ string_of_typ et
-            ^ " " ^ x ^ string_of_option_removed (fun x -> " = " ^ string_of_texp x) e ^
-            ";" ^ decl_attribs_list t
-    in
-    decl_attribs_list gv
-
-let rec compile_program (prog : prog) (global_vars : global_vars) : string =
+let rec compile_program (prog : prog) : string =
     debug_print ">> compile_program";
-    (* "precision mediump float;" ^  *)
-     (decl_attribs global_vars) ^ 
-     (comp_fn_lst prog)
+    comp_prog prog
  

@@ -906,58 +906,58 @@ let check_main_fn (cx: contexts) : unit =
 
 let check_exactCode (ec: string) : TypedAst.prog =
     let test = Assoc.empty in
-    [((ExactCodeTyp, ec, test, []), [])]
+    [Fn ((ExactCodeTyp, ec, test, []), [])]
 
 let rec check_term (cx: contexts) (t: term) 
-: contexts * TypedAst.prog * TypedAst.global_vars =
+: contexts * TypedAst.prog =
     match t with
     | Using s -> check_exprog (get_prog cx s) cx
     | ExactCode ec -> 
-        cx, (check_exactCode ec), []
-    | Prototype p -> check_prototype cx p, [], []
+        cx, (check_exactCode ec)
+    | Prototype p -> check_prototype cx p, []
     | Coordinate c -> let cx',tf = check_coordinate cx c in
-        cx', tf, []
-    | Frame f -> check_frame cx f, [], []
+        cx', List.map (fun f -> TypedAst.Fn f) tf
+    | Frame f -> check_frame cx f, []
     | Typ (ml, id, t) ->
         let pm = get_ml_pm cx ml in
         let ext = has_modification cx ml External in
-        check_typ_decl cx id (ext, pm, t), [], []
+        check_typ_decl cx id (ext, pm, t), []
     | GlobalVar gv -> let (cx', gv') = check_global_variable cx gv in
-        cx', [], (match gv' with | None -> [] | Some gv'' -> [gv''])
+        cx', (match gv' with | None -> [] | Some v -> [TypedAst.GlobalVar v])
     | Fn f -> let (cx', f') = check_fn cx f None in
-        cx', (match f' with | None -> [] | Some f' -> [f']), []
+        cx', (match f' with | None -> [] | Some f' -> [Fn f'])
     
 and check_aterm (cx: contexts) ((t, meta): aterm) 
-: contexts * TypedAst.prog * TypedAst.global_vars =
+: contexts * TypedAst.prog =
     check_term (with_meta cx meta) t
 
 (* This might end up being really bad -- there's no scoping management on external files *)
 and check_exprog (tl: prog) (cx : contexts) :
-contexts * TypedAst.prog * TypedAst.global_vars =
-    let cx', f, gv = List.fold_left (fun acc t -> let cx', f', gv' = check_aterm (tr_fst acc) t in
-    (cx', f'@(tr_snd acc), gv'@(tr_thd acc)))
-    (cx, [], []) tl in
-    cx', List.rev f, List.rev gv
+contexts * TypedAst.prog =
+    let cx', f = List.fold_left (fun acc t -> let cx', f' = check_aterm (fst acc) t in
+    (cx', f'@(snd acc)))
+    (cx, []) tl in
+    cx', List.rev f
 
 let rec check_term_list (tl: prog) (externs: prog Assoc.context) :
-contexts * TypedAst.prog * TypedAst.global_vars =
+contexts * TypedAst.prog=
     debug_print ">> check_global_var_or_fn_lst";
     (* Annoying bootstrapping hack *)
-    let cx, f, gv = List.fold_left (fun acc t -> let cx', f', gv' = check_aterm (tr_fst acc) t in
-        (cx', f'@(tr_snd acc), gv'@(tr_thd acc)))
-        (init (snd (List.hd tl)) externs, [], []) tl in
-    cx, List.rev f, List.rev gv
+    let cx, f = List.fold_left (fun acc t -> let cx', f' = check_aterm (fst acc) t in
+        (cx', f'@(snd acc)))
+        (init (snd (List.hd tl)) externs, []) tl in
+    cx, List.rev f
 
 (* Returns the list of fn's which represent the program 
  * and params of the void main() fn *)
-let check_prog (tl: prog) (externs: prog Assoc.context) : TypedAst.prog * TypedAst.global_vars =
+let check_prog (tl: prog) (externs: prog Assoc.context) : TypedAst.prog =
     debug_print ">> check_prog";
-    let cx, typed_prog, typed_gvs = check_term_list tl externs in
+    let cx, typed_prog = check_term_list tl externs in
     check_main_fn cx;
     debug_print "===================";
     debug_print "Type Check Complete";
     debug_print "===================\n";
-    typed_prog, typed_gvs
+    typed_prog
 
 (* Searches the program for files which need to be loaded *)
 (* If we have any duplicate names, throws an exception to avoid cycles *)

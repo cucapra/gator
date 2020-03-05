@@ -43,9 +43,12 @@ and if_block = texp * comm list
 type parameterization = etyp Assoc.context
 type params = (etyp * string) list
 type global_var = storage_qual * etyp * string * texp option
-type global_vars = global_var list
 type ret_typ = etyp
 type fn_decl = ret_typ * id * parameterization * params
 type fn = fn_decl * comm list
 
-type prog = fn list
+type term =
+    | GlobalVar of global_var
+    | Fn of fn
+
+type prog = term list

@@ -76,5 +76,10 @@ let string_of_fn ((rt,id,pm,p), cl : fn) : string =
     (string_of_typ rt) ^ " " ^ id ^ string_of_parameterization pm 
     ^ string_of_params p ^ string_of_comm_list cl
 
+let string_of_term (t : term) : string =
+  match t with
+  | GlobalVar v -> string_of_global_var v
+  | Fn f -> string_of_fn f
+
 let string_of_prog (e : prog) : string =
-    string_of_separated_list "\n" string_of_fn e
+    string_of_separated_list "\n" string_of_term e
