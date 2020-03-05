@@ -1,6 +1,8 @@
 (* Standard type definitions*)
 type id = string
 
+type exactCode = string
+
 type constvar =
   | ConstInt of int
   | ConstVar of id

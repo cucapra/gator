@@ -15,6 +15,7 @@ let rec string_of_typ (t: etyp) : string =
   | ArrTyp (t, c) -> string_of_typ t ^ "[" ^ string_of_constvar c ^ "]"
   | AnyTyp -> "any"
   | GenTyp -> "genType"
+  | ExactCodeTyp -> "ExactCodeType"
   
 and string_of_pml (p : etyp list) : string =
   if List.length p > 0 then "<" ^ string_of_list string_of_typ p ^ ">" else ""
@@ -66,7 +67,8 @@ let rec string_of_comm (c: comm) : string =
   | For (d, b, u, cl) -> "for (" ^ string_of_comm d ^ string_of_texp b ^ "; " 
     ^ string_of_comm u ^ ") " ^ block_string cl
   | Return x -> "return" ^ string_of_option_removed (fun x -> " " ^ string_of_texp x) x ^ ";"
- 
+  | ExactCodeComm ec -> ec
+
 and string_of_comm_list (cl : comm list) : string = 
    string_of_separated_list "\n" string_of_comm cl
 

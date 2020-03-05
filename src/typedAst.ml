@@ -12,6 +12,7 @@ type etyp =
     | ParTyp of string * etyp list
     | AnyTyp
     | GenTyp
+    | ExactCodeTyp
 
 (* expressions *)
 type texp = exp * etyp
@@ -35,6 +36,8 @@ type comm =
     | If of if_block * if_block list * (comm list) option  (* if - elif list - else *)
     | For of comm * texp * comm * comm list
     | Return of texp option
+    | ExactCodeComm of string
+
 and if_block = texp * comm list
 
 type parameterization = etyp Assoc.context

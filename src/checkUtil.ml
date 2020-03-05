@@ -243,6 +243,7 @@ let rec map_acomm (cx : contexts) (fs : string -> string) (fe : exp -> exp) (ft 
   | If (i, il, clo) -> If (it i, List.map it il, option_map (List.map ct) clo),meta
   | For (c1, e, c2, cl) -> For (ct c1, et e, ct c2, List.map ct cl),meta
   | Return e -> Return(option_map et e),meta
+  | ExactCodeComm ec -> ac
 
 let map_fn_typ (cx : contexts) (fs : string -> string) (fe : exp -> exp) (ft : typ -> typ) (fn : fn_typ) 
   : fn_typ =

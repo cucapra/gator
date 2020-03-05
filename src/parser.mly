@@ -81,6 +81,7 @@ exception ParseException of string
 %token ATTRIBUTE
 %token UNIFORM
 %token VARYING
+%token POUND
 
 (* Precedences *)
 
@@ -133,6 +134,8 @@ let node(T) == t = T; { (t, $startpos) }
 let term ==
   | USING; s = STRING; SEMI;
     <Using>
+  | POUND; s = STRING; SEMI;
+    <ExactCode>
   | PROTOTYPE; x = ID; LBRACE; p = list(node(prototype_element)); RBRACE;
     <Prototype>
   | m = modification*; COORDINATE; x = ID; COLON; p = ID;
@@ -244,6 +247,8 @@ let comm_element ==
     < Print >
   | RETURN; e = node(exp)?;
     < Return >
+  | POUND; s = STRING; 
+    < ExactCodeComm >
 
 let dexp :=
   | d1 = dexp; PLUS; d2 = dexp;
