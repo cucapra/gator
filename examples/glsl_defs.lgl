@@ -134,9 +134,10 @@ with vec4 T: declare float length(T v);
 declare vec2 normalize(vec2 x);
 declare vec3 normalize(vec3 x);
 with float T: declare T max(T f1, T f2);
-with vec2 T: declare T reflect(T v1, T v2);
-with vec3 T: declare T reflect(T v1, T v2);
+with float[2] T: declare T reflect(T v1, T v2);
+with float[3] T: declare T reflect(T v1, T v2);
 with float T: declare T pow(T f1, T f2);
+declare T mix(T v1, T v2, T v3);
 
 // Geometric Objects and Operations
 

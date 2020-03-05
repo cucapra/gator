@@ -86,8 +86,8 @@ color getSkyColor(color e) {
 
 // sea
 with frame(2) r:
-float sea_octave(cart2<r>.point uv, float choppy) {
-    uv += [noise(uv), noise(uv)];        
+float sea_octave(cart2<r>.vector uv, float choppy) {
+    uv += [noise(uv), noise(uv)] as! cart2<r>.vector;        
     auto wv = [1.0, 1.0]-abs(sin(uv));
     auto swv = abs(cos(uv));    
     wv = mix(wv,swv,wv);
