@@ -125,6 +125,7 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) : sigma =
         in
         loop (eval_comm c1 fns s)
     | Return e -> s
+    | ExactCodeComm ec -> s
 
 and eval_cl (cl : comm list) (fns : fn list) (s : sigma) : ovalue * sigma =
     match cl with
@@ -148,6 +149,7 @@ let rec default_value (t : etyp) : ovalue =
     | ParTyp _ -> CoreValue Unit
     | ArrTyp (t', d) -> CoreValue Unit
     | AnyTyp | GenTyp -> CoreValue Unit
+    | ExactCodeTyp -> CoreValue Unit
     
 let start_eval (fns : fn list) (gv : global_vars) : unit =
     let add_arg = fun acc (_, t, name, _) -> Assoc.update name (default_value t) acc in
