@@ -1,6 +1,6 @@
-declare bool >(int i1, int i2);
-declare bool <(int i1, int i2);
+declare bool >(float i1, float i2);
 declare bool !(bool b);
+declare bool ==(int i1, int i2);
 
 void main() {
     if (1 == 2) { 

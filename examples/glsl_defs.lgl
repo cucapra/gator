@@ -170,7 +170,7 @@ prototype geometry {
     transformation<target> +(transformation<target> m1, transformation<target> m2);
 
     with frame() middle, target:
-    transformation<target> *(transformation<middle> m1, this<middle>.transformation<target> m2);
+    transformation<target> *(this<middle>.transformation<target> m2, transformation<middle> m1);
 
     angle dot(direction v1, direction v2);
     scalar length(vector v);
@@ -236,8 +236,8 @@ coordinate cart2 : geometry {
         return (m1 as! mat2 + m2 as! mat2) as! transformation<target>;
     }
     with frame(2) middle, target:
-    transformation<target> *(transformation<middle> m1, this<middle>.transformation<target> m2) {
-        return (m1 as! mat2 * m2 as! mat2) as! transformation<target>;
+    transformation<target> *(this<middle>.transformation<target> m2, transformation<middle> m1) {
+        return (m2 as! mat2 * m1 as! mat2) as! transformation<target>;
     }
 
     angle dot(direction v1, direction v2) {
@@ -314,8 +314,8 @@ coordinate cart3 : geometry {
         return (m1 as! mat3 + m2 as! mat3) as! transformation<target>;
     }
     with frame(3) middle, target:
-    transformation<target> *(transformation<middle> m1, this<middle>.transformation<target> m2) {
-        return (m1 as! mat3 * m2 as! mat3) as! transformation<target>;
+    transformation<target> *(this<middle>.transformation<target> m2, transformation<middle> m1) {
+        return (m2 as! mat3 * m1 as! mat3) as! transformation<target>;
     }
 
     angle dot(direction v1, direction v2) {
@@ -371,8 +371,8 @@ coordinate hom : geometry {
         return (m1 as! mat4 + m2 as! mat4) as! transformation<target>;
     }
     with frame(3) middle, target:
-    transformation<target> *(transformation<middle> m1, this<middle>.transformation<target> m2) {
-        return (m1 as! mat4 * m2 as! mat4) as! transformation<target>;
+    transformation<target> *(this<middle>.transformation<target> m2, transformation<middle> m1) {
+        return (m2 as! mat4 * m1 as! mat4) as! transformation<target>;
     }
 }
 

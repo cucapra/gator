@@ -8,12 +8,12 @@ void main() {
     float r3 = .3;
     print r3;
 
-    vec1 r4 = [1.];
+    float[1] r4 = [1.];
     print r4;
 
-    vec3 r5 = [1.,2.,3.];
+    float[3] r5 = [1.,2.,3.];
     print r5;
 
-    mat2x2 r6 = [[1.,2.],[3.,4.]];
+    float[2][2] r6 = [[1.,2.],[3.,4.]];
     print r6;
 }

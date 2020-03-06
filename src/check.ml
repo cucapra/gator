@@ -637,9 +637,8 @@ and check_comm (cx: contexts) (c: comm) : contexts * TypedAst.comm =
         let check_if b c =
             let er = (check_aexp cx b) in
             let _, cr = check_comm_lst cx c in
-            (match snd er with 
-            | BoolTyp -> ((exp_to_texp cx er), cr)
-            | _ -> error cx ("Expected boolean expression for if condition"))
+            if is_subtype cx (snd er) BoolTyp then ((exp_to_texp cx er), cr)
+            else error cx ("Expected boolean expression for if condition")
         in
         let c2r = (match c2 with | Some e -> Some (snd (check_comm_lst cx e)) | None -> None) in
         cx, TypedAst.If (check_if b c1, List.map (fun (b, c) -> check_if b c) el, c2r)

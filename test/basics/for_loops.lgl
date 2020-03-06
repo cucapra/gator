@@ -1,7 +1,10 @@
+declare bool <=(int x, int y);
+declare int ++(int x);
+
 void main() {
     for (int i = 0; i <= 9; i++) {
         for (int j = 2; j <= 3; j++) {
-            print i + j;
+            print i;
         }
     }
 }
