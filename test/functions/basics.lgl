@@ -1,21 +1,26 @@
+declare int +(int x, int y);
+declare float +(float x, float y);
+declare int -(int x);
+declare bool <=(int x, int y);
+
 int f(int x) {
     int f = x; // THIS IS FINE
     return f + 1;
 }
 
 float g(float x) {
-    return x - 1.;
+    return x + 1.;
 }
 
 bool h(int x) {
     return x <= 0;
 }
 
-vec2 vid(vec2 x) {
+float[2] vid(float[2] x) {
     return x;
 }
 
-mat2x2 mid(mat2x2 x) {
+float[2][2] mid(float[2][2] x) {
     return x;
 }
 
@@ -24,8 +29,8 @@ void main() {
     int s1 = f(5);
     float s2 = g(1.2);
     bool s3 = h(-5);
-    vec2 s4 = vid([1., 2.]);
-    mat2x2 s5 = mid([[1., 0.], [0., 1.]]);
+    float[2] s4 = vid([1., 2.]);
+    float[2][2] s5 = mid([[1., 0.], [0., 1.]]);
 
     print s1;
     print s2;

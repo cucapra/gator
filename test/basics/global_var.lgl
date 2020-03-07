@@ -1,6 +1,7 @@
 uniform float[3] x;
 varying float[3][3] y;
 attribute int z;
+const int q;
 
 void main() {
     print 1;

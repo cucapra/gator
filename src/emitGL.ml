@@ -35,8 +35,11 @@ and string_of_glsl_mat (m: texp list list) : string =
 
 and string_of_typ (t : etyp) : string =
     match t with
+    | ArrTyp (IntTyp, d) -> "ivec" ^ string_of_constvar d
     | ArrTyp (FloatTyp, d) -> "vec" ^ string_of_constvar d
-    | ArrTyp (ArrTyp (FloatTyp, _), d) -> "mat" ^ string_of_constvar d
+    | ArrTyp (BoolTyp, d) -> "bvec" ^ string_of_constvar d
+    | ArrTyp (ArrTyp (FloatTyp, _), d)
+    | ArrTyp (ArrTyp (IntTyp, _), d) -> "mat" ^ string_of_constvar d
     | ParTyp (s, _) -> s
     | _ -> TypedAstPrinter.string_of_typ t
 
@@ -83,15 +86,20 @@ and string_of_exp (e : exp) : string =
     | Var v -> v
     | Arr a -> (match a with
         | [] -> "vec0()"
-        | (_, t)::_ -> (match t with
-            | FloatTyp | IntTyp -> "vec" ^ (string_of_int (List.length a)) 
+        | (_, t)::_ -> print_endline (string_of_typ t); (match t with
+            | FloatTyp -> "vec" ^ (string_of_int (List.length a)) 
                 ^ "(" ^ string_of_list string_of_texp a ^ ")"
-            | ArrTyp (FloatTyp, d) -> let as_vec_list = (fun v -> (
+            | IntTyp -> "ivec" ^ (string_of_int (List.length a)) 
+                ^ "(" ^ string_of_list string_of_texp a ^ ")"
+            | BoolTyp -> "bvec" ^ (string_of_int (List.length a)) 
+                ^ "(" ^ string_of_list string_of_texp a ^ ")"
+            | ArrTyp (FloatTyp, d)
+            | ArrTyp (IntTyp, d) -> let as_vec_list = (fun v -> (
                 match v with 
                 | (Arr a', _) -> a'
                 | _ -> failwith "Typechecker error, a matrix must be a list of vectors")) in
                 string_of_glsl_mat (List.map as_vec_list a)
-            | _ -> failwith "Typechecker error, every array must be a list of ints, floats, or vectors"))
+            | _ -> failwith "Typechecker error, every array must be a list of ints, floats, vectors, or bools"))
     | Index (l, r) -> string_of_texp l ^ "[" ^ string_of_texp r ^ "]"
     | FnInv (id, tl, args) -> string_of_fn_util id (List.map string_of_texp args)
 

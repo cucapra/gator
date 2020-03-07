@@ -1,7 +1,0 @@
-const float PI = 3.14;
-varying vec3 pos;
-
-void main() {
-    int[5] x = [1, 2, 3, 4, 5];
-    print(x[0]);
-}
