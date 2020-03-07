@@ -86,7 +86,7 @@ and string_of_exp (e : exp) : string =
     | Var v -> v
     | Arr a -> (match a with
         | [] -> "vec0()"
-        | (_, t)::_ -> print_endline (string_of_typ t); (match t with
+        | (_, t)::_ -> (match t with
             | FloatTyp -> "vec" ^ (string_of_int (List.length a)) 
                 ^ "(" ^ string_of_list string_of_texp a ^ ")"
             | IntTyp -> "ivec" ^ (string_of_int (List.length a)) 
