@@ -114,7 +114,7 @@ def main():
     use_typescript = args.t
     success_symbols, fail_symbols = get_symbols()
     any_fails = False  # Trick to avoid printing excess successes
-    for path, _, files in os.walk("test/functions"):
+    for path, _, files in os.walk("test/generics"):
         lglfiles = [x for x in files if x.endswith(".lgl")]
         if len(lglfiles) > 0:
             print("🏃‍   Running tests in " + path + ":")

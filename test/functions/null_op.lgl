@@ -1,5 +1,0 @@
-void null_op() { }
-
-void main() {
-    null_op();
-}
