@@ -1,0 +1,24 @@
+tag a is vec<2>;
+tag b is vec<2>;
+tag par<`t : vec<2>> is vec<3>;
+
+void main() {
+    par<vec<2>> p = [1., 1., 1.];
+
+    print p;
+
+    a avec = [1., 2.];
+    par<a> pa = [1., 2., 3.];
+    canon a->par<a> asParA = [[1., 0.], [0., 1.], [0., 0.]];
+    canon par<a>->a asA = [[1., 0., 0.], [0., 1., 0.]];
+    par<a> s1 = avec in par<a>;
+    a s2 = pa in a;
+
+    print s1;
+    print s2;
+
+    canon par<a>->par<b> parAtoB = [[0., 0., 1.], [0., 1., 0.], [1., 0., 0.]];
+    par<b> s3 = avec in par<b>;
+
+    print s3;
+}

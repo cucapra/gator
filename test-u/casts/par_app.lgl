@@ -1,0 +1,68 @@
+tag model is vec<3>;
+tag world is vec<3>;
+tag camera is vec<3>;
+tag rot<`t : vec<n>> is vec<n>; // Rotated by 90 degrees counterclockwise around the z-axis as an example
+tag dir<`t : vec<n>> is vec<n>;
+tag hom<`t : vec<n>> is vec<n + 1>;
+
+declare dir<`t> normalize<`t : vec>(`t v);
+declare vec4 vec4(vec<3> v, float f);
+declare vec3 vec3(vec<4> v);
+declare float dot<`t : vec>(dir<`t> v1, dir<`t> v2);
+
+canon hom<`t> homify<`t : vec<3>>(`t v) {
+    return vec4(v, 1.) as hom<`t>;
+}
+
+canon hom<`t> homNorm<`t : vec<3>>(dir<`t> v) {
+    return vec4(v, 0.) as hom<`t>;
+}
+
+canon `t hom_reduce<`t : vec<3>>(hom<`t> v) {
+    return vec3(v) as `t;
+}
+
+`t->`u hom_matrix_reduce<`t : vec<3>, `u : vec<3>>(hom<`t>->hom<`u> m) {
+    `t->hom<`t> asHomFlat = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.], [0., 0., 0.]];
+    hom<`u>->`u homReduce = [[1., 0., 0., 0.], [0., 1., 0., 0.], [0., 0., 1., 0.]];
+    return homReduce * m * asHomFlat;
+}
+
+canon rot<`t> rotate<`t : vec<3>>(`t v) {
+    `t->rot<`t> rotation_matrix = [[0., -1., 0.], [1., 0., 0.], [0., 0., 1.]];
+    return rotation_matrix * v;
+}
+
+`t->rot<`u> rotate_matrix<`t : vec<3>, `u : vec<3>>(`t->`u m) {
+    `u->rot<`u> rotation_matrix = [[0., -1., 0.], [1., 0., 0.], [0., 0., 1.]];
+    return rotation_matrix * m;
+}
+
+canon `t rot_reduce<`t : vec<3>>(rot<rot<rot<rot<`t>>>> v) {
+    return v as `t;
+}
+
+void main() {
+    model uPosition = [1., 1., 1.];
+    dir<model> uNorm = [0., 0., 1.];
+    canon hom<model>->hom<world> uModel = [[1., .5, 0., 0.], [0., 1., 0., 0.], [1., 0., 1., 0.], [0., 0., .5, 1.]];
+    canon hom<world>->hom<camera> uWorld = [[1., .5, 0., 0.], [0., 1., 0., 0.], [1., 0., 1., 0.], [0., 0., .5, 1.]];
+    world lightPos = [0., 1., 0.];
+    
+    float angle = dot(normalize(uPosition in model), uNorm);
+    auto worldHomPosition = uPosition in hom<world>;
+    auto worldPosition = worldHomPosition in world;
+    float camAngle = dot(normalize(uNorm in camera), normalize(lightPos in camera));
+
+    print angle;
+    print worldHomPosition;
+    print worldPosition;
+    print camAngle;
+
+    auto rrm = uPosition in rot<rot<model>>;
+    auto rm = rrm in rot<model>; // Must loop around using 'rotate'
+    model->rot<world> mtwr = rotate_matrix<model, world>(hom_matrix_reduce<model, world>(uModel)); // Can't synthesize this (yet?)
+
+    print rm;
+    print mtwr;
+}
