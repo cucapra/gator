@@ -1,5 +1,0 @@
-coord tag t is vec3;
-
-void main() {
-    print 1;
-}

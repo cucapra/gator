@@ -1,3 +1,0 @@
-void main(uniform int x) { // Attributes must be in {vec | mat}
-    return;
-}

@@ -1,7 +1,7 @@
-tag a is vec<2>;
-tag b is vec<2>;
+type a is float[2];
+type b is float[2];
 
-canon b f(a x, a y) { // Can't canonize things with more than 1 argument
+canon b f(a x, a y) { // Can't canonize things with more than 1 non-canonical argument
     return [1., 2.];
 }
 

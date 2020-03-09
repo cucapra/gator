@@ -1,8 +1,0 @@
-tag a is vec<2>;
-tag b is vec<2>;
-
-void main() {
-    canon a->b a_b = [[1., 2.], [2., 1.]];
-    b bvec = [1., 2.];
-    a fail = bvec in a; //backwards, no path cause we can't use inverses
-}

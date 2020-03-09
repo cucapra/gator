@@ -1,4 +1,7 @@
-bool uninvokable<`t : vec<2>>(`t x) {
+with bool T: T &&(T x, T y);
+
+with float[2] T: 
+bool f(T x) {
     return x && true; // Doesn't typecheck
 }
 

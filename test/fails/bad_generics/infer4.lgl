@@ -1,8 +1,0 @@
-`t add_op<`t : genType>(`t x, `t y) {
-    `t result = x + y;
-    return result;
-}
-
-void main() {
-    print add_op([1., 2.], 3);
-}

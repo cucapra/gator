@@ -1,3 +1,0 @@
-void main() {
-    if (b) { 5; } else { skip; }
-}

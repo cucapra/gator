@@ -1,1 +1,1 @@
-Fatal error: exception Gatorl__Check.TypeException("Cannot unify vec4 and vec3")
+Fatal error: exception Gatorl__CheckUtil.TypeException("Line: 3 -- Cannot unify float[4] and float[3]")

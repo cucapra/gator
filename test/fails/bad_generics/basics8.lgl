@@ -1,3 +1,0 @@
-void main<`t : vec<2>>(`t x) {  // It is nonsenical to use generics in the main function
-    print 1;
-}

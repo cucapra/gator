@@ -1,9 +1,0 @@
-`t project_r3_r2<`t : vec<3>>(`t x) { // returns vec2, not `t
-    `t->vec2 proj = [[1., 0., 0.], [0., 1., 0.]];
-    // Multiply, but annoying as a test
-    return app_mat<`t, vec2>(proj, x);
-}
-
-void main() {
-    print 1;
-}

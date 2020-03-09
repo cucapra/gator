@@ -1,15 +1,9 @@
-tag a is vec<2>;
-tag b is vec<2>;
+type a is float[2];
 
-canon b f(a x) { 
-    return [1., 2.];
-}
-
-canon b g(a x) { 
-    return [2., 2.];
+canon a f(a x) { // cannot canonicalize a map to the identity
+    return x + [1., 1.];
 }
 
 void main() {
-    a avec = [1., 2.];
-    b fail = avec in b; // ambiguous path
+    print 1;
 }

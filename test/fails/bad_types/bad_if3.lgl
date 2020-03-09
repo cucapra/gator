@@ -1,5 +1,0 @@
-void main() {
-    bool b = 1 == 1;
-    if (b) { int x = 5; } else { skip; }
-    print x;
-}
