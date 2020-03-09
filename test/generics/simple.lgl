@@ -1,7 +1,0 @@
-`a id<`a:genType>(`a t) {
-    return t;
-}
-
-void main() {
-    float f = id<float>(1.0);
-}

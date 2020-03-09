@@ -893,8 +893,8 @@ let check_coordinate (cx: contexts) ((ml,id,p,ce) : coordinate) : contexts * Typ
 (* Check that there is a void main() defined *)
 let check_main_fn (cx: contexts) : unit =
     debug_print ">> check_main_fn";
-    let main_fns = get_functions cx "main" in
-    if List.length main_fns != 1 then error cx ("Multiple declarations of main") else
+    match get_functions_safe cx "main" with | [] -> () | main_fns ->
+    if List.length main_fns > 1 then error cx ("Multiple declarations of main") else
     let ml, rt, id, pr, meta = snd (List.hd main_fns) in 
     let pm = get_ml_pm cx ml in
     debug_print (">> check_main_fn_2" ^ (string_of_list string_of_param pr) ^ (string_of_parameterization pm));
