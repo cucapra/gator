@@ -253,6 +253,12 @@ let dexp :=
   | x = ID;
     <DimVar>
 
+let dtyp :=
+  | d1 = dtyp; TIMES; d2 = dtyp;
+    <MultTyp>
+  | s = STRING;
+    <BaseTyp>
+
 let typ :=
   | AUTOTYP;
     { AutoTyp }

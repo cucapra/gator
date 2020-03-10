@@ -1,0 +1,8 @@
+dimension meters is float;
+declare meters +(meters x, meters y);
+declare meters*meters *(meters x, meters y);
+void main() {
+    meters x = 3.7;
+    meters y = x + 4.5;
+    meters*meters z = x * y;
+}
