@@ -40,7 +40,7 @@ alphaColor extendColor(color c) {
 }
 
 float decodeFloat (alphaColor c) {
-  alphaColor bitShift = [1.0 / (16777216.), 1.0 / (65536.), 1.0 / (256.0), 1.];
+  alphaColor bitShift = [1.0 / (256. * 256. * 256.), 1.0 / (256. * 256.), 1.0 / (256.0), 1.];
   return dot(c, bitShift);
 }
 
