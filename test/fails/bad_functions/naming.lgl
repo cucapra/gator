@@ -1,4 +1,4 @@
-uniform mat3 x;
+uniform float[3][3] x;
 
 int f(int x) {
     return x;
