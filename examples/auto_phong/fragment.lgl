@@ -19,26 +19,6 @@ varying cart3<model>.vector vNormal;
 uniform cart3<light>.point uLight;
 canon uniform hom<light>.transformation<world> uLightTrans;
 
-// Boilerplate application definitions to help in expressions
-// canon hom<world>.point app_uModel(hom<model>.point v) {
-//     return uModel * v;
-// }
-// canon hom<world>.vector app_uModel(hom<model>.vector v) {
-//     return uModel * v;
-// }
-// canon hom<camera>.point app_uView(hom<world>.point v) {
-//     return uView * v;
-// }
-// canon hom<camera>.vector app_uView(hom<world>.vector v) {
-//     return uView * v;
-// }
-// canon hom<world>.point app_uLightTrans(hom<light>.point v) {
-//     return uLightTrans * v;
-// }
-// canon hom<world>.vector app_uLightTrans(hom<light>.vector v) {
-//     return uLightTrans * v;
-// }
-
 // Shader Code
 
 void main() {

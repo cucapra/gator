@@ -14,24 +14,11 @@ uniform sampler2D<alphaColor> uTexture;
 varying cart3<model>.point vPosition;
 varying cart3<model>.vector vNormal;
 varying cart3<lightProjective>.point vShadowPos;
-uniform hom<model>.transformation<world> uModel;
-uniform hom<world>.transformation<camera> uCamera;
+canon uniform hom<model>.transformation<world> uModel;
+canon uniform hom<world>.transformation<camera> uCamera;
 uniform cart3<world>.point uLight;
 uniform color uBaseColor;
 uniform float uSpecStrength;
-
-canon hom<world>.point app_uModel(hom<model>.point v) {
-    return uModel * v;
-}
-canon hom<world>.vector app_uModel(hom<model>.vector v) {
-    return uModel * v;
-}
-canon hom<camera>.point app_uView(hom<world>.point v) {
-    return uCamera * v;
-}
-canon hom<camera>.vector app_uView(hom<world>.vector v) {
-    return uCamera * v;
-}
 
 alphaColor extendColor(color c) {
   return vec4(c, 1.) as! alphaColor;

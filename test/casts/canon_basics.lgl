@@ -8,7 +8,7 @@ prototype test {
   with frame() r: object t;
 
   with frame() target:
-  canon this<target>.a trans(canon t<target> x, a y);
+  this<target>.a trans(t<target> x, a y);
 }
 
 with frame(3) r:

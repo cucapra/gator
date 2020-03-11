@@ -118,13 +118,13 @@ prototype geometry {
     vector -(point x, point y);
     vector -(point x);
     with frame() target:
-    canon this<target>.vector *(canon transformation<target> m, vector v);
+    this<target>.vector *(transformation<target> m, vector v);
 
     with frame() target:
-    canon this<target>.vector *(canon transformation<target> m, direction d);
+    this<target>.vector *(transformation<target> m, direction d);
 
     with frame() target:
-    canon this<target>.point *(canon transformation<target> m, point p);
+    this<target>.point *(transformation<target> m, point p);
 
     with frame() target:
     transformation<target> +(transformation<target> m1, transformation<target> m2);
