@@ -47,7 +47,7 @@ void main() {
 
   auto res1 = x in impl2;
   auto res2 = x in f2;
-  auto res3 = x in impl2<f2>;
+  // auto res3 = x in impl2<f2>;
 
   //should fail
   // auto resf1 = (x in impl2) in impl1;

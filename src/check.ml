@@ -519,6 +519,8 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
                     ("Ambiguous constraint ordering between " ^ string_of_typ t1
                     ^ " and " ^ string_of_typ t2)
                 in
+                print_endline (string_of_list string_of_typ args');
+                print_endline (string_of_list string_of_typ ptr);
                 if not (is_subtype_list cxf args' ptr) then [] else
                 match rtr with
                 | MemberTyp _ -> let rec_result = [] in
