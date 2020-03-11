@@ -1,0 +1,39 @@
+type vec3 is float[3];
+type mat3 is float[3][3];
+type color is vec3;
+
+`u app_mat<`t : vec, `u : vec>(`t->`u m, `t x) {
+    return m * x;
+}
+
+`u app_mat2<`t : vec, `u : vec, `v : `t->`u>(`v m, `t x) {
+    return m * x;
+}
+
+`t id_vec3<`t : vec<3>>(`t x) {
+    `t->`t id = [[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]];
+    return x;
+}
+
+vec2 project_r3_r2<`t : vec<3>>(`t x) {
+    `t->vec2 proj = [[1., 0., 0.], [0., 1., 0.]];
+    // Multiply, but annoying as a test
+    return app_mat<`t, vec2>(proj, x);
+}
+
+`t scale_mat<`t : mat>(`t m1, `t m2) {
+    `t l = 3. * m1;
+    `t r = 5. * m2;
+    return l + r;
+}
+
+void main() {
+    print id_vec3([2., 1., 1.]);
+
+    print app_mat([[1., 0.], [0., 1.], [1., 1.]], [1., 2.]);
+    // print app_mat2([[1., 0.], [0., 1.], [1., 1.]], [1., 2.]);
+    print project_r3_r2([1., 1., 1.]);
+
+    print scale_mat([[1., 0.], [0., 1.]], [[1., 0.], [0., 1.]]);
+    print scale_mat([[1., 0.], [0., 1.]], [[1., 0.], [0., 1.]]);
+}

@@ -1,1 +1,1 @@
-Fatal error: exception Gatorl__Check.TypeException("print function cannot print void types")
+Fatal error: exception Gatorl__CheckUtil.TypeException("void functions cannot return a value")

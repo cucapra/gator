@@ -1,9 +1,0 @@
-tag model is vec<3>;
-tag dir<`t : vec> is `t;
-
-declare canon dir<`t> normalize<`t : vec>(`t x);
-declare float dot<`t: genType>(dir<`t> v1, dir<`t> v2); // `t must be a vector
-
-void main() {
-    print 1;
-}

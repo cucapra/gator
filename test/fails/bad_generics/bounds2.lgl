@@ -1,7 +1,11 @@
-`t vec_id<`t : vec>(`t x) {
-    return x;
+with int T: declare T +(T x, T y);
+with float T: declare T +(T x, T y);
+
+// Note that t cannot be a bool, so `t should be a genTyp
+with int T: T add_op(T x, T y) {
+    return x + y;
 }
 
 void main() {
-    int fail = vec_id<int>(1); // fails the bounds
+    auto fail = add_op<float>(1., 2.);
 }

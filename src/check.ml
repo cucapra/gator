@@ -263,8 +263,7 @@ let rec typ_erase (cx: contexts) (t : typ) : TypedAst.etyp =
     | AutoTyp -> error cx ("Cannot infer the type of auto")
     | AnyTyp -> TypedAst.AnyTyp
     | GenTyp -> TypedAst.GenTyp
-    | BotTyp | AnyFrameTyp | FrameTyp _ | GenArrTyp _ -> 
-        debug_fail cx ("Cannot erase " ^ string_of_typ t)
+    | BotTyp | AnyFrameTyp | FrameTyp _ | GenArrTyp _ | ExactCodeTyp -> debug_fail cx ("Cannot erase " ^ string_of_typ t)
 
 let rec etyp_to_typ (e : TypedAst.etyp) : typ =
     debug_print ">> etyp_to_typ";
@@ -279,6 +278,7 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
         match c with | ConstInt i -> DimNum i | ConstVar v -> DimVar v)
     | TypedAst.AnyTyp -> AnyTyp
     | TypedAst.GenTyp -> GenTyp
+    | TypedAst.ExactCodeTyp -> ExactCodeTyp
 
 let rec check_val (cx: contexts) (v: value) : typ = 
     debug_print (">> check_val " ^ string_of_value v);
@@ -702,27 +702,26 @@ and check_comm (cx: contexts) (c: comm) : contexts * TypedAst.comm =
                     error cx ("Cannot infer the type of " ^ string_of_aexp e)
                 | _ -> t')
             | _ -> t) in
-        check_assign cx t' s (snd result);
+        check_assign cx t' (Var s) (snd result);
         bind_typ cx s ml t', TypedAst.Decl (typ_erase cx t', s, (exp_to_texp cx result))
     | Assign (s, e) ->
-        let t = get_var cx s in
+        let x,t = check_aexp cx s in
         let result = check_aexp cx e in
-        check_assign cx t s (snd result);
-        cx, TypedAst.Assign (s, (exp_to_texp cx result))
+        check_assign cx t (fst s) (snd result);
+        cx, TypedAst.Assign (exp_to_texp cx (x,t), (exp_to_texp cx result))
     | AssignOp (s, b, e) -> 
         let cx', c' = check_acomm cx 
-            (Assign (s, (FnInv(b, [], [Var s, snd e; e]), cx.meta)), cx.meta) in
+            (Assign (s, (FnInv(b, [], [fst s, snd e; e]), cx.meta)), cx.meta) in
         (match c' with
-        | TypedAst.Assign (_, (TypedAst.FnInv (_, _, [_, st; e]), _)) -> 
-            cx', TypedAst.AssignOp((s, st), b, e)
+        | TypedAst.Assign (s', (TypedAst.FnInv (_, _, [_, st; e]), _)) -> 
+            cx', TypedAst.AssignOp(s', b, e)
         | _ -> debug_fail cx "Assign must return an assign?")
     | If ((b, c1), el, c2) ->
         let check_if b c =
             let er = (check_aexp cx b) in
             let _, cr = check_comm_lst cx c in
-            (match snd er with 
-            | BoolTyp -> ((exp_to_texp cx er), cr)
-            | _ -> error cx ("Expected boolean expression for if condition"))
+            if is_subtype cx (snd er) BoolTyp then ((exp_to_texp cx er), cr)
+            else error cx ("Expected boolean expression for if condition")
         in
         let c2r = (match c2 with 
             | Some e -> Some (snd (check_comm_lst cx e)) 
@@ -737,6 +736,8 @@ and check_comm (cx: contexts) (c: comm) : contexts * TypedAst.comm =
         cx, TypedAst.For (c1r, btexp, c2r, (snd (check_comm_lst cx'' cl)))
     | Return e ->
         cx, TypedAst.Return(option_map (exp_to_texp cx |- check_aexp cx) e)
+    | ExactCodeComm ec ->
+        cx, TypedAst.ExactCodeComm(ec)
 
 (* Updates Gamma and Psi *)
 and check_comm_lst (cx: contexts) (cl : acomm list) : contexts * TypedAst.comm list = 
@@ -748,9 +749,9 @@ and check_comm_lst (cx: contexts) (cl : acomm list) : contexts * TypedAst.comm l
         cx'', c' :: cl'
 
 (* Updates Gamma *)
-and check_assign (cx: contexts) (t: typ) (s: string) (etyp : typ) : unit =
+and check_assign (cx: contexts) (t: typ) (x: exp) (etyp : typ) : unit =
     debug_print (">> check_assign " ^ string_of_typ t ^ " " 
-        ^ s ^ " assigned " ^ string_of_typ etyp);
+        ^ string_of_exp x ^ " assigned " ^ string_of_typ etyp);
     (* Check that t, if not a core type, is a registered tag *)
     let rec check_tag (t: typ) : unit =
         match t with
@@ -759,7 +760,7 @@ and check_assign (cx: contexts) (t: typ) (s: string) (etyp : typ) : unit =
     in
     check_tag t;
     if is_subtype cx etyp t then ()
-    else error cx ("Mismatched types for var decl for " ^ s ^
+    else error cx ("Mismatched types for var decl for " ^ string_of_exp x ^
         ": expected " ^ string_of_typ t ^ ", found " ^ string_of_typ etyp)
 
 (* Helper function for type checking void functions. 
@@ -855,7 +856,7 @@ let check_global_variable (cx: contexts) (ml, sq, t, id, e: global_var)
     debug_print ">> check_global_variable";
     check_typ_valid cx t;
     let e' = option_map (fun x -> check_aexp cx x) e in
-    (match e' with | Some (_,te) -> check_assign cx t id te | None -> ());
+    (match e' with | Some (_,te) -> check_assign cx t (Var id) te | None -> ());
     let gvr = if has_modification cx ml External then None else
         Some (sq, typ_erase cx t, id, option_map (fun x -> exp_to_texp cx x) e') in
     bind_typ cx id ml t, gvr
@@ -996,8 +997,8 @@ let check_coordinate (cx: contexts) ((ml,id,p,ce) : coordinate)
 (* Check that there is a void main() defined *)
 let check_main_fn (cx: contexts) : unit =
     debug_print ">> check_main_fn";
-    let main_fns = get_functions cx "main" in
-    if List.length main_fns != 1 then error cx ("Multiple declarations of main") else
+    match get_functions_safe cx "main" with | [] -> () | main_fns ->
+    if List.length main_fns > 1 then error cx ("Multiple declarations of main") else
     let ml, rt, id, pr, meta = snd (List.hd main_fns) in 
     let pm = get_ml_pm cx ml in
     debug_print (">> check_main_fn_2" ^ (string_of_list string_of_param pr) 
@@ -1008,57 +1009,61 @@ let check_main_fn (cx: contexts) : unit =
         | UnitTyp -> ()
         | _ -> raise (TypeException "Expected main function to return void")
 
+let check_exactCode (ec: string) : TypedAst.prog =
+    let test = Assoc.empty in
+    [Fn ((ExactCodeTyp, ec, test, []), [])]
+
 let rec check_term (cx: contexts) (t: term) 
-: contexts * TypedAst.prog * TypedAst.global_vars =
+: contexts * TypedAst.prog =
     match t with
     | Using s -> check_exprog (get_prog cx s) cx
-    | Prototype p -> check_prototype cx p, [], []
+    | ExactCode ec -> 
+        cx, (check_exactCode ec)
+    | Prototype p -> check_prototype cx p, []
     | Coordinate c -> let cx',tf = check_coordinate cx c in
-        cx', tf, []
-    | Frame f -> check_frame cx f, [], []
+        cx', List.map (fun f -> TypedAst.Fn f) tf
+    | Frame f -> check_frame cx f, []
     | Typ (ml, id, t) ->
         let pm = get_ml_pm cx ml in
-        check_typ_decl cx id (has_modification cx ml External, pm, t), [], []
+        let ext = has_modification cx ml External in
+        check_typ_decl cx id (ext, pm, t), []
     | GlobalVar gv -> let (cx', gv') = check_global_variable cx gv in
-        cx', [], (match gv' with | None -> [] | Some gv'' -> [gv''])
+        cx', (match gv' with | None -> [] | Some v -> [TypedAst.GlobalVar v])
     | Fn f -> let (cx', f') = check_fn cx f None in
-        cx', (match f' with | None -> [] | Some f' -> [f']), []
+        cx', (match f' with | None -> [] | Some f' -> [Fn f'])
     
 and check_aterm (cx: contexts) ((t, meta): aterm) 
-: contexts * TypedAst.prog * TypedAst.global_vars =
+: contexts * TypedAst.prog =
     check_term (with_meta cx meta) t
 
 (* This might end up being really bad -- 
  * there's no scoping management on external files *)
 and check_exprog (tl: prog) (cx : contexts) :
-contexts * TypedAst.prog * TypedAst.global_vars =
-    let cx', f, gv = List.fold_left 
-        (fun acc t -> let cx', f', gv' = check_aterm (tr_fst acc) t in
-    (cx', f'@(tr_snd acc), gv'@(tr_thd acc)))
-    (cx, [], []) tl in
-    cx', List.rev f, List.rev gv
+contexts * TypedAst.prog =
+    let cx', f = List.fold_left (fun acc t -> let cx', f' = check_aterm (fst acc) t in
+    (cx', f'@(snd acc)))
+    (cx, []) tl in
+    cx', List.rev f
 
 let rec check_term_list (tl: prog) (externs: prog Assoc.context) :
-contexts * TypedAst.prog * TypedAst.global_vars =
+contexts * TypedAst.prog=
     debug_print ">> check_global_var_or_fn_lst";
     (* Annoying bootstrapping hack *)
-    let cx, f, gv = List.fold_left 
-        (fun acc t -> let cx', f', gv' = check_aterm (tr_fst acc) t in
-        (cx', f'@(tr_snd acc), gv'@(tr_thd acc)))
-        (init (snd (List.hd tl)) externs, [], []) tl in
-    cx, List.rev f, List.rev gv
+    let cx, f = List.fold_left (fun acc t -> let cx', f' = check_aterm (fst acc) t in
+        (cx', f'@(snd acc)))
+        (init (snd (List.hd tl)) externs, []) tl in
+    cx, List.rev f
 
 (* Returns the list of fn's which represent the program 
  * and params of the void main() fn *)
-let check_prog (tl: prog) (externs: prog Assoc.context) 
-    : TypedAst.prog * TypedAst.global_vars =
+let check_prog (tl: prog) (externs: prog Assoc.context) : TypedAst.prog =
     debug_print ">> check_prog";
-    let cx, typed_prog, typed_gvs = check_term_list tl externs in
+    let cx, typed_prog = check_term_list tl externs in
     check_main_fn cx;
     debug_print "===================";
     debug_print "Type Check Complete";
     debug_print "===================\n";
-    typed_prog, typed_gvs
+    typed_prog
 
 (* Searches the program for files which need to be loaded *)
 (* If we have any duplicate names, throws an exception to avoid cycles *)

@@ -1,5 +1,7 @@
-int f() {
-    return true;
+type a is float[2];
+
+a f(float[2] x) {
+    return x; // No downcasting in return
 }
 
 void main() {

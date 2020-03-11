@@ -81,6 +81,7 @@ exception ParseException of string
 %token ATTRIBUTE
 %token UNIFORM
 %token VARYING
+%token POUND
 
 (* Precedences *)
 
@@ -133,6 +134,8 @@ let node(T) == t = T; { (t, $startpos) }
 let term ==
   | USING; s = STRING; SEMI;
     <Using>
+  | POUND; s = STRING; SEMI;
+    <ExactCode>
   | PROTOTYPE; x = ID; LBRACE; p = list(node(prototype_element)); RBRACE;
     <Prototype>
   | m = modification*; COORDINATE; x = ID; COLON; p = ID;
@@ -236,14 +239,16 @@ let comm_element ==
     { Decl(m, t, x, e) }
   | e = node(effectful_exp);
     < Exp >
-  | x = ID; GETS; e = node(exp); 
+  | x = node(assign_exp); GETS; e = node(exp); 
     < Assign >
-  | x = ID; a = assignop; e = node(exp); 
+  | x = node(assign_exp); a = assignop; e = node(exp); 
     < AssignOp >
   | PRINT; e = node(exp); 
     < Print >
   | RETURN; e = node(exp)?;
     < Return >
+  | POUND; s = STRING; 
+    < ExactCodeComm >
 
 let dexp :=
   | d1 = dexp; PLUS; d2 = dexp;
@@ -320,8 +325,8 @@ let exp:=
     <>
   | v = value;
     <Val>
-  | x = ID;
-    <Var>
+  | e = assign_exp;
+    <>
   | op = unop; e = node(exp);
     { FnInv(op, [], [e]) }
   | e1 = node(exp); op = infix; e2 = node(exp);
@@ -336,8 +341,6 @@ let exp:=
     <In>
   | e = node(exp); DOT; s = ID;
     { FnInv("swizzle",[],[Var s, $startpos; e]) }
-  | x = ID; LBRACK; e = node(exp); RBRACK;
-    { Index((Var x, $startpos), e) }
 
 /* A strict subset of expressions that can have effects, separated to help parse commands */
 /* In other words, we syntactically reject commands that have no effect on the program */
@@ -349,6 +352,15 @@ let effectful_exp ==
     { FnInv(op, [], [(Var (fst x), snd x)]) }
   | x = node(ID); op = unop_effectful;
     { FnInv(op, [], [(Var (fst x), snd x)]) }
+
+/* A strict subset of expressions that can be in assignments to help the parser */
+/* We syntactically reject assignments to anything but Indexes and Vars */
+/* Note that indexes may _recurse_ on expressions, this is fine */
+let assign_exp ==
+  | x = ID;
+    <Var>
+  | x = ID; LBRACK; e = node(exp); RBRACK;
+    { Index((Var x, $startpos), e) }
 
 let unop ==
   /* NOTE: if you update this, update id_extended, which is built to avoid MINUS conflicts */

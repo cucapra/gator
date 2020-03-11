@@ -1,0 +1,213 @@
+type vec2 is float[2];
+type vec3 is float[3];
+type vec4 is float[4];
+type scalar is float;
+with float T:
+type test is float[2];
+
+with vec2 T: declare T +(T v1, T v2);
+with vec2 T: declare T -(T v1, T v2);
+with vec2 T: declare T -(T v);
+with vec2 T: with float U: declare T *(T v, U f);
+with vec2 T: with float U: declare T *(U f, T v);
+
+with vec3 T: declare T +(T v1, T v2);
+with float T: declare test<T> +(test<T> v1, test<T> v2);
+with vec3 T: declare T -(T v1, T v2);
+with vec3 T: declare T -(T v);
+with vec3 T: with float U: declare T *(T v, U f);
+with vec3 T: with float U: declare T *(U f, T v);
+
+with vec4 T: declare T +(T v1, T v2);
+with vec4 T: declare T -(T v1, T v2);
+with vec4 T: declare T -(T v);
+with vec4 T: with float U: declare T *(T v, U f);
+with vec4 T: with float U: declare T *(U f, T v);
+
+with float T: declare T +(T f1, T f2);
+with float T: declare T -(T f1, T f2);
+with float T: declare T -(T f);
+with float T: declare T *(T f1, T f2);
+with float T: declare T /(T f1, T f2);
+
+declare float cos(float f);
+declare float sqrt(float f);
+declare float acos(float f);
+
+prototype geometry {
+    object point;
+    object vector;
+
+    vector +(vector x, vector y);
+    vector -(vector x, vector y);
+    vector *(vector v, scalar s);
+    vector *(scalar s, vector v);
+    vector -(vector v);
+    point translate(point p, vector v);
+    point +(point p, vector v);
+    point -(point p, vector v);
+    vector -(point x, point y);
+    vector -(point x);
+}
+with frame(2) r:
+coordinate cart2 : geometry {
+    object point is float[2];
+    object vector is float[2];
+
+    // vector +(vector x, vector y) {
+    //     return (x as! vec2 + y as! vec2) as! vector;
+    // }
+    vector -(vector x, vector y) {
+        return (x as! vec2 - y as! vec2) as! vector;
+    }
+    vector *(vector v, scalar s) {
+        return (v as! vec2 * s) as! vector;
+    }
+    vector *(scalar s, vector v) {
+        return (s * v as! vec2) as! vector;
+    }
+    vector -(vector v) {
+        return (-v as! vec2) as! vector;
+    }
+    point translate(point p, vector v) {
+        return (p as! vec2 + v as! vec2) as! point;
+    }
+    point +(point p, vector v) {
+        return (p as! vec2 + v as! vec2) as! point;
+    }
+    point -(point p, vector v) {
+        return (p as! vec2 - v as! vec2) as! point;
+    }
+    vector -(point x, point y) {
+        return (x as! vec2 - y as! vec2) as! vector;
+    }
+    vector -(point v) {
+        return (-v as! vec2) as! vector;
+    }
+}
+with frame(3) r:
+coordinate cart3 : geometry {
+    object point is float[3];
+    object vector is float[3];
+
+    vector +(vector x, vector y) {
+        return (x as! vec3 + y as! vec3) as! vector;
+    }
+    vector -(vector x, vector y) {
+        return (x as! vec3 - y as! vec3) as! vector;
+    }
+    vector *(vector v, scalar s) {
+        return (v as! vec3 * s) as! vector;
+    }
+    vector *(scalar s, vector v) {
+        return (s * v as! vec3) as! vector;
+    }
+    vector -(vector v) {
+        return (-v as! vec3) as! vector;
+    }
+    point translate(point p, vector v) {
+        return (p as! vec3 + v as! vec3) as! point;
+    }
+    point +(point p, vector v) {
+        return (p as! vec3 + v as! vec3) as! point;
+    }
+    point -(point p, vector v) {
+        return (p as! vec3 - v as! vec3) as! point;
+    }
+    vector -(point x, point y) {
+        return (x as! vec3 - y as! vec3) as! vector;
+    }
+    vector -(point v) {
+        return (-v as! vec3) as! vector;
+    }
+}
+with frame(2) r:
+coordinate polar : geometry {
+
+    object point is float[2];
+    object vector is float[2];
+
+    vector *(vector v, scalar s) {
+        return [v[0] * s, v[1]];
+    }
+    with float[2] T:
+    T __trans(T x, T y) {
+        // https://pritschet.me/wiki/physics/linear-translation-polar-coordinates/
+        float r1 = x[0];
+        float r2 = y[0];
+        float theta1 = x[1];
+        float theta2 = x[2];
+        float r = sqrt(r1 * r1 + r2 * r2 + 2. * r1 * r2 * cos(theta1 - theta2));
+        float theta = acos((r1 * cos(theta1) + r2 * cos(theta2)) / r);
+        return [r, theta];
+    }
+    vector +(vector x, vector y) {
+        return __trans(x, y);
+    }
+    vector -(vector x, vector y) {
+        return __trans(x, [-y[0], y[1]]);
+    }
+    vector *(scalar s, vector v) {
+        return [s * v[0], v[1]];
+    }
+    vector -(vector v) {
+        return [-v[0], v[1]];
+    }
+    point translate(point p, vector v) {
+        return __trans(p, v) as! point;
+    }
+    point +(point p, vector v) {
+        return __trans(p, v) as! point;
+    }
+    point +(point p, vector v) {
+        return (p as! vec2 - v as! vec2) as! point;
+    }
+    vector -(point x, point y) {
+        return __trans(x, [-y[0], y[1]]) as! vector;
+    }
+    vector -(point v) {
+        return [-v[0], v[1]];
+    }
+}
+with frame(3) r:
+coordinate hom : geometry {
+    object point is float[4];
+    object vector is float[4];
+
+    vector +(vector x, vector y) {
+        return [x[0] + y[0], x[1] + y[1], x[2] + y[2], 0.];
+    }
+    vector -(vector x, vector y) {
+        return [x[0] - y[0], x[1] - y[1], x[2] - y[2], 0.];
+    }
+    vector *(vector v, scalar s) {
+        return [v[0] * s, v[1] * s, v[2] * s, 0.];
+    }
+    vector *(scalar s, vector v) {
+        return [s * v[0], s * v[1], s * v[2], 0.];
+    }
+    vector -(vector v) {
+        return [-v[0], -v[1], -v[2], 0.];
+    }
+    point translate(point p, vector v) {
+        return (p as! vec4 + v as! vec4 * p[3]) as! point;
+    }
+    point +(point p, vector v) {
+        return (p as! vec4 + v as! vec4 * p[3]) as! point;
+    }
+    point -(point p, vector v) {
+        return (p as! vec4 - v as! vec4 * p[3]) as! point;
+    }
+    vector -(point x, point y) {
+        return (x as! vec4 * y[3] - y as! vec4 * x[3]) as! vector;
+    }
+    // We don't actually need to define every function, it will just fail if we try and call an undefined function
+}
+
+frame world has dimension 3;
+frame plane has dimension 2;
+
+void main() {
+    hom.point<world> v = [1., 2., 1., 1.];
+    print -v; // negative of a hom point not defined
+}

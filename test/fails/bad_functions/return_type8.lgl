@@ -1,9 +1,0 @@
-tag a is vec2;
-
-vec2 f(a x) {
-    return x; // No topcasting in return
-}
-
-void main() {
-    return;
-}

@@ -1,25 +1,25 @@
-space model is vec<3>;
-space world is vec<3>;
-space camera is vec<3>;
-tag projective is vec<3>;
-space hom<`t : vec<n>> is vec<n+1>;
+#"precision mediump float;";
 
-declare vec4 vec4<`t : vec<3>>(`t v, float f);
-declare vec3 vec3<`t : vec<4>>(`t v);
+type vec3 is float[3];
+type vec4 is float[4];
+type mat4 is float[4][4];
 
-attribute model aPosition;
-attribute model aNormal;
-varying model vPosition;
-varying model vNormal;
-canon uniform hom<camera>->hom<projective> uProjection;
-canon uniform hom<world>->hom<camera> uView;
-canon uniform hom<model>->hom<world> uModel;
+with mat4 T: declare T *(T m1, T m2);
+with mat4 T: with vec4 U: declare U *(T m, U v);
 
-canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
-canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }
+declare vec4 vec4(vec3 v, float f);
+declare vec3 vec3(vec4 v);
+
+attribute vec3 aPosition;
+attribute vec3 aNormal;
+varying vec3 vPosition;
+varying vec3 vNormal;
+uniform mat4 uProjection;
+uniform mat4 uView;
+uniform mat4 uModel;
 
 void main() {
   vNormal = aNormal;
   vPosition = aPosition;
-  hom<projective> gl_Position = aPosition in hom<projective>;
+  vec4 gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
 }

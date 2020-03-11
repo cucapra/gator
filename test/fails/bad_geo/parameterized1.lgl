@@ -1,7 +1,0 @@
-tag a is vec<2>;
-tag p3<`t : vec<3>> is vec<2>;
-tag p32<`t : vec<3>> is p3<vec<3>, vec<3>>; // incorrect number of arguments to p3
-
-void main() {
-    print 1;
-}

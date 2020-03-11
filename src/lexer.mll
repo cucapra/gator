@@ -12,7 +12,7 @@ let white = [' ' '\t']
 let num = ['0'-'9']+
 let letter = ['a'-'z' 'A'-'Z']
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
-let s = ['"'] ['a'-'z' 'A'-'Z' '0'-'9' ' ' '\t' '-' '.' '_' '/']* ['"'] 
+let s = ['"'] ['a'-'z' 'A'-'Z' '0'-'9' ' ' '\t' '-' '.' '_' '/' ';']* ['"'] 
 let floatval = ((['0'-'9']*['.']['0'-'9']+)|(['0'-'9']+['.']['0'-'9']*))
 let newline = ['\n' '\r']
 let comment = "//" [^ '\r' '\n']* 
@@ -82,6 +82,7 @@ rule read = parse
   | ";"             { SEMI }
   | "."             { DOT }
   | ":"             { COLON }
+  | "#"             { POUND }
   | "void"          { VOID }
   | "return"        { RETURN }
   | "declare"       { DECLARE }
@@ -104,12 +105,6 @@ rule read = parse
   | "precision"
   | "invariant"
   | "discard"
-  | "ivec2"
-  | "ivec3"
-  | "ivec4"
-  | "bvec2"
-  | "bvec3"
-  | "bvec4"
   | "asm"
   | "class" 
   | "union" 
@@ -138,20 +133,6 @@ rule read = parse
   | "superp"
   | "input"
   | "output"
-  | "hvec2"
-  | "hvec3"
-  | "hvec4"
-  | "dvec2"
-  | "dvec3"
-  | "dvec4"
-  | "fvec2"
-  | "fvec3"
-  | "fvec4"
-  | "sampler1DShadow"
-  | "sampler2DShadow"
-  | "sampler2DRect"
-  | "sampler3DRect"
-  | "sampler2DRectShadow"
   | "sizeof"
   | "cast"
   | "namespace"

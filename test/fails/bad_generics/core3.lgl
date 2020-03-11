@@ -1,9 +1,0 @@
-// Note that t cannot be a bool
-`t add_op<`t : genType>(`t x, `t y) {
-    `t result = x + y;
-    return result;
-}
-
-void main() {
-    int fail = add_op<int>(1, false);  // Check every argument
-}

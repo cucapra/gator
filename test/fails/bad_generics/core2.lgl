@@ -1,9 +1,0 @@
-// Note that this means `t cannot be a bool
-`t add_op<`t : genType>(`t x, `t y) {
-    `t result = x + y;
-    return result;
-}
-
-void main() {
-    bool fail = add_op<bool>(true, false);
-}

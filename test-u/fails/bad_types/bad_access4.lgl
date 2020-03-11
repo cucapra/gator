@@ -1,3 +1,0 @@
-void main() {
-    print [1., 2., 3., 4.].f;  // Swizzling letters must be in the set {x,y,z,w, r,g,b,a, s,t,p,q}
-}

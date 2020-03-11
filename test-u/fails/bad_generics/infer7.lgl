@@ -1,7 +1,0 @@
-`u app_mat<`t, `u>(`t->`u m, t x) {
-    return m * x;
-}
-
-void main() {
-    vec3 fail = app_mat([[1., 0.], [0., 1.]], [1., 1.]); // Will not return a vec3
-}

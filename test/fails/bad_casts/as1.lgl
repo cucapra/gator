@@ -1,4 +1,4 @@
 void main() {
-    vec<4> v = [1., 2., 3., 4.];
-    vec<3> fail = v as vec<3>; // Not a subtype
+    float[4] v = [1., 2., 3., 4.];
+    auto fail = v as! float[3]; // Not a subtype
 }

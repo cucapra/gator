@@ -22,6 +22,7 @@ let rec comp_type (t : etyp) : string =
     | ArrTyp _ -> failwith "Cannot represent ArrTyp in Javascript"
     | AnyTyp -> failwith "unimplemented anytyp in Javascript"
     | GenTyp -> failwith "unimplemented gentyp in Javascript"
+    | ExactCodeTyp -> failwith "unimplemented ExactCodeTyp in Javascript"
 
 (* let comp_fn_arg_type (t : etyp) : string =
     match t with
@@ -149,9 +150,10 @@ and comp_exp (e : exp) (s : SS.t) : string =
         fn_name ^ "(" ^ (String.concat "," (List.map (fun (e, _) -> comp_exp e s) args)) ^ ")" *)
         failwith "unimplemented function invocation writing"
 
-let comp_assign (x : id) ((e, t) : texp) (s : SS.t) : string =
+let comp_assign (x : texp) ((e, t) : texp) (s : SS.t) : string =
     match t with
-    | UnitTyp | BoolTyp | IntTyp | FloatTyp | StringTyp | ParTyp _ -> x ^ "=" ^ (comp_exp e s) ^ ";"
+    | UnitTyp | BoolTyp | IntTyp | FloatTyp | StringTyp | ExactCodeTyp | ParTyp _ -> 
+        comp_exp (fst x) s ^ "=" ^ comp_exp e s ^ ";"
     (* | VecTyp v -> "vec" ^ (string_of_int v) ^ ".copy(" ^ x ^ "," ^ (comp_exp e s) ^ ");"
     | MatTyp (m, n) -> "mat" ^ (string_of_int (max m n)) ^ ".copy(" ^ x ^ "," ^ (comp_exp e s) ^ ");" *)
     | ArrTyp _ | AnyTyp | GenTyp -> comp_type t
@@ -187,6 +189,7 @@ let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
             ^ "{ " ^ (comp_comm_lst cl s) ^ " }" ^ (comp_comm_lst tl s))
         | Return Some (e, _) -> "return " ^ (comp_exp e s) ^ ";" ^ (comp_comm_lst tl s)
         | Return None -> "return;" ^ (comp_comm_lst tl s)
+        | ExactCodeComm ec -> ec
 
 let comp_fn (f : fn) (s : SS.t) : string =
     let (rt, id, pm, p), cl = f in
@@ -197,14 +200,19 @@ let comp_fn (f : fn) (s : SS.t) : string =
     let fn_str = "function " ^ fn_name ^ "(" ^ param_string ^ "):" ^ (comp_type rt) ^ "{" ^ (comp_comm_lst cl s) ^ "}" in
     fn_str
 
-let rec comp_fn_lst (f : fn list) (s : SS.t) : string =
+let rec comp_prog (f : prog) (s : SS.t) : string =
     debug_print ">> comp_fn_lst";
     match f with 
     | [] -> ""
-    | f::t -> let (_,id,_,_),_ = f in
-        comp_fn f s ^ comp_fn_lst t (SS.add id s)
+    | Fn f::t -> let (_,id,_,_),_ = f in
+        comp_fn f s ^ comp_prog t (SS.add id s)
+    | GlobalVar (sq, et, x, e)::t -> let e_str = string_of_option_removed (fun x -> "= " ^ comp_texp x SS.empty) e in
+        match et with
+        (* | VecTyp n -> "var " ^ x ^ "= vec" ^ (string_of_int n) ^ ".create();" ^ x ^ e_str ^ (decl_attribs t)
+        | MatTyp (m,n) -> "var " ^ x ^ "= mat" ^ (string_of_int (max m n)) ^ ".create();" ^ e_str ^ (decl_attribs t) *)
+        | _ -> "var " ^ x ^ e_str ^ ";" ^ (comp_prog t s)
 
-let rec decl_attribs (gv : global_vars) : string = 
+(* let rec decl_attribs (gv : global_vars) : string = 
     debug_print ">> decl_attribs";
     match gv with
     | [] -> ""
@@ -212,7 +220,7 @@ let rec decl_attribs (gv : global_vars) : string =
         match et with
         (* | VecTyp n -> "var " ^ x ^ "= vec" ^ (string_of_int n) ^ ".create();" ^ x ^ e_str ^ (decl_attribs t)
         | MatTyp (m,n) -> "var " ^ x ^ "= mat" ^ (string_of_int (max m n)) ^ ".create();" ^ e_str ^ (decl_attribs t) *)
-        | _ -> "var " ^ x ^ e_str ^ ";" ^ (decl_attribs t)
+        | _ -> "var " ^ x ^ e_str ^ ";" ^ (decl_attribs t) *)
 
 let util_funcs =
     String.concat "" (List.map
@@ -266,7 +274,7 @@ let util_funcs =
     "function __mat4to2(m:mat4):mat2{return mat2.fromValues(m[0],m[1],m[4],m[5]);}" ^
     "function __mat3to2(m:mat3):mat2{return mat2.fromValues(m[0],m[1],m[3],m[4]);}"
 
-let rec compile_program (prog : prog) (global_vars : global_vars) : string =
+let rec compile_program (prog : prog) : string =
     debug_print ">> compile_programJS";
     (* let prog' = generate_generics_in_prog prog false in *)
-    "import {vec2,mat2,vec3,mat3,vec4,mat4} from 'gl-matrix';" ^ util_funcs ^ "\n" ^ (decl_attribs global_vars) ^ (comp_fn_lst prog SS.empty) ^ "main__();"
+    "import {vec2,mat2,vec3,mat3,vec4,mat4} from 'gl-matrix';" ^ util_funcs ^ "\n" ^ comp_prog prog SS.empty ^ "main__();"

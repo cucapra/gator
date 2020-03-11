@@ -1,0 +1,6 @@
+declare void f();
+
+void main() {
+    auto x = f();
+    return;
+}

@@ -1,4 +1,0 @@
-void main() {
-    skip;;
-    print 5;
-}

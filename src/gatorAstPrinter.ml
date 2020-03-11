@@ -33,6 +33,7 @@ let rec string_of_typ (t: typ) : string =
     | GenArrTyp t' -> "arr of " ^ string_of_typ t'
     | AnyFrameTyp -> "frame"
     | AnyTyp -> "anyType"
+    | ExactCodeTyp -> "ExactCodeTyp"
 
 and string_of_pml (p : typ list) : string =
     if List.length p > 0 then "<" ^ string_of_list string_of_typ p ^ ">" else ""
@@ -80,10 +81,10 @@ and string_of_comm (c: comm) : string =
     | Skip -> "skip;"
     | Print e -> "print " ^ string_of_aexp e ^ ";"
     | Exp e -> string_of_aexp e ^ ";"
-    | Decl (ml, t, s, e) -> string_of_mod_list ml ^ string_of_typ t 
-        ^ " " ^ s ^ " = " ^ string_of_aexp e ^ ";"
-    | Assign (b, x) -> b ^ " = " ^ string_of_aexp x ^ ";"
-    | AssignOp (x, op, e) -> x ^ " " ^ op ^ "= " ^ string_of_aexp e
+    | Decl (ml, t, s, e) -> string_of_mod_list ml ^ (string_of_typ t) ^ 
+        " " ^ s ^ " = " ^ (string_of_aexp e) ^ ";"
+    | Assign (b, x) -> (string_of_aexp b) ^ " = " ^ (string_of_aexp x) ^ ";"
+    | AssignOp (x, op, e) -> (string_of_aexp x) ^ " " ^ op ^ "= " ^ (string_of_aexp e)
     | If ((b, c1), elif_list, c2) -> 
         "if (" ^ string_of_aexp b ^ ")" ^ block_string c1 
         ^ string_of_list (fun (b, c) -> "elif (" ^ string_of_aexp b ^ ")" ^ block_string c) elif_list
@@ -92,6 +93,7 @@ and string_of_comm (c: comm) : string =
         ^ string_of_acomm u ^ ") " ^ block_string cl
     | Return None -> "return;"
     | Return Some e -> "return " ^ string_of_aexp e ^ ";"
+    | ExactCodeComm ec -> ec
 
 let string_of_frame ((x, d) : frame) =
     "frame " ^ x ^ " is " ^ string_of_dexp d ^ ";"
@@ -124,6 +126,7 @@ let string_of_global_var (ml, sq, t, x, e : global_var) : string =
 let string_of_term (t : term) : string = 
     match t with
     | Using s -> "using " ^ s
+    | ExactCode s -> "exact code: " ^ s
     | Prototype p -> string_of_prototype p
     | Coordinate c -> string_of_coordinate c
     | Frame f -> string_of_frame f

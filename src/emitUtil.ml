@@ -20,7 +20,7 @@ let string_of_fn_util (id : string) (args : string list) : string =
     let base = (replace_all_in_name id) ^ "(" ^ string_of_list (fun x -> x) args ^ ")" in
     match args with
     | [a] -> if List.mem id unop_list then id ^ a else base
-    | [a; b] -> if List.mem id binop_list then a ^ id ^ b else base
+    | [a; b] -> if List.mem id binop_list then "(" ^ a ^ id ^ b ^ ")" else base
     | _ -> base
 
 let rec replace_type (et : etyp) (t : etyp) (r : etyp) : etyp =

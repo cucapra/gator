@@ -1,4 +1,4 @@
-int f<`t : `t>(int x) {
+with T T: int f(int x) {
     return x;
 }
 

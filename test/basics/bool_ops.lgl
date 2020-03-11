@@ -17,8 +17,8 @@ void main() {
     bool b3 = 3 > 2;
     print b3;
 
-    // bool bb3 = 3 < 2;
-    // print bb3;
+    bool bb3 = 3 < 2;
+    print bb3;
 
     // bool bb4 = bb3 < 2;
     // print bb4;

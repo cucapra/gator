@@ -30,6 +30,7 @@ type typ =
     | FrameTyp of dexp (* i.e. frame<3> or frame<n> *)
     | GenTyp
     | GenArrTyp of typ
+    | ExactCodeTyp 
 
 (* expressions *)
 type aexp = exp astNode
@@ -55,11 +56,12 @@ and comm =
     | Print of aexp
     | Exp of aexp
     | Decl of modification list * typ * string * aexp 
-    | Assign of string * aexp
-    | AssignOp of string * string * aexp
+    | Assign of aexp * aexp
+    | AssignOp of aexp * string * aexp
     | If of if_block * if_block list * acomm list option  (* if - elif list - else *)
     | For of acomm * aexp * acomm * acomm list
     | Return of aexp option
+    | ExactCodeComm of string
 and if_block = aexp * acomm list
 
 (* function and type parameterization,
@@ -95,6 +97,7 @@ type global_var = modification list * storage_qual * typ * id * aexp option
 
 (* Terms that make up a program *)
 (* In any order, we have:
+ * ExactCode for exact code insertion
  * Frame Declarations of user types
  * External function declarations without bodies
  * Global variable declarations
@@ -103,6 +106,7 @@ type global_var = modification list * storage_qual * typ * id * aexp option
 type aterm = term astNode
 and term =
     | Using of string
+    | ExactCode of string
     | Prototype of prototype
     | Coordinate of coordinate
     | Frame of frame

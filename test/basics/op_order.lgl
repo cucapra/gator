@@ -1,24 +1,31 @@
+declare int +(int x, int y);
+declare int *(int x, int y);
+declare float[2] -(float[2] x, float[2] y);
+declare float[2] .*(float[2] x, float[2] y);
+declare float[3][2] +(float[3][2] x, float[3][2] y);
+// declare int *(int x, int y);
+
 void main() {
-    int r1 = 1 + 2 * 3 + 4;
+    int r1 = (1 + 2) * 3 + 4;
     print r1;
 
-    vec2 r2 = [3., 6.] - [1., 2.] .* [2., 2.];
+    float[2] r2 = [3., 6.] - [1., 2.] .* [2., 2.];
     print r2;
 
-    mat2x3 r3 = [[1., 1., 1.], [1., 1., 1.]] +
-    [[1., 1., 1.], [1., 1., 1.]] *
-    [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
+    float[3][2] r3 = [[1., 1., 1.], [1., 1., 1.]] +
+        [[1., 1., 1.], [1., 1., 1.]];
+    //     [[1., 1., 1.], [1., 1., 1.], [1., 1., 1.]];
     print r3;
 
-    bool r4 = false && false || true;
-    print r4;
+    // bool r4 = false && false || true;
+    // print r4;
 
-    bool r5 = ! true || true;
-    print r5;
+    // bool r5 = ! true || true;
+    // print r5;
 
-    bool r6 = 1 == 2;
-    print r6;
+    // bool r6 = 1 == 2;
+    // print r6;
 
-    bool r7 = 2 + 3 <= 5;
-    print r7;
+    // bool r7 = 2 + 3 <= 5;
+    // print r7;
 }

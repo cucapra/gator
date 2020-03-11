@@ -1,5 +1,0 @@
-void main() {
-    vec2 v1 = [2., 3.];
-    vec3 v2 = [1., 2., 3.];
-    print v1 + v2;
-}

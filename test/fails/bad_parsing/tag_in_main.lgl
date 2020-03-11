@@ -1,4 +1,0 @@
-void main() {
-    tag s is vec2;
-    return;
-}

@@ -1,3 +1,5 @@
+#"precision mediump float;";
+
 using "../glsl_defs.lgl";
 
 type color is vec3;
@@ -19,11 +21,11 @@ uniform cart3<world>.point uLight;
 void main() {
     // vec4 gl_FragColor = vec4(uLight, .9);
     color ambient = [0.1, 0., 0.];
-    color diffColor = [0.4, 0.3, 0.9];
-    color specColor = [0.0, 0.0, 0.0];
+    color diffColor = [0.4, 0.3, 0.8];
+    color specColor = [1.0, 1.0, 1.0];
 
     auto worldPos = hom_reduce(uModel*homify(vPosition));
-    auto camPos = hom_reduce(uView*homify(worldPos));
+    auto camPos = hom_reduce(uView*uModel*homify(vPosition));
     auto worldNorm = normalize(hom_reduce(uModel*homify(vNormal)));
 
     auto lightDir = normalize(uLight - worldPos);

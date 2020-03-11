@@ -1,4 +1,0 @@
-void main() {
-    vec<4> v = [1., 2., 3., 4.];
-    vec<4> fail = v as vec<3>; // should be 'as vec4'
-}

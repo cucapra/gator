@@ -1,9 +1,0 @@
-// Note that t cannot be a bool, so `t should be a genTyp
-`t add_op<`t>(`t x, `t y) {
-    `t result = x + y;
-    return result;
-}
-
-void main() {
-    int fail = add_op<int>(1, 2);
-}

@@ -1,0 +1,1 @@
+Fatal error: exception Gatorl__CheckUtil.TypeException("mismatched return types, expected: int, found: bool")
