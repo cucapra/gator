@@ -1,16 +1,17 @@
 open GatorAst
 
-(* For readability, especially with psi *)
+(* Type of a function invocation *)
 type fn_inv = string * typ list 
 
 (* Type definitions *)
 (* Stores supertype and possible parameterization information for the type *)
-(* Also stores whether or not this type is external (the boolean value) *)
+(* Also stores whether or not the type is external *)
 type tau = bool * parameterization * typ
 
 (* Variable definitions *)
 (* Maps from variable names to the type of that variable *)
-type gamma = typ
+(* Also stores whether the variable is canonical *)
+type gamma = bool * typ
 
 (* Dimension definitions *)
 (* Stores dimension information for reference frames *)
@@ -24,23 +25,22 @@ type chi = parameterization * string option
 
 (* Function definitions *)
 (* Stores the full type each function overload *)
-(* Also stores the name of the invoking class *)
+(* Also stores the name of the invoking class if applicable *)
 type phi = (string option * fn_typ) list
 
 (* Transformation context *)
-(* Effectively has the type 'start->(target, f<pml>) list' for types start and target 
- * (both restricted implicitely to var types), *)
-(* function/matrix name f, and function parameter list pml *)
-(* Note that the resulting thing could be a call with a concrete parameterization, 
- * hence the typ list (which is empty for matrices) *)
-type psi = (typ * fn_inv) list
+(* Provides a map from a given type to all 
+ * canonical functions that can operate on that type *)
+type psi = string list
+(* type psi = (typ * fn_inv) list *)
 
 (* Special contexts for avoiding name duplication *)
 (* We maintain the invariant for a given set of contexts: 
  * if a string 'x' is in lookup
  * then 'x' is in exactly one of the variant types of lookup 
  * otherwise 'x' is in none of the variant types *)
-(* Note that the parameterization variable names are _not_ necessarily unique, so aren't tracked in the lookup *)
+(* Note that the parameterization variable names are _not_ necessarily unique, 
+ * so aren't tracked in the lookup *)
 type exp_bindings = CGamma | CPhi
 type typ_bindings = CTau | CChi | CDelta
 
@@ -61,7 +61,7 @@ type binding_contexts = {
 }
 
 (* A type to contain every non-lookup context to simplify definitions *)
-(* We use '_a' syntax to denote elements which shouldn't be accessed directly *)
+(* We use a preceding '_' to denote elements which shouldn't be accessed directly *)
 (* Kept separate from binding_contexts since name repetition is permitted *)
 type contexts = {
   ps : psi Assoc.context;

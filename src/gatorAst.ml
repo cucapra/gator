@@ -55,7 +55,7 @@ and comm =
     | Skip
     | Print of aexp
     | Exp of aexp
-    | Decl of typ * string * aexp 
+    | Decl of modification list * typ * string * aexp 
     | Assign of aexp * aexp
     | AssignOp of aexp * string * aexp
     | If of if_block * if_block list * acomm list option  (* if - elif list - else *)
@@ -70,7 +70,7 @@ type parameterization = typ Assoc.context
 
 (* function parameters *)
 (* arguments may have an optional parameterization *)
-type params = (typ * string) list
+type params = (modification list * typ * string) list
 type ret_typ = typ
 (* function header -- our functions are not first-order! *)
 type fn_typ = modification list * ret_typ * id * params * metadata

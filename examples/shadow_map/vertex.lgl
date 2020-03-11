@@ -14,42 +14,11 @@ varying cart3<model>.point vPosition;
 attribute cart3<model>.direction aNormal;
 varying cart3<model>.direction vNormal;
 varying cart3<lightProjective>.point vShadowPos;
-uniform hom<model>.transformation<world> uModel;
-uniform hom<world>.transformation<light> uLightView;
-uniform hom<light>.transformation<lightProjective> uLightProjection;
-uniform hom<world>.transformation<camera> uCamera;
-uniform hom<camera>.transformation<projective> uProjection;
-
-canon hom<world>.point app_uModel(hom<model>.point v) {
-    return uModel * v;
-}
-canon hom<world>.vector app_uModel(hom<model>.vector v) {
-    return uModel * v;
-}
-canon hom<light>.point app_uLView(hom<world>.point v) {
-    return uLightView * v;
-}
-canon hom<light>.vector app_uLView(hom<world>.vector v) {
-    return uLightView * v;
-}
-canon hom<lightProjective>.point app_uLProj(hom<light>.point v) {
-    return uLightProjection * v;
-}
-canon hom<lightProjective>.vector app_uLProj(hom<light>.vector v) {
-    return uLightProjection * v;
-}
-canon hom<camera>.point app_uView(hom<world>.point v) {
-    return uCamera * v;
-}
-canon hom<camera>.vector app_uView(hom<world>.vector v) {
-    return uCamera * v;
-}
-canon hom<projective>.point app_uProj(hom<camera>.point v) {
-    return uProjection * v;
-}
-canon hom<projective>.vector app_uProj(hom<camera>.vector v) {
-    return uProjection * v;
-}
+canon uniform hom<model>.transformation<world> uModel;
+canon uniform hom<world>.transformation<light> uLightView;
+canon uniform hom<light>.transformation<lightProjective> uLightProjection;
+canon uniform hom<world>.transformation<camera> uCamera;
+canon uniform hom<camera>.transformation<projective> uProjection;
 
 void main() {
   hom<lightProjective>.transformation<lightProjective> texUnitConverter = 
@@ -57,7 +26,6 @@ void main() {
                                                          [0.0, 0.5, 0.0, 0.5], 
                                                          [0.0, 0.0, 0.5, 0.5], 
                                                          [0.0, 0.0, 0.0, 1.0]];
-
   vShadowPos = hom_reduce(texUnitConverter * (aPosition in hom<lightProjective>));
   vPosition = aPosition;
   vNormal = aNormal;

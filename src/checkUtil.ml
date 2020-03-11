@@ -1,7 +1,7 @@
 open Util
 open GatorAst
 open GatorAstPrinter
-open Contexts
+open CheckContexts
 
 exception TypeException of string
 
@@ -12,10 +12,10 @@ let ignore_dexp (d : dexp) : unit = ignore d
 let ignore_typ_context (t : typ Assoc.context) : unit = ignore t
 let string_of_fn_inv ((s, tl) : fn_inv) : string = 
   s ^ "<" ^ string_of_list string_of_typ tl ^ ">"
-let string_of_tau (e, pm, t : tau) =
-  if e then "declare " else "" ^ string_of_parameterization pm ^ " " ^  string_of_typ t
-let string_of_gamma (g : gamma) =
-  string_of_typ g
+let string_of_tau (b, pm, t : tau) =
+  if b then "declare " else "" ^ string_of_parameterization pm ^ " " ^  string_of_typ t
+let string_of_gamma ((b, t) : gamma) =
+  (if b then "canon " else "") ^ string_of_typ t
 let string_of_delta (f : delta) =
   string_of_dexp f
 let string_of_chi (pm, c : chi) =
@@ -25,7 +25,7 @@ let string_of_phi (p : phi) =
     (fun (c, f) -> c, rename_fn (fun x -> "%" ^ let cut = if String.contains x '_' then String.rindex x '_' else 0 in
       String.sub x cut (String.length x - cut)) f) p)
 let string_of_psi (ps : psi) : string =
-  string_of_list (fun (t, p) -> "(" ^ string_of_typ t ^ ", " ^ string_of_fn_inv p ^ ")") ps
+  string_of_list (fun x -> x) ps
 
 let print_cxt   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_tau   "\n" cx._bindings.t)
 let print_cxg   (cx : contexts) = print_endline (Assoc.to_string_sep string_of_gamma "\n" cx._bindings.g)
@@ -133,6 +133,9 @@ let reset (cx : contexts) (cx_ref : contexts) (b : exp_bindings) : contexts =
 let has_modification (cx : contexts) (ml : modification list) (m : modification) : bool =
   List.fold_right (fun mc acc -> mc = m || acc) ml false 
 
+let bind_typ (cx : contexts) (id : string) (ml : modification list) (t : typ) : contexts = 
+  bind cx id (Gamma ((has_modification cx ml Canon), t))
+
 let get_ml_pm (cx : contexts) (ml : modification list) : parameterization =
   let get_ml_pm_rec (pm : parameterization) (m : modification) =
     match m with
@@ -157,10 +160,19 @@ let get_typ (cx : contexts) (id : string) : tau =
   | Some t -> t
   | _ -> error cx ("Undefined type " ^ id)
 
-let get_var (cx : contexts) (x : string) : gamma =
+let get_var (cx : contexts) (x : string) : typ =
   match find_exp cx x with
-  | Some Gamma g -> g
+  | Some Gamma (_,g) -> g
   | _ -> error cx ("Undefined variable " ^ x)
+
+let get_if_canonical_var (cx : contexts) (x : string) : bool = 
+  match find_exp cx x with
+  | Some Gamma (c,_) -> c
+  | _ -> error cx ("Undefined variable " ^ x)
+
+let get_canonical_vars (cx : contexts) : string list = 
+  List.fold_right (fun (s, (b,_)) acc -> if b then s::acc else acc) 
+    (Assoc.bindings cx._bindings.g) []
 
 let get_frame (cx : contexts) (x : string) : delta =
   match find_typ cx x with
@@ -237,7 +249,7 @@ let rec map_acomm (cx : contexts) (fs : string -> string) (fe : exp -> exp) (ft 
   | Skip -> ac
   | Print e -> Print(et e),meta
   | Exp e -> Exp(et e),meta
-  | Decl (t, s, e) -> Decl(ft t, s, et e),meta
+  | Decl (ml, t, s, e) -> Decl(ml, ft t, s, et e),meta
   | Assign (s, e) -> Assign(et s, et e),meta
   | AssignOp (s1, s2, e) -> AssignOp(et s1, fs s2, et e),meta
   | If (i, il, clo) -> If (it i, List.map it il, option_map (List.map ct) clo),meta
@@ -249,7 +261,7 @@ let map_fn_typ (cx : contexts) (fs : string -> string) (fe : exp -> exp) (ft : t
   : fn_typ =
   debug_print (">> map_fn_typ " ^ string_of_fn_typ fn);
   let ml,rt,id,pr,m = fn in
-  List.map (map_mod cx ft) ml,ft rt,id,List.map (fun (t,s)->(ft t,s)) pr,m
+  List.map (map_mod cx ft) ml,ft rt,id,List.map (fun (ml,t,s)->(ml,ft t,s)) pr,m
 
 let map_fn (cx : contexts) (fs : string -> string) (fe : exp -> exp) (ft : typ -> typ) (fnt,cl : fn) : fn =
   debug_print (">> map_fn " ^ string_of_fn (fnt, cl));

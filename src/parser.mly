@@ -174,8 +174,8 @@ let coordinate_element ==
     <CoordFn>
 
 let parameter == 
-  | t = typ; x = ID;
-    <>
+  | (ml, t) = terminated_list (modification, typ); x = ID;
+    { (ml, t, x) }
 
 let parameters(L, P, R) ==
   | x = delimited(L, separated_list(COMMA, P), R); <>
@@ -235,8 +235,8 @@ let assignop ==
 let comm_element == 
   | SKIP;
     { Skip }
-  | t = typ; x = ID; GETS; e = node(exp); 
-    < Decl >
+  | (m, t) = terminated_list(modification, typ); x = ID; GETS; e = node(exp); 
+    { Decl(m, t, x, e) }
   | e = node(effectful_exp);
     < Exp >
   | x = node(assign_exp); GETS; e = node(exp); 
