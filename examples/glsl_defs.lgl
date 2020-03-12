@@ -137,7 +137,7 @@ with float T: declare T max(T f1, T f2);
 with vec2 T: declare T reflect(T v1, T v2);
 with vec3 T: declare T reflect(T v1, T v2);
 with float T: declare T pow(T f1, T f2);
-// declare T mix(T v1, T v2, T v3);
+with vec2 T: declare T mix(T v1, T v2, T v3);
 
 // Geometric Objects and Operations
 
@@ -178,6 +178,7 @@ prototype geometry {
     direction normalize(direction v);
     vector reflect(direction v1, direction v2);
     vector reflect(vector v1, direction v2);
+    vector mix(vector v1, vector v2, vector v3);
 }
 
 // Coordinate Scheme Definitions
@@ -257,6 +258,9 @@ coordinate cart2 : geometry {
     }
     vector reflect(vector v1, direction v2) {
         return (reflect(v1 as! vec2, v2 as! vec2) as! vector);
+    }
+    vector mix(vector v1, vector v2, vector v3) {
+        return (mix(v1 as! vec2, v2 as! vec2, v3 as! vec2) as! vector);
     }
 }
 

@@ -118,6 +118,8 @@ and is_subtype_list (cx: contexts) (l1: typ list) (l2: typ list) : bool =
     if List.length l1 != List.length l2 then false else
     List.for_all2 (is_subtype cx) l1 l2
 
+(* Given a parameterization and a list of types being invoked on that parameterization *)
+(* Returns the appropriate concretized context if one exists *)
 and match_parameterization_safe (cx : contexts) (pml : typ list) 
     : typ Assoc.context option = 
     debug_print (">> match_parameterization <" ^ string_of_list string_of_typ pml ^ ">");
@@ -128,8 +130,7 @@ and match_parameterization_safe (cx : contexts) (pml : typ list)
         Assoc.empty (Assoc.bindings cx.pm) pml)
     else None
 
-(* Given a parameterization and a list of types being invoked on that parameterization *)
-(* Returns the appropriate concretized context if one exists *)
+(* Throws an error if there is no concretized context that exists *)
 and match_parameterization (cx: contexts) (pml : typ list) : typ Assoc.context =
     match match_parameterization_safe cx pml with | Some r -> r | None ->
     error cx ("Invalid parameterization provided by <" 
