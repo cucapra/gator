@@ -4,7 +4,7 @@ tag coord c is vec2;
 
 // Gives 'in' the power to convert from anything to anything else in the same dimension
 canon `u any<`t : vec2, `u : vec2>(`t v) {
-    return v as `u;
+    return v as! `u;
 }
 
 void main() {    

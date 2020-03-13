@@ -1,3 +1,6 @@
+// b->ac, for example, is a matrix map from b to ac (duh?)
+// Feel free to make it a function instead, or use * if you're feeling bold
+
 tag a is vec<2>;
 tag ac is a;
 tag b is a;

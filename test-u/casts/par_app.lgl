@@ -1,7 +1,11 @@
-tag model is vec<3>;
-tag world is vec<3>;
+// This one will be tricky to translate to Gator
+// I think I want 'dependent' types so that float[n] can work
+// Dunno what that should look like, you can ignore this if you want
+
+frame model has dimension 3;
+frame world is vec<3>;
 tag camera is vec<3>;
-tag rot<`t : vec<n>> is vec<n>; // Rotated by 90 degrees counterclockwise around the z-axis as an example
+with float[3] T: type rot is T; // Rotated by 90 degrees counterclockwise around the z-axis as an example
 tag dir<`t : vec<n>> is vec<n>;
 tag hom<`t : vec<n>> is vec<n + 1>;
 
