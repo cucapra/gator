@@ -1,10 +1,36 @@
-tag coord a is vec2;
-tag coord b is vec2;
-tag coord c is vec2;
+declare type vec2 is float[2];
+declare type mat2 is float[2][2];
+declare vec2 *(mat2 m, vec2 v);
+
+prototype euclidean {
+    object vector;
+    with frame() r: object matrix;
+
+    with frame() r: vector *(matrix<r> m, vector v);
+}
+
+with frame(2) r:
+coordinate cart2 : euclidean {
+    object vector is float[2];
+    with frame(2) r2: object matrix is float[2][2];
+
+    with frame(2) r2:
+    canon this<r2>.vector *(canon matrix<r2> m, vector v) {
+        return (m as! mat2 * v as! vec2) as! this<r2>.vector;
+    }
+}
+
+type a is float[2];
+type b is float[2];
+type c is float[2];
 
 // Gives 'in' the power to convert from anything to anything else in the same dimension
-canon `u any<`t : vec2, `u : vec2>(`t v) {
-    return v as! `u;
+with frame(2) r1:
+with frame(2) r2:
+with cart2<r1>.vector T:
+with cart2<r2>.vector U:
+canon T any(U v) {
+    return v as! T;
 }
 
 void main() {    
@@ -12,8 +38,10 @@ void main() {
     b bvec = [2., 1.];
     c cvec = [3., 0.];
 
-    print avec in b;
-    print avec in c;
-    print cvec in b;
-    print bvec in a;
+    a result = any<b, a>(bvec);
+
+    // print avec in b;
+    // print avec in c;
+    // print cvec in b;
+    // print bvec in a;
 }
