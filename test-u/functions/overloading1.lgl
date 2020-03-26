@@ -1,7 +1,9 @@
-tag a is vec2;
-tag b is a;
-tag c is a;
-tag d is b;
+declare type vec2 is float[2];
+
+type a is vec2;
+type b is a;
+type c is a;
+type d is b;
 
 declare int id(int x);
 declare bool id(bool x);
@@ -9,7 +11,7 @@ declare vec2 normalize(vec2 x);
 declare a normalize(a x);
 declare d normalize(d x);
 declare c normalize(c x);
-
+ 
 void main() {
     a avec = [1., 2.];
     b bvec = [1., 0.];
