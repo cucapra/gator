@@ -145,7 +145,9 @@ prototype geometry {
     object point;
     object vector;
     object direction;
+    object normal;
     with frame() r: object transformation;
+    with frame() r: object normalTransformation;
 
     vector +(vector x, vector y);
     vector -(vector x, vector y);
@@ -165,6 +167,9 @@ prototype geometry {
 
     with frame() target:
     this<target>.point *(transformation<target> m, point p);
+
+    with frame() target:
+    this<target>.normal *(normalTransformation<target> m, normal d);
 
     with frame() target:
     transformation<target> +(transformation<target> m1, transformation<target> m2);
@@ -188,7 +193,9 @@ coordinate cart2 : geometry {
     object point is float[2];
     object vector is float[2];
     object direction is float[2];
+    object normal is direction;
     with frame(2) r2: object transformation is float[2][2];
+    with frame(2) r2: object normalTransformation is float[2][2];
 
     vector +(vector x, vector y) {
         return (x as! vec2 + y as! vec2) as! vector;
@@ -269,7 +276,9 @@ coordinate cart3 : geometry {
     object point is float[3];
     object vector is float[3];
     object direction is float[3];
+    object normal is direction;
     with frame(3) r2: object transformation is float[3][3];
+    with frame(3) r2: object normalTransformation is float[3][3];
 
     vector +(vector x, vector y) {
         return (x as! vec3 + y as! vec3) as! vector;
@@ -314,6 +323,10 @@ coordinate cart3 : geometry {
         return (m as! mat3 * p as! vec3) as! this<target>.point;
     }
     with frame(3) target:
+    canon this<target>.vector *(canon normalTransformation<target> m, normal d) {
+        return (m as! mat3 * d as! vec3) as! this<target>.vector;
+    }
+    with frame(3) target:
     transformation<target> +(transformation<target> m1, transformation<target> m2) {
         return (m1 as! mat3 + m2 as! mat3) as! transformation<target>;
     }
@@ -347,7 +360,9 @@ coordinate hom : geometry {
     object point is float[4];
     object vector is float[4];
     object direction is float[4];
+    object normal is direction;
     with frame(3) r2: object transformation is float[4][4];
+    with frame(3) r2: object normalTransformation is float[4][4];
 
     point +(point p, vector v) {
         return (p as! vec4 + v as! vec4 * p[3]) as! point;
