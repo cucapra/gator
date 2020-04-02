@@ -384,9 +384,20 @@ let check_fn_inv (cx: contexts) (x : id)
     let fn_invocated = get_functions_safe cx x in
     match List.fold_right (fun (c, f) acc -> 
         match acc, try_fn_inv c f with | None, f -> f | Some _, None -> acc 
-        | Some (_,f1,_), Some (_,f2,_) -> 
+        | Some f1, Some f2 -> 
+            let _,ft1,_ = f1 in let _,ft2,_ = f2 in
+            let _,_,_,p1,_ = ft1 in
+            let _,_,_,p2,_ = ft2 in
+            (* If one of the functions is a subtype of the other, we can use it *)
+            if List.fold_left2 
+            (fun acc (_,x,_) (_,y,_) -> (is_subtype cx x y) && acc) true p1 p2
+            then Some f2
+            else if List.fold_left2 
+            (fun acc (_,x,_) (_,y,_) -> (is_subtype cx x y) && acc) true p2 p1
+            then Some f1
+            else
             error cx ("Ambiguous choice of functions to call" 
-            ^ string_of_fn_typ f1 ^ " and " ^ string_of_fn_typ f2)) fn_invocated None
+            ^ string_of_fn_typ ft1 ^ " and " ^ string_of_fn_typ ft2)) fn_invocated None
     with
     | Some (spm, fn_found, pmt) -> 
         let ml,rt,x',_,_ = fn_found in
