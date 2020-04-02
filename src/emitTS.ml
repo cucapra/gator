@@ -63,9 +63,16 @@ and comp_exp (e : exp) (s : SS.t) : string =
     | Arr a -> (match a with
         | [] -> failwith "cannot have an empty array"
         | (_, t)::_ -> (match t with
-            | FloatTyp | IntTyp -> "vec" ^ (string_of_int (List.length a)) ^ ".fromValues(" ^ (String.concat ", " (List.map (fun (e, t) -> comp_exp e s) a)) ^ ")"
+            (* | FloatTyp | IntTyp -> "vec" ^ (string_of_int (List.length a)) ^ ".fromValues(" ^ (String.concat ", " (List.map (fun (e, t) -> comp_exp e s) a)) ^ ")" *)
+            | FloatTyp | IntTyp | BoolTyp->  "[" ^ (String.concat ", " (List.map (fun (e, t) -> comp_exp e s) a)) ^ "]"
             (* | VecTyp n -> let as_vec_list = (fun v -> (match v with | (Arr a', _) -> (List.map fst a') | _ -> failwith "Typechecker error, a matrix must be a list of vectors")) in
                 string_of_mat (List.map as_vec_list a) s *)
+            (* | ArrTyp (FloatTyp, d) -> let as_vec_list = (fun v -> (
+                match v with 
+                | (Arr a', _) -> a'
+                | _ -> failwith "Typechecker error, a matrix must be a list of vectors")) in
+                string_of_mat (List.map as_vec_list a) *)
+            | ArrTyp (someTyp, d) -> "[" ^ (String.concat ", " (List.map (fun (e, t) -> comp_exp e s) a)) ^ "]"
             | _ -> failwith "Typechecker error, every array must be a list of ints, floats, or vectors"))
     (* | Unop (op, (e, t)) ->
         begin
@@ -148,7 +155,8 @@ and comp_exp (e : exp) (s : SS.t) : string =
             else (String.concat "__" (List.map comp_fn_arg_type tpl)) ^ "." ^ f
         in
         fn_name ^ "(" ^ (String.concat "," (List.map (fun (e, _) -> comp_exp e s) args)) ^ ")" *)
-        failwith "unimplemented function invocation writing"
+        "(" ^ string_of_fn_util f (List.map string_of_texp args) ^ ")"
+        (* failwith "unimplemented function invocation writing" *)
 
 let comp_assign (x : texp) ((e, t) : texp) (s : SS.t) : string =
     match t with
@@ -156,7 +164,7 @@ let comp_assign (x : texp) ((e, t) : texp) (s : SS.t) : string =
         comp_exp (fst x) s ^ "=" ^ comp_exp e s ^ ";"
     (* | VecTyp v -> "vec" ^ (string_of_int v) ^ ".copy(" ^ x ^ "," ^ (comp_exp e s) ^ ");"
     | MatTyp (m, n) -> "mat" ^ (string_of_int (max m n)) ^ ".copy(" ^ x ^ "," ^ (comp_exp e s) ^ ");" *)
-    | ArrTyp _ | AnyTyp | GenTyp -> comp_type t
+    | ArrTyp _ | AnyTyp | GenTyp -> comp_exp (fst x) s ^ (*comp_type t ^*) "=" ^ (comp_exp e s) ^ ";"
 
 let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
     debug_print ">> comp_comm_lst";
@@ -167,13 +175,14 @@ let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
         | Print (e, _) -> "console.log(" ^ comp_exp e s ^ ");" ^ comp_comm_lst tl s
         | Exp (e, _) -> comp_exp e s ^ ";"
         | Decl (et, x, e) ->
-            (* let create_str = match et with
-                | VecTyp n -> "let " ^ x ^ "=vec" ^ (string_of_int n) ^ ".create();"
-                | MatTyp (m, n) -> "let " ^ x ^ "=mat" ^ (string_of_int (max m n)) ^ ".create();"
+            let create_str = match et with
+                (*| VecTyp n -> failwith "unimplemented VecTyp compile" (*"let " ^ x ^ "=vec" ^ (string_of_int n) ^ ".create();"*)*)
+                (*| MatTyp (m, n) -> failwith "unimplemented MatTyp compile" (*"let " ^ x ^ "=mat" ^ (string_of_int (max m n)) ^ ".create();"*)*)
                 | _ -> "let "
             in
-            create_str ^ (comp_assign x e s) ^ (comp_comm_lst tl s) *)
-            failwith "unimplemented declaration"
+            create_str ^ (comp_assign (Var x, et) e s) ^ (comp_comm_lst tl s)
+            (* failwith "unimplemented declaration" *)
+            (* x ^ " = " ^ string_of_texp e ^ ";" *)
         | Assign (x, e) -> (comp_assign x e s) ^ (comp_comm_lst tl s)
         | AssignOp ((x, t), op, e) -> failwith "unimplemented assignop"
             (* (comp_assign x ((FnInv (op, (Var x, t), e)), t) s) ^ (comp_comm_lst tl s) *)
