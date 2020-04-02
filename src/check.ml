@@ -118,6 +118,8 @@ and is_subtype_list (cx: contexts) (l1: typ list) (l2: typ list) : bool =
     if List.length l1 != List.length l2 then false else
     List.for_all2 (is_subtype cx) l1 l2
 
+(* Given a parameterization and a list of types being invoked on that parameterization *)
+(* Returns the appropriate concretized context if one exists *)
 and match_parameterization_safe (cx : contexts) (pml : typ list) 
     : typ Assoc.context option = 
     debug_print (">> match_parameterization <" ^ string_of_list string_of_typ pml ^ ">");
@@ -128,8 +130,7 @@ and match_parameterization_safe (cx : contexts) (pml : typ list)
         Assoc.empty (Assoc.bindings cx.pm) pml)
     else None
 
-(* Given a parameterization and a list of types being invoked on that parameterization *)
-(* Returns the appropriate concretized context if one exists *)
+(* Throws an error if there is no concretized context that exists *)
 and match_parameterization (cx: contexts) (pml : typ list) : typ Assoc.context =
     match match_parameterization_safe cx pml with | Some r -> r | None ->
     error cx ("Invalid parameterization provided by <" 
@@ -383,9 +384,20 @@ let check_fn_inv (cx: contexts) (x : id)
     let fn_invocated = get_functions_safe cx x in
     match List.fold_right (fun (c, f) acc -> 
         match acc, try_fn_inv c f with | None, f -> f | Some _, None -> acc 
-        | Some (_,f1,_), Some (_,f2,_) -> 
+        | Some f1, Some f2 -> 
+            let _,ft1,_ = f1 in let _,ft2,_ = f2 in
+            let _,_,_,p1,_ = ft1 in
+            let _,_,_,p2,_ = ft2 in
+            (* If one of the functions is a subtype of the other, we can use it *)
+            if List.fold_left2 
+            (fun acc (_,x,_) (_,y,_) -> (is_subtype cx x y) && acc) true p1 p2
+            then Some f2
+            else if List.fold_left2 
+            (fun acc (_,x,_) (_,y,_) -> (is_subtype cx x y) && acc) true p2 p1
+            then Some f1
+            else
             error cx ("Ambiguous choice of functions to call" 
-            ^ string_of_fn_typ f1 ^ " and " ^ string_of_fn_typ f2)) fn_invocated None
+            ^ string_of_fn_typ ft1 ^ " and " ^ string_of_fn_typ ft2)) fn_invocated None
     with
     | Some (spm, fn_found, pmt) -> 
         let ml,rt,x',_,_ = fn_found in

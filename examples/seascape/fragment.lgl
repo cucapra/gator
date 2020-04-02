@@ -73,7 +73,7 @@ float diffuse(cart3<r>.direction n,cart3<r>.direction l,cart3<r>.point p) {
     return res[0];
 }
 with frame(3) r:
-float specular(cart3<r>.direction n,cart3<r>.direction e,cart3<r>.direction l,float s) {    
+float specular(cart3<r>.direction n,cart3<r>.direction e,cart3<r>.direction l,float s) {
     float nrm = (s + 8.0) / (PI * 8.0);
     return pow(max(dot(normalize(reflect(e,n)),l),0.0),s) * nrm;
 }
@@ -87,9 +87,9 @@ color getSkyColor(color e) {
 // sea
 with frame(2) r:
 float sea_octave(cart2<r>.vector uv, float choppy) {
-    uv += [noise(uv), noise(uv)] as! cart2<r>.vector;        
-    auto wv = [1.0, 1.0]-abs(sin(uv));
-    auto swv = abs(cos(uv));    
+    uv += [noise(uv), noise(uv)] as! cart2<r>.vector;
+    auto wv = [1.0, 1.0]-abs<r>(sin<r>(uv));
+    auto swv = abs<r>(cos<r>(uv));
     wv = mix(wv,swv,wv);
     return pow(1.0-pow(wv[0] * wv[1],0.65),choppy);
 }
@@ -100,13 +100,13 @@ float map(cart3<r>.point p) {
     float amp = SEA_HEIGHT;
     float choppy = SEA_CHOPPY;
     vec2 uv = [p[0], p[2]]; uv[0] *= 0.75;
-    
+
     float d = 0.;
     float h = 0.0;    
-    for(int i = 0; i <= ITER_GEOMETRY - 1; i++) {        
+    for(int i = 0; i <= ITER_GEOMETRY - 1; i++) {
     	d = sea_octave((uv+SEA_TIME)*freq,choppy);
     	d += sea_octave((uv-SEA_TIME)*freq,choppy);
-        h += d * amp;        
+        h += d * amp;
     	uv *= octave_m; 
         freq *= 1.9; 
         amp *= 0.22;
@@ -121,13 +121,13 @@ float map_detailed(cart3<r>.point p) {
     float amp = SEA_HEIGHT;
     float choppy = SEA_CHOPPY;
     vec2 uv = [p[0], [2]]; uv[0] *= 0.75;
-    
+
     float d = 0.;
-    float h = 0.0;    
-    for(int i = 0; i <= ITER_FRAGMENT - 1; i++) {        
+    float h = 0.0;
+    for(int i = 0; i <= ITER_FRAGMENT - 1; i++) {
     	d = sea_octave((uv+SEA_TIME)*freq,choppy);
     	d += sea_octave((uv-SEA_TIME)*freq,choppy);
-        h += d * amp;        
+        h += d * amp;
     	uv *= octave_m; freq *= 1.9; amp *= 0.22;
         choppy = mix(choppy,1.0,0.2);
     }
@@ -135,21 +135,21 @@ float map_detailed(cart3<r>.point p) {
 }
 
 with frame(3) r:
-color getSeaColor(cart3<r>.point p, cart3<r>.direction n, 
-    cart3<r>.point l, cart3<r>.point eye, cart3<r>.vector dist) {  
+color getSeaColor(cart3<r>.point p, cart3<r>.direction n,
+    cart3<r>.point l, cart3<r>.point eye, cart3<r>.vector dist) {
     float fresnel = clamp(1.0 - dot(n,-eye), 0.0, 1.0);
     fresnel = pow(fresnel,3.0) * 0.5;
-        
+
     auto reflected = getSkyColor(reflect(eye,n));    
-    auto refracted = SEA_BASE + diffuse(n,l,80.0) * SEA_WATER_COLOR * 0.12; 
-    
+    auto refracted = SEA_BASE + diffuse(n,l,80.0) * SEA_WATER_COLOR * 0.12;
+
     auto res_color = mix(refracted,reflected,fresnel);
-    
+
     float atten = max(1.0 - dot(dist,dist) * 0.001, 0.0);
     res_color += SEA_WATER_COLOR * (p[1] - SEA_HEIGHT) * 0.18 * atten;
     
     res_color += vec3(specular(n,l,eye,60.0));
-    
+
     return res_color;
 }
 
@@ -157,7 +157,7 @@ color getSeaColor(cart3<r>.point p, cart3<r>.direction n,
 with frame(3) r:
 cart3<r>.direction getNormal(cart3<r>.point p, float eps) {
     cart3<r>.vector n = [0., 0., 0.];
-    n[1] = map_detailed(p);    
+    n[1] = map_detailed(p);
     n[0] = map_detailed(vec3(p[0]+eps,p[1],p[2])) - n[1];
     n[2] = map_detailed(vec3(p[0],p[1],p[2]+eps)) - n[1];
     n[1] = eps;
@@ -165,16 +165,16 @@ cart3<r>.direction getNormal(cart3<r>.point p, float eps) {
 }
 
 with frame(3) r:
-float heightMapTracing(cart3<r>.direction ori, cart3<r>.direction dir, cart3<r>.point p) {  
+float heightMapTracing(cart3<r>.direction ori, cart3<r>.direction dir, cart3<r>.point p) {
     float tm = 0.0;
-    float tx = 1000.0;    
+    float tx = 1000.0;
     float hx = map(ori + dir * tx);
     if(hx > 0.0) { return tx; }
-    float hm = map(ori + dir * tm);    
+    float hm = map(ori + dir * tm);
     float tmid = 0.0;
     for(int i = 0; i <= NUM_STEPS - 1; i++) {
-        tmid = mix(tm,tx, hm/(hm-hx));                   
-        p = ori + dir * tmid;                   
+        tmid = mix(tm,tx, hm/(hm-hx));
+        p = ori + dir * tmid;
     	float hmid = map(p);
 		if(hmid <= 0.0) {
         	tx = tmid;
@@ -187,13 +187,13 @@ float heightMapTracing(cart3<r>.direction ori, cart3<r>.direction dir, cart3<r>.
     return tmid;
 }
 
-cart3<world>.point getPixel(Cart2<tex>.point coord, float time) {    
-    Cart2<screen>.point uv = coord / [iResolution[0], iResolution[1]];
+cart3<world>.point getPixel(cart2<tex>.point coord, float time) {
+    cart2<screen>.point uv = coord / [iResolution[0], iResolution[1]];
     uv = uv * 2.0 - 1.0;
-    uv[0] *= iResolution[0] / iResolution[1];    
-        
+    uv[0] *= iResolution[0] / iResolution[1];
+
     // ray
-    cart3<world>.vector ang = [sin(time*3.0)*0.1,sin(time)*0.2+0.3,time];    
+    cart3<world>.vector ang = [sin(time*3.0)*0.1,sin(time)*0.2+0.3,time];
     cart3<world>.vector ori = [0.0,3.5,time*5.0];
     cart3<world>.direction dir = normalize([uv[0], uv[1], -2.0]); 
     dir[2] += length(uv) * 0.14;
@@ -205,7 +205,7 @@ cart3<world>.point getPixel(Cart2<tex>.point coord, float time) {
     cart3<world>.vector dist = p - ori;
     cart3<world>.direction n = getNormal(p, dot(dist,dist) * EPSILON_NRM);
     cart3<world>.direction light = normalize(vec3(0.0,1.0,0.8)); 
-             
+
     // color
     return mix(
         getSkyColor(dir),
