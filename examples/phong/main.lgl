@@ -1,0 +1,26 @@
+declare type WebGLRenderingContext;
+declare type WebGLProgram;
+declare type WebGLUniformLocation;
+declare type mat4;
+
+with mat4 T: declare T mat4.rotateY(T model1, T model2, float someFloat);
+
+with WebGLProgram T: declare void gl.useProgram(T someProgram);
+declare WebGLUniformLocation lgl.uniformLoc(WebGLRenderingContext gl, WebGLProgram prog, string someName);
+
+//Imports
+#"import * as lgl from '../lglexample';";
+
+//Globals
+const WebGLProgram program;
+const WebGLUniformLocation loc_uProjection;
+
+void render(mat4 view, mat4 projection){
+    mat4.rotateY(view, view, 0.1);
+
+    gl.useProgram(program);
+}
+
+void main(){
+    #"let gl = lgl.setup(render_0);";
+}

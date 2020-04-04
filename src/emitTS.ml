@@ -14,15 +14,15 @@ let rec comp_type (t : etyp) : string =
     | IntTyp -> "number"
     | FloatTyp -> "number"
     | StringTyp -> "string"
-    | ParTyp (s, tl) -> failwith "unimplemented partyp writing"
+    | ParTyp (s, tl) -> s
     (* | VecTyp n -> "vec" ^ (string_of_int n)
     | MatTyp (m, n) -> "mat" ^ (string_of_int (max m n))
     | TransTyp (t1, t2) -> ("Cannot represent TransTyp " ^ comp_type t1 ^ comp_type t2 ^ " in Javascript")
     | AbsTyp (x, _) -> "Cannot represent AbsTyp " ^ x ^ " in Javascript" *)
-    | ArrTyp _ -> failwith "Cannot represent ArrTyp in Javascript"
+    | ArrTyp (innerType, _) -> "Array<" ^ comp_type innerType ^ ">"
     | AnyTyp -> failwith "unimplemented anytyp in Javascript"
     | GenTyp -> failwith "unimplemented gentyp in Javascript"
-    | ExactCodeTyp -> failwith "unimplemented ExactCodeTyp in Javascript"
+    | ExactCodeTyp -> "asdf123"
 
 (* let comp_fn_arg_type (t : etyp) : string =
     match t with
@@ -173,17 +173,17 @@ let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
     | h::tl -> match h with
         | Skip -> comp_comm_lst tl s
         | Print (e, _) -> "console.log(" ^ comp_exp e s ^ ");" ^ comp_comm_lst tl s
-        | Exp (e, _) -> comp_exp e s ^ ";"
+        | Exp (e, _) -> comp_exp e s ^ ";" ^"\n"
         | Decl (et, x, e) ->
             let create_str = match et with
                 (*| VecTyp n -> failwith "unimplemented VecTyp compile" (*"let " ^ x ^ "=vec" ^ (string_of_int n) ^ ".create();"*)*)
                 (*| MatTyp (m, n) -> failwith "unimplemented MatTyp compile" (*"let " ^ x ^ "=mat" ^ (string_of_int (max m n)) ^ ".create();"*)*)
                 | _ -> "let "
             in
-            create_str ^ (comp_assign (Var x, et) e s) ^ (comp_comm_lst tl s)
+            create_str ^ (comp_assign (Var x, et) e s) ^"\n" ^ (comp_comm_lst tl s)
             (* failwith "unimplemented declaration" *)
             (* x ^ " = " ^ string_of_texp e ^ ";" *)
-        | Assign (x, e) -> (comp_assign x e s) ^ (comp_comm_lst tl s)
+        | Assign (x, e) -> (comp_assign x e s) ^"\n" ^ (comp_comm_lst tl s)
         | AssignOp ((x, t), op, e) -> failwith "unimplemented assignop"
             (* (comp_assign x ((FnInv (op, (Var x, t), e)), t) s) ^ (comp_comm_lst tl s) *)
         | If (((b, _), c1), el, c2) -> 
@@ -192,22 +192,26 @@ let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
             ^ (List.fold_left (fun acc ((b, _), c) -> "if " ^ "(" ^ (comp_exp b s) ^ ")"
                 ^ "{" ^ (comp_comm_lst c s) ^ "}" ^ acc) "" el)
             ^ (match c2 with | Some c2 -> " else {" ^ (comp_comm_lst c2 s) ^ "}" | None -> "")
+            ^"\n"
             ^ (comp_comm_lst tl s))
         | For (i, (cond, _), after, cl) ->
             ("for (" ^ (comp_comm_lst [i] s) ^ " " ^ (comp_exp cond s) ^ "; " ^ (comp_comm_lst [after] s |> (String.split_on_char ';') |> List.hd) ^ ")"
-            ^ "{ " ^ (comp_comm_lst cl s) ^ " }" ^ (comp_comm_lst tl s))
-        | Return Some (e, _) -> "return " ^ (comp_exp e s) ^ ";" ^ (comp_comm_lst tl s)
-        | Return None -> "return;" ^ (comp_comm_lst tl s)
+            ^ "{ " ^ (comp_comm_lst cl s) ^ " }" ^"\n" ^ (comp_comm_lst tl s))
+        | Return Some (e, _) -> "return " ^ (comp_exp e s) ^ ";" ^"\n" ^ (comp_comm_lst tl s)
+        | Return None -> "return;" ^"\n" ^ (comp_comm_lst tl s)
         | ExactCodeComm ec -> ec
 
 let comp_fn (f : fn) (s : SS.t) : string =
     let (rt, id, pm, p), cl = f in
     debug_print (">> comp_fn" ^ id);
-    let param_string = string_of_list (fun (t, i) -> i ^ ":" ^ comp_type t) p in
-    (* let fn_name = id ^ "__" ^ (String.concat "__" (List.map (fun (_, t) -> comp_fn_arg_type t) (Assoc.bindings pm))) in *)
-    let fn_name = id ^ "__" ^ (String.concat "__" (List.map (fun (_, t) -> comp_type t) (Assoc.bindings pm))) in
-    let fn_str = "function " ^ fn_name ^ "(" ^ param_string ^ "):" ^ (comp_type rt) ^ "{" ^ (comp_comm_lst cl s) ^ "}" in
-    fn_str
+    match rt with
+        | ExactCodeTyp -> id ^ " "
+        | _ -> 
+            let param_string = string_of_list (fun (t, i) -> i ^ ":" ^ comp_type t) p in
+            (* let fn_name = id ^ "__" ^ (String.concat "__" (List.map (fun (_, t) -> comp_fn_arg_type t) (Assoc.bindings pm))) in *)
+            let fn_name = id ^ (String.concat "__" (List.map (fun (_, t) -> comp_type t) (Assoc.bindings pm))) in
+            let fn_str = "function " ^ fn_name ^ "(" ^ param_string ^ "):" ^ (comp_type rt) ^ "{" ^"\n"^ (comp_comm_lst cl s) ^ "}" in
+            fn_str ^"\n" 
 
 let rec comp_prog (f : prog) (s : SS.t) : string =
     debug_print ">> comp_fn_lst";
@@ -286,4 +290,4 @@ let util_funcs =
 let rec compile_program (prog : prog) : string =
     debug_print ">> compile_programJS";
     (* let prog' = generate_generics_in_prog prog false in *)
-    "import {vec2,mat2,vec3,mat3,vec4,mat4} from 'gl-matrix';" ^ util_funcs ^ "\n" ^ comp_prog prog SS.empty ^ "main__();"
+    "import {vec2,mat2,vec3,mat3,vec4,mat4} from 'gl-matrix';" ^ util_funcs ^ "\n" ^ comp_prog prog SS.empty ^ "main();"
