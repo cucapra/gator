@@ -173,7 +173,7 @@ let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
     | h::tl -> match h with
         | Skip -> comp_comm_lst tl s
         | Print (e, _) -> "console.log(" ^ comp_exp e s ^ ");" ^ comp_comm_lst tl s
-        | Exp (e, _) -> comp_exp e s ^ ";" ^"\n"
+        | Exp (e, _) -> comp_exp e s ^ ";" ^"\n" ^ (comp_comm_lst tl s)
         | Decl (et, x, e) ->
             let create_str = match et with
                 (*| VecTyp n -> failwith "unimplemented VecTyp compile" (*"let " ^ x ^ "=vec" ^ (string_of_int n) ^ ".create();"*)*)

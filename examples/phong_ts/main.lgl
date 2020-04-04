@@ -51,7 +51,7 @@ void render(mat4 view, mat4 projection){
     #"lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);";
     #"lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);";
 
-    #"gl.disable(gl.CULL_FACE)";
+    #"gl.disable(gl.CULL_FACE);";
 
     // Draw the object.
     lgl.drawMesh(gl, mesh);
