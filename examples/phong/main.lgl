@@ -2,25 +2,82 @@ declare type WebGLRenderingContext;
 declare type WebGLProgram;
 declare type WebGLUniformLocation;
 declare type mat4;
+declare type vec3;
+declare type lgl.mesh;
 
+declare string require(string someModule);
+//mat4
+declare mat4 mat4.create();
 with mat4 T: declare T mat4.rotateY(T model1, T model2, float someFloat);
-
+//vec3
+declare vec3 vec3.fromValues(float x, float y, float z);
+//gl
 with WebGLProgram T: declare void gl.useProgram(T someProgram);
+declare void gl.uniform3fv(WebGLUniformLocation loc1, vec3 someVec3);
+//lgl
+declare WebGLProgram lgl.compileProgram(WebGLRenderingContext gl, string vertex, string fragment);
 declare WebGLUniformLocation lgl.uniformLoc(WebGLRenderingContext gl, WebGLProgram prog, string someName);
-
+declare void gl.uniformMatrix4fv(WebGLUniformLocation someLoc, bool someBool, mat4 someMat4);
+declare int lgl.attribLoc(WebGLRenderingContext gl, WebGLProgram program, string someName);
+declare lgl.mesh lgl.getBunny(WebGLRenderingContext gl);
+declare void lgl.drawMesh(WebGLRenderingContext gl, lgl.mesh someMesh);
 //Imports
 #"import * as lgl from '../lglexample';";
 
 //Globals
+const WebGLRenderingContext gl;
 const WebGLProgram program;
 const WebGLUniformLocation loc_uProjection;
+const WebGLUniformLocation loc_uView;
+const WebGLUniformLocation loc_uModel;
+const WebGLUniformLocation loc_uLight;
+const int loc_aPosition;
+const int loc_aNormal;
+const mat4 model;
+const vec3 light;
+const lgl.mesh mesh;
 
 void render(mat4 view, mat4 projection){
-    mat4.rotateY(view, view, 0.1);
+    mat4.rotateY(model, model, 0.1);
 
     gl.useProgram(program);
+
+    gl.uniformMatrix4fv(loc_uProjection, false, projection);
+    gl.uniformMatrix4fv(loc_uView, false, view);
+    gl.uniformMatrix4fv(loc_uModel, false, model);
+    gl.uniform3fv(loc_uLight, light);
+
+    // Set the attribute arrays.
+    #"lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);";
+    #"lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);";
+
+    #"gl.disable(gl.CULL_FACE)";
+
+    // Draw the object.
+    lgl.drawMesh(gl, mesh);
 }
 
 void main(){
     #"let gl = lgl.setup(render_0);";
+    // auto someRequire = require("./vertex.lgl");
+    // float asdf = 5.;
+    program = lgl.compileProgram(gl, require("./vertex.lgl"), require("./fragment.lgl"));
+    string fs = require("fs");
+
+    // Uniform and attribute locations.
+    loc_uProjection = lgl.uniformLoc(gl, program, "uProjection");
+    loc_uView = lgl.uniformLoc(gl, program, "uView");
+    loc_uModel = lgl.uniformLoc(gl, program, "uModel");
+    loc_uLight = lgl.uniformLoc(gl, program, "uLight");
+    loc_aPosition = lgl.attribLoc(gl, program, "aPosition");
+    loc_aNormal = lgl.attribLoc(gl, program, "aNormal");
+
+    // We'll draw a gator
+    mesh = lgl.getBunny(gl);
+
+    // Initialize the model position.
+    model = mat4.create();
+
+    // Position the light source for the lighting effect.
+    light = vec3.fromValues(20., 0., 20.);
 }

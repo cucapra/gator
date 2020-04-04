@@ -199,7 +199,7 @@ let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
             ^ "{ " ^ (comp_comm_lst cl s) ^ " }" ^"\n" ^ (comp_comm_lst tl s))
         | Return Some (e, _) -> "return " ^ (comp_exp e s) ^ ";" ^"\n" ^ (comp_comm_lst tl s)
         | Return None -> "return;" ^"\n" ^ (comp_comm_lst tl s)
-        | ExactCodeComm ec -> ec
+        | ExactCodeComm ec -> ec ^"\n" ^ (comp_comm_lst tl s)
 
 let comp_fn (f : fn) (s : SS.t) : string =
     let (rt, id, pm, p), cl = f in
@@ -223,7 +223,7 @@ let rec comp_prog (f : prog) (s : SS.t) : string =
         match et with
         (* | VecTyp n -> "var " ^ x ^ "= vec" ^ (string_of_int n) ^ ".create();" ^ x ^ e_str ^ (decl_attribs t)
         | MatTyp (m,n) -> "var " ^ x ^ "= mat" ^ (string_of_int (max m n)) ^ ".create();" ^ e_str ^ (decl_attribs t) *)
-        | _ -> "var " ^ x ^ e_str ^ ";" ^ (comp_prog t s)
+        | _ -> "var " ^ x ^ e_str ^ ";" ^ "\n" ^ (comp_prog t s)
 
 (* let rec decl_attribs (gv : global_vars) : string = 
     debug_print ">> decl_attribs";
@@ -290,4 +290,4 @@ let util_funcs =
 let rec compile_program (prog : prog) : string =
     debug_print ">> compile_programJS";
     (* let prog' = generate_generics_in_prog prog false in *)
-    "import {vec2,mat2,vec3,mat3,vec4,mat4} from 'gl-matrix';" ^ util_funcs ^ "\n" ^ comp_prog prog SS.empty ^ "main();"
+    "import {vec2,mat2,vec3,mat3,vec4,mat4} from 'gl-matrix';" ^ (*util_funcs ^*) "\n" ^ comp_prog prog SS.empty ^ "main();"
