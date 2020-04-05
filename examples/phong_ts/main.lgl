@@ -1,10 +1,13 @@
+//Declare Types
 declare type WebGLRenderingContext;
 declare type WebGLProgram;
 declare type WebGLUniformLocation;
 declare type mat4;
 declare type vec3;
-declare type lgl.mesh;
+declare type lgl.Mesh;
 
+//Declare Functions
+//misc
 declare string require(string someModule);
 //mat4
 declare mat4 mat4.create();
@@ -14,13 +17,13 @@ declare vec3 vec3.fromValues(float x, float y, float z);
 //gl
 with WebGLProgram T: declare void gl.useProgram(T someProgram);
 declare void gl.uniform3fv(WebGLUniformLocation loc1, vec3 someVec3);
+declare void gl.uniformMatrix4fv(WebGLUniformLocation someLoc, bool someBool, mat4 someMat4);
 //lgl
 declare WebGLProgram lgl.compileProgram(WebGLRenderingContext gl, string vertex, string fragment);
 declare WebGLUniformLocation lgl.uniformLoc(WebGLRenderingContext gl, WebGLProgram prog, string someName);
-declare void gl.uniformMatrix4fv(WebGLUniformLocation someLoc, bool someBool, mat4 someMat4);
 declare int lgl.attribLoc(WebGLRenderingContext gl, WebGLProgram program, string someName);
-declare lgl.mesh lgl.getBunny(WebGLRenderingContext gl);
-declare void lgl.drawMesh(WebGLRenderingContext gl, lgl.mesh someMesh);
+declare lgl.Mesh lgl.getBunny(WebGLRenderingContext gl);
+declare void lgl.drawMesh(WebGLRenderingContext gl, lgl.Mesh someMesh);
 //Imports
 #"import * as lgl from '../lglexample';";
 
@@ -35,7 +38,7 @@ const int loc_aPosition;
 const int loc_aNormal;
 const mat4 model;
 const vec3 light;
-const lgl.mesh mesh;
+const lgl.Mesh mesh;
 
 void render(mat4 view, mat4 projection){
     mat4.rotateY(model, model, 0.1);
@@ -58,7 +61,7 @@ void render(mat4 view, mat4 projection){
 }
 
 void main(){
-    #"let gl = lgl.setup(render_0);";
+    #"gl = lgl.setup(render_0);";
     // auto someRequire = require("./vertex.lgl");
     // float asdf = 5.;
     program = lgl.compileProgram(gl, require("./vertex.lgl"), require("./fragment.lgl"));

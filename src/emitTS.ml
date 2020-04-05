@@ -218,12 +218,17 @@ let rec comp_prog (f : prog) (s : SS.t) : string =
     match f with 
     | [] -> ""
     | Fn f::t -> let (_,id,_,_),_ = f in
-        comp_fn f s ^ comp_prog t (SS.add id s)
-    | GlobalVar (sq, et, x, e)::t -> let e_str = string_of_option_removed (fun x -> "= " ^ comp_texp x SS.empty) e in
+        comp_fn f s ^ "\n" ^ comp_prog t (SS.add id s)
+    | GlobalVar (sq, et, x, e)::t -> 
+        let e_str = string_of_option_removed (fun x -> "= " ^ comp_texp x SS.empty) e in
+        let ts_type = match (string_of_typ et) with
+            | "int" | "float" -> "number"
+            | a -> a
+        in
         match et with
         (* | VecTyp n -> "var " ^ x ^ "= vec" ^ (string_of_int n) ^ ".create();" ^ x ^ e_str ^ (decl_attribs t)
         | MatTyp (m,n) -> "var " ^ x ^ "= mat" ^ (string_of_int (max m n)) ^ ".create();" ^ e_str ^ (decl_attribs t) *)
-        | _ -> "var " ^ x ^ e_str ^ ";" ^ "\n" ^ (comp_prog t s)
+        | _ -> "var " ^ x  ^ ":" ^ ts_type ^ e_str ^ ";" ^ "\n" ^ (comp_prog t s)
 
 (* let rec decl_attribs (gv : global_vars) : string = 
     debug_print ">> decl_attribs";
