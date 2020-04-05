@@ -22,7 +22,7 @@ let rec comp_type (t : etyp) : string =
     | ArrTyp (innerType, _) -> "Array<" ^ comp_type innerType ^ ">"
     | AnyTyp -> failwith "unimplemented anytyp in Javascript"
     | GenTyp -> failwith "unimplemented gentyp in Javascript"
-    | ExactCodeTyp -> "asdf123"
+    | ExactCodeTyp -> "ExactCode"
 
 (* let comp_fn_arg_type (t : etyp) : string =
     match t with
