@@ -5,6 +5,7 @@ declare type WebGLUniformLocation;
 declare type mat4;
 declare type vec3;
 declare type lgl.Mesh;
+declare type WebGLBuffer;
 
 //Declare Functions
 //misc
@@ -21,9 +22,11 @@ declare void gl.uniformMatrix4fv(WebGLUniformLocation someLoc, bool someBool, ma
 //lgl
 declare WebGLProgram lgl.compileProgram(WebGLRenderingContext gl, string vertex, string fragment);
 declare WebGLUniformLocation lgl.uniformLoc(WebGLRenderingContext gl, WebGLProgram prog, string someName);
-declare int lgl.attribLoc(WebGLRenderingContext gl, WebGLProgram program, string someName);
+declare float lgl.attribLoc(WebGLRenderingContext gl, WebGLProgram program, string someName);
 declare lgl.Mesh lgl.getBunny(WebGLRenderingContext gl);
 declare void lgl.drawMesh(WebGLRenderingContext gl, lgl.Mesh someMesh);
+declare void lgl.bind_attrib_buffer(WebGLRenderingContext gl, float someFloat, WebGLBuffer someBuffer, int someSize);
+
 //Imports
 #"import * as lgl from '../lglexample';";
 
@@ -34,23 +37,30 @@ const WebGLUniformLocation loc_uProjection;
 const WebGLUniformLocation loc_uView;
 const WebGLUniformLocation loc_uModel;
 const WebGLUniformLocation loc_uLight;
-const int loc_aPosition;
-const int loc_aNormal;
+const float loc_aPosition;
+const float loc_aNormal;
 const mat4 model;
 const vec3 light;
 const lgl.Mesh mesh;
+// declare WebGLBuffer mesh.normals;
+// declare WebGLBuffer mesh.positions;
 
 void render(mat4 view, mat4 projection){
+    // Rotate the model a little bit on each frame.
     mat4.rotateY(model, model, 0.1);
 
+    // Use our shader pair.
     gl.useProgram(program);
 
+    // Set the shader "uniform" parameters.
     gl.uniformMatrix4fv(loc_uProjection, false, projection);
     gl.uniformMatrix4fv(loc_uView, false, view);
     gl.uniformMatrix4fv(loc_uModel, false, model);
     gl.uniform3fv(loc_uLight, light);
 
     // Set the attribute arrays.
+    // lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
+    // lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
     #"lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);";
     #"lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);";
 
@@ -62,10 +72,9 @@ void render(mat4 view, mat4 projection){
 
 void main(){
     #"gl = lgl.setup(render_0);";
-    // auto someRequire = require("./vertex.lgl");
-    // float asdf = 5.;
+
+    // Compiler our shaders.
     program = lgl.compileProgram(gl, require("./vertex.lgl"), require("./fragment.lgl"));
-    string fs = require("fs");
 
     // Uniform and attribute locations.
     loc_uProjection = lgl.uniformLoc(gl, program, "uProjection");
