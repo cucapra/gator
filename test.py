@@ -58,13 +58,14 @@ def test_exception(tempname, expectname):
                 outval = next(outf)
                 expval = next(expf)
                 # Special case party!
-                print(outval[0:20])
                 if expval.startswith(PARSING_ERROR):
                     return outval.startswith(PARSING_ERROR)
                 if expval.startswith(EXTERN_ERROR):
                     return outval.startswith(EXTERN_ERROR)
                 if expval.startswith(EXCEPTION_ERROR):
                     pindex = expval.index("(")
+                    print(outval[:pindex])
+                    print(expval[:pindex])
                     return outval[:pindex] == expval[:pindex]
                 return False
     except:
