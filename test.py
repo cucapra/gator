@@ -25,7 +25,7 @@ SUCCESS_COUNT = 5
 # Error messages we look for.
 PARSING_ERROR = "Fatal error: exception Failure(\"Parsing error"
 EXTERN_ERROR = "Fatal error: exception Failure(\"Unimplemented function"
-EXCEPTION_ERROR = "Fatal error: exception"
+EXCEPTION_ERROR = "Fatal error:"
 
 
 def get_symbols():
