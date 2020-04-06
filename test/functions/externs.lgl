@@ -1,11 +1,13 @@
 type vec2 is float[2];
+type vec4 is float[4];
 
 declare int f();
 declare int g(int x);
 declare vec2 h(vec2 x, int y, int z);
 declare int +(int x, int y);
 declare int *(int x, int y);
-// declare vec4 gl_FragCoord; // TODO: See issue #19
+declare vec4 +(vec4 x, vec4 y);
+declare builtin vec4 gl_FragCoord;
 
 void main() {
     int s1 = g(f());
@@ -13,5 +15,5 @@ void main() {
     int s3 = g(g(g(g(g(g(3))))));
     vec2 s4 = h(h(h([1., 2.], g(g(f())), 2), 2, g(g(f()))), g(2), f());
     int s5 = g(f()) + g(1) * g(f());
-    // vec4 s6 = gl_FragCoord + [1., 0., 1., 0.];
+    vec4 s6 = gl_FragCoord + [1., 0., 1., 0.];
 }
