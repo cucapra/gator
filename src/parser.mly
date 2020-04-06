@@ -81,6 +81,7 @@ exception ParseException of string
 %token ATTRIBUTE
 %token UNIFORM
 %token VARYING
+%token BUILTIN
 %token POUND
 
 (* Precedences *)
@@ -303,6 +304,8 @@ let storage_qual ==
     { Uniform }
   | VARYING;
     { Varying }
+  | BUILTIN;
+    { BuiltIn }
 
 let value ==
   | b = bool;
