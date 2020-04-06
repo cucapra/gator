@@ -25,7 +25,7 @@ SUCCESS_COUNT = 5
 # Error messages we look for.
 PARSING_ERROR = "Fatal error: exception Failure(\"Parsing error"
 EXTERN_ERROR = "Fatal error: exception Failure(\"Unimplemented function"
-EXCEPTION_ERROR = "Fatal error: exception"
+EXCEPTION_ERROR = "Fatal error:"
 
 
 def get_symbols():
@@ -64,7 +64,8 @@ def test_exception(tempname, expectname):
                     return outval.startswith(EXTERN_ERROR)
                 if expval.startswith(EXCEPTION_ERROR):
                     pindex = expval.index("(")
-                    return outval[:pindex] == expval[:pindex]
+                    pindex2 = outval.index("(")
+                    return outval[pindex2-15:pindex2] == expval[pindex-15:pindex]
                 return False
     except:
         return False
