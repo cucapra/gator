@@ -1,14 +1,14 @@
-type a is float[3];
-type b is float[3];
+// type a is float[3];
+// type b is float[3];
 
-// Cannot use a canonical function with a generic return type not dependent on the input type
-// This is enforced to avoid reasoning about the universal quantifier -- necessary due to potentially infinite generic parameterization recursion
-with float[3] T, U:
-canon U any(T v) {
-    return v as! U;
-}
+// // Cannot use a canonical function with a generic return type not dependent on the input type
+// // This is enforced to avoid reasoning about the universal quantifier -- necessary due to potentially infinite generic parameterization recursion
+// with float[3] T, U:
+// canon U any(T v) {
+//     return v as! U;
+// }
 
-void main() {
-    a avec = [1., 2., 3.];
-    b fail = avec in b;
-}
+// void main() {
+//     a avec = [1., 2., 3.];
+//     b fail = avec in b;
+// }
