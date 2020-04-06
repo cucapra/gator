@@ -64,7 +64,8 @@ def test_exception(tempname, expectname):
                     return outval.startswith(EXTERN_ERROR)
                 if expval.startswith(EXCEPTION_ERROR):
                     pindex = expval.index("(")
-                    return outval[pindex-15:pindex] == expval[pindex-15:pindex]
+                    pindex2 = outval.index("(")
+                    return outval[pindex2-15:pindex2] == expval[pindex-15:pindex]
                 return False
     except:
         return False
