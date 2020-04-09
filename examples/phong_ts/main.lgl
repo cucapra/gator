@@ -19,6 +19,7 @@ declare vec3 vec3.fromValues(float x, float y, float z);
 with WebGLProgram T: declare void gl.useProgram(T someProgram);
 declare void gl.uniform3fv(WebGLUniformLocation loc1, vec3 someVec3);
 declare void gl.uniformMatrix4fv(WebGLUniformLocation someLoc, bool someBool, mat4 someMat4);
+declare void gl.disable(int someInt);
 //lgl
 declare WebGLProgram lgl.compileProgram(WebGLRenderingContext gl, string vertex, string fragment);
 declare WebGLUniformLocation lgl.uniformLoc(WebGLRenderingContext gl, WebGLProgram prog, string someName);
@@ -42,8 +43,9 @@ const float loc_aNormal;
 const mat4 model;
 const vec3 light;
 const lgl.Mesh mesh;
-// declare WebGLBuffer mesh.normals;
-// declare WebGLBuffer mesh.positions;
+declare WebGLBuffer mesh.normals;
+declare WebGLBuffer mesh.positions;
+declare int gl.CULL_FACE;
 
 void render(mat4 view, mat4 projection){
     // Rotate the model a little bit on each frame.
@@ -59,12 +61,10 @@ void render(mat4 view, mat4 projection){
     gl.uniform3fv(loc_uLight, light);
 
     // Set the attribute arrays.
-    // lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
-    // lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
-    #"lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);";
-    #"lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);";
+    lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
+    lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
 
-    #"gl.disable(gl.CULL_FACE);";
+    gl.disable(gl.CULL_FACE);
 
     // Draw the object.
     lgl.drawMesh(gl, mesh);
