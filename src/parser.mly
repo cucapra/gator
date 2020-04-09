@@ -144,6 +144,8 @@ let term ==
     <Coordinate>
   | FRAME; x = ID; HAS; DIMENSION; d = dexp; SEMI;
     <Frame>
+  | (m, t) = terminated_list(modification, typ); x = ID; SEMI; 
+    { GlobalVar(m, BuiltIn, t, x, None) }
   | m = modification*; TYP; x = ID; SEMI;
     { Typ(m, x, AnyTyp) }
   | m = modification*; TYP; x = ID; IS; t = typ; SEMI;
