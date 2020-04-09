@@ -81,7 +81,6 @@ exception ParseException of string
 %token ATTRIBUTE
 %token UNIFORM
 %token VARYING
-%token BUILTIN
 %token POUND
 
 (* Precedences *)

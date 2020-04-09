@@ -91,7 +91,6 @@ rule read = parse
   | "attribute"     { ATTRIBUTE }
   | "uniform"       { UNIFORM }
   | "varying"       { VARYING }  
-  | "builtin"       { BUILTIN }
   | "break"
   | "continue"
   | "do"
