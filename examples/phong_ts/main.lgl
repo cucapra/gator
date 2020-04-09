@@ -43,9 +43,9 @@ const float loc_aNormal;
 const mat4 model;
 const vec3 light;
 const lgl.Mesh mesh;
-declare builtin WebGLBuffer mesh.normals;
-declare builtin WebGLBuffer mesh.positions;
-declare builtin int gl.CULL_FACE;
+declare WebGLBuffer mesh.normals;
+declare WebGLBuffer mesh.positions;
+declare int gl.CULL_FACE;
 
 void render(mat4 view, mat4 projection){
     // Rotate the model a little bit on each frame.

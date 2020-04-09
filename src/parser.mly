@@ -306,8 +306,6 @@ let storage_qual ==
     { Uniform }
   | VARYING;
     { Varying }
-  | BUILTIN;
-    { BuiltIn }
 
 let value ==
   | b = bool;
