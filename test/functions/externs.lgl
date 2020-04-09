@@ -7,7 +7,7 @@ declare vec2 h(vec2 x, int y, int z);
 declare int +(int x, int y);
 declare int *(int x, int y);
 declare vec4 +(vec4 x, vec4 y);
-declare builtin vec4 gl_FragCoord;
+declare vec4 gl_FragCoord;
 
 void main() {
     int s1 = g(f());
