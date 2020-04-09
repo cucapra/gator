@@ -97,7 +97,7 @@ def js_format(line):
     # Note that they must all be floats per Lathe's requirements on arrays
     as_float = lambda x : list(map(float, re.findall(r"-?[0-9]+\.[0-9]*", x)))
     as_mat = lambda exp : list(map(as_float, \
-        filter(lambda x : len(x) > 0, re.split("\[", exp))))
+        filter(lambda x : len(x) > 0, re.split(r"\[", exp))))
     # Apply the matrix changes
     to_js = lambda exp : "{}".format(js_matrix_format(as_mat(exp.groups()[0])))
     # And run the whole mess on every matrix
