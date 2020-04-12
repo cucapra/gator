@@ -77,6 +77,7 @@ with mat4 T: with mat4 U: declare mat4 *(T m, U v);
 
 declare float sin(float f);
 declare float cos(float f);
+declare float tan(float f);
 declare float sqrt(float f);
 declare float acos(float f);
 with float[2] T: declare T sin(T f);
@@ -130,6 +131,9 @@ with vec4 T: declare float dot(T v1, T v2);
 with vec2 T: declare float length(T v);
 with vec3 T: declare float length(T v);
 with vec4 T: declare float length(T v);
+with vec2 T: declare float distance(T p1, T p2);
+with vec3 T: declare float distance(T p1, T p2);
+with vec4 T: declare float distance(T p1, T p2);
 // declare T normalize<T : vec3>(T x);
 declare vec2 normalize(vec2 x);
 declare vec3 normalize(vec3 x);
@@ -137,14 +141,17 @@ with float T: declare T max(T f1, T f2);
 with vec2 T: declare T reflect(T v1, T v2);
 with vec3 T: declare T reflect(T v1, T v2);
 with float T: declare T pow(T f1, T f2);
+with float T: declare T pow(T f1, int e);
 with vec2 T: declare T mix(T v1, T v2, T v3);
 
 // Geometric Objects and Operations
 
 prototype geometry {
     object point;
+    object position is point;
     object vector;
     object direction is vector;
+    object halfdir is direction;
     // There's probably a better way to do this, but whatever
     // Separate normals so they work with normal transformations
     object normal is direction;
@@ -178,6 +185,7 @@ prototype geometry {
 
     angle dot(direction v1, direction v2);
     scalar length(vector v);
+    scalar distance(point p1, point p2);
     direction normalize(vector v); // Only direction -> direction is allowed, so canonicalizing this is fine
     direction normalize(direction v);
     normal normalNormalize(vector v);
@@ -191,8 +199,10 @@ prototype geometry {
 with frame(2) r:
 coordinate cart2 : geometry {
     object point is float[2];
+    object position is point;
     object vector is float[2];
     object direction is vector;
+    object halfdir is direction;
     object normal is direction;
     with frame(2) r2: object transformation is float[2][2];
     with frame(2) r2: object normalTransformation is float[2][2];
@@ -254,6 +264,9 @@ coordinate cart2 : geometry {
     scalar length(vector v) {
         return (length(v as! vec2) as! scalar);
     }
+    scalar distance(point p1, point p2) {
+        return distance(p1 as! vec2, p2 as! vec2) as! scalar;
+    }
     canon direction normalize(vector v) {
         return (normalize(v as! vec2) as! direction);
     }
@@ -277,8 +290,10 @@ coordinate cart2 : geometry {
 with frame(3) r:
 coordinate cart3 : geometry {
     object point is float[3];
+    object position is point;
     object vector is float[3];
     object direction is vector;
+    object halfdir is direction;
     object normal is direction;
     with frame(3) r2: object transformation is float[3][3];
     with frame(3) r2: object normalTransformation is float[3][3];
@@ -340,6 +355,9 @@ coordinate cart3 : geometry {
     scalar length(vector v) {
         return (length(v as! vec3) as! scalar);
     }
+    scalar distance(point p1, point p2) {
+        return distance(p1 as! vec3, p2 as! vec3) as! scalar;
+    }
     canon direction normalize(vector v) {
         return (normalize(v as! vec3) as! direction);
     }
@@ -360,8 +378,10 @@ coordinate cart3 : geometry {
 with frame(3) r:
 coordinate hom : geometry {
     object point is float[4];
+    object position is point;
     object vector is float[4];
     object direction is vector;
+    object halfdir is direction;
     object normal is direction;
     with frame(3) r2: object transformation is float[4][4];
     with frame(3) r2: object normalTransformation is float[4][4];
