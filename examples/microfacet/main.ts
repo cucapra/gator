@@ -22,15 +22,28 @@ function main() {
   );
 
   // Uniform and attribute locations.
+  // I hate everything about these declarations, btw
   let loc_uProjection = lgl.uniformLoc(gl, program, 'uProjection');
   let loc_uView = lgl.uniformLoc(gl, program, 'uView');
   let loc_uModel = lgl.uniformLoc(gl, program, 'uModel');
   let loc_aPosition = lgl.attribLoc(gl, program, 'aPosition');
   let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
-
-  // Texture things
-  let loc_aTexCoord = lgl.attribLoc(gl, program, 'aTexCoord');
-  let loc_uTexture = lgl.uniformLoc(gl, program, 'uTexture');
+  let loc_aTangent = lgl.attribLoc(gl, program, 'aTangent');
+  let loc_aBiTangent = lgl.attribLoc(gl, program, 'aBiTangent');
+  let loc_mat_diffuseColor = lgl.uniformLoc(gl, program, 'mat_diffuseColor');
+  let loc_mat_hasDiffuseTexture = lgl.uniformLoc(gl, program, 'mat_hasDiffuseTexture');
+  let loc_mat_diffuseTexture = lgl.uniformLoc(gl, program, 'mat_diffuseTexture');
+  let loc_mat_indexOfRefraction = lgl.uniformLoc(gl, program, 'mat_indexOfRefraction');
+  let loc_mat_alpha = lgl.uniformLoc(gl, program, 'mat_alpha');
+  let loc_mat_hasAlphaTexture = lgl.uniformLoc(gl, program, 'mat_hasAlphaTexture');
+  let loc_mat_alphaTexture = lgl.uniformLoc(gl, program, 'mat_alphaTexture');
+  let loc_mat_hasNormalTexture = lgl.uniformLoc(gl, program, 'mat_hasNormalTexture');
+  let loc_mat_normalTexture = lgl.uniformLoc(gl, program, 'mat_normalTexture');
+  let loc_mat_normalTextureScale = lgl.uniformLoc(gl, program, 'mat_normalTextureScale');
+  let loc_light_count = lgl.uniformLoc(gl, program, 'light_count');
+  let loc_light_eyePosition = lgl.uniformLoc(gl, program, 'light_eyePosition');
+  let loc_light_attenuation = lgl.uniformLoc(gl, program, 'light_attenuation');
+  let loc_light_color = lgl.uniformLoc(gl, program, 'light_color');
 
   // Read in lpshead obj
   // URL must be statically analyzable other than (__dirname) and (__filename)
@@ -43,9 +56,6 @@ function main() {
 
   // Initialize the model position.
   let model = mat4.create();
-
-  // Position the light source for the lighting effect.
-  let light = vec3.fromValues(20., 0., 20.);
 
   // Load image texture
   lgl.load_texture(gl, flower);

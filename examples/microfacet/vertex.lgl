@@ -1,14 +1,32 @@
-void main(vec3 aPosition, vec3 aNormal, vec3 vPosition, vec3 vNormal, vec4->vec4 uProjection, vec4->vec4 uView, vec4->vec4 uModel, vec2 aTexCoord, vec2 vTexCoord) {
-  vec3->vec4 v3_v4 = [
-    [1., 0., 0.],
-    [0., 1., 0.],
-    [0., 0., 1.],
-    [0., 0., 0.]
-  ];
+#"precision mediump float;";
 
-  vTexCoord = aTexCoord;
+type vec2 is float[2];
+type vec3 is float[3];
+type vec4 is float[4];
+type mat4 is float[4][4];
 
-  vNormal = aNormal;
-  vPosition = aPosition;
-  vec4 gl_Position = uProjection * uView * uModel * (v3_v4 * aPosition + [0., 0., 0., 1.]);
+with mat4 T: declare T *(T m1, T m2);
+with mat4 T: with vec4 U: declare U *(T m, U v);
+
+declare vec4 vec4(vec3 v, float f);
+declare vec3 vec3(vec4 v);
+
+attribute vec3 aPosition;
+attribute vec3 aNormal;
+attribute vec3 aTangent;
+attribute vec3 aBiTangent;
+varying vec3 geom_position;
+varying vec3 geom_normal;
+varying vec3 geom_tangent;
+varying vec3 geom_bitangent;
+uniform mat4 uProjection;
+uniform mat4 uView;
+uniform mat4 uModel;
+
+void main() {
+  geom_position = aNormal;
+  geom_normal = aPosition;
+  geom_tangent = aTangent;
+  geom_bitangent = aBiTangent;
+  vec4 gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
 }
