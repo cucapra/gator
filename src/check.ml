@@ -106,7 +106,7 @@ let rec is_subtype (cx: contexts) (to_check : typ) (target : typ) : bool =
     
     (* Type lookup cases *)
     (* Note that the primitive of a given type is the top representation of that type *)
-    | Literal t, _ -> is_subtype cx target (primitive cx to_check)
+    | Literal t, _ -> is_subtype cx target (primitive_deep cx to_check)
     | ParTyp (s, tl), _ -> is_subtype cx (typ_step cx to_check) target
     | MemberTyp (c, o), _ -> is_subtype cx (typ_step cx to_check) target
     | FrameTyp _, _ -> is_subtype cx (typ_step cx to_check) target
@@ -185,12 +185,21 @@ and typ_step (cx : contexts) (t : typ) : typ =
     | _ -> AnyTyp
 
 (* Produces the primitive of the given type (non-declared non-literal) *)
-and primitive (cx : contexts) (t : typ) : typ =
+and primitive_deep (cx : contexts) (t : typ) : typ =
     debug_print (">> primitive " ^ string_of_typ t);
     let rec is_primitive t' : bool =
     match t' with
     | ParTyp _ | MemberTyp _ | Literal _ -> false
     | ArrTyp (t'', _) | GenArrTyp t'' -> is_primitive t''
+    | _ -> true
+    in
+    if is_primitive t then t else primitive_deep cx (typ_step cx t)
+
+let rec primitive (cx : contexts) (t : typ) : typ =
+    debug_print (">> primitive " ^ string_of_typ t);
+    let rec is_primitive t' : bool =
+    match t' with
+    | ParTyp _ | MemberTyp _ | Literal _ -> false
     | _ -> true
     in
     if is_primitive t then t else primitive cx (typ_step cx t)
@@ -199,8 +208,8 @@ let rec greatest_common_child (cx: contexts) (t1: typ) (t2: typ): typ =
     debug_print ">> greatest_common_child";
     if is_subtype cx t1 t2 then t1 else 
     if is_subtype cx t2 t1 then t2 else 
-    let top = primitive cx t1 in
-    if is_typ_eq cx top (primitive cx t2) then Literal top else
+    let top = primitive_deep cx t1 in
+    if is_typ_eq cx top (primitive_deep cx t2) then Literal top else
     error cx ("Cannot unify " ^ string_of_typ t1 ^ " and " ^ string_of_typ t2)
 
 let rec least_common_parent (cx: contexts) (t1: typ) (t2: typ): typ =
@@ -260,7 +269,7 @@ let rec typ_erase (cx: contexts) (t : typ) : TypedAst.etyp =
             then TypedAst.ParTyp (s, List.map (typ_erase cx) tl)
             else typ_erase cx (typ_step cx t)
     | MemberTyp _ | Literal _ -> 
-        typ_erase cx (primitive cx t)
+        typ_erase cx (primitive_deep cx t)
     | AutoTyp -> error cx ("Cannot infer the type of auto")
     | AnyTyp -> TypedAst.AnyTyp
     | GenTyp -> TypedAst.GenTyp

@@ -53,6 +53,7 @@ with vec3 T: declare T -(T v);
 with vec3 T: with float U: declare T *(T v, U f);
 with vec3 T: with float U: declare T *(U f, T v);
 with vec3 T: with float U: declare T /(T f1, U f2);
+declare vec3 .*(vec3 v, vec3 f);
 
 with vec4 T: declare T +(T v1, T v2);
 with vec4 T: declare T -(T v1, T v2);

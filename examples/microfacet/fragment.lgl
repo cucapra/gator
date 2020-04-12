@@ -12,7 +12,7 @@ const int MAX_LIGHTS = 40;
 const float PI = 3.14159265359;
 in cart3<view>.position geom_position;
 in uv geom_texCoord;
-in cart3<view>.vector geom_normal;
+in cart3<view>.normal geom_normal;
 in cart3<view>.vector geom_tangent;
 in cart3<view>.vector geom_bitangent;
 uniform color mat_diffuseColor;
@@ -35,7 +35,7 @@ cart3<view>.halfdir get_halfdir(cart3<view>.direction n1, cart3<view>.direction 
     return normalize(n1 + n2) as! cart3<view>.halfdir;
 }
 
-alphaColor alphatize(color c)  {return vec4(c, 1.) as! alphaColor;}
+alphaColor alphatize(vec3 c)  {return vec4(c, 1.) as! alphaColor;}
 
 float F(cart3<view>.direction i, cart3<view>.halfdir m) {
     float c = abs(dot(i, m));
@@ -98,6 +98,10 @@ vec3 I(color c, cart3<view>.point source, cart3<view>.point target, attenuation 
     return (c / (a[0] + a[1] * d + a[2] * d * d));
 }
 
+vec3 promote(float f) {
+  return [f, f, f];
+}
+
 void main() {
     fragColor = [0., 0., 0., 1.];
     for (int idx = 0; idx <= (light_count - 1); idx += 1) { 
@@ -107,7 +111,7 @@ void main() {
         auto n = geom_normal;
         auto kd = getDiffuseColor();
         fragColor += alphatize(
-                (kd + promote(F(i,m) * D(m) * G(i,o,m) / (4 * abs (dot(i,n)) * abs(dot(o,n))))) * max(0., dot(n,i)) * 
+                (kd + promote(F(i,m) * D(m,n) * G(i,o,m,n) / (4. * abs (dot(i,n)) * abs(dot(o,n))))) * max(0., dot(n,i)) .* 
                 I(light_color[idx], light_eyePosition[idx], geom_position, light_attenuation[idx]));
  }
 }
