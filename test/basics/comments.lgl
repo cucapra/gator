@@ -7,15 +7,22 @@ float //there we go!//;
 
 void main() {
 	// This is a comment
-	
+	/*So is this*/
+
 	// And another one!
 	if (true) // Wow, so many comments
 	{ //}}}}}}}}}
+	/*
+	 * What is this? A comment?
+	 * But it spans multiple lines?
+	 */
 	print 1 //interrupted!
 	;
 	//{{}}{}{{}asldkfjspodpo98fbh09 0q2i3}43567iop;[;+]
 	} //else
 	else { //;//}
+	print 5 /*An inter...
+	...ruption!! */;
 	print 2//;
 	; }
 	// tag another is bad;

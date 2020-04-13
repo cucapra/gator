@@ -12,22 +12,27 @@ let white = [' ' '\t']
 let num = ['0'-'9']+
 let letter = ['a'-'z' 'A'-'Z']
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_' '.']*
-let s = ['"'] ['a'-'z' 'A'-'Z' '0'-'9' ' ' '\t' '-' '.' ',' '_' '/' ';' '(' ')' '=' '*' '{' '}' ''']* ['"'] 
+let s = ['"'] ['a'-'z' 'A'-'Z' '0'-'9' ' ' '\t' '-' '.' ',' '_' '/' ';' '(' ')' '=' '*' '{' '}' ''']* ['"']
 let floatval = ((['0'-'9']*['.']['0'-'9']+)|(['0'-'9']+['.']['0'-'9']*))
 let newline = ['\n' '\r']
-let comment = "//" [^ '\r' '\n']* 
+let comment = "//" [^ '\r' '\n']*
+let multiline_start = "/*"
+(* Handle one star at a time *)
+let multiline_middle = [^ '*' '\r' '\n']* | '*'
+let multiline_end = "*/"
 
 (* Lexer definition *)
 
 rule read = parse
   | comment         { read lexbuf }
+  | multiline_start { multicomment lexbuf }
   | white           { read lexbuf }
   | newline         { Lexing.new_line lexbuf; read lexbuf }
   | "using"         { USING }
   | "prototype"     { PROTOTYPE }
-  | "object"        { OBJECT }  
+  | "object"        { OBJECT }
   | "coordinate"    { COORDINATE }
-  | "dimension"     { DIMENSION }  
+  | "dimension"     { DIMENSION }
   | "frame"         { FRAME }
   | "type"          { TYP }
   | "is"            { IS }
@@ -90,7 +95,7 @@ rule read = parse
   | "const"         { CONST }
   | "attribute"     { ATTRIBUTE }
   | "uniform"       { UNIFORM }
-  | "varying"       { VARYING }  
+  | "varying"       { VARYING }
   | "break"
   | "continue"
   | "do"
@@ -106,8 +111,8 @@ rule read = parse
   | "invariant"
   | "discard"
   | "asm"
-  | "class" 
-  | "union" 
+  | "class"
+  | "union"
   | "enum"
   | "typedef"
   | "template"
@@ -115,7 +120,7 @@ rule read = parse
   | "goto"
   | "switch"
   | "default"
-  | "inline" 
+  | "inline"
   | "noinline"
   | "volatile"
   | "public"
@@ -149,3 +154,7 @@ rule read = parse
             exit 1
           }
 
+and multicomment = parse
+  | multiline_end   { read lexbuf }
+  | newline         { Lexing.new_line lexbuf; multicomment lexbuf }
+  | multiline_middle { multicomment lexbuf}
