@@ -261,7 +261,7 @@ coordinate cart2 : geometry {
     scalar length(vector v) {
         return (length(v as! vec2) as! scalar);
     }
-    canon direction normalize(vector v) {
+    direction normalize(vector v) {
         return (normalize(v as! vec2) as! direction);
     }
     direction normalize(direction v) {
@@ -351,15 +351,15 @@ coordinate cart3 : geometry {
     scalar length(vector v) {
         return (length(v as! vec3) as! scalar);
     }
-    canon direction normalize(vector v) {
+    direction normalize(vector v) {
         return (normalize(v as! vec3) as! direction);
     }
     direction normalize(direction v) {
         return v;
     }
-    canon normal normalNormalize(vector v) {
-        return (normalize(v as! vec3) as! normal);
-    }
+    // canon normal normalNormalize(vector v) {
+    //     return (normalize(v as! vec3) as! normal);
+    // }
     vector reflect(direction v1, direction v2) {
         return (reflect(v1 as! vec3, v2 as! vec3) as! vector);
     }
@@ -416,6 +416,10 @@ canon hom<r>.point homify(cart3<r>.point v) {
 with frame(3) r:
 canon hom<r>.vector homify(cart3<r>.vector v) {
     return vec4(v, 0.) as! hom<r>.vector;
+}
+with frame(3) r:
+canon hom<r>.direction homify(cart3<r>.direction v) {
+    return vec4(v, 0.) as! hom<r>.direction;
 }
 with frame(3) r:
 canon cart3<r>.point hom_reduce(hom<r>.point v) {
