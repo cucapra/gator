@@ -144,7 +144,7 @@ with vec2 T: declare T mix(T v1, T v2, T v3);
 prototype geometry {
     object point;
     object vector;
-    object direction is vector;
+    object direction;
     // There's probably a better way to do this, but whatever
     // Separate normals so they work with normal transformations
     object normal is direction;
@@ -161,6 +161,9 @@ prototype geometry {
     point +(vector p, point v);
     vector -(point x, point y);
     vector -(point x);
+    with frame() target:
+    this<target>.vector *(transformation<target> m, direction v);
+
     with frame() target:
     this<target>.vector *(transformation<target> m, vector v);
 
@@ -192,7 +195,7 @@ with frame(2) r:
 coordinate cart2 : geometry {
     object point is float[2];
     object vector is float[2];
-    object direction is vector;
+    object direction is float[2];
     object normal is direction;
     with frame(2) r2: object transformation is float[2][2];
     with frame(2) r2: object normalTransformation is float[2][2];
@@ -226,6 +229,10 @@ coordinate cart2 : geometry {
     }
     vector -(point v) {
         return (-v as! vec2) as! vector;
+    }
+    with frame(2) target:
+    this<target>.vector *(transformation<target> m, direction v) {
+        return (m as! mat2 * v as! vec2) as! this<target>.vector;
     }
     with frame(2) target:
     this<target>.vector *(transformation<target> m, vector v) {
@@ -278,7 +285,7 @@ with frame(3) r:
 coordinate cart3 : geometry {
     object point is float[3];
     object vector is float[3];
-    object direction is vector;
+    object direction is float[3];
     object normal is direction;
     with frame(3) r2: object transformation is float[3][3];
     with frame(3) r2: object normalTransformation is float[3][3];
@@ -312,6 +319,10 @@ coordinate cart3 : geometry {
     }
     vector -(point v) {
         return (-v as! vec3) as! vector;
+    }
+    with frame(3) target:
+    canon this<target>.vector *(canon transformation<target> m, direction v) {
+        return (m as! mat3 * v as! vec3) as! this<target>.vector;
     }
     with frame(3) target:
     canon this<target>.vector *(canon transformation<target> m, vector v) {
@@ -361,7 +372,7 @@ with frame(3) r:
 coordinate hom : geometry {
     object point is float[4];
     object vector is float[4];
-    object direction is vector;
+    object direction is float[4];
     object normal is direction;
     with frame(3) r2: object transformation is float[4][4];
     with frame(3) r2: object normalTransformation is float[4][4];
@@ -374,6 +385,10 @@ coordinate hom : geometry {
     }
     vector -(point x, point y) {
         return (x as! vec4 * y[3] - y as! vec4 * x[3]) as! vector;
+    }
+    with frame(3) target:
+    canon this<target>.vector *(canon transformation<target> m, direction v) {
+        return (m as! mat4 * v as! vec4) as! this<target>.vector;
     }
     with frame(3) target:
     canon this<target>.vector *(canon transformation<target> m, vector v) {
