@@ -151,12 +151,8 @@ prototype geometry {
     object point;
     object position is point;
     object vector;
-<<<<<<< HEAD
-    object direction is vector;
-    object halfdir is direction;
-=======
     object direction;
->>>>>>> 6cbb41ae2a8855990493254da75182cb0b03ce39
+    object halfdir is direction;
     // There's probably a better way to do this, but whatever
     // Separate normals so they work with normal transformations
     object normal is direction;
