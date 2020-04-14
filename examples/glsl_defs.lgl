@@ -151,8 +151,12 @@ prototype geometry {
     object point;
     object position is point;
     object vector;
+<<<<<<< HEAD
     object direction is vector;
     object halfdir is direction;
+=======
+    object direction;
+>>>>>>> 6cbb41ae2a8855990493254da75182cb0b03ce39
     // There's probably a better way to do this, but whatever
     // Separate normals so they work with normal transformations
     object normal is direction;
@@ -169,6 +173,9 @@ prototype geometry {
     point +(vector p, point v);
     vector -(point x, point y);
     vector -(point x);
+    with frame() target:
+    this<target>.vector *(transformation<target> m, direction v);
+
     with frame() target:
     this<target>.vector *(transformation<target> m, vector v);
 
@@ -203,7 +210,7 @@ coordinate cart2 : geometry {
     object point is float[2];
     object position is point;
     object vector is float[2];
-    object direction is vector;
+    object direction is float[2];
     object halfdir is direction;
     object normal is direction;
     with frame(2) r2: object transformation is float[2][2];
@@ -240,6 +247,10 @@ coordinate cart2 : geometry {
         return (-v as! vec2) as! vector;
     }
     with frame(2) target:
+    this<target>.vector *(transformation<target> m, direction v) {
+        return (m as! mat2 * v as! vec2) as! this<target>.vector;
+    }
+    with frame(2) target:
     this<target>.vector *(transformation<target> m, vector v) {
         return (m as! mat2 * v as! vec2) as! this<target>.vector;
     }
@@ -270,7 +281,7 @@ coordinate cart2 : geometry {
     scalar distance(point p1, point p2) {
         return distance(p1 as! vec2, p2 as! vec2) as! scalar;
     }
-    canon direction normalize(vector v) {
+    direction normalize(vector v) {
         return (normalize(v as! vec2) as! direction);
     }
     direction normalize(direction v) {
@@ -295,7 +306,7 @@ coordinate cart3 : geometry {
     object point is float[3];
     object position is point;
     object vector is float[3];
-    object direction is vector;
+    object direction is float[3];
     object halfdir is direction;
     object normal is direction;
     with frame(3) r2: object transformation is float[3][3];
@@ -332,6 +343,10 @@ coordinate cart3 : geometry {
         return (-v as! vec3) as! vector;
     }
     with frame(3) target:
+    canon this<target>.vector *(canon transformation<target> m, direction v) {
+        return (m as! mat3 * v as! vec3) as! this<target>.vector;
+    }
+    with frame(3) target:
     canon this<target>.vector *(canon transformation<target> m, vector v) {
         return (m as! mat3 * v as! vec3) as! this<target>.vector;
     }
@@ -362,15 +377,15 @@ coordinate cart3 : geometry {
     scalar distance(point p1, point p2) {
         return distance(p1 as! vec3, p2 as! vec3) as! scalar;
     }
-    canon direction normalize(vector v) {
+    direction normalize(vector v) {
         return (normalize(v as! vec3) as! direction);
     }
     direction normalize(direction v) {
         return v;
     }
-    canon normal normalNormalize(vector v) {
-        return (normalize(v as! vec3) as! normal);
-    }
+    // canon normal normalNormalize(vector v) {
+    //     return (normalize(v as! vec3) as! normal);
+    // }
     vector reflect(direction v1, direction v2) {
         return (reflect(v1 as! vec3, v2 as! vec3) as! vector);
     }
@@ -384,7 +399,7 @@ coordinate hom : geometry {
     object point is float[4];
     object position is point;
     object vector is float[4];
-    object direction is vector;
+    object direction is float[4];
     object halfdir is direction;
     object normal is direction;
     with frame(3) r2: object transformation is float[4][4];
@@ -399,6 +414,10 @@ coordinate hom : geometry {
     }
     vector -(point x, point y) {
         return (x as! vec4 * y[3] - y as! vec4 * x[3]) as! vector;
+    }
+    with frame(3) target:
+    canon this<target>.vector *(canon transformation<target> m, direction v) {
+        return (m as! mat4 * v as! vec4) as! this<target>.vector;
     }
     with frame(3) target:
     canon this<target>.vector *(canon transformation<target> m, vector v) {
@@ -426,6 +445,10 @@ canon hom<r>.point homify(cart3<r>.point v) {
 with frame(3) r:
 canon hom<r>.vector homify(cart3<r>.vector v) {
     return vec4(v, 0.) as! hom<r>.vector;
+}
+with frame(3) r:
+canon hom<r>.direction homify(cart3<r>.direction v) {
+    return vec4(v, 0.) as! hom<r>.direction;
 }
 with frame(3) r:
 canon cart3<r>.point hom_reduce(hom<r>.point v) {
