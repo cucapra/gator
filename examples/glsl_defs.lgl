@@ -53,7 +53,7 @@ with vec3 T: declare T -(T v);
 with vec3 T: with float U: declare T *(T v, U f);
 with vec3 T: with float U: declare T *(U f, T v);
 with vec3 T: with float U: declare T /(T f1, U f2);
-declare vec3 .*(vec3 v, vec3 f);
+declare vec3 *(vec3 v, vec3 f);
 
 with vec4 T: declare T +(T v1, T v2);
 with vec4 T: declare T -(T v1, T v2);
@@ -184,6 +184,7 @@ prototype geometry {
     with frame() middle, target:
     transformation<target> *(this<middle>.transformation<target> m2, transformation<middle> m1);
 
+    // position point_pos_free(point p);
     angle dot(direction v1, direction v2);
     scalar length(vector v);
     scalar distance(point p1, point p2);
@@ -259,6 +260,7 @@ coordinate cart2 : geometry {
         return (m2 as! mat2 * m1 as! mat2) as! transformation<target>;
     }
 
+    // canon position point_pos_free(point p) { return p as! position; }
     angle dot(direction v1, direction v2) {
         return (dot(v1 as! vec2, v2 as! vec2) as! angle);
     }
@@ -350,6 +352,7 @@ coordinate cart3 : geometry {
         return (m2 as! mat3 * m1 as! mat3) as! transformation<target>;
     }
 
+    // canon position point_pos_free(point p) { return p as! position; }
     angle dot(direction v1, direction v2) {
         return (dot(v1 as! vec3, v2 as! vec3) as! angle);
     }
@@ -386,6 +389,7 @@ coordinate hom : geometry {
     object normal is direction;
     with frame(3) r2: object transformation is float[4][4];
     with frame(3) r2: object normalTransformation is float[4][4];
+    // canon position point_pos_free(point p) { return p as! position; }
 
     point +(point p, vector v) {
         return (p as! vec4 + v as! vec4 * p[3]) as! point;

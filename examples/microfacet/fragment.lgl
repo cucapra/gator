@@ -1,4 +1,5 @@
 #"precision mediump float;";
+#"precision mediump int;";
 using "../glsl_defs.lgl";
 
 type color is vec3;
@@ -8,94 +9,93 @@ type attenuation is vec3;
 
 frame view has dimension 3;
 
-const int MAX_LIGHTS = 40;
 const float PI = 3.14159265359;
-in cart3<view>.position geom_position;
-in uv geom_texCoord;
-in cart3<view>.normal geom_normal;
-in cart3<view>.vector geom_tangent;
-in cart3<view>.vector geom_bitangent;
+varying cart3<view>.position geom_position;
+varying uv geom_texCoord;
+varying cart3<view>.normal geom_normal;
+// varying cart3<view>.vector geom_tangent;
+// varying cart3<view>.vector geom_bitangent;
 uniform color mat_diffuseColor;
-uniform bool mat_hasDiffuseTexture;
+uniform int mat_hasDiffuseTexture;
 uniform sampler2D<alphaColor> mat_diffuseTexture;
 uniform float mat_indexOfRefraction;
 uniform float mat_alpha;
-uniform bool mat_hasAlphaTexture;
+uniform int mat_hasAlphaTexture;
 uniform sampler2D<vec4> mat_alphaTexture;
-uniform bool mat_hasNormalTexture;
-uniform sampler2D<hom<view>.vector> mat_normalTexture;
-uniform float mat_normalTextureScale;
-uniform int light_count;
-uniform cart3<view>.position[MAX_LIGHTS] light_eyePosition;
-uniform attenuation[MAX_LIGHTS] light_attenuation;
-uniform color[MAX_LIGHTS] light_color;
-out alphaColor fragColor;
+// uniform int mat_hasNormalTexture;
+// uniform sampler2D<hom<view>.vector> mat_normalTexture;
+// uniform float mat_normalTextureScale;
+uniform cart3<view>.position light_eyePosition;
+uniform attenuation light_attenuation;
+uniform color light_color;
 
 cart3<view>.halfdir get_halfdir(cart3<view>.direction n1, cart3<view>.direction n2){
-    return normalize(n1 + n2) as! cart3<view>.halfdir;
+	return normalize(n1 + n2) as! cart3<view>.halfdir;
 }
 
 alphaColor alphatize(vec3 c)  {return vec4(c, 1.) as! alphaColor;}
 
 float F(cart3<view>.direction i, cart3<view>.halfdir m) {
-    float c = abs(dot(i, m));
-    float g = sqrt(mat_indexOfRefraction * mat_indexOfRefraction - 1. + c * c);
+	float c = abs(dot(i, m));
+	float g = sqrt(mat_indexOfRefraction * mat_indexOfRefraction - 1. + c * c);
 
-    return (1. / 2.) * (pow(g-c, 2) / pow(g+c, 2)) * (1. + pow(c * (g + c) - 1., 2) / pow(c * (g - c) + 1., 2));
+	return (1. / 2.) * ((g-c)*(g-c)) / ((g+c)*(g+c)) * 
+    (1. + ((c * (g + c) - 1.)*(c * (g + c) - 1.)) / ((c * (g - c) + 1.)*(c * (g - c) + 1.)));
 }
 
 float getRoughness() {
-    float a = mat_alpha;
-    if (mat_hasAlphaTexture){
-        auto temp = texture2D(mat_alphaTexture, geom_texCoord);
-        a *= temp[0];
-    }
-    return a;
+	float a = mat_alpha;
+	if (mat_hasAlphaTexture == 1){
+		auto temp = texture2D(mat_alphaTexture, geom_texCoord);
+		a *= temp[0];
+	}
+	return a;
 }
 
 with float[3] T:
 float getAngle(T v1, T v2) { 
-    return acos(dot(v1 as! vec3, v2 as! vec3));
+	return acos(dot(v1 as! vec3, v2 as! vec3));
 }
 
 float D(cart3<view>.halfdir m, cart3<view>.normal n) {
-    if ((dot(m, n) > 0.)) {  
-        float roughness = getRoughness();
-        float theta = getAngle(m, n);
-        return (pow(roughness, 2) / (PI * pow(cos(theta), 4) * pow(pow(roughness,2) + pow(tan(theta),2), 2)));
-    }
-    else { 
-        return 0.;
-    }
+	if ((dot(m, n) > 0.)) {  
+		float roughness = getRoughness();
+		float theta = getAngle(m, n);
+		return (roughness*roughness) / (PI * (cos(theta)*cos(theta)*cos(theta)*cos(theta))
+      * (((roughness*roughness) + (tan(theta)*tan(theta)))*((roughness*roughness) + (tan(theta)*tan(theta)))));
+	}
+	else { 
+		return 0.;
+	}
 }
 
 float G1(cart3<view>.direction v, cart3<view>.halfdir m, cart3<view>.normal n) { 
-    if (dot(v, m) * dot(v, n) > 0.) { 
-        float roughness = getRoughness();
-        float theta = getAngle(v, normalize(n));
-        return (2. / (1. + sqrt(1. + pow(roughness,2) * pow(tan(theta), 2))));
-    }
-    else { return 0.; }
+  if (dot(v, m) * dot(v, n) > 0.) { 
+	  float roughness = getRoughness();
+	  float theta = getAngle(v, normalize(n));
+	  return (2. / (1. + sqrt(1. + (roughness*roughness) * (tan(theta)*tan(theta)))));
+  }
+  else { return 0.; }
 }
 
 float G(cart3<view>.direction i, cart3<view>.direction o, cart3<view>.halfdir m, cart3<view>.normal n) {
-    return (G1(i, m, n) * G1(o, m, n));
+  return (G1(i, m, n) * G1(o, m, n));
 }
 
 vec3 getDiffuseColor() {
-    vec3 kd = mat_diffuseColor;
-    if (mat_hasDiffuseTexture) { 
-        auto tmp = texture2D(mat_diffuseTexture, geom_texCoord);
-        kd[0] *= tmp[0];
-        kd[1] *= tmp[1];
-        kd[2] *= tmp[2];
-    }
-    return kd;
+  vec3 kd = mat_diffuseColor;
+  if (mat_hasDiffuseTexture == 1) { 
+    auto tmp = texture2D(mat_diffuseTexture, geom_texCoord);
+    kd[0] *= tmp[0];
+    kd[1] *= tmp[1];
+    kd[2] *= tmp[2];
+  }
+  return kd;
 }
 
 vec3 I(color c, cart3<view>.point source, cart3<view>.point target, attenuation a) { 
-    float d = distance(source, target);
-    return (c / (a[0] + a[1] * d + a[2] * d * d));
+  float d = distance(source, target);
+  return (c / (a[0] + a[1] * d + a[2] * d * d));
 }
 
 vec3 promote(float f) {
@@ -103,15 +103,13 @@ vec3 promote(float f) {
 }
 
 void main() {
-    fragColor = [0., 0., 0., 1.];
-    for (int idx = 0; idx <= (light_count - 1); idx += 1) { 
-        auto i = normalize(light_eyePosition[idx] - geom_position);
-        auto o = normalize(-geom_position);
-        auto m = get_halfdir(i, o);
-        auto n = geom_normal;
-        auto kd = getDiffuseColor();
-        fragColor += alphatize(
-                (kd + promote(F(i,m) * D(m,n) * G(i,o,m,n) / (4. * abs (dot(i,n)) * abs(dot(o,n))))) * max(0., dot(n,i)) .* 
-                I(light_color[idx], light_eyePosition[idx], geom_position, light_attenuation[idx]));
- }
+  vec4 gl_FragColor = vec4(getDiffuseColor(), 1.);
+	auto i = normalize(light_eyePosition - geom_position);
+	auto o = normalize(-geom_position);
+	auto m = get_halfdir(i, o);
+	auto n = geom_normal;
+	auto kd = getDiffuseColor();
+	gl_FragColor += alphatize(
+		(kd + promote(F(i,m) * D(m,n) * G(i,o,m,n) / (4.0 * abs (dot(i,n)) * abs(dot(o,n))))) * max(0., dot(n,i)) * 
+		I(light_color, light_eyePosition, geom_position, light_attenuation));
 }

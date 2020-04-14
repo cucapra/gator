@@ -1,32 +1,33 @@
 #"precision mediump float;";
 
-type vec2 is float[2];
-type vec3 is float[3];
-type vec4 is float[4];
-type mat4 is float[4][4];
+using "../glsl_defs.lgl";
 
-with mat4 T: declare T *(T m1, T m2);
-with mat4 T: with vec4 U: declare U *(T m, U v);
+frame model has dimension 3;
+frame world has dimension 3;
+frame view has dimension 3;
+frame proj has dimension 3;
 
-declare vec4 vec4(vec3 v, float f);
-declare vec3 vec3(vec4 v);
+type uv is vec2;
 
-attribute vec3 aPosition;
-attribute vec3 aNormal;
-attribute vec3 aTangent;
-attribute vec3 aBiTangent;
-varying vec3 geom_position;
-varying vec3 geom_normal;
-varying vec3 geom_tangent;
-varying vec3 geom_bitangent;
-uniform mat4 uProjection;
-uniform mat4 uView;
-uniform mat4 uModel;
+attribute cart3<model>.point aPosition;
+attribute cart3<model>.normal aNormal;
+attribute uv aTexCoord;
+// attribute cart3<view>.vector aTangent;
+// attribute cart3<view>.vector aBitangent;
+varying cart3<view>.point geom_position;
+varying uv geom_texCoord;
+varying cart3<view>.normal geom_normal;
+// varying cart3<view>.vector geom_tangent;
+// varying cart3<view>.vector geom_bitangent;
+uniform hom<view>.transformation<proj> uProjection;
+uniform hom<world>.transformation<view> uView;
+uniform hom<model>.transformation<world> uModel;
 
 void main() {
-  geom_position = aNormal;
-  geom_normal = aPosition;
-  geom_tangent = aTangent;
-  geom_bitangent = aBiTangent;
-  vec4 gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
+  geom_position = aPosition in view;
+  geom_normal = aNormal in view;
+  geom_texCoord = aTexCoord;
+  // geom_tangent = aTangent in view;
+  // geom_bitangent = aBitangent in view;
+  vec4 gl_Position = aPosition in proj;
 }

@@ -28,8 +28,9 @@ function main() {
   let loc_uModel = lgl.uniformLoc(gl, program, 'uModel');
   let loc_aPosition = lgl.attribLoc(gl, program, 'aPosition');
   let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
-  let loc_aTangent = lgl.attribLoc(gl, program, 'aTangent');
-  let loc_aBiTangent = lgl.attribLoc(gl, program, 'aBiTangent');
+  // let loc_aTangent = lgl.attribLoc(gl, program, 'aTangent');
+  // let loc_aBiTangent = lgl.attribLoc(gl, program, 'aBiTangent');
+  let loc_aTexCoord = lgl.attribLoc(gl, program, 'aTexCoord');
   let loc_mat_diffuseColor = lgl.uniformLoc(gl, program, 'mat_diffuseColor');
   let loc_mat_hasDiffuseTexture = lgl.uniformLoc(gl, program, 'mat_hasDiffuseTexture');
   let loc_mat_diffuseTexture = lgl.uniformLoc(gl, program, 'mat_diffuseTexture');
@@ -37,17 +38,16 @@ function main() {
   let loc_mat_alpha = lgl.uniformLoc(gl, program, 'mat_alpha');
   let loc_mat_hasAlphaTexture = lgl.uniformLoc(gl, program, 'mat_hasAlphaTexture');
   let loc_mat_alphaTexture = lgl.uniformLoc(gl, program, 'mat_alphaTexture');
-  let loc_mat_hasNormalTexture = lgl.uniformLoc(gl, program, 'mat_hasNormalTexture');
-  let loc_mat_normalTexture = lgl.uniformLoc(gl, program, 'mat_normalTexture');
-  let loc_mat_normalTextureScale = lgl.uniformLoc(gl, program, 'mat_normalTextureScale');
-  let loc_light_count = lgl.uniformLoc(gl, program, 'light_count');
+  // let loc_mat_hasNormalTexture = lgl.uniformLoc(gl, program, 'mat_hasNormalTexture');
+  // let loc_mat_normalTexture = lgl.uniformLoc(gl, program, 'mat_normalTexture');
+  // let loc_mat_normalTextureScale = lgl.uniformLoc(gl, program, 'mat_normalTextureScale');
   let loc_light_eyePosition = lgl.uniformLoc(gl, program, 'light_eyePosition');
   let loc_light_attenuation = lgl.uniformLoc(gl, program, 'light_attenuation');
   let loc_light_color = lgl.uniformLoc(gl, program, 'light_color');
 
   // Read in lpshead obj
   // URL must be statically analyzable other than (__dirname) and (__filename)
-  let src = fs.readFileSync(__dirname + './../resources/lpshead/head.OBJ', 'utf8');
+  // let src = fs.readFileSync(__dirname + './../resources/lpshead/head.OBJ', 'utf8');
 
   // let mesh = lgl.load_obj (gl, src);
 
@@ -56,6 +56,8 @@ function main() {
 
   // Initialize the model position.
   let model = mat4.create();
+  let lightModel = mat4.create();
+  mat4.translate(lightModel, lightModel, [5., 5., 0.]);
 
   // Load image texture
   lgl.load_texture(gl, flower);
@@ -72,9 +74,28 @@ function main() {
     gl.uniformMatrix4fv(loc_uView, false, view);
     gl.uniformMatrix4fv(loc_uModel, false, model);
 
+    gl.uniform3fv(loc_mat_diffuseColor, [.5, .5, .5]);
+    gl.uniform1i(loc_mat_diffuseTexture, 0);
+    gl.uniform1i(loc_mat_hasDiffuseTexture, 1);
+    gl.uniform1i(loc_mat_hasAlphaTexture, 0);
+    let light = vec3.create();
+    // vec3.transformMat4(light, light, projection);
+    vec3.transformMat4(light, light, view);
+    vec3.transformMat4(light, light, lightModel);
+    gl.uniform3fv(loc_light_eyePosition, light);
+    gl.uniform3fv(loc_light_color, [.5, .2, .1]);
+    gl.uniform3fv(loc_light_attenuation, [.1, .1, .1]);
+    gl.uniform1f(loc_mat_alpha, .5);
+    gl.uniform1f(loc_mat_indexOfRefraction, .3);
+    gl.uniform1i(loc_mat_alphaTexture, 0);
+    // gl.uniform1i(loc_mat_hasNormalTexture, 0);
+
     // Set the attribute arrays.
     lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
+    // lgl.bind_attrib_buffer(gl, loc_aBiTangent, mesh.positions, 3);
+    // lgl.bind_attrib_buffer(gl, loc_aTangent, mesh.positions, 3);
+    lgl.bind_attrib_buffer(gl, loc_aTexCoord, mesh.texcoords, 2);
 
     // Draw the object.
     lgl.drawMesh(gl, mesh);
