@@ -10,9 +10,9 @@ type dexp =
     | DimNum of int
     | DimPlus of dexp * dexp
 
-type dtyp = 
+(* type dtyp = 
     | BaseTyp of string
-    | MultTyp of dtyp * dtyp
+    | MultTyp of dtyp * dtyp *)
 (* types *)
 type typ =
     | BotTyp (* Useful exactly for empty lists *)
@@ -22,7 +22,7 @@ type typ =
     | IntTyp
     | FloatTyp
     | StringTyp
-    | DimTyp of dtyp
+    (* | DimTyp of dtyp *)
     | ThisTyp (* Used for coordinate/class declarations *)
     | Literal of typ
     | ArrTyp of typ * dexp (* i.e. float[5] or bool[2][3] *)
@@ -68,7 +68,7 @@ and if_block = aexp * acomm list
 
 (* function and type parameterization,
  * which may extend another type. *)
-type parameterization = typ Assoc.context
+type parameterization = (typ * bool) Assoc.context
 
 (* function parameters *)
 (* arguments may have an optional parameterization *)

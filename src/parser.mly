@@ -158,7 +158,9 @@ let prototype_element ==
 
 let modification ==
   | WITH; t = typ; r = separated_list(COMMA, ID); COLON;
-    <With>
+    { With(t, r, false) }
+  | WITH; t2 = ID; LWICK; t1 = typ; COLON; 
+    { With(t1, [t2], true) }
   | CANON;
     { Canon }
   | DECLARE;
@@ -253,11 +255,11 @@ let dexp :=
   | x = ID;
     <DimVar>
 
-let dtyp :=
+/* let dtyp :=
   | d1 = dtyp; TIMES; d2 = dtyp;
     <MultTyp>
   | s = STRING;
-    <BaseTyp>
+    <BaseTyp> */
 
 let typ :=
   | AUTOTYP;
