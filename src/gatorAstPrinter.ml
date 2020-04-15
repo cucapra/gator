@@ -13,10 +13,10 @@ let rec string_of_dexp (d : dexp) : string =
     | DimNum n -> string_of_int n
     | DimVar s -> s
 
-let rec string_of_dtyp (d : dtyp) : string = 
+(* let rec string_of_dtyp (d : dtyp) : string = 
     match d with 
     | BaseTyp s -> s
-    | MultTyp (x, y) -> string_of_dtyp x ^ " * " ^ string_of_dtyp y
+    | MultTyp (x, y) -> string_of_dtyp x ^ " * " ^ string_of_dtyp y *)
 
 let rec string_of_typ (t: typ) : string = 
     match t with
@@ -28,7 +28,7 @@ let rec string_of_typ (t: typ) : string =
     | FrameTyp d -> "frame<" ^ string_of_dexp d ^ ">"
     | FloatTyp -> "float"
     | StringTyp -> "string"
-    | DimTyp d -> "dimension" ^ string_of_dtyp(d)
+    (* | DimTyp d -> "dimension" ^ string_of_dtyp(d) *)
     | ThisTyp -> "this"
     | Literal t -> "%(" ^ string_of_typ t ^ ")"
     | ArrTyp (t, d) -> string_of_typ t ^ "[" ^ string_of_dexp d ^ "]"
