@@ -170,7 +170,7 @@ void renderSkyboxAndCubes(mat4 projection, mat4 view){
     // if(gl.COLOR_BUFFER_BIT){ comparison = 1;}
     // if(gl.DEPTH_BUFFER_BIT){ comparison = 1;}
     // gl.clear(comparison);
-    #"gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);";
+    #"gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);"; //Lack of bitwise OR
 
     // Draw the skybox, with its static cubemap texture.
     gl.useProgram(programSB);
@@ -185,7 +185,7 @@ void renderSkyboxAndCubes(mat4 projection, mat4 view){
 
     gl.clearColor(0,0,0,1);
     // gl.clear(comparison);
-    #"gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);";
+    #"gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);"; //Lack of bitwise OR
 
     gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxCubemap);
 
@@ -276,7 +276,7 @@ void render(mat4 view, mat4 projection){
     // }
     // let canvas = canvases[0] as HTMLCanvasElement;
     
-    #"canvas = document.getElementsByTagName('canvas')[0] as HTMLCanvasElement;";
+    #"canvas = document.getElementsByTagName('canvas')[0] as HTMLCanvasElement;"; //Difficulty with the HTMLCollectionOf<HTMLCanvasElement> type
     gl.viewport(0.,0.,canvas.width,canvas.height);
 
     renderSkyboxAndCubes(projection, view);
@@ -391,7 +391,7 @@ void main(){
 
     int ct = 0;
     // const HTMLImageElement[6] asdf;
-    #"var img = new Array(6);";
+    #"var img = new Array(6);"; //Difficulty with arrays of custom types
     string[6] urls = [
         require("../resources/park/posx.jpg"), require("../resources/park/negx.jpg"),
         require("../resources/park/posy.jpg"), require("../resources/park/negy.jpg"),
@@ -414,6 +414,7 @@ void main(){
 
     skyboxCubemap = gl.createTexture();  // Create the texture object for the skybox
 
+    //Problems with: "new" keyword, dot accessor on an indexing lookup, first class functions
     #"for (let i = 0; i <= 5; i++) {";
     #"    img[i] = new Image();";
     #"    img[i].onload = function() {";
