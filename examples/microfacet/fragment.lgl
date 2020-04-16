@@ -103,7 +103,7 @@ vec3 promote(float f) {
 }
 
 void main() {
-  vec4 gl_FragColor = vec4(getDiffuseColor(), 1.);
+  vec4 gl_FragColor = vec4(0., 0., 0., 1.);
 	auto i = normalize(light_eyePosition - geom_position);
 	auto o = normalize(-geom_position);
 	auto m = get_halfdir(i, o);
