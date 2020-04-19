@@ -82,6 +82,9 @@ rule read = parse
   | ">="            { GEQ }
   | "||"            { OR }
   | "&&"            { AND }
+  | "^"             { BITXOR }
+  | "|"             { BITOR }
+  | "&"             { BITAND }
   | "!"             { NOT }
   | ","             { COMMA }
   | ";"             { SEMI }
