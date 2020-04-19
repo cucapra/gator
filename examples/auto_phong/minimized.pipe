@@ -1,0 +1,153 @@
+// An example file
+// Lines used by the pipeline checker are prepended with $$, which does nothing
+
+// Ignoring boring setup stuff
+
+frame model has dimension 3;
+frame world has dimension 3;
+frame view has dimension 3;
+frame proj has dimension 3;
+frame light has dimension 3;
+
+// We're gonna keep the attribute/varying/uniform tags around
+// A few reasons for this, but the biggest is minimizing changes
+attribute cart3<model>.poin aPosition;
+attribute cart3<model>.vector aNormal;
+
+varying cart3<model>.point vPosition;
+varying cart3<model>.vector vNormal;
+
+uniform cart3<light>.point uLight;
+canon uniform hom<model>.transformation<world> uModel;
+canon uniform hom<light>.transformation<world> uLightModel;
+canon uniform hom<world>.transformation<view> uView;
+canon uniform hom<view>.transformation<proj> uProjection;
+
+function main() {
+  // Ignoring more boring HTML setup stuff
+
+  let camera = canvasOrbitCamera(canvas);
+  let projection = mat4.create();
+  let view = mat4.create();
+
+  // Clear the canvas.
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  // Set up the render loop.
+  let cancel = registerAnimator(() => {
+    // Update the camera view.
+    camera.view(view);
+    camera.tick();
+
+
+    // Update the projection matrix.
+    let width = gl.drawingBufferWidth;
+    let height = gl.drawingBufferHeight;
+    projection_matrix(projection, width, height);
+
+    // Set the rendering context to fill the canvas.
+    gl.viewport(0, 0, width, height);
+
+    // Rendering flags.
+    gl.enable(gl.DEPTH_TEST);  // Prevent triangle overlap.
+    gl.enable(gl.CULL_FACE);  // Triangles not visible from behind.
+
+    render(view, projection);
+  });
+
+  $$ let vertexShader = compileShader(gl, gl.VERTEX_SHADER, './vertex.lgl');
+  $$ let fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, './fragment.lgl');
+  $$ let program = lgl.createProgram(gl, [vertexShader, fragmentShader]);
+
+  // Uniform and attribute locations.
+  // Still using string literals here -- match code as much as possible
+  $$ let loc_uProjection = gl.getUniformLocation(program, "uProjection");
+  $$ let loc_uView = gl.getUniformLocation(program, "uView");
+  $$ let loc_uModel = gl.getUniformLocation(program, "uModel");
+  $$ let loc_uLight = gl.getUniformLocation(program, "uLight");
+  $$ let loc_uLightTrans = gl.getUniformLocation(program, "uLightModel");
+  $$ let loc_aPosition = gl.getUniformLocation(program, "aPosition");
+  $$ let loc_aNormal = gl.getUniformLocation(program, "aNormal");
+
+  // We'll draw a bunny
+  let mesh = lgl.getBunny(gl);
+
+  // Initialize the model position.
+  let model = mat4.create();
+  let lightTrans = mat4.create();
+
+  // Position the light source for the lighting effect.
+  let light = vec3.fromValues(20., 0., 20.);
+
+  function render(view: mat4, projection: mat4) {
+    // Rotate the model a little bit on each frame.
+    // mat4.rotateY(model, model, .01);
+    mat4.rotateZ(lightTrans, lightTrans, .01);
+
+    // Use our shader pair.
+    gl.useProgram(program);
+
+    // Set the shader "uniform" parameters.
+    $$ gl.uniformMatrix4fv(loc_uProjection, false, projection);
+    $$ gl.uniformMatrix4fv(loc_uView, false, view);
+    $$ gl.uniformMatrix4fv(loc_uModel, false, model);
+    $$ gl.uniformMatrix4fv(loc_uLightTrans, false, lightTrans);
+    $$ gl.uniform3fv(loc_uLight, light);
+
+    // Set the attribute arrays.
+    $$ gl.bindBuffer(gl.ARRAY_BUFFER, mesh.positions);
+    $$ gl.vertexAttribPointer(loc_aPosition, 3, gl.FLOAT, false, 0, 0);
+    $$ gl.enableVertexAttribArray(loc_aPosition);
+    $$ gl.bindBuffer(gl.ARRAY_BUFFER, mesh.normals);
+    $$ gl.vertexAttribPointer(loc_aNormal, 3, gl.FLOAT, false, 0, 0);
+    $$ gl.enableVertexAttribArray(loc_aPosition);
+
+    gl.disable(gl.CULL_FACE);
+
+    // Draw the object.
+    $$ bind_element_buffer(gl, mesh.cells);
+    $$ gl.drawElements(gl.TRIANGLES, mesh.cell_count, gl.UNSIGNED_SHORT, 0);
+    let errorCode = gl.getError();
+    if (errorCode != 0) {
+      throw errorCode;
+    }
+  }
+}
+
+main();
+
+// Alright, so these are a bit weird
+// I think the basic principle should be to try and minimize changes we require
+// In other words, these will still be in their own files and whatnot
+// We get the files from the semantics of compileProgram
+VERTEX {
+    void main() {
+      $$vNormal = aNormal;
+      $$vPosition = aPosition;
+      $$gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
+    }
+}
+
+FRAGMENT {
+    void main() {
+        color ambient = [.1, 0., 0.];
+        color diffColor = [0.2, 0.8, 0.4];
+        color specColor = [1.0, 1.0, 1.0];
+
+        auto worldPos = vPosition in world;
+        auto camPos = worldPos in camera;
+        auto worldNorm = normalize(vNormal in world);
+
+        auto lightDir = normalize((uLight in world) - worldPos);
+        auto lightWorldDot = dot(lightDir, worldNorm);
+        scalar diffuse = max(lightWorldDot, 0.0);
+
+        auto reflectDir = normalize(reflect(-lightDir, worldNorm) in camera);
+
+        scalar specular = pow(max(dot(normalize(-camPos), reflectDir), 0.), 32.);
+
+        vec4 gl_FragColor = vec4(ambient + diffuse * diffColor + specular * specColor, 1.0);
+    }
+
+}
