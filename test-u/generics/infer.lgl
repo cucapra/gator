@@ -3,7 +3,8 @@
 // It could maybe, but then we have might have problems (see tag_inference for more strange things)
 // Also, the fails (fails/infer* and fails/tag_inference*) get pretty interesting
 
-`t id<`t>(`t x) {
+with T:
+T id(T x) {
     return x;
 }
 
@@ -11,31 +12,42 @@ int id_int(int x) {
     return x;
 }
 
-`t restrict<`t>(`t x) {
+with T:
+T restrict(T x) {
     return id_int(x);
 }
 
-`t add_op<`t>(`t x, `t y) {
-    `t result = x + y;
+with T:
+T add_op(T x, T y) {
+    T result = x + y;
     return result;
 }
 
-`u app_mat<`t, `u>(`t->`u m, `t x) {
+// Previously
+// `u app_mat<`t, `u>(`t->`u m, `t x) {
+//     return m * x;
+// }
+// Now
+with T, U:
+U app_mat(cart2<T>.matrix<U> m, T x) {
     return m * x;
 }
 
-`t project_r3_r2<`t>(`t x) {
-    `t->vec2 proj = [[1., 0., 0.], [0., 1., 0.]];
+with T:
+T project_r3_r2(T x) {
+    canon cart2<T>.matrix<vec2> proj = [[1., 0., 0.], [0., 1., 0.]];
     // Multiply, but annoying as a test
     return app_mat(proj, x);
 }
 
-`t double<`t>(`t x) {
+with T:
+T double(T x) {
     return 2. * x;
 }
 
 // O_o
-`v multiop<`t, `u, `v>(`t x, `u y, `v z) {
+with T, U, V:
+V multiop(T x, U y, V z) {
     return x * y * z
 }
 

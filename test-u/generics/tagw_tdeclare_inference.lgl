@@ -8,14 +8,17 @@ type pos is vec3;
 type color is vec3;
 type tinted is color;
 
-declare float dot<t extends vec>(t x, t y);
+with vec T:
+declare float dot(T x, T y);
 
 // This could be even more powerful, but we're not there yet
-declare t normalize<t extends vec>(t x);
+with vec T:
+declare T normalize(T x);
 
-float normed_dot<t extends vec>(t x, t y) {
-    t normx = normalize(x);
-    t normy = normalize(y);
+with vec T:
+float normed_dot(T x, T y) {
+    T normx = normalize(x);
+    T normy = normalize(y);
     return dot(normx, normy);
 }
 
