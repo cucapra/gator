@@ -2,42 +2,48 @@
 // Introducing tags makes it even weirder o_O
 // (Also check out declare.lgl to make sure that stuff works)
 
-tag a is vec2;
-tag b is vec2;
-tag c is b;
-tag d is b;
-tag e is c;
+declare type vec2 is float[2];
+declare type mat2x2 is float[2][2];
+declare vec2 *(mat2x2 m, vec2 v);
 
-`t id<`t>(`t x) {
-    return x;
-}
+type a is vec2;
+type b is vec2;
+type c is b;
+type d is b;
+type e is c;
 
+// `t id<`t>(`t x) {
+//     return x;
+// }
+// 
 // Note that we will also use this to check bounds!
-vec2 to_top<`t extends vec2>(`t x) {
-    `t->vec2 m = [[1., 0.], [0., 1.]];
+with vec2 T:
+vec2 to_top(T x) {
+    mat2x2 m = [[1., 0.], [0., 1.]];
     return m * x;
 }
 
 // Note that, as before, bounds just increase the strictness of the operation
-b as_b<`t extends c>(`t x) {
+with c T:
+b as_b(c x) {
     return x;
 }
 
-// Note also that bounds using tags can make using a function impossible
-vec2 uninvokable<`t : a>(`t x) {
-    return x;
-}
-
-`t low_cast<`t : b>(a x) {
-    a->b a_b = [[.5, .5], [1.5, .5]];
-    b->`t id = [[1., 0.], [0., 1.]];
-    return id * a_b * x;
-}
-
-`t very_low_cast<`t : c>(a x) {
-    return low_cast(x);
-}
-
+// // Note also that bounds using tags can make using a function impossible
+// vec2 uninvokable<`t : a>(`t x) {
+//     return x;
+// }
+// 
+// `t low_cast<`t : b>(a x) {
+//     a->b a_b = [[.5, .5], [1.5, .5]];
+//     b->`t id = [[1., 0.], [0., 1.]];
+//     return id * a_b * x;
+// }
+// 
+// `t very_low_cast<`t : c>(a x) {
+//     return low_cast(x);
+// }
+// 
 void main() {
     a avec = [1., 1.];
     b bvec = [1., 2.];
@@ -45,22 +51,22 @@ void main() {
     d dvec = [1., 0.];
     e evec = [0., 1.];
 
-    a s1 = id(avec); // Easy enough so far
-    b s2 = id(cvec); // Subsumption still works
-    vec2 s3 = to_top(avec);
-    vec2 s4 = to_top(evec); // Pretty cool tbh
-    vec2 s5 = to_top(avec) + to_top(bvec);
-    vec2 s6 = to_top(id(evec)); // Multi-level inference
-
-    b s7 = as_b(cvec);
-    b s8 = as_b(evec) + as_b(dvec);
-
-    d s9 = low_cast(avec); // A bit trickier
-    c s10 = low_cast(avec);
-    b s11 = as_b(id(low_cast(avec))); // ouch -- see what has to be inferred below:
-    // b s11 = as_b<c>(id<c>(low_cast<c>(avec))); -- not trivial
-    b s12 = very_low_cast(avec)); // should cast down to c, then back up to b
-    e s13 = very_low_cast(avec)); // should still work
-
-    print 1;
+//     a s1 = id(avec); // Easy enough so far
+//     b s2 = id(cvec); // Subsumption still works
+//     vec2 s3 = to_top(avec);
+//     vec2 s4 = to_top(evec); // Pretty cool tbh
+//     vec2 s5 = to_top(avec) + to_top(bvec);
+//     vec2 s6 = to_top(id(evec)); // Multi-level inference
+// 
+//     b s7 = as_b(cvec);
+//     b s8 = as_b(evec) + as_b(dvec);
+// 
+//     d s9 = low_cast(avec); // A bit trickier
+//     c s10 = low_cast(avec);
+//     b s11 = as_b(id(low_cast(avec))); // ouch -- see what has to be inferred below:
+//     // b s11 = as_b<c>(id<c>(low_cast<c>(avec))); -- not trivial
+//     b s12 = very_low_cast(avec)); // should cast down to c, then back up to b
+//     e s13 = very_low_cast(avec)); // should still work
+// 
+//     print 1;
 }

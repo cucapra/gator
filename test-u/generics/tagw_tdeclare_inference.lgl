@@ -2,9 +2,11 @@
 // The fails are probably the more interesting part
 // But the stuff that typechecks can be pretty cool too
 
-tag pos is vec3;
-tag color is vec3;
-tag tinted is color;
+declare type vec3 is float[3];
+
+type pos is vec3;
+type color is vec3;
+type tinted is color;
 
 declare float dot<t extends vec>(t x, t y);
 
