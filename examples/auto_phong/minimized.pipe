@@ -68,8 +68,8 @@ function main() {
   $$ let loc_uModel = gl.getUniformLocation(program, "uModel");
   $$ let loc_uLight = gl.getUniformLocation(program, "uLight");
   $$ let loc_uLightTrans = gl.getUniformLocation(program, "uLightModel");
-  $$ let loc_aPosition = gl.getUniformLocation(program, "aPosition");
-  $$ let loc_aNormal = gl.getUniformLocation(program, "aNormal");
+  $$ let loc_aPosition = gl.getAttributeLocation(program, "aPosition");
+  $$ let loc_aNormal = gl.getAttributeLocation(program, "aNormal");
 
   // We'll draw a bunny
   let mesh = lgl.getBunny(gl);
