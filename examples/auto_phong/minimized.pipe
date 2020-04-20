@@ -1,5 +1,6 @@
 // An example file
-// Lines used by the pipeline checker are prepended with $$, which does nothing
+// Lines used by the pipeline checker are prepended with $$, 
+//   which does nothing besides denote these lines
 
 // Ignoring boring setup stuff
 
@@ -37,14 +38,14 @@ function main() {
   // Set up the render loop.
   let cancel = registerAnimator(() => {
     // Update the camera view.
-    camera.view(view);
+    $$ camera.view(view);
     camera.tick();
 
 
     // Update the projection matrix.
-    let width = gl.drawingBufferWidth;
-    let height = gl.drawingBufferHeight;
-    projection_matrix(projection, width, height);
+    $$ let width = gl.drawingBufferWidth;
+    $$ let height = gl.drawingBufferHeight;
+    $$ projection_matrix(projection, width, height);
 
     // Set the rendering context to fill the canvas.
     gl.viewport(0, 0, width, height);
@@ -53,7 +54,7 @@ function main() {
     gl.enable(gl.DEPTH_TEST);  // Prevent triangle overlap.
     gl.enable(gl.CULL_FACE);  // Triangles not visible from behind.
 
-    render(view, projection);
+    $$ render(view, projection);
   });
 
   $$ let vertexShader = compileShader(gl, gl.VERTEX_SHADER, './vertex.lgl');
@@ -123,9 +124,9 @@ main();
 // We get the files from the semantics of compileProgram
 VERTEX {
     void main() {
-      $$vNormal = aNormal;
-      $$vPosition = aPosition;
-      $$gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
+      $$ vNormal = aNormal;
+      $$ vPosition = aPosition;
+      $$ gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
     }
 }
 
@@ -147,7 +148,7 @@ FRAGMENT {
 
         scalar specular = pow(max(dot(normalize(-camPos), reflectDir), 0.), 32.);
 
-        vec4 gl_FragColor = vec4(ambient + diffuse * diffColor + specular * specColor, 1.0);
+        $$ vec4 gl_FragColor = vec4(ambient + diffuse * diffColor + specular * specColor, 1.0);
     }
 
 }

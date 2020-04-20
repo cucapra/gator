@@ -1,0 +1,12 @@
+// For simplicity, we start with the vertex shader
+// The only rules are that we must declare a varying (Before) assigning to it
+//  and that we require assignment to each varying before the program ends (Eventually)
+
+varying_var = { varying \s* $1; }
+assigned_var = { [varying_var] = $1; }
+
+require varying_var Before assigned_var
+require Eventually assigned_var
+// alternatively, we just state this is assignment with using the varying after the program ends
+assignment assign_var 
+use varying_var After [program_end]
