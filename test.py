@@ -25,7 +25,7 @@ SUCCESS_COUNT = 5
 # Error messages we look for.
 PARSING_ERROR = "Fatal error: exception Failure(\"Parsing error"
 EXTERN_ERROR = "Fatal error: exception Failure(\"Unimplemented function"
-EXCEPTION_ERROR = "Fatal error: exception"
+EXCEPTION_ERROR = "Fatal error:"
 
 
 def get_symbols():
@@ -64,7 +64,8 @@ def test_exception(tempname, expectname):
                     return outval.startswith(EXTERN_ERROR)
                 if expval.startswith(EXCEPTION_ERROR):
                     pindex = expval.index("(")
-                    return outval[:pindex] == expval[:pindex]
+                    pindex2 = outval.index("(")
+                    return outval[pindex2-15:pindex2] == expval[pindex-15:pindex]
                 return False
     except:
         return False
@@ -96,7 +97,7 @@ def js_format(line):
     # Note that they must all be floats per Lathe's requirements on arrays
     as_float = lambda x : list(map(float, re.findall(r"-?[0-9]+\.[0-9]*", x)))
     as_mat = lambda exp : list(map(as_float, \
-        filter(lambda x : len(x) > 0, re.split("\[", exp))))
+        filter(lambda x : len(x) > 0, re.split(r"\[", exp))))
     # Apply the matrix changes
     to_js = lambda exp : "{}".format(js_matrix_format(as_mat(exp.groups()[0])))
     # And run the whole mess on every matrix

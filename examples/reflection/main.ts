@@ -89,10 +89,12 @@ function main() {
   let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
 
   // We'll draw a teapot.
-  let teapot = lgl.getTeapot(gl);
+  let teapot = lgl.getBunny(gl);
 
   // Initialize the model position.
   let model = mat4.create();
+
+  mat4.scale(model, model, [4.0, 4., 4.]);
 
   var ct = 0;
   var img = new Array(6);

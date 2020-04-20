@@ -81,6 +81,7 @@ let string_of_storage_qual (s: storage_qual) : string =
   | Attribute -> "attribute"
   | Uniform -> "uniform"
   | Varying -> "varying"
+  | BuiltIn -> ""
 
 (*****************************************************
  * Debug-printer

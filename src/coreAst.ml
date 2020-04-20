@@ -23,3 +23,4 @@ type storage_qual =
   | Attribute
   | Uniform
   | Varying
+  | BuiltIn

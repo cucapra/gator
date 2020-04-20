@@ -14,15 +14,15 @@ let rec comp_type (t : etyp) : string =
     | IntTyp -> "number"
     | FloatTyp -> "number"
     | StringTyp -> "string"
-    | ParTyp (s, tl) -> failwith "unimplemented partyp writing"
+    | ParTyp (s, tl) -> s
     (* | VecTyp n -> "vec" ^ (string_of_int n)
     | MatTyp (m, n) -> "mat" ^ (string_of_int (max m n))
     | TransTyp (t1, t2) -> ("Cannot represent TransTyp " ^ comp_type t1 ^ comp_type t2 ^ " in Javascript")
     | AbsTyp (x, _) -> "Cannot represent AbsTyp " ^ x ^ " in Javascript" *)
-    | ArrTyp _ -> failwith "Cannot represent ArrTyp in Javascript"
+    | ArrTyp (innerType, _) -> "Array<" ^ comp_type innerType ^ ">"
     | AnyTyp -> failwith "unimplemented anytyp in Javascript"
     | GenTyp -> failwith "unimplemented gentyp in Javascript"
-    | ExactCodeTyp -> failwith "unimplemented ExactCodeTyp in Javascript"
+    | ExactCodeTyp -> "ExactCode"
 
 (* let comp_fn_arg_type (t : etyp) : string =
     match t with
@@ -63,9 +63,16 @@ and comp_exp (e : exp) (s : SS.t) : string =
     | Arr a -> (match a with
         | [] -> failwith "cannot have an empty array"
         | (_, t)::_ -> (match t with
-            | FloatTyp | IntTyp -> "vec" ^ (string_of_int (List.length a)) ^ ".fromValues(" ^ (String.concat ", " (List.map (fun (e, t) -> comp_exp e s) a)) ^ ")"
+            (* | FloatTyp | IntTyp -> "vec" ^ (string_of_int (List.length a)) ^ ".fromValues(" ^ (String.concat ", " (List.map (fun (e, t) -> comp_exp e s) a)) ^ ")" *)
+            | FloatTyp | IntTyp | BoolTyp->  "[" ^ (String.concat ", " (List.map (fun (e, t) -> comp_exp e s) a)) ^ "]"
             (* | VecTyp n -> let as_vec_list = (fun v -> (match v with | (Arr a', _) -> (List.map fst a') | _ -> failwith "Typechecker error, a matrix must be a list of vectors")) in
                 string_of_mat (List.map as_vec_list a) s *)
+            (* | ArrTyp (FloatTyp, d) -> let as_vec_list = (fun v -> (
+                match v with 
+                | (Arr a', _) -> a'
+                | _ -> failwith "Typechecker error, a matrix must be a list of vectors")) in
+                string_of_mat (List.map as_vec_list a) *)
+            | ArrTyp (someTyp, d) -> "[" ^ (String.concat ", " (List.map (fun (e, t) -> comp_exp e s) a)) ^ "]"
             | _ -> failwith "Typechecker error, every array must be a list of ints, floats, or vectors"))
     (* | Unop (op, (e, t)) ->
         begin
@@ -148,7 +155,8 @@ and comp_exp (e : exp) (s : SS.t) : string =
             else (String.concat "__" (List.map comp_fn_arg_type tpl)) ^ "." ^ f
         in
         fn_name ^ "(" ^ (String.concat "," (List.map (fun (e, _) -> comp_exp e s) args)) ^ ")" *)
-        failwith "unimplemented function invocation writing"
+        "(" ^ string_of_fn_util f (List.map string_of_texp args) ^ ")"
+        (* failwith "unimplemented function invocation writing" *)
 
 let comp_assign (x : texp) ((e, t) : texp) (s : SS.t) : string =
     match t with
@@ -156,7 +164,7 @@ let comp_assign (x : texp) ((e, t) : texp) (s : SS.t) : string =
         comp_exp (fst x) s ^ "=" ^ comp_exp e s ^ ";"
     (* | VecTyp v -> "vec" ^ (string_of_int v) ^ ".copy(" ^ x ^ "," ^ (comp_exp e s) ^ ");"
     | MatTyp (m, n) -> "mat" ^ (string_of_int (max m n)) ^ ".copy(" ^ x ^ "," ^ (comp_exp e s) ^ ");" *)
-    | ArrTyp _ | AnyTyp | GenTyp -> comp_type t
+    | ArrTyp _ | AnyTyp | GenTyp -> comp_exp (fst x) s ^ (*comp_type t ^*) "=" ^ (comp_exp e s) ^ ";"
 
 let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
     debug_print ">> comp_comm_lst";
@@ -165,16 +173,17 @@ let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
     | h::tl -> match h with
         | Skip -> comp_comm_lst tl s
         | Print (e, _) -> "console.log(" ^ comp_exp e s ^ ");" ^ comp_comm_lst tl s
-        | Exp (e, _) -> comp_exp e s ^ ";"
+        | Exp (e, _) -> comp_exp e s ^ ";" ^"\n" ^ (comp_comm_lst tl s)
         | Decl (et, x, e) ->
-            (* let create_str = match et with
-                | VecTyp n -> "let " ^ x ^ "=vec" ^ (string_of_int n) ^ ".create();"
-                | MatTyp (m, n) -> "let " ^ x ^ "=mat" ^ (string_of_int (max m n)) ^ ".create();"
+            let create_str = match et with
+                (*| VecTyp n -> failwith "unimplemented VecTyp compile" (*"let " ^ x ^ "=vec" ^ (string_of_int n) ^ ".create();"*)*)
+                (*| MatTyp (m, n) -> failwith "unimplemented MatTyp compile" (*"let " ^ x ^ "=mat" ^ (string_of_int (max m n)) ^ ".create();"*)*)
                 | _ -> "let "
             in
-            create_str ^ (comp_assign x e s) ^ (comp_comm_lst tl s) *)
-            failwith "unimplemented declaration"
-        | Assign (x, e) -> (comp_assign x e s) ^ (comp_comm_lst tl s)
+            create_str ^ (comp_assign (Var x, et) e s) ^"\n" ^ (comp_comm_lst tl s)
+            (* failwith "unimplemented declaration" *)
+            (* x ^ " = " ^ string_of_texp e ^ ";" *)
+        | Assign (x, e) -> (comp_assign x e s) ^"\n" ^ (comp_comm_lst tl s)
         | AssignOp ((x, t), op, e) -> failwith "unimplemented assignop"
             (* (comp_assign x ((FnInv (op, (Var x, t), e)), t) s) ^ (comp_comm_lst tl s) *)
         | If (((b, _), c1), el, c2) -> 
@@ -183,34 +192,46 @@ let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
             ^ (List.fold_left (fun acc ((b, _), c) -> "if " ^ "(" ^ (comp_exp b s) ^ ")"
                 ^ "{" ^ (comp_comm_lst c s) ^ "}" ^ acc) "" el)
             ^ (match c2 with | Some c2 -> " else {" ^ (comp_comm_lst c2 s) ^ "}" | None -> "")
+            ^"\n"
             ^ (comp_comm_lst tl s))
         | For (i, (cond, _), after, cl) ->
             ("for (" ^ (comp_comm_lst [i] s) ^ " " ^ (comp_exp cond s) ^ "; " ^ (comp_comm_lst [after] s |> (String.split_on_char ';') |> List.hd) ^ ")"
-            ^ "{ " ^ (comp_comm_lst cl s) ^ " }" ^ (comp_comm_lst tl s))
-        | Return Some (e, _) -> "return " ^ (comp_exp e s) ^ ";" ^ (comp_comm_lst tl s)
-        | Return None -> "return;" ^ (comp_comm_lst tl s)
-        | ExactCodeComm ec -> ec
+            ^ "{ " ^ (comp_comm_lst cl s) ^ " }" ^"\n" ^ (comp_comm_lst tl s))
+        | Return Some (e, _) -> "return " ^ (comp_exp e s) ^ ";" ^"\n" ^ (comp_comm_lst tl s)
+        | Return None -> "return;" ^"\n" ^ (comp_comm_lst tl s)
+        | ExactCodeComm ec -> ec ^"\n" ^ (comp_comm_lst tl s)
 
 let comp_fn (f : fn) (s : SS.t) : string =
     let (rt, id, pm, p), cl = f in
     debug_print (">> comp_fn" ^ id);
-    let param_string = string_of_list (fun (t, i) -> i ^ ":" ^ comp_type t) p in
-    (* let fn_name = id ^ "__" ^ (String.concat "__" (List.map (fun (_, t) -> comp_fn_arg_type t) (Assoc.bindings pm))) in *)
-    let fn_name = id ^ "__" ^ (String.concat "__" (List.map (fun (_, t) -> comp_type t) (Assoc.bindings pm))) in
-    let fn_str = "function " ^ fn_name ^ "(" ^ param_string ^ "):" ^ (comp_type rt) ^ "{" ^ (comp_comm_lst cl s) ^ "}" in
-    fn_str
+    match rt with
+        | ExactCodeTyp -> id ^ " "
+        | _ -> 
+            let param_string = string_of_list (fun (t, i) -> i ^ ":" ^ comp_type t) p in
+            (* let fn_name = id ^ "__" ^ (String.concat "__" (List.map (fun (_, t) -> comp_fn_arg_type t) (Assoc.bindings pm))) in *)
+            let fn_name = id ^ (String.concat "__" (List.map (fun (_, t) -> comp_type t) (Assoc.bindings pm))) in
+            let fn_str = "function " ^ fn_name ^ "(" ^ param_string ^ "):" ^ (comp_type rt) ^ "{" ^"\n"^ (comp_comm_lst cl s) ^ "}" in
+            fn_str ^"\n" 
 
 let rec comp_prog (f : prog) (s : SS.t) : string =
     debug_print ">> comp_fn_lst";
     match f with 
     | [] -> ""
     | Fn f::t -> let (_,id,_,_),_ = f in
-        comp_fn f s ^ comp_prog t (SS.add id s)
-    | GlobalVar (sq, et, x, e)::t -> let e_str = string_of_option_removed (fun x -> "= " ^ comp_texp x SS.empty) e in
-        match et with
-        (* | VecTyp n -> "var " ^ x ^ "= vec" ^ (string_of_int n) ^ ".create();" ^ x ^ e_str ^ (decl_attribs t)
-        | MatTyp (m,n) -> "var " ^ x ^ "= mat" ^ (string_of_int (max m n)) ^ ".create();" ^ e_str ^ (decl_attribs t) *)
-        | _ -> "var " ^ x ^ e_str ^ ";" ^ (comp_prog t s)
+        comp_fn f s ^ "\n" ^ comp_prog t (SS.add id s)
+    | GlobalVar (sq, et, x, e)::t -> 
+        match sq with
+        | BuiltIn -> ""
+        | _ ->
+            let e_str = string_of_option_removed (fun x -> "= " ^ comp_texp x SS.empty) e in
+            let ts_type = match (string_of_typ et) with
+                | "int" | "float" -> "number"
+                | a -> a
+            in
+            match et with
+            (* | VecTyp n -> "var " ^ x ^ "= vec" ^ (string_of_int n) ^ ".create();" ^ x ^ e_str ^ (decl_attribs t)
+            | MatTyp (m,n) -> "var " ^ x ^ "= mat" ^ (string_of_int (max m n)) ^ ".create();" ^ e_str ^ (decl_attribs t) *)
+            | _ -> "var " ^ x  ^ ":" ^ ts_type ^ e_str ^ ";" ^ "\n" ^ (comp_prog t s)
 
 (* let rec decl_attribs (gv : global_vars) : string = 
     debug_print ">> decl_attribs";
@@ -277,4 +298,4 @@ let util_funcs =
 let rec compile_program (prog : prog) : string =
     debug_print ">> compile_programJS";
     (* let prog' = generate_generics_in_prog prog false in *)
-    "import {vec2,mat2,vec3,mat3,vec4,mat4} from 'gl-matrix';" ^ util_funcs ^ "\n" ^ comp_prog prog SS.empty ^ "main__();"
+    "import {vec2,mat2,vec3,mat3,vec4,mat4} from 'gl-matrix';" ^ (*util_funcs ^*) "\n" ^ comp_prog prog SS.empty ^ "main();"
