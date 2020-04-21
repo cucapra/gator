@@ -1,6 +1,0 @@
-declare vec3 f(color x);
-
-void main() {
-    print f();
-    return;
-}

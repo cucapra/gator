@@ -1,4 +1,0 @@
-void main() {
-    float bad = 1.;
-    print [1., 2.][bad];  // Must be an integer
-}

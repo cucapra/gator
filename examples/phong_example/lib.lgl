@@ -1,0 +1,36 @@
+using "../glsl_defs.lgl";
+
+type color is vec3;
+type alphaColor is vec4;
+
+//scheme<frame>.object
+
+//frame:  set of basis vectors
+//scheme: what the numbers mean (cartesian, polar, etc...)
+//object: what the thing is (point, vectors, etc...)
+
+// Schemes: cart3, hom
+// Frames: NONE (maybe later model, world, view by default)
+// Objects: points, directions, vectors, affine transformations
+
+frame model       has dimension 3;
+frame world       has dimension 3;
+frame view        has dimension 3;
+frame projection  has dimension 3;
+
+// uniform:   constant over a single shader run
+// attribute: vertex -- read, fragment -- nothing
+// varying:   vertex -- read/write, fragment -- read
+
+uniform hom<model>.transformation<world> uModel;
+uniform hom<world>.transformation<view> uView;
+uniform hom<view>.transformation<projection> uProjection;
+uniform hom<model>.transformation<projection> uMVP;
+
+uniform cart3<world>.point uLight;
+varying cart3<model>.point vPos;
+varying cart3<model>.vector vNormal;
+
+alphaColor alphatize(color c) {
+  return vec4(c, 1.) as! alphaColor;
+}

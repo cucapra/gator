@@ -13,7 +13,7 @@ function main() {
   );
 
   const fs : any = require('fs');
-  let caiman = fs.readFileSync(__dirname + './../resources/OBJ/caiman.obj', 'utf8');
+  // let caiman = fs.readFileSync(__dirname + './../resources/OBJ/caiman.obj', 'utf8');
 
   // Uniform and attribute locations.
   let loc_uProjection = lgl.uniformLoc(gl, program, 'uProjection');
@@ -27,15 +27,15 @@ function main() {
   let loc_uRef = lgl.uniformLoc(gl, program, 'uRef');
 
   // We'll draw a teapot.
-  // let mesh = lgl.getBunny(gl);
-  let mesh = lgl.load_obj (gl, caiman);
+  let mesh = lgl.getBunny(gl);
+  // let mesh = lgl.load_obj (gl, caiman);
 
   // Initialize the model position.
   let model = mat4.create();
   let ref_model = mat4.create();
 
   // Position the light source for the lighting effect.
-  let light = vec3.fromValues(0., 1., 5.);
+  let light = vec3.fromValues(20., -10.5, 40.);
 
   // Set up user movement commands
   let rotateFlag = true;
@@ -62,11 +62,12 @@ function main() {
         mat4.rotateY(model, model, -.1);
     }
   }
+  mat4.translate(model, model, [0., -10.5, 17.]);
 
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
-    if (rotateFlag)
-      mat4.rotateY(model, model, .01);
+    // if (rotateFlag)
+      // mat4.rotateY(model, model, .01);
 
     // Use our shader pair.
     gl.useProgram(program);

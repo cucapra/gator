@@ -95,10 +95,8 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) : sigma =
     | Print e -> let v, s' = eval_texp e fns s in
         print_string (string_of_ovalue v ^ "\n"); s'
     | Exp e -> snd (eval_texp e fns s)
-    | Decl (_, x, e)
-    | Assign (x, e) -> let v, s' = eval_texp e fns s in
-        (try let _ = Assoc.lookup x s in Assoc.update x v s' with
-        _ -> Assoc.update x v s')
+    | Decl (_, x, e) -> failwith "unimplemented op"
+    | Assign (x, e) -> failwith "unimplemented op"
     | AssignOp (x, op, e) -> failwith "unimplemented op"
     | If ((b, c1), el, c2) ->
         let check_if b s = (match (eval_texp b fns s) with
@@ -125,6 +123,7 @@ and eval_comm (c : comm) (fns : fn list) (s : sigma) : sigma =
         in
         loop (eval_comm c1 fns s)
     | Return e -> s
+    | ExactCodeComm ec -> s
 
 and eval_cl (cl : comm list) (fns : fn list) (s : sigma) : ovalue * sigma =
     match cl with
@@ -148,13 +147,15 @@ let rec default_value (t : etyp) : ovalue =
     | ParTyp _ -> CoreValue Unit
     | ArrTyp (t', d) -> CoreValue Unit
     | AnyTyp | GenTyp -> CoreValue Unit
+    | ExactCodeTyp -> CoreValue Unit
     
-let start_eval (fns : fn list) (gv : global_vars) : unit =
-    let add_arg = fun acc (_, t, name, _) -> Assoc.update name (default_value t) acc in
+let start_eval (fns : term list) : unit =
+    failwith "unimplemented"
+    (* let add_arg = fun acc (_, t, name, _) -> Assoc.update name (default_value t) acc in
     let s = List.fold_left add_arg Assoc.empty gv in
     match fst (fn_lookup "main" fns) with
     | None -> failwith "Typechecker failed to find lack of main"
-    | Some main -> eval_funct main fns s |> ignore
+    | Some main -> eval_funct main fns s |> ignore *)
 
-let eval_prog (p : prog) (gv : global_vars) : unit =
-    start_eval p gv
+let eval_prog (p : prog) : unit =
+    start_eval p

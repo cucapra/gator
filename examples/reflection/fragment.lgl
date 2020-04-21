@@ -1,37 +1,25 @@
-space model is vec<3>;
-space world is vec<3>;
-space view is vec<3>;
-tag hom<`t : vec<n>> is vec<n+1>;
-tag dir<`t : vec<n>> is vec<n>;
-space color is vec<3>;
-tag alpha<`t : color> is vec<4>;
+#"precision mediump float;";
 
-declare dir<`t> normalize<`t : vec>(`t x);
-declare float dot<`t: vec>(dir<`t> v1, dir<`t> v2);
-declare `t textureCube<`t : vec<4>>(samplerCube<`t> sc, model m);
-declare vec4 vec4<`t : vec<3>>(`t v, float f);
-declare vec3 vec3<`t : vec<4>>(`t v);
-declare float min(float f1, float f2);
-declare float max(float f1, float f2);
-declare `t reflect<`t : vec>(`t v1, dir<`t> v2);
-declare float pow(float f1, float f2);
+using "../glsl_defs.lgl";
 
-varying model vPosition;
-varying dir<model> vNormal;
-uniform samplerCube<alpha<color>> uSkybox;
-canon uniform hom<world>->hom<view> uView;
-canon uniform hom<model>->hom<world> uModel;
-canon uniform dir<model>->view uNormalMatrix;
-uniform view->model uInverseViewTransform;
+frame model has dimension 3;
+frame world has dimension 3;
+frame view has dimension 3;
 
-canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
-canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return v.xyz as `t; }
-canon hom<`t> homify_dir<`t : vec<3>>(dir<`t> v) { return vec4(v, 0.) as hom<`t>; }
-canon alpha<`t> extendColor<`t : color>(`t c) { return vec4(c, 1.) as alpha<`t>; }
+type color is vec3;
+type alphaColor is vec4;
+
+varying cart3<model>.point vPosition;
+varying cart3<model>.normal vNormal;
+uniform samplerCube<alphaColor> uSkybox;
+canon uniform hom<world>.transformation<view> uView;
+canon uniform hom<model>.transformation<world> uModel;
+canon uniform cart3<model>.normalTransformation<view> uNormalMatrix;
+canon uniform cart3<view>.transformation<model> uInverseViewTransform;
 
 void main() {
-    dir<view> N = normalize(uNormalMatrix * vNormal);
-    view V = -(vPosition in view);
-    view R = -reflect(V,N);
-    alpha<color> gl_FragColor = textureCube(uSkybox, R in model);
+    auto N = normalize(uNormalMatrix * vNormal);
+    auto V = -(vPosition in view);
+    auto R = -reflect(V,N);
+    auto gl_FragColor = textureCube(uSkybox, R in model);
 }

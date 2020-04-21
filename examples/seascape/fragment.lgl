@@ -1,0 +1,233 @@
+//
+// From https://www.shadertoy.com/view/Ms2SD1
+// "Seascape" by Alexander Alekseev aka TDM - 2014
+// License Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+// Contact: tdmaav@gmail.com
+//
+// Converted to Gator by Dietrich Geisler aka Checkmate50
+//
+
+using "../glsl_defs.lgl";
+
+type color is vec3;
+
+// Reference Frame Declarations
+
+frame tex has dimension 2;
+frame screen has dimension 2;
+frame camera has dimension 3;
+frame world has dimension 3;
+
+// Incoming variables
+
+uniform vec2 iResolution;
+uniform float iTime;
+
+const int NUM_STEPS = 8;
+const float PI	 	= 3.141592;
+const float EPSILON	= .001;
+const float EPSILON_NRM = (0.1 / iResolution[0]);
+const bool AA = false;
+
+// sea
+const int ITER_GEOMETRY = 3;
+const int ITER_FRAGMENT = 5;
+const float SEA_HEIGHT = 0.6;
+const float SEA_CHOPPY = 4.0;
+const float SEA_SPEED = 0.8;
+const float SEA_FREQ = 0.16;
+const color SEA_BASE = [0.0,0.09,0.18];
+const color SEA_WATER_COLOR = ([0.8,0.9,0.6] as! color) * 0.6;
+const float SEA_TIME = (1.0 + iTime * SEA_SPEED);
+const mat2 octave_m = [[1.6, 1.2], [-1.2, 1.6]];
+
+// math
+mat3 fromEuler(vec3 ang) {
+	vec2 a1 = [sin(ang[0]),cos(ang[0])];
+    vec2 a2 = [sin(ang[1]),cos(ang[1])];
+    vec2 a3 = [sin(ang[2]),cos(ang[2])];
+    mat3 m = [[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]];
+    m[0] = [a1[1]*a3[1]+a1[0]*a2[0]*a3[0],a1[1]*a2[0]*a3[0]+a3[1]*a1[0],-a2[1]*a3[0]];
+	m[1] = [-a2[1]*a1[0],a1[1]*a2[1],a2[0]];
+	m[2] = [a3[1]*a1[0]*a2[0]+a1[1]*a3[0],a1[0]*a3[0]-a1[1]*a3[1]*a2[0],a2[1]*a3[1]];
+	return m;
+}
+float hash( float[2] p ) {
+	float h = dot(p as! vec2,[127.1,311.7]);	
+    return fract(sin(h)*43758.5453123);
+}
+float noise( float[2] p ) {
+    vec2 i = floor( p as! vec2 );
+    vec2 f = fract( p as! vec2 );	
+	vec2 u = f*f*([3.0, 3.0]-2.0*f);
+    return -1.0+2.0*mix( mix( hash( i + vec2(0.0,0.0) ), 
+                     hash( i + vec2(1.0,0.0) ), u[0]),
+                mix( hash( i + vec2(0.0,1.0) ), 
+                     hash( i + vec2(1.0,1.0) ), u[0]), u[1]);
+}
+
+// lighting
+with frame(3) r:
+float diffuse(cart3<r>.direction n,cart3<r>.direction l,cart3<r>.point p) {
+    float[3] res = pow(p as! vec3,dot(n,l) * 0.4 + 0.6);
+    return res[0];
+}
+with frame(3) r:
+float specular(cart3<r>.direction n,cart3<r>.direction e,cart3<r>.direction l,float s) {
+    float nrm = (s + 8.0) / (PI * 8.0);
+    return pow(max(dot(normalize(reflect(e,n)),l),0.0),s) * nrm;
+}
+
+// sky
+color getSkyColor(color e) {
+    e[1] = (max(e[1],0.0)*0.8+0.2)*0.8;
+    return (vec3(pow(1.0-e[1],2.0), 1.0-e[1], 0.6+(1.0-e[1])*0.4) as! color) * 1.1;
+}
+
+// sea
+with frame(2) r:
+float sea_octave(cart2<r>.vector uv, float choppy) {
+    uv += [noise(uv), noise(uv)] as! cart2<r>.vector;
+    auto wv = [1.0, 1.0]-abs<r>(sin<r>(uv));
+    auto swv = abs<r>(cos<r>(uv));
+    wv = mix(wv,swv,wv);
+    return pow(1.0-pow(wv[0] * wv[1],0.65),choppy);
+}
+
+with frame(3) r:
+float map(cart3<r>.point p) {
+    float freq = SEA_FREQ;
+    float amp = SEA_HEIGHT;
+    float choppy = SEA_CHOPPY;
+    vec2 uv = [p[0], p[2]]; uv[0] *= 0.75;
+
+    float d = 0.;
+    float h = 0.0;    
+    for(int i = 0; i <= ITER_GEOMETRY - 1; i++) {
+    	d = sea_octave((uv+SEA_TIME)*freq,choppy);
+    	d += sea_octave((uv-SEA_TIME)*freq,choppy);
+        h += d * amp;
+    	uv *= octave_m; 
+        freq *= 1.9; 
+        amp *= 0.22;
+        choppy = mix(choppy,1.0,0.2);
+    }
+    return p[1] - h;
+}
+
+with frame(3) r:
+float map_detailed(cart3<r>.point p) {
+    float freq = SEA_FREQ;
+    float amp = SEA_HEIGHT;
+    float choppy = SEA_CHOPPY;
+    vec2 uv = [p[0], [2]]; uv[0] *= 0.75;
+
+    float d = 0.;
+    float h = 0.0;
+    for(int i = 0; i <= ITER_FRAGMENT - 1; i++) {
+    	d = sea_octave((uv+SEA_TIME)*freq,choppy);
+    	d += sea_octave((uv-SEA_TIME)*freq,choppy);
+        h += d * amp;
+    	uv *= octave_m; freq *= 1.9; amp *= 0.22;
+        choppy = mix(choppy,1.0,0.2);
+    }
+    return p[1] - h;
+}
+
+with frame(3) r:
+color getSeaColor(cart3<r>.point p, cart3<r>.direction n,
+    cart3<r>.point l, cart3<r>.point eye, cart3<r>.vector dist) {
+    float fresnel = clamp(1.0 - dot(n,-eye), 0.0, 1.0);
+    fresnel = pow(fresnel,3.0) * 0.5;
+
+    auto reflected = getSkyColor(reflect(eye,n));    
+    auto refracted = SEA_BASE + diffuse(n,l,80.0) * SEA_WATER_COLOR * 0.12;
+
+    auto res_color = mix(refracted,reflected,fresnel);
+
+    float atten = max(1.0 - dot(dist,dist) * 0.001, 0.0);
+    res_color += SEA_WATER_COLOR * (p[1] - SEA_HEIGHT) * 0.18 * atten;
+    
+    res_color += vec3(specular(n,l,eye,60.0));
+
+    return res_color;
+}
+
+// tracing
+with frame(3) r:
+cart3<r>.direction getNormal(cart3<r>.point p, float eps) {
+    cart3<r>.vector n = [0., 0., 0.];
+    n[1] = map_detailed(p);
+    n[0] = map_detailed(vec3(p[0]+eps,p[1],p[2])) - n[1];
+    n[2] = map_detailed(vec3(p[0],p[1],p[2]+eps)) - n[1];
+    n[1] = eps;
+    return normalize(n);
+}
+
+with frame(3) r:
+float heightMapTracing(cart3<r>.direction ori, cart3<r>.direction dir, cart3<r>.point p) {
+    float tm = 0.0;
+    float tx = 1000.0;
+    float hx = map(ori + dir * tx);
+    if(hx > 0.0) { return tx; }
+    float hm = map(ori + dir * tm);
+    float tmid = 0.0;
+    for(int i = 0; i <= NUM_STEPS - 1; i++) {
+        tmid = mix(tm,tx, hm/(hm-hx));
+        p = ori + dir * tmid;
+    	float hmid = map(p);
+		if(hmid <= 0.0) {
+        	tx = tmid;
+            hx = hmid;
+        } else {
+            tm = tmid;
+            hm = hmid;
+        }
+    }
+    return tmid;
+}
+
+cart3<world>.point getPixel(cart2<tex>.point coord, float time) {
+    cart2<screen>.point uv = coord / [iResolution[0], iResolution[1]];
+    uv = uv * 2.0 - 1.0;
+    uv[0] *= iResolution[0] / iResolution[1];
+
+    // ray
+    cart3<world>.vector ang = [sin(time*3.0)*0.1,sin(time)*0.2+0.3,time];
+    cart3<world>.vector ori = [0.0,3.5,time*5.0];
+    cart3<world>.direction dir = normalize([uv[0], uv[1], -2.0]); 
+    dir[2] += length(uv) * 0.14;
+    dir = normalize(dir) * fromEuler(ang);
+    
+    // tracing
+    cart3<world>.point p = [0., 0., 0.];
+    heightMapTracing(ori,dir,p);
+    cart3<world>.vector dist = p - ori;
+    cart3<world>.direction n = getNormal(p, dot(dist,dist) * EPSILON_NRM);
+    cart3<world>.direction light = normalize(vec3(0.0,1.0,0.8)); 
+
+    // color
+    return mix(
+        getSkyColor(dir),
+        getSeaColor(p,n,light,dir,dist),
+    	pow(smoothstep(0.0,-0.02,dir[1]),0.2));
+}
+
+// main
+void main() {
+    float time = iTime * 0.3 + iMouse[0]*0.01;
+	
+// #ifdef AA
+//     vec3 color = vec3(0.0);
+//     for(int i = -1; i <= 1; i++) {
+//         for(int j = -1; j <= 1; j++) {
+//         	vec2 uv = fragCoord+vec2(i,j)/3.0;
+//     		color += getPixel(uv, time);
+//         }
+//     }
+//     color /= 9.0;
+    auto pixel_color = getPixel(fragCoord, time);
+    
+    // post
+	fragColor = vec4(pow(pixel_color,[0.65,0.65,0.65]), 1.0);
+}

@@ -1,5 +1,0 @@
-declare int f(a x);  // Invalid parameter type
-
-void main() {
-    return;
-}

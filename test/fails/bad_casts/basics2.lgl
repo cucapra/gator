@@ -1,8 +1,0 @@
-tag a is vec<2>;
-tag b is vec<2>;
-
-void main() {
-    a->b a_b = [[1., 2.], [2., 1.]];
-    a avec = [1., 2.];
-    b fail = avec in b; //a_b is not a canonical matrix, so no path
-}

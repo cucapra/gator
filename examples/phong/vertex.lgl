@@ -1,3 +1,5 @@
+#"precision mediump float;";
+
 type vec3 is float[3];
 type vec4 is float[4];
 type mat4 is float[4][4];

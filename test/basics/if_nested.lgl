@@ -1,3 +1,5 @@
+declare int -(int x);
+
 void main() {
     bool b = true;
     bool b_in = false;

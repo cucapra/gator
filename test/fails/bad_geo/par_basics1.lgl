@@ -1,6 +1,0 @@
-tag a is vec<2>;
-tag par<`t : vec<2>> is vec<3>;
-
-void main() {
-    par<vec<3>> fail = [1., 1., 1.];
-}

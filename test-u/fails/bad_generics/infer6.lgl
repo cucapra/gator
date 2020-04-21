@@ -1,7 +1,0 @@
-`u app_mat<`t, `u>(`t->`u m, `t x) {
-    return m * x;
-}
-
-void main() {
-    print app_mat([[1., 2.], [2., 1.]], [1., 2., 3.]);  // vec2->vec2 and vec3 don't work
-}

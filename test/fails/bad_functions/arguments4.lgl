@@ -1,8 +1,0 @@
-int f(int x, bool y) {
-    return x + y;
-}
-
-void main() {
-    print f(1, true);
-    return;
-}

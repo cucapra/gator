@@ -9,6 +9,7 @@ let (|-) = compose
 let curry f x y = f (x, y)
 let uncurry f (x, y) = f x y
 
+let is_none x = match x with | None -> true | _ -> false
 (* Cause for some reason Option.map doesn't exist? *)
 let option_map (f: 'a -> 'b) (o: 'a option) : 'b option =
   match o with
@@ -36,6 +37,10 @@ let string_of_bounded_list (f: 'a -> string) (lb : string) (rb : string) (l : 'a
   lb ^ string_of_list f l ^ rb
 let string_of_array (f : 'a -> string) (a: 'a list) =
   string_of_bounded_list f "[" "]" a
+
+let list_replace (x : 'a) (l : 'a list) (index : int) =
+  if index > List.length l || index < 0 then failwith "Index out of range"
+  else List.mapi (fun i y -> if i == index then x else y) l
 
 let rec repeat (s : string) (count : int) : string = 
   if count <= 0 then "" else (if count > 1 then (s ^ (repeat s (count-1))) else s)
@@ -76,6 +81,7 @@ let string_of_storage_qual (s: storage_qual) : string =
   | Attribute -> "attribute"
   | Uniform -> "uniform"
   | Varying -> "varying"
+  | BuiltIn -> ""
 
 (*****************************************************
  * Debug-printer

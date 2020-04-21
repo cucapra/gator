@@ -1,7 +1,0 @@
-`t vec_id<`t : vec>(`t x) {
-    return x;
-}
-
-void main() {
-    vec2 fail = vec_id<vec>([1., 2.]); // Can't use 'vec' as a parameter :P
-}

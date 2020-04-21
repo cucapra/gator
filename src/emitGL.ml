@@ -5,8 +5,6 @@ open Lin_ops
 open Util
 open EmitUtil
 
-(*add new lines after each semi-colon *)
-
 (* type epsilon = (id, etyp) Assoc.context *)
 type delta = (etyp list) Assoc.context
 
@@ -37,8 +35,11 @@ and string_of_glsl_mat (m: texp list list) : string =
 
 and string_of_typ (t : etyp) : string =
     match t with
-    | ArrTyp (FloatTyp, d) -> "vec" ^ string_of_constvar d 
-    | ArrTyp (ArrTyp (FloatTyp, _), d) -> "mat" ^ string_of_constvar d
+    | ArrTyp (IntTyp, d) -> "ivec" ^ string_of_constvar d
+    | ArrTyp (FloatTyp, d) -> "vec" ^ string_of_constvar d
+    | ArrTyp (BoolTyp, d) -> "bvec" ^ string_of_constvar d
+    | ArrTyp (ArrTyp (FloatTyp, _), d)
+    | ArrTyp (ArrTyp (IntTyp, _), d) -> "mat" ^ string_of_constvar d
     | ParTyp (s, _) -> s
     | _ -> TypedAstPrinter.string_of_typ t
 
@@ -86,70 +87,69 @@ and string_of_exp (e : exp) : string =
     | Arr a -> (match a with
         | [] -> "vec0()"
         | (_, t)::_ -> (match t with
-            | FloatTyp | IntTyp -> "vec" ^ (string_of_int (List.length a)) 
+            | FloatTyp -> "vec" ^ (string_of_int (List.length a)) 
                 ^ "(" ^ string_of_list string_of_texp a ^ ")"
-            | ArrTyp (FloatTyp, d) -> let as_vec_list = (fun v -> (
+            | IntTyp -> "ivec" ^ (string_of_int (List.length a)) 
+                ^ "(" ^ string_of_list string_of_texp a ^ ")"
+            | BoolTyp -> "bvec" ^ (string_of_int (List.length a)) 
+                ^ "(" ^ string_of_list string_of_texp a ^ ")"
+            | ArrTyp (FloatTyp, d)
+            | ArrTyp (IntTyp, d) -> let as_vec_list = (fun v -> (
                 match v with 
                 | (Arr a', _) -> a'
                 | _ -> failwith "Typechecker error, a matrix must be a list of vectors")) in
                 string_of_glsl_mat (List.map as_vec_list a)
-            | _ -> failwith "Typechecker error, every array must be a list of ints, floats, or vectors"))
+            | _ -> failwith "Typechecker error, every array must be a list of ints, floats, vectors, or bools"))
     | Index (l, r) -> string_of_texp l ^ "[" ^ string_of_texp r ^ "]"
     | FnInv (id, tl, args) -> string_of_fn_util id (List.map string_of_texp args)
 
 let rec string_of_comm (c: comm) : string =
-    let block_string c = "{\n " ^ string_of_separated_list "" string_of_comm c ^ "}" in
+    let block_string c = "{ " ^ string_of_separated_list "" string_of_comm c ^ "}" in
     match c with
     | Skip -> "skip;"
     | Print e -> "print " ^ string_of_texp e ^ ";"
     | Exp e -> string_of_texp e ^ ";"
     | Decl (t, s, e) -> let ts = (if is_core s then "" else string_of_typ t ^ " ") in
         ts ^ s ^ " = " ^ string_of_texp e ^ ";"
-    | Assign (b, x) -> b ^ " = " ^ string_of_texp x ^ ";"
-    | AssignOp ((x, _), op, e) -> x ^ " " 
-        ^ op ^ "= " ^ (string_of_texp e)
+    | Assign (b, x) -> string_of_texp b ^ " = " ^ string_of_texp x ^ ";"
+    | AssignOp (x, op, e) -> string_of_texp x ^ " " 
+        ^ op ^ "= " ^ (string_of_texp e) ^ ";"
     | If ((b, c1), elif_list, c2) -> 
         "if (" ^ string_of_texp b ^ ")" ^ block_string c1 
         ^ string_of_list (fun (b, c) -> "elif (" ^ string_of_texp b ^ ")" ^ block_string c) elif_list
         ^ string_of_option_removed (fun x -> "else " ^ block_string x) c2
-    | For (d, b, u, cl) -> "for (" ^ string_of_comm d ^ string_of_texp b ^ "; "
-        ^ string_of_comm u ^ ") " ^ block_string cl
+    | For (d, b, u, cl) -> let us = string_of_comm u in (* Hack to get rid of the semicolon at the end of the for loop *)
+        "for (" ^ string_of_comm d ^ string_of_texp b ^ "; " 
+        ^ String.sub us 0 (String.length us - 1) ^ ") " ^ block_string cl
     | Return x -> "return" ^ string_of_option_removed (fun x -> " " ^ string_of_texp x) x ^ ";"
+    | ExactCodeComm ec -> ec
 
-    (*Modified*)
 let comp_fn (f : fn) : string = 
     debug_print ">> comp_fn";
     let (rt, id, _, p), cl = f in
-    let param_string = string_of_list (fun (t, i) -> string_of_typ t ^ " " ^ i) p in
-    let type_id_string = match id with
-        | "main" -> "void main"
-        | _ -> string_of_typ rt ^ " " ^ replace_all_in_name id
-    in
-    if !pretty_printer then 
-    (type_id_string ^ "(" ^ param_string ^ "){" ^ string_of_separated_list "" string_of_comm cl ^ "}" ^ "\n\n")
-    else 
-    (type_id_string ^ "(" ^ param_string ^ "){" ^ string_of_separated_list "" string_of_comm cl ^ "}")
+    match rt with
+        | ExactCodeTyp -> id ^ " "
+        | _ ->
+            let param_string = string_of_list (fun (t, i) -> string_of_typ t ^ " " ^ i) p in
+            let type_id_string = match id with
+                | "main" -> "void main"
+                | _ -> string_of_typ rt ^ " " ^ replace_all_in_name id
+            in
+            if !pretty_printer then 
+            (type_id_string ^ "(" ^ param_string ^ "){" ^ string_of_separated_list "" string_of_comm cl ^ "}" ^ "\n\n")
+            else
+            (type_id_string ^ "(" ^ param_string ^ "){" ^ string_of_separated_list "" string_of_comm cl ^ "}")
 
-let rec comp_fn_lst (f : fn list) : string =
+let rec comp_prog (f : term list) : string =
     debug_print ">> comp_fn_lst";
     match f with 
     | [] -> ""
-    | h::t -> (comp_fn h) ^ (comp_fn_lst t)
+    | Fn h::t -> comp_fn h ^ comp_prog t
+    | GlobalVar (sq, et, x, e)::t -> string_of_storage_qual sq ^ " " ^ string_of_typ et
+        ^ " " ^ x ^ string_of_option_removed (fun x -> " = " ^ string_of_texp x) e ^
+        ";" ^ comp_prog t
 
-let decl_attribs (gv : global_vars) : string = 
-    debug_print ">> decl_attribs";
-    let rec decl_attribs_list (gv : global_vars) : string =
-        match gv with
-        | [] -> ""
-        | (sq, et, x, e)::t -> 
-            (string_of_storage_qual sq) ^ " " ^ (string_of_typ et)
-            ^ " " ^ x ^ string_of_option_removed (fun x -> " = " ^ string_of_texp x) e ^
-            ";" ^ (decl_attribs_list t) 
-    in
-    decl_attribs_list gv
-
-let rec compile_program (prog : prog) (global_vars : global_vars) : string =
+let rec compile_program (prog : prog) : string =
     debug_print ">> compile_program";
-    "precision mediump float;" ^ (decl_attribs global_vars) ^ 
-     (comp_fn_lst prog)
+    comp_prog prog
  

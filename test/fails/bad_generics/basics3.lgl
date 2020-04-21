@@ -1,7 +1,0 @@
-`t id<`t>(`t x) {
-    return x;
-}
-
-void main() {
-    bool fail = id<bool>(id<int>(3));  // Use return and pass type correctly
-}

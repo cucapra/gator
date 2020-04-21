@@ -2,7 +2,7 @@ import * as lgl from '../lglexample';
 import { mat4 } from 'gl-matrix';
 
 // Texture for LPSHead
-const head_lambert : string = require('../resources/lpshead/lambertian.jpg');
+const head_lambert : string = require('../resources/adrian.png');
 
 // Loads file system implementation in parcel
 // * can only call synchronous functions *
@@ -31,9 +31,10 @@ function main() {
 
   // Read in lpshead obj
   // URL must be statically analyzable other than (__dirname) and (__filename)
-  let src = fs.readFileSync(__dirname + './../resources/lpshead/head.OBJ', 'utf8');
+  // let src = fs.readFileSync(__dirname + './../resources/lpshead/head.OBJ', 'utf8');
+  let mesh = lgl.getTeapot(gl);
 
-  let mesh = lgl.load_obj (gl, src);
+  // let mesh = lgl.load_obj (gl, src);
   
   // Initialize the model position.
   let model = mat4.create();

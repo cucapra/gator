@@ -1,0 +1,26 @@
+type a is float[2];
+type b is float[2];
+type c is float[2];
+
+with float[2] T: declare T +(T x, T y);
+
+canon b _ab(a v) {
+    return (v + [1., 1.]) as! b;
+}
+
+canon a _ba(b v) {
+    return (v - [1., 1.]) as! a;
+}
+
+void main() {
+    a avec = [1., 2.];
+    b bvec = [2., 3.];
+
+    b s1 = avec in b; // = _ab(avec)
+    a s2 = bvec in a; // = _ba(_ab(avec))
+
+    print s1;
+    print s2;
+    print s3;
+    print s4;
+}

@@ -1,0 +1,37 @@
+<<<<<<< HEAD:test/functions/TODO_fail.lgl
+declare float[3] *(float[3][3] m, float[3] v);
+
+prototype geometry {
+    object vector;
+    with frame() r2: object matrix;
+}
+
+with frame(3) r:
+coordinate cart3 : geometry {
+    object vector is float[3];
+    with frame(3) r2: object matrix is float[3][3];
+    with frame(3) target:
+    this<target>.vector *(matrix<target> m, vector v) {
+        return (m * v) as! this<r2>.vector;
+    }
+}
+=======
+declare float[3] *(float[3][3] m, float[3] v);
+
+prototype geometry {
+    object vector;
+    with frame() r2: object matrix;
+}
+
+with frame(3) r:
+coordinate cart3 : geometry {
+    object vector is float[3];
+    with frame(3) r2: object matrix is float[3][3];
+    with frame(3) target:
+    this<target>.vector *(matrix<target> m, vector v) {
+        return (m * v) as! this<r2>.vector;
+    }
+}
+
+void main() {}
+>>>>>>> 6cbb41ae2a8855990493254da75182cb0b03ce39:test-u/functions/inference_fail.lgl
