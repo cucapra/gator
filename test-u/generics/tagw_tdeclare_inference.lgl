@@ -2,18 +2,23 @@
 // The fails are probably the more interesting part
 // But the stuff that typechecks can be pretty cool too
 
-tag pos is vec3;
-tag color is vec3;
-tag tinted is color;
+declare type vec3 is float[3];
 
-declare float dot<t extends vec>(t x, t y);
+type pos is vec3;
+type color is vec3;
+type tinted is color;
+
+with vec T:
+declare float dot(T x, T y);
 
 // This could be even more powerful, but we're not there yet
-declare t normalize<t extends vec>(t x);
+with vec T:
+declare T normalize(T x);
 
-float normed_dot<t extends vec>(t x, t y) {
-    t normx = normalize(x);
-    t normy = normalize(y);
+with vec T:
+float normed_dot(T x, T y) {
+    T normx = normalize(x);
+    T normy = normalize(y);
     return dot(normx, normy);
 }
 

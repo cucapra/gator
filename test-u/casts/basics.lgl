@@ -1,26 +1,45 @@
-type a is float[2];
-type b is float[2];
-type c is float[2];
+declare type vec2 is float[2];
+declare type mat2 is float[2][2];
+declare vec2 *(mat2 m, vec2 v);
+declare float[2] +(float[2] x, float[2] y);
+declare float[2] -(float[2] x, float[2] y);
 
-with float[2] T: declare T +(T x, T y);
+prototype euclidean {
+    object point;
+    with frame() r: object matrix;
 
-canon b _ab(a v) {
-    return (v + [1., 1.]) as! b;
+    with frame() r: point *(matrix<r> m, point v);
 }
 
-canon a _ba(b v) {
-    return (v - [1., 1.]) as! a;
+with frame(2) r:
+coordinate cart2 : euclidean {
+    object point is float[2];
+    with frame(2) r2: object matrix is float[2][2];
+
+    with frame(2) r2:
+    canon this<r2>.point *(canon matrix<r2> m, point v) {
+        return (m as! mat2 * v as! vec2) as! this<r2>.point;
+    }
+}
+
+frame a has dimension 2;
+frame b has dimension 2;
+
+canon cart2<b>.point _ab(cart2<a>.point v) {
+    return (v + [1., 1.]) as! cart2<b>.point;
+}
+
+canon cart2<a>.point _ba(cart2<b>.point v) {
+    return (v - [1., 1.]) as! cart2<a>.point;
 }
 
 void main() {
-    a avec = [1., 2.];
-    b bvec = [2., 3.];
+    cart2<a>.point avec = [1., 2.];
+    cart2<b>.point bvec = [2., 3.];
 
-    b s1 = avec in b; // = _ab(avec)
-    a s2 = bvec in a; // = _ba(_ab(avec))
+    cart2<b>.point s1 = avec in cart2<b>; // = _ab(avec)
+    cart2<a>.point s2 = bvec in cart2<a>; // = _ba(_ab(avec))
 
     print s1;
     print s2;
-    print s3;
-    print s4;
 }

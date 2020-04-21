@@ -39,6 +39,9 @@ exception ParseException of string
 %token GEQ
 %token AND
 %token OR
+%token BITAND
+%token BITXOR
+%token BITOR
 %token NOT
 %token COMMA
 %token DOT
@@ -86,10 +89,14 @@ exception ParseException of string
 (* Precedences *)
 
 %left ID THIS
-%left AND OR
+%left OR
+%left AND
 %left NOT EQ LEQ GEQ LBRACK 
 %left LWICK RWICK 
 
+%left BITOR
+%left BITXOR
+%left BITAND
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
 %left AS IN
@@ -392,6 +399,9 @@ let infix ==
   | EQ; { "==" }
   | LEQ; { "<=" }
   | GEQ; { ">=" }
+  | BITXOR; { "^" }
+  | BITOR; { "|" }
+  | BITAND; { "&" }
   | OR; { "||" }
   | AND; { "&&" }
 
