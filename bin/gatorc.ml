@@ -66,13 +66,13 @@ let _ =
     let prog = parse_prog f in
     let progname = List.hd (String.split_on_char '.'  (List.hd (List.rev (String.split_on_char '/' f)))) in
     let fs,found = Check.search_prog prog [progname] in
-    let typedProg, params = Check.check_prog prog (search_progs (prog_path f) fs found) in
-    if !run_interp then Ops.eval_prog typedProg params
-    else if !emit_ts then print_string (EmitTS.compile_program typedProg params)
+    let typedProg = Check.check_prog prog (search_progs (prog_path f) fs found) in
+    if !run_interp then Ops.eval_prog typedProg
+    else if !emit_ts then print_string (EmitTS.compile_program typedProg)
     else if !pretty_printer then 
-        let compiled_program = EmitGL.compile_program typedProg params in
+        let compiled_program = EmitGL.compile_program typedProg in
         let r  = Str.regexp ";\\s*}?" in
         let result = Str.global_replace r "\\0\n" compiled_program in
         print_string result
-    else print_string (EmitGL.compile_program typedProg params)
+    else print_string (EmitGL.compile_program typedProg)
     
