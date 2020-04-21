@@ -1,27 +1,16 @@
-declare type mat4 is float[4][4];
-declare mat4 mat4.rotateY(mat4 m1, mat4 m2, float f);
-
 prototype geometry {
     object vector;
-    with frame() r2: object transformation;
-    with frame(3) T:
-    transformation<T> rotateY(transformation<T> t1, transformation<T> t2, float f);
 }
 
 with frame(3) r:
-coordinate hom : geometry {
+coordinate cart3 : geometry {
     object vector is float[3];
-    with frame(3) r2: object transformation is float[4][4];
-    with frame(3) T: 
-    transformation<T> rotateY(transformation<T> t1, transformation<T> t2, float f) {
-        return mat4.rotateY(t1 as! mat4, t2 as! mat4, f) as! transformation<T>;
-    }
 }
 
 with frame(3) r1:
 with frame(3) r2:
-with hom<r1>.vector T:
-with hom<r2>.vector U:
+with cart3<r1>.vector T:
+with cart3<r2>.vector U:
 canon T any(U v) {
     return v as! T;
 }
