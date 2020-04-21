@@ -11,6 +11,7 @@ let set_program_file (arg : string) : unit =
 let run_interp : bool ref = ref false
 let emit_ts : bool ref = ref false
 let debug_flag : bool ref = ref false
+let pretty_printer : bool ref = ref false
 
 let usage_msg = "Gator Help Center\n"
 let spec_list : (Arg.key * Arg.spec * Arg.doc) list =
@@ -20,7 +21,8 @@ let spec_list : (Arg.key * Arg.spec * Arg.doc) list =
         ("-t", Arg.Set emit_ts,
         "Emits Typescript (replaces standard output)");
         ("-d", Arg.Set debug_flag,
-        "Enable debug output")
+        "Enable debug output");
+        ("-p", Arg.Set pretty_printer, "Enable pretty printing")
     ]
 
 let prog_path f = if not (String.contains f '/') then "" else
@@ -58,6 +60,7 @@ let rec search_progs path fs found : GatorAst.prog Assoc.context =
 let _ =
     Arg.parse spec_list set_program_file usage_msg;
     Util.debug := !debug_flag;
+    Util.pretty_printer := !pretty_printer;
     match !program_file with
     None -> print_string (Arg.usage_string spec_list usage_msg) | Some f ->
     let prog = parse_prog f in
@@ -66,4 +69,10 @@ let _ =
     let typedProg = Check.check_prog prog (search_progs (prog_path f) fs found) in
     if !run_interp then Ops.eval_prog typedProg
     else if !emit_ts then print_string (EmitTS.compile_program typedProg)
+    else if !pretty_printer then 
+        let compiled_program = EmitGL.compile_program typedProg in
+        let r  = Str.regexp ";\\s*}?" in
+        let result = Str.global_replace r "\\0\n" compiled_program in
+        print_string result
     else print_string (EmitGL.compile_program typedProg)
+    

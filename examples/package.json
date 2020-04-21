@@ -23,6 +23,7 @@
     "parcel": "^1.12.3",
     "primitive-cube": "^2.0.1",
     "teapot": "^1.0.0",
-    "webgl-obj-loader": "^1.1.3"
+    "webgl-obj-loader": "^1.1.3",
+    "yarn": "^1.17.3"
   }
 }
