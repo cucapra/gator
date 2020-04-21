@@ -1,7 +1,0 @@
-int f() {
-    return 5;
-}
-
-void main() {
-    bool x = f();
-}

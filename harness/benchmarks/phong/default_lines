@@ -1,0 +1,15 @@
+color ambient = [.1, 0., 0.];
+color diffColor = [0.4, 0.3, 0.9];
+color specColor = [1.0, 1.0, 1.0];
+auto worldPos = vPosition in world;
+auto camPos = worldPos in camera;
+auto worldNorm = normalize(vNormal in world);
+auto lightDir = normalize(uLight - worldPos);
+auto lightWorldDot = dot(lightDir, worldNorm);
+scalar diffuse = max(lightWorldDot, 0.0);
+auto reflectDir = normalize(reflect(-lightDir, worldNorm) in camera);
+scalar specular = pow(max(dot(normalize(-camPos), reflectDir), 0.), 32.);
+vec4 gl_FragColor = vec4(ambient + diffuse * diffColor + specular * specColor, 1.0);
+vNormal = aNormal;
+vPosition = aPosition;
+vec4 gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);

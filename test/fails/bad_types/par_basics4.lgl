@@ -1,5 +1,0 @@
-tag par<`t : vec2->vec3> is vec2; // Must be constrained by vecs
-
-void main() {
-    print 1;
-}

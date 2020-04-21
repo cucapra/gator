@@ -52,7 +52,6 @@ Tests
 
 There are a bunch of tests under the `test` directory.
 Use the `test.py` script to run them.
-Many tests are currently broken; so instead run `gatorc test/types/geops.lgl` to ensure installation worked correctly
 
 Technical Details
 -----------------

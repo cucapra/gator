@@ -1,1 +1,0 @@
-Fatal error: exception Gatorl__Check.TypeException("Invalid array definition for [[1., 2.], [1.]], must be a matrix or vector")

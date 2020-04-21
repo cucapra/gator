@@ -1,7 +1,0 @@
-void f() {
-    return 5; // Cannot return from a void function
-}
-
-void main() {
-    return;
-}

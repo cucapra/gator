@@ -3,6 +3,8 @@
 // TODO: Add interpreter support for each
 // TODO: Make a way to link lgl files so we can just include these declarations
 
+// Note that genType refers to {int, float, vec2, vec3, vec4, mat2, mat3, mat4}
+
 // https://www.khronos.org/files/opengles_shading_language.pdf
 // FROM THE SPECS:  "For any specific use of a function, the actual type has to be the same for all arguments and for the return type"
 

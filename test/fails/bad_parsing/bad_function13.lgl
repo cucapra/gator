@@ -1,7 +1,0 @@
-void foo() {
-    return;
-}; // Extra semicolon
-
-void main() {
-    return;
-}

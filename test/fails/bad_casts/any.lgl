@@ -1,10 +1,11 @@
-tag a is vec<3>;
-tag b is vec<3>;
+type a is float[3];
+type b is float[3];
 
 // Cannot use a canonical function with a generic return type not dependent on the input type
 // This is enforced to avoid reasoning about the universal quantifier -- necessary due to potentially infinite generic parameterization recursion
-canon `u any<`t : vec<3>, `u : vec<3>>(`t v) {
-    return v as `u;
+with float[3] T, U:
+canon U any(T v) {
+    return v as! U;
 }
 
 void main() {

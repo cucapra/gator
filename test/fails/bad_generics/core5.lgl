@@ -1,7 +1,0 @@
-`u app_mat<`t : vec, `u : vec>(`t->`u m, `t x) {
-    return m * x;
-}
-
-void main() {
-    vec3 fail = app_mat<vec2, vec3>([[1., 2.], [2., 1.]], [1., 2]); // Maps must be checked correctly
-}

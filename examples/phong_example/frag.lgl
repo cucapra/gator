@@ -1,0 +1,33 @@
+using "lib.lgl";
+
+// Can't canonicalize matrices for now, so we do this
+canon hom<world>.point app_uModel(hom<model>.point v) {
+    return uModel * v;
+}
+canon hom<world>.vector app_uModel(hom<model>.vector v) {
+    return uModel * v;
+}
+canon hom<view>.point app_uView(hom<world>.point v) {
+    return uView * v;
+}
+canon hom<view>.vector app_uView(hom<world>.vector v) {
+    return uView * v;
+}
+canon hom<projection>.point app_uMVP(hom<model>.point v) {
+    return uMVP * v;
+}
+canon hom<projection>.vector app_uMVP(hom<model>.vector v) {
+    return uMVP * v;
+}
+
+void main() {
+  color diffuse = [.2, .8, .3];
+  color specular = [1., 1., 1.];
+
+  auto lightDir = normalize(uLight - vPos in world);
+
+  auto diff = max(dot(normalize(vNormal in world), lightDir), 0.);
+  auto reflection = reflect(-lightDir, normalize(vNormal in world));
+  auto spec = pow(max(dot(normalize(-(vPos in view)), normalize(reflection in view)), 0.), 32.);
+  auto gl_FragColor = alphatize(diff * diffuse + spec * specular);
+}

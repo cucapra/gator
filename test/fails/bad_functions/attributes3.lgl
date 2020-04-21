@@ -1,3 +1,0 @@
-void main(uniform vec2 x, int y) { // Must include attributes in main
-    return;
-}

@@ -1,3 +1,0 @@
-void main() {
-    print [[1., 2.], [1.]]; //Must have same number of columns across rows
-}

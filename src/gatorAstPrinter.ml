@@ -13,11 +13,6 @@ let rec string_of_dexp (d : dexp) : string =
     | DimNum n -> string_of_int n
     | DimVar s -> s
 
-let rec string_of_dtyp (d : dtyp) : string = 
-    match d with 
-    | BaseTyp s -> s
-    | MultTyp (x, y) -> string_of_dtyp x ^ " * " ^ string_of_dtyp y
-
 let rec string_of_typ (t: typ) : string = 
     match t with
     | BotTyp -> "bottyp"
@@ -28,7 +23,6 @@ let rec string_of_typ (t: typ) : string =
     | FrameTyp d -> "frame<" ^ string_of_dexp d ^ ">"
     | FloatTyp -> "float"
     | StringTyp -> "string"
-    | DimTyp d -> "dimension" ^ string_of_dtyp(d)
     | ThisTyp -> "this"
     | Literal t -> "%(" ^ string_of_typ t ^ ")"
     | ArrTyp (t, d) -> string_of_typ t ^ "[" ^ string_of_dexp d ^ "]"
@@ -39,27 +33,29 @@ let rec string_of_typ (t: typ) : string =
     | GenArrTyp t' -> "arr of " ^ string_of_typ t'
     | AnyFrameTyp -> "frame"
     | AnyTyp -> "anyType"
+    | ExactCodeTyp -> "ExactCodeTyp"
 
 and string_of_pml (p : typ list) : string =
     if List.length p > 0 then "<" ^ string_of_list string_of_typ p ^ ">" else ""
 
 let string_of_modification (m: modification) : string =
     match m with
-    | With (t, pm, _) -> "with " ^ string_of_typ t ^ " " ^ string_of_list (fun x -> x) pm ^ ":"
+    | With (t, pm) -> "with " ^ string_of_typ t ^ " " ^ string_of_list (fun x -> x) pm ^ ":"
     | Canon -> "canon"
     | External -> "declare"
 
 let string_of_mod_list (m: modification list) : string =
     string_of_separated_list " " string_of_modification m
+    ^ if List.length m > 0 then " " else ""
 
-let string_of_param ((t, s): typ * string) : string =
-    string_of_typ t ^ " " ^ s
+let string_of_param ((ml, t, s): modification list * typ * string) : string =
+    string_of_mod_list ml ^ string_of_typ t ^ " " ^ s
 
 let string_of_parameterization (pm : parameterization) : string =
     if Assoc.size pm != 0 then "<" ^ Assoc.to_string string_of_typ pm ^ ">" else ""
 
 let string_of_fn_typ (ml, r, x, p, _ : fn_typ) : string = 
-    string_of_mod_list ml ^ (if List.length ml > 0 then " " else "") ^ string_of_typ r ^ " " ^ x
+    string_of_mod_list ml ^ string_of_typ r ^ " " ^ x
     ^ "(" ^ string_of_list string_of_param p ^ ")"
 
 let rec string_of_aexp ((e, m): aexp) : string =
@@ -83,11 +79,12 @@ and string_of_comm (c: comm) : string =
     let block_string c = "{\n " ^ string_of_acomm_list c ^ "}" in
     match c with
     | Skip -> "skip;"
-    | Print e -> "print " ^ (string_of_aexp e) ^ ";"
+    | Print e -> "print " ^ string_of_aexp e ^ ";"
     | Exp e -> string_of_aexp e ^ ";"
-    | Decl (t, s, e) -> (string_of_typ t) ^ " " ^ s ^ " = " ^ (string_of_aexp e) ^ ";"
-    | Assign (b, x) -> b ^ " = " ^ (string_of_aexp x) ^ ";"
-    | AssignOp (x, op, e) -> x ^ " " ^ op ^ "= " ^ (string_of_aexp e)
+    | Decl (ml, t, s, e) -> string_of_mod_list ml ^ (string_of_typ t) ^ 
+        " " ^ s ^ " = " ^ (string_of_aexp e) ^ ";"
+    | Assign (b, x) -> (string_of_aexp b) ^ " = " ^ (string_of_aexp x) ^ ";"
+    | AssignOp (x, op, e) -> (string_of_aexp x) ^ " " ^ op ^ "= " ^ (string_of_aexp e)
     | If ((b, c1), elif_list, c2) -> 
         "if (" ^ string_of_aexp b ^ ")" ^ block_string c1 
         ^ string_of_list (fun (b, c) -> "elif (" ^ string_of_aexp b ^ ")" ^ block_string c) elif_list
@@ -95,7 +92,8 @@ and string_of_comm (c: comm) : string =
     | For (d, b, u, cl) -> "for (" ^ string_of_acomm d ^ "; " ^ string_of_aexp b ^ "; " 
         ^ string_of_acomm u ^ ") " ^ block_string cl
     | Return None -> "return;"
-    | Return Some e -> "return " ^ (string_of_aexp e) ^ ";"
+    | Return Some e -> "return " ^ string_of_aexp e ^ ";"
+    | ExactCodeComm ec -> ec
 
 let string_of_frame ((x, d) : frame) =
     "frame " ^ x ^ " is " ^ string_of_dexp d ^ ";"
@@ -122,12 +120,13 @@ let string_of_coordinate (ml, x, p, cl : coordinate) : string =
     "{\n" ^ string_of_list (fun ce -> string_of_coordinate_element ce ^ "\n") (List.map fst cl) ^ "}"
 
 let string_of_global_var (ml, sq, t, x, e : global_var) : string =
-    string_of_mod_list ml ^ " " ^ string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ x 
+    string_of_mod_list ml ^ string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ x 
     ^ string_of_option_removed (fun x -> "= " ^ string_of_aexp x) e
     
 let string_of_term (t : term) : string = 
     match t with
     | Using s -> "using " ^ s
+    | ExactCode s -> "exact code: " ^ s
     | Prototype p -> string_of_prototype p
     | Coordinate c -> string_of_coordinate c
     | Frame f -> string_of_frame f

@@ -1,11 +1,11 @@
-tag pos is vec<3>;
-tag color is vec<3>;
-tag tinted is color;
+type pos is float[3];
+type color is float[3];
 
-declare float dot<`t : vec>(`t x, `t y);
+with pos    T: declare float dot(T x, T y);
+with color  T: declare float dot(T x, T y);
 
 void main() {
     pos x = [1., 2., 3.];
     color red = [1., 0., 0.];
-    float fail = dot<color>(x, red);  // The intended catch
+    auto fail = dot(x, red);  // The intended catch
 }

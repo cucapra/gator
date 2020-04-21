@@ -1,3 +1,5 @@
+#"precision mediump float;";
+
 using "../glsl_defs.lgl";
 
 // Reference Frame Declarations
@@ -16,7 +18,7 @@ uniform float uRef;
 void main() {
     vec3 ambient = [.1, 0., 0.];
     vec3 diffColor = [0.2, 0.8, 0.4];
-    vec3 specColor = [0.0, 0.0, 0.0];
+    vec3 specColor = [1.0, 1.0, 1.0];
     // Correct phong model for reference
     if (uRef == 1.) {
         mat3 modelMatrix = mat3(uModel);
@@ -43,6 +45,9 @@ void main() {
 
         vec3 worldPos = vec3(uModel * vec4(vPosition, 1.));
         vec3 worldNorm = vec3(uModel * vec4(vNormal, 0.));
+        // Uncomment for failing example
+        // vec3 worldPos = vPosition;
+        // vec3 worldNorm = vNormal;
 
         vec3 lightDir = normalize(uLight - worldPos);
         float lightWorldDot = dot(lightDir, worldNorm);

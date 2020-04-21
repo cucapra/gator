@@ -1,22 +1,29 @@
-tag s is vec<2>; // This is another comment
-tag //not a tag
+type s is float[2]; // This is another comment
+type //not a tag
 v //still not//;;
 is //nope;;;
-vec<3> //there we go!//;
+float //there we go!//;
 ;
 
 void main() {
 	// This is a comment
-	
+	/*So is this*/
+
 	// And another one!
 	if (true) // Wow, so many comments
 	{ //}}}}}}}}}
-	skip //interrupted!
+	/*
+	 * What is this? A comment?
+	 * But it spans multiple lines?
+	 */
+	print 1 //interrupted!
 	;
 	//{{}}{}{{}asldkfjspodpo98fbh09 0q2i3}43567iop;[;+]
 	} //else
 	else { //;//}
-	skip//;
+	print 5 /*An inter...
+	...ruption!! */;
+	print 2//;
 	; }
 	// tag another is bad;
 	print 5//t //another interruption!;;;;;

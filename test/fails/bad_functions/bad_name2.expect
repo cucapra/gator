@@ -1,1 +1,1 @@
-Fatal error: exception Gatorl__Check.TypeException("function of duplicate name has been found: f")
+Fatal error: exception Gatorl__CheckUtil.TypeException("function of duplicate name has been found: f")

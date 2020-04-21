@@ -1,0 +1,10 @@
+uniform float[3][3] x;
+
+int f(int x) {
+    return x;
+}
+
+void main() {
+    print(f(1));
+    return;
+}

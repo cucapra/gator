@@ -1,26 +1,17 @@
-space model is vec<3>;
-space world is vec<3>;
-tag viewport is vec<3>;
-tag camera is viewport;
-tag light is viewport;
-space view<`t : viewport> is `t;
-tag proj<`t : viewport> is `t;
-space hom<`t : vec<n>> is vec<n+1>;
+#"precision mediump float;";
 
-declare vec4 vec4<`t : vec<3>>(`t v, float f);
-declare vec3 vec3<`t : vec<4>>(`t v);
+using "../glsl_defs.lgl";
 
-attribute model aPosition;
-canon uniform hom<model>->hom<world> uModel;
-canon uniform hom<world>->hom<view<light>> uLightView;
-canon uniform hom<view<light>>->hom<proj<light>> uLightProjection;
+frame model has dimension 3;
+frame world has dimension 3;
+frame light has dimension 3;
+frame lightProjective has dimension 3;
 
-canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
-canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return vec3(v) as `t; }
+attribute cart3<model>.point aPosition;
+canon uniform hom<model>.transformation<world> uModel;
+canon uniform hom<world>.transformation<light> uLightView;
+canon uniform hom<light>.transformation<lightProjective> uLightProjection;
 
 void main() {
-    hom<proj<light>> gl_Position = 
-      uLightProjection * uLightView * uModel * homify(aPosition);
-
-    // auto gl_Position = aPosition in hom<proj<light>>;
+    auto gl_Position = aPosition in hom<lightProjective>;
 }

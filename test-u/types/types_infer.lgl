@@ -1,0 +1,67 @@
+// Explicit generic requirements help a lot
+// We assume that bounds work as per 'bounds.lgl'
+
+type a is float[2];
+type b is float[2];
+type c is b;
+type d is b;
+type e is c;
+with float[2] T, U: type tr is float[2][2];
+
+with float[2] T, U:
+declare U *(tr<T, U> m, T x);
+with float[2] T, U, V:
+declare V *(tr<U, V> m1, tr<T, U> m2);
+
+with float[2] T:
+float[2] to_top(T x) {
+    tr<T,float[2]> m = [[1., 0.], [0., 1.]];
+    return m * x;
+}
+
+// Note that, as before, bounds just increase the strictness of the operation
+with c T:
+b as_b(T x) {
+    return x;
+}
+
+with b T:
+T low_cast(a x) {
+    tr<a, b> a_b = [[.5, .5], [1.5, .5]];
+    tr<b, T> id_m = [[1., 0.], [0., 1.]];
+    return id_m * (a_b * x);
+}
+
+with float[2] T:
+with T U:
+U downcast2(T x) {
+  tr<T, U> caster = [[1., 0.], [0., 1.]];
+  return caster * x;
+}
+
+with float[2] T:
+with T U:
+T notreallydowncast(T x) {
+  tr<T, U> caster = [[1., 0.], [0., 1.]];
+  return caster * x;
+}
+
+void main() {
+    a avec = [1., 1.];
+    b bvec = [1., 2.];
+    c cvec = [0., 2.];
+    d dvec = [1., 0.];
+    e evec = [0., 1.];
+
+    float[2] s1 = to_top(avec);
+
+    b s2 = as_b(cvec);
+    b s3 = as_b(evec);
+
+    b s4 = low_cast(avec);
+
+    b s5 = downcast2(bvec);
+    b s6 = notreallydowncast(bvec);
+
+    print 1;
+}

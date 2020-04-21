@@ -1,5 +1,0 @@
-declare int int();
-
-void main() {
-    return;
-}

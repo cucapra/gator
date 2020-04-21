@@ -1,8 +1,0 @@
-tag a is vec2;
-tag b is vec2;
-tag par<`t : vec2> is vec3;
-
-void main() {
-    par<a> pa = [1., 2., 3.];
-    par<b> fail = pa; // Not a subtype
-}

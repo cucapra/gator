@@ -1,7 +1,0 @@
-int f(varying int x) { // Can't include an attribute in NOT MAIN
-    return f(x);
-}
-
-void main() {
-    print f(5);
-}

@@ -1,5 +1,9 @@
+type a is float[2];
+type b is float[3];
+
 void main() {
-    float f = 0.;
-    bool fail = f as bool; // Not a subtype
+    a avec = [1., 1.];
+
+    b fail = avec as! b; // Bad dimensions
     print 1;
 }

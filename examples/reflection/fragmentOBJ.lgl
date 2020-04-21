@@ -1,45 +1,33 @@
-// Type Declarations
-space model is vec<3>;
-space world is vec<3>;
-space view is vec<3>;
-tag hom<`t : vec<n>> is vec<n+1>;
-tag dir<`t : vec<n>> is vec<n>;
-space color is vec<3>;
-tag alpha<`t : color> is vec<4>;
+#"precision mediump float;";
 
-// External Function Declarations
-declare dir<`t> normalize<`t : vec>(`t x);
-declare float dot<`t: vec>(dir<`t> v1, dir<`t> v2);
-declare vec4 vec4<`t : vec<3>>(`t v, float f);
-declare vec3 vec3<`t : vec<4>>(`t v);
-declare float min(float f1, float f2);
-declare float max(float f1, float f2);
-declare `t reflect<`t : vec>(`t v1, `t v2);
-declare float pow(float f1, float f2);
+using "../glsl_defs.lgl";
 
-// Canonical Function Declarations
-canon hom<`t> homify<`t : vec<3>>(`t v) { return vec4(v, 1.) as hom<`t>; }
-canon `t hom_reduce<`t : vec<3>>(hom<`t> v) { return v.xyz as `t; }
-canon hom<`t> homify_dir<`t : vec<3>>(dir<`t> v) { return vec4(v, 0.) as hom<`t>; }
-canon alpha<`t> extendColor<`t : color>(`t c) { return vec4(c, 1.) as alpha<`t>; }
+frame model has dimension 3;
+frame world has dimension 3;
+frame view has dimension 3;
+
+type color is vec3;
+type alphaColor is vec4;
 
 // External Vector Declarations
-varying model vPosition;
-canon uniform hom<model>->hom<world> uModel;
-canon uniform hom<world>->hom<view> uView;
-varying dir<model> vNormal;
-uniform hom<world> uLight;
+varying cart3<model>.point vPosition;
+canon uniform hom<model>.transformation<world> uModel;
+canon uniform hom<world>.transformation<view> uView;
+varying cart3<model>.vector vNormal;
+uniform hom<world>.point uLight;
+
+alphaColor extendColor(color v) { return vec4(v, 1.) as! alphaColor; }
 
 void main() {
     color ambient = [.1, 0., 0.];
     color diffuse = [0.4, 0.3, 0.9];
     color spec = [1.0, 1.0, 1.0];
 
-    auto lightDir = normalize((uLight in world) - (vPosition in world));
+    auto lightDir = normalize((uLight in cart3<world>) - (vPosition in world));
     float lambertian = max(dot(normalize(vNormal in world), lightDir), 0.);
-    
-    auto reflectDir = normalize(reflect(-lightDir, normalize(vNormal in world)) in view);
-    float specular = pow(max(dot(-(normalize(vPosition in view)), reflectDir), 0.0), 32.);
 
-    alpha<color> gl_FragColor = extendColor(ambient + lambertian * diffuse + specular * spec);
+    auto reflectDir = normalize(reflect(-lightDir, normalize(vNormal in world)) in view);
+    float specular = pow(max(dot((normalize(-vPosition in view)), reflectDir), 0.0), 32.);
+
+    auto gl_FragColor = extendColor(ambient + lambertian * diffuse + specular * spec);
 }
