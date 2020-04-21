@@ -110,6 +110,6 @@ void main() {
 	auto n = geom_normal;
 	auto kd = getDiffuseColor();
 	gl_FragColor += alphatize(
-		(kd + promote(F(i,m) * D(m,n) * G(i,o,m,n) / (4.0 * abs (dot(i,n)) * abs(dot(o,n))))) * max(0., dot(n,i)) * 
-		I(light_color, light_eyePosition, geom_position, light_attenuation));
+		(kd + promote(F(i,m) * D(m,n) * G(i,o,m,n) / (4.0 * abs (dot(i,n)) * abs(dot(o,n))))) * max(0., dot(n,i)) 
+		* I(light_color, light_eyePosition, geom_position, light_attenuation));
 }

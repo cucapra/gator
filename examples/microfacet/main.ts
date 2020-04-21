@@ -58,6 +58,10 @@ function main() {
   let model = mat4.create();
   let light = vec3.create();
   let lightModel = mat4.create();
+  let offset = vec3.create();
+  vec3.set(offset, 20., 0., 20.)
+  mat4.translate(lightModel, lightModel, offset);
+  // mat4.lookAt(lightModel, offset, [0., 0., 0.], [0., 1., 0.]);
 
   // Load image texture
   lgl.load_texture(gl, flower);
@@ -80,11 +84,11 @@ function main() {
     gl.uniform1i(loc_mat_hasAlphaTexture, 0);
     
     vec3.set(light, 0., 0., 0.);
-    // mat4.lookAt(lightModel, [10., 10., 0.], [0., 0., 0.], [0., 1., 0.]);
+    vec3.transformMat4(light, light, lightModel);
     vec3.transformMat4(light, light, view);
     gl.uniform3fv(loc_light_eyePosition, light);
     gl.uniform3fv(loc_light_color, [1., 1., 1.]);
-    gl.uniform3fv(loc_light_attenuation, [1., 1., 1.]);
+    gl.uniform3fv(loc_light_attenuation, [.001, .03, .001]);
     gl.uniform1f(loc_mat_alpha, 0.03);
     gl.uniform1f(loc_mat_indexOfRefraction, 1.33);
     gl.uniform1i(loc_mat_alphaTexture, 0);
