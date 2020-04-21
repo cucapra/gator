@@ -2,39 +2,68 @@
 // Introducing tags makes it even weirder o_O
 // (Also check out declare.lgl to make sure that stuff works)
 
-tag a is vec2;
-tag b is vec2;
-tag c is b;
-tag d is b;
-tag e is c;
+declare type vec2 is float[2];
+declare type mat2x2 is float[2][2];
+declare vec2 *(mat2x2 m, vec2 v);
 
-`t id<`t>(`t x) {
-    return x;
+type a is vec2;
+type b is vec2;
+type c is b;
+type d is b;
+type e is c;
+
+prototype euclidean {
+    object vector;
+    with frame() r: object matrix;
+
+    with frame() r: vector *(matrix<r> m, vector v);
 }
 
+with frame(2) r:
+coordinate cart2 : euclidean {
+    object vector is float[2];
+    with frame(2) r2: object matrix is float[2][2];
+
+    with frame(2) r2:
+    canon this<r2>.vector *(canon matrix<r2> m, vector v) {
+        return (m as! mat2x2 * v as! vec2) as! this<r2>.vector;
+    }
+}
+
+// TODO: that this syntax is not yet supported
+with T:
+T id(T x) {
+    return x;
+}
+ 
 // Note that we will also use this to check bounds!
-vec2 to_top<`t extends vec2>(`t x) {
-    `t->vec2 m = [[1., 0.], [0., 1.]];
+with vec2 T:
+vec2 to_top(T x) {
+    mat2x2 m = [[1., 0.], [0., 1.]];
     return m * x;
 }
 
 // Note that, as before, bounds just increase the strictness of the operation
-b as_b<`t extends c>(`t x) {
+with c T:
+b as_b(c x) {
     return x;
 }
 
 // Note also that bounds using tags can make using a function impossible
-vec2 uninvokable<`t : a>(`t x) {
+with a T:
+vec2 uninvokable(T x) {
     return x;
 }
 
-`t low_cast<`t : b>(a x) {
-    a->b a_b = [[.5, .5], [1.5, .5]];
-    b->`t id = [[1., 0.], [0., 1.]];
+with b T:
+T low_cast(a x) {
+    canon cart2<a>.matrix<b> a_b = [[.5, .5], [1.5, .5]];
+    canon cart2<T>.matrix<T> id = [[1., 0.], [0., 1.]];
     return id * a_b * x;
 }
 
-`t very_low_cast<`t : c>(a x) {
+with c T:
+T very_low_cast(a x) {
     return low_cast(x);
 }
 
@@ -59,8 +88,8 @@ void main() {
     c s10 = low_cast(avec);
     b s11 = as_b(id(low_cast(avec))); // ouch -- see what has to be inferred below:
     // b s11 = as_b<c>(id<c>(low_cast<c>(avec))); -- not trivial
-    b s12 = very_low_cast(avec)); // should cast down to c, then back up to b
-    e s13 = very_low_cast(avec)); // should still work
+    b s12 = very_low_cast(avec); // should cast down to c, then back up to b
+    e s13 = very_low_cast(avec); // should still work
 
     print 1;
 }
