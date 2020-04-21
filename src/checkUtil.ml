@@ -139,10 +139,10 @@ let bind_typ (cx : contexts) (id : string) (ml : modification list) (t : typ) : 
 let get_ml_pm (cx : contexts) (ml : modification list) : parameterization =
   let get_ml_pm_rec (pm : parameterization) (m : modification) =
     match m with
-    | With (t, sl) -> 
+    | With (t, sl, b) -> 
       let fail s = error cx ("Duplicate parameterization assignments to variable " ^ s) in
       List.fold_right (fun s acc -> if Assoc.mem s acc then fail s
-        else Assoc.update s t acc) sl pm
+        else Assoc.update s (t,b) acc) sl pm
     | _ -> pm
   in
   List.fold_left get_ml_pm_rec (Assoc.empty) ml
@@ -231,7 +231,7 @@ let rec map_aexp (cx : contexts) (fs : string -> string) (f : typ -> typ) (ae : 
 let map_mod (cx : contexts) (f : typ -> typ) (m : modification) : modification =
   debug_print (">> map_mod " ^ string_of_modification m);
   match m with
-  | With(t, b) -> With(f t, b)
+  | With(t, b, v) -> With(f t, b, v)
   | _ -> m
 
 let rec map_acomm (cx : contexts) (fs : string -> string) (fe : exp -> exp) (ft : typ -> typ) (ac : acomm) 
