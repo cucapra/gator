@@ -1,18 +1,18 @@
-declare float[3] *(float[3][3] m, float[3] v);
-
 prototype geometry {
     object vector;
-    with frame() r2: object matrix;
 }
 
 with frame(3) r:
 coordinate cart3 : geometry {
     object vector is float[3];
-    with frame(3) r2: object matrix is float[3][3];
-    with frame(3) target:
-    this<target>.vector *(matrix<target> m, vector v) {
-        return (m * v) as! this<r2>.vector;
-    }
+}
+
+with frame(3) r1:
+with frame(3) r2:
+with cart3<r1>.vector T:
+with cart3<r2>.vector U:
+canon T any(U v) {
+    return v as! T;
 }
 
 void main() {}

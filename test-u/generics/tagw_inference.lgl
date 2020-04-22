@@ -88,8 +88,8 @@ void main() {
     c s10 = low_cast(avec);
     b s11 = as_b(id(low_cast(avec))); // ouch -- see what has to be inferred below:
     // b s11 = as_b<c>(id<c>(low_cast<c>(avec))); -- not trivial
-    b s12 = very_low_cast(avec)); // should cast down to c, then back up to b
-    e s13 = very_low_cast(avec)); // should still work
+    b s12 = very_low_cast(avec); // should cast down to c, then back up to b
+    e s13 = very_low_cast(avec); // should still work
 
     print 1;
 }

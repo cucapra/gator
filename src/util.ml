@@ -87,6 +87,9 @@ let string_of_storage_qual (s: storage_qual) : string =
  * Debug-printer
  *****************************************************)
 
- let debug = ref false
+ let debug = ref true
+ let pretty_printer = ref true
+
+ (*Add pretty printing flag here*)
 
  let debug_print (s: string) : unit = if !debug then Printf.printf "%s\n" s
