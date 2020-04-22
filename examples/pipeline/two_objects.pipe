@@ -1,0 +1,58 @@
+// The goal of this program is to draw two objects
+// Each uses the same shader pair, but different model matrices
+
+main() {
+    // compiling a program recovers its member variables statically
+    // the set of writeable member variables of a program are as follows (U = union):
+    // { in(VERTEX) } U { uniform(VERTEX) } U { uniform(FRAGMENT) }
+    // the set of readable member variables of a program are the out variable of FRAGMENT
+    // We can't yet write or read these these variables
+    program = compile(vertex, fragment);
+    ...
+    model1 = mat4.create();
+    mat4.translate(model1, model1, [10., 10., 10.]);
+    model2 = mat4.create();
+    mat4.translate(model2, model2, [-10., -10., -10.]);
+    render(mat4 view, mat4 projection) {
+        useProgram(program);
+        // At this point, program's member variables become writeable
+        program.uModel = model1;
+        program.uView = view;
+        program.uProjection = projection;
+        program.aPosition = ...;
+
+        // draw = loop over the vertex code (note that loop invariance of uProjection * uView * uModel can happen here)
+        // Note that all variables of program must be assigned at this point
+        draw();
+
+        // At this point, the current program's member variables become readable, though this is useless for now
+        // Note, however, that the program's member variables are _still_ writeable
+        program.uModel = model2;
+
+        // draw again; once again, we can loop invariant uProjection * uView * uModel
+        draw();
+    }
+}
+
+vertex {
+    out vec3 vPosition; // associated fragment must have 'in' associated with each out;
+    in vec3 aPosition;
+    mat4 uModel;
+    mat4 uView;
+    mat4 uProjection;
+    void main() {
+      vPosition = aPosition;
+      gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
+    }
+}
+
+fragment {
+    mat4 uModel;
+    mat4 uView;
+    in vec3 vPosition;
+    out vec4 gl_FragColor;
+    void main() {
+        gl_FragColor = uView * uModel * vec4(vPosition, 1.);
+    }
+
+}
