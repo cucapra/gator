@@ -1,0 +1,11 @@
+declare float +(float f1, float f2);
+declare float -(float f1, float f2);
+declare float *(float f1, float f2);
+// declare float /(float f1, float f2);
+
+void main() {
+  float x = 2.0e10;
+  float y = 3.0e1;
+
+  float z = x + y;
+}
