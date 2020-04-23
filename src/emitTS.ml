@@ -234,7 +234,7 @@ let rec comp_prog (f : prog) (s : SS.t) : string =
             match et with
             (* | VecTyp n -> "var " ^ x ^ "= vec" ^ (string_of_int n) ^ ".create();" ^ x ^ e_str ^ (decl_attribs t)
             | MatTyp (m,n) -> "var " ^ x ^ "= mat" ^ (string_of_int (max m n)) ^ ".create();" ^ e_str ^ (decl_attribs t) *)
-            | _ -> "var " ^ x  ^ ":" ^ ts_type ^ e_str ^ ";" ^ "\n" ^ (comp_prog t s)
+            | _ -> "var " ^ x  (*^ ":" ^ ts_type*) ^ e_str ^ ";" ^ "\n" ^ (comp_prog t s)
 
 (* let rec decl_attribs (gv : global_vars) : string = 
     debug_print ">> decl_attribs";
