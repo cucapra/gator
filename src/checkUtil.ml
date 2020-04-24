@@ -10,6 +10,7 @@ let rename_fn (f : string -> string) (a,b,id,c,d:fn_typ) : fn_typ = a,b,f id,c,d
 let ignore_typ (t : typ) : unit = ignore t
 let ignore_dexp (d : dexp) : unit = ignore d
 let ignore_typ_context (t : typ Assoc.context) : unit = ignore t
+let ignore_typ_bool_context (t : (typ * bool) Assoc.context) : unit = ignore t
 let string_of_fn_inv ((s, tl) : fn_inv) : string = 
   s ^ "<" ^ string_of_list string_of_typ tl ^ ">"
 let string_of_tau (b, pm, t : tau) =

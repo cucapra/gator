@@ -23,7 +23,7 @@ let rec reduce_dexp (cx: contexts) (d : dexp) : int =
 
 let rec unwrap_abstyp (cx: contexts) (s: string) : typ =
     debug_print ">> unwrap_abstyp";
-    match get_pm cx s with
+    match fst (get_pm cx s) with
         | ParTyp (s, tl) -> debug_fail cx "unimplemented partyp unwrapping"
         | p -> p
 
@@ -34,7 +34,7 @@ let rec replace_abstype_query (c: typ Assoc.context) (t: typ) : typ * bool =
     let is_abs s = Assoc.mem s c in    
     match t with
     | ParTyp (s, tl) -> 
-        if is_abs s then Assoc.lookup s c, true else 
+        if is_abs s then (Assoc.lookup s c), true else 
         let tl', b = List.fold_right (fun t (acc, b) -> 
             let t', b' = replace_abstype_query c t in t'::acc, b || b') tl ([], false) 
         in
@@ -120,13 +120,14 @@ and is_subtype_list (cx: contexts) (l1: typ list) (l2: typ list) : bool =
 
 (* Given a parameterization and a list of types being invoked on that parameterization *)
 (* Returns the appropriate concretized context if one exists *)
+(**should be checking fpr < *)
 and match_parameterization_safe (cx : contexts) (pml : typ list) 
     : typ Assoc.context option = 
     debug_print (">> match_parameterization <" ^ string_of_list string_of_typ pml ^ ">");
     let pmb = Assoc.bindings cx.pm in
     if List.length pmb == List.length pml
-        && List.fold_left2 (fun acc (s, c) t -> is_subtype cx t c && acc) true pmb pml
-    then Some (List.fold_left2 (fun tcacc (s, c) t -> Assoc.update s t tcacc)
+        && List.fold_left2 (fun acc (s, (t1, b)) t -> is_subtype cx t t1 &&  not ((is_typ_eq cx t t1) && b) && acc) true pmb pml
+    then Some (List.fold_left2 (fun tcacc (s, _) t -> Assoc.update s t tcacc)
         Assoc.empty (Assoc.bindings cx.pm) pml)
     else None
 
@@ -166,7 +167,7 @@ and tau_lookup (cx: contexts) (x: id) (pml: typ list) : typ =
  * illegal geometric type, or external type (they have no supertype) *)
 and typ_step (cx : contexts) (t : typ) : typ =
     debug_print (">> typ_step " ^ string_of_typ t);
-    let t', modified = replace_abstype_query (Assoc.union cx.scheme_pm cx.pm) t in
+    let t', modified = replace_abstype_query (Assoc.map fst (Assoc.union cx.scheme_pm cx.pm)) t in
     if modified then t' else
     match t with
     | ParTyp (s, tl) -> 
@@ -358,7 +359,7 @@ let check_fn_inv (cx: contexts) (x : id)
         in
         match inferred_pml with | None -> None | Some ipml ->
         (* Check that the parameterization conforms to the bounds provided *)
-        let ipml_clean = List.map (replace_abstype cx.pm) ipml in
+        let ipml_clean = List.map (replace_abstype (Assoc.map fst cx.pm)) ipml in
         let param_check = match_parameterization_safe (with_pm cx pm) ipml_clean in
         let scheme_check = (match c with | None -> None
             | Some scheme -> let scx = (with_pm cx (fst (get_scheme cx scheme))) in
@@ -418,12 +419,13 @@ let check_fn_inv (cx: contexts) (x : id)
  * and returns the contexts updated with that pm *)
 let check_parameterization (cx: contexts) (pm: parameterization) : contexts =
     debug_print (">> check_parameterization " ^ string_of_parameterization pm);
-    let check_parameter found (s, t) =
+    let check_parameter found (s, (t, b)) =
         if Assoc.mem s found then error cx ("Duplicate parameter `" ^ s)
         else check_typ_valid (with_pm cx found) t;
-        Assoc.update s t found
+        Assoc.update s (t,b) found
     in
-    ignore_typ_context (List.fold_left check_parameter Assoc.empty (Assoc.bindings pm));
+    (**make new function that takes in (typ, bool)*)
+    ignore_typ_bool_context (List.fold_left check_parameter Assoc.empty (Assoc.bindings pm));
     with_pm cx pm
 
 let update_psi (cx: contexts) (f : fn_typ) : contexts =
@@ -518,7 +520,7 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
                     | Some s -> get_var cx s) args in
                 match infer_pml cxf args' params with | None -> [] | Some pml ->
                 match match_parameterization_safe cxf pml with | None -> [] | Some mpm ->
-                let pr1 = List.map snd (Assoc.bindings pm) in
+                let pr1 = List.map (fst |- snd) (Assoc.bindings pm) in
                 let rtr = replace_abstype mpm rt in
                 let ptr = List.map (replace_abstype mpm |- tr_snd) params in
                 let scheme_check = (match c with | None -> None
@@ -580,7 +582,7 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
             match fns with
             | [] -> List.map (fun s -> 
                 let c, (ml,rt,id,pr,_) = get_valid_fn (get_functions_safe cx s) in
-                (rt, (id, Assoc.values (get_ml_pm cx ml), []), [])) ps_lst 
+                (rt, (id, List.map fst (Assoc.values (get_ml_pm cx ml)), []), [])) ps_lst 
             | (_, fs) :: t ->
                 search_fns fs @ search_phi_rec t
             in

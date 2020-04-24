@@ -46,7 +46,7 @@ and string_of_pml (p : typ list) : string =
 
 let string_of_modification (m: modification) : string =
     match m with
-    | With (t, pm, b) -> if b then "with " ^ string_of_typ t ^ " < " ^ string_of_list (fun x -> x) pm ^ ":" 
+    | With (t, pm, b) -> if b then "with " ^ string_of_list (fun x -> x) pm  ^ " < " ^ string_of_typ t ^ ":"
         else "with " ^ string_of_typ t ^ " " ^ string_of_list (fun x -> x) pm ^ ":"
     | Canon -> "canon"
     | External -> "declare"
@@ -60,7 +60,7 @@ let string_of_param ((ml, t, s): modification list * typ * string) : string =
 
 let string_of_parameterization (pm : parameterization) : string =
     if Assoc.size pm != 0 then "<" ^  
-    List.fold_left (fun acc s -> string_of_typ s ^ acc) "" (List.map (fun (x,y) -> x) (Assoc.values pm))^ ">" else ""
+    List.fold_left (fun acc s -> string_of_typ s ^ acc) "" (List.map fst (Assoc.values pm))^ ">" else ""
 
 let string_of_fn_typ (ml, r, x, p, _ : fn_typ) : string = 
     string_of_mod_list ml ^ string_of_typ r ^ " " ^ x
