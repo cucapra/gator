@@ -120,7 +120,6 @@ and is_subtype_list (cx: contexts) (l1: typ list) (l2: typ list) : bool =
 
 (* Given a parameterization and a list of types being invoked on that parameterization *)
 (* Returns the appropriate concretized context if one exists *)
-(**should be checking fpr < *)
 and match_parameterization_safe (cx : contexts) (pml : typ list) 
     : typ Assoc.context option = 
     debug_print (">> match_parameterization <" ^ string_of_list string_of_typ pml ^ ">");
@@ -424,7 +423,6 @@ let check_parameterization (cx: contexts) (pm: parameterization) : contexts =
         else check_typ_valid (with_pm cx found) t;
         Assoc.update s (t,b) found
     in
-    (**make new function that takes in (typ, bool)*)
     ignore_typ_bool_context (List.fold_left check_parameter Assoc.empty (Assoc.bindings pm));
     with_pm cx pm
 
@@ -817,7 +815,7 @@ let check_typ_decl (cx: contexts) (x : string) (b,pm,t : tau) : contexts =
         | ArrTyp (t', _) -> check_valid_supertype t'
         | ParTyp (s, pml) -> 
             if Assoc.mem s cx'.pm 
-            then check_valid_supertype(Assoc.lookup s cx'.pm)
+            then check_valid_supertype(fst (Assoc.lookup s cx'.pm))
             else let _,tpm,_ = get_typ cx' s in
             let pmb = Assoc.bindings tpm in
             if List.length pmb == List.length pml
@@ -825,7 +823,7 @@ let check_typ_decl (cx: contexts) (x : string) (b,pm,t : tau) : contexts =
                 if is_subtype cx' t' c then () else
                 error cx ("Invalid typ used in the parameterization " 
                     ^ string_of_typ t ^ " for parameter " ^ s))
-                () (Assoc.bindings tpm) (List.map check_valid_supertype pml); t)
+                () (List.map (fun (s, (t, _)) -> (s,t)) (Assoc.bindings tpm)) (List.map check_valid_supertype pml); t)
             else error cx ("Invalid number of parameters 
                 provided to parameterized type " ^ s)
         | _ -> error cx ("Invalid type declaration " ^ string_of_typ t)
@@ -842,7 +840,7 @@ contexts * (TypedAst.params * TypedAst.parameterization) option =
     let cx' = check_parameterization cx pm in
     let cx'',pr = check_params cx' pl in
     let pme = List.fold_right (fun (s, t) acc -> if is_subtype cx t AnyFrameTyp then acc 
-        else Assoc.update s (typ_erase cx t) acc) (Assoc.bindings pm) Assoc.empty 
+        else Assoc.update s (typ_erase cx t) acc) (List.map (fun (s, (t, _)) -> (s,t))(Assoc.bindings pm)) Assoc.empty 
     in
     if has_modification cx ml External then cx'', None else cx'', Some (pr, pme)
 
