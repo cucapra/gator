@@ -135,7 +135,10 @@ let comp_fn (f : fn) : string =
                 | "main" -> "void main"
                 | _ -> string_of_typ rt ^ " " ^ replace_all_in_name id
             in
-            type_id_string ^ "(" ^ param_string ^ "){" ^ string_of_separated_list "" string_of_comm cl ^ "}"
+            if !pretty_printer then 
+            (type_id_string ^ "(" ^ param_string ^ "){" ^ string_of_separated_list "" string_of_comm cl ^ "}" ^ "\n\n")
+            else
+            (type_id_string ^ "(" ^ param_string ^ "){" ^ string_of_separated_list "" string_of_comm cl ^ "}")
 
 let rec comp_prog (f : term list) : string =
     debug_print ">> comp_fn_lst";
