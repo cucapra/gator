@@ -1,7 +1,7 @@
 // The goal of this program is to draw two objects
 // Each uses the same shader pair and meshes, but different model matrices and colors
 
-// Some kinda metprogramming 
+// Some kinda metaprogramming 
 with type T:
 declare type varying;
 
@@ -23,22 +23,28 @@ typescript void main() {
     model2 = mat4.create();
     mat4.translate(model2, model2, [-10., -10., -10.]);
     while (true) {
-        render();
+        render(get_mesh());
     }
 }
 
-typescript void render() {
+typescript void render(mesh) {
     // pseudo-code
     update(view);
     update(projection);
 
     // Binds the current program (restricted to a value)
     $current = program;
+
     // $current's variables should be determined statically
-    $current.vPosition = ...;
-    // Calling $current runs the underlying bound program (which here returns void)
+    // To bind a new variable, we create a partial function with some arguments applied
+    // Note that binding a variable in this way is equivalent to GLSL's bind function
+    // Also note that calling partial on a non-bound program gives an error
+    with_mesh = partial(program, vPosition = mesh.positions);
+
+    // Calling with_mesh runs the underlying bound program (which here returns void)
+    // Gives a static error if the called program is not bound to $current
     // Call with any number of arguments; equivalent to binding then calling
-    $current(color = [1., 1., 0.]);
+    with_mesh(color = [1., 1., 0.]);
 
     // At this point, $current's member variables become readable, though this is useless for now
     // Note, however, that the program's member variables are _still_ writeable
