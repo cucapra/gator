@@ -1,0 +1,22 @@
+@openGL
+
+void main() {
+    auto doublerProgram = compile(doubler);
+    
+    state.current = doublerProgram;
+    doublerProgram.var1 = [5, 6, 7, 8, 9, 10];
+    run(doublerProgram);
+    state.current = triplerProgram;
+    doublerProgram.var1 = [5, 6, 7, 8, 9, 10];
+    auto result = doublerProgram.var2;
+}
+
+doubler {
+    in int var1;
+    out int var2;
+    uniform mat4 uModel;
+    void main() {
+        var2 = uModel * var1 * 2;
+        var2 = var1 * 2;
+    }
+}

@@ -1,7 +1,16 @@
 // The goal of this program is to draw two objects
-// Each uses the same shader pair, but different model matrices
+// Each uses the same shader pair and meshes, but different model matrices and colors
 
-main() {
+// Some kinda metprogramming 
+with type T:
+declare type varying;
+
+mat4 model;
+mat4 view;
+mat4 projection;
+
+// All functions must have a target language; this one is typescript
+typescript void main() {
     // compiling a program recovers its member variables statically
     // the set of writeable member variables of a program are as follows (U = union):
     // { in(VERTEX) } U { uniform(VERTEX) } U { uniform(FRAGMENT) }
@@ -13,44 +22,46 @@ main() {
     mat4.translate(model1, model1, [10., 10., 10.]);
     model2 = mat4.create();
     mat4.translate(model2, model2, [-10., -10., -10.]);
-    render(mat4 view, mat4 projection) {
-        useProgram(program);
-        // At this point, program's member variables become writeable
-        program.uModel = model1;
-        program.uView = view;
-        program.uProjection = projection;
-        program.aPosition = ...;
-
-        // draw = loop over the vertex code (note that loop invariance of uProjection * uView * uModel can happen here)
-        // Note that all variables of program must be assigned at this point
-        draw();
-
-        // At this point, the current program's member variables become readable, though this is useless for now
-        // Note, however, that the program's member variables are _still_ writeable
-        program.uModel = model2;
-
-        // draw again; once again, we can loop invariant uProjection * uView * uModel
-        draw();
+    while (true) {
+        render();
     }
 }
 
-vertex {
+typescript void render() {
+    // pseudo-code
+    update(view);
+    update(projection);
+
+    // Binds the current program (restricted to a value)
+    $current = program;
+    // $current's variables should be determined statically
+    $current.vPosition = ...;
+    // Calling $current runs the underlying bound program (which here returns void)
+    // Call with any number of arguments; equivalent to binding then calling
+    $current(color = [1., 1., 0.]);
+
+    // At this point, $current's member variables become readable, though this is useless for now
+    // Note, however, that the program's member variables are _still_ writeable
+    $uModel = model2; // This actually updates uModel for $current!  Thus we need to include a $
+
+    // Note that $current.vPosition has been bound earlier, so that still holds
+    $current(color = [1., 0., 1.]);
+}
+
+// The glsl keyword targets the compilation of this program to glsl
+// The program keyword indicates that this is something that must be bound to be run
+glsl program void vertex (vec3 vPosition, vec3 color) {
     out vec3 vPosition; // associated fragment must have 'in' associated with each out;
-    in vec3 aPosition;
-    mat4 uModel;
-    mat4 uView;
-    mat4 uProjection;
+    
     void main() {
       vPosition = aPosition;
       gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
     }
 }
 
-fragment {
-    mat4 uModel;
-    mat4 uView;
-    in vec3 vPosition;
+glsl program void fragment(vec3 vPosition, vec3 color) {
     out vec4 gl_FragColor;
+
     void main() {
         gl_FragColor = uView * uModel * vec4(vPosition, 1.);
     }
