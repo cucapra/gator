@@ -5,9 +5,9 @@
 with type T:
 declare type varying;
 
-mat4 model;
-mat4 view;
-mat4 projection;
+mat4 uModel;
+mat4 uView;
+mat4 uProjection;
 
 // All functions must have a target language; this one is typescript
 typescript void main() {
@@ -16,60 +16,76 @@ typescript void main() {
     // { in(VERTEX) } U { uniform(VERTEX) } U { uniform(FRAGMENT) }
     // the set of readable member variables of a program are the out variable of FRAGMENT
     // We can't yet write or read these these variables
-    program = compile(vertex, fragment);
     ...
     model1 = mat4.create();
     mat4.translate(model1, model1, [10., 10., 10.]);
     model2 = mat4.create();
     mat4.translate(model2, model2, [-10., -10., -10.]);
     while (true) {
-        render(get_mesh());
+        render(compile(vertex, fragment), get_mesh(), get_view(), get_projection());
     }
 }
 
-typescript void render(mesh) {
-    // pseudo-code
-    update(view);
-    update(projection);
+typescript void render(program, mesh, view, projection) {
+    state.uView = view;
+    state.uProjection = projection;
 
     // Binds the current program (restricted to a value)
-    $current = program;
+    state.current = program;
 
     // $current's variables should be determined statically
     // To bind a new variable, we create a partial function with some arguments applied
     // Note that binding a variable in this way is equivalent to GLSL's bind function
     // Also note that calling partial on a non-bound program gives an error
     with_mesh = partial(program, vPosition = mesh.positions);
+    with_mesh2 = partial(program2, vPosition = mesh2.positions);
+    with_color = partial(program2, vPosition = mesh.positions, color = [1, 1, 1]);
+
+    // Must be bound
+    state.uModel = model1;
+
+    state.current = program2;
+
+    reuse(state.uView);
+    reuse(state.uProjection);
 
     // Calling with_mesh runs the underlying bound program (which here returns void)
     // Gives a static error if the called program is not bound to $current
     // Call with any number of arguments; equivalent to binding then calling
-    with_mesh(color = [1., 1., 0.]);
+    with_mesh(color = [1, 1, 0]);
+    with_mesh2(color = [1., 0, 1]);
+    // translates to:
+    // state.bind(vPosition = mesh.positions);
+    // state.bind(color = [1, 1, 0]);
+    // state.run();
+    // state.bind(vPosition = mesh2.positions);
+    // state.bind(color = [1, 0, 1]);
+    // state.run();
 
     // At this point, $current's member variables become readable, though this is useless for now
     // Note, however, that the program's member variables are _still_ writeable
-    $uModel = model2; // This actually updates uModel for $current!  Thus we need to include a $
+    state.uModel = model2; // This actually updates uModel for $current!  Thus we need to include a $
 
     // Note that $current.vPosition has been bound earlier, so that still holds
-    $current(color = [1., 0., 1.]);
+    program2(color = [1., 0., 1.]);
 }
 
 // The glsl keyword targets the compilation of this program to glsl
 // The program keyword indicates that this is something that must be bound to be run
 glsl program void vertex (vec3 vPosition, vec3 color) {
-    out vec3 vPosition; // associated fragment must have 'in' associated with each out;
-    
+    out vec3 vColor; // associated fragment must have 'in' associated with each out;
+
     void main() {
-      vPosition = aPosition;
+      vColor = color;
       gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
     }
 }
 
-glsl program void fragment(vec3 vPosition, vec3 color) {
+glsl program void fragment(vec3 vColor) {
     out vec4 gl_FragColor;
 
     void main() {
-        gl_FragColor = uView * uModel * vec4(vPosition, 1.);
+        gl_FragColor = vColor;
     }
 
 }
