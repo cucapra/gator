@@ -1,4 +1,5 @@
 type meters is float;
+type inches is float;
 
 with T < float: T +(T x, T y);
 with T < float: T -(T x, T y);
@@ -9,5 +10,9 @@ void main(){
     float a = 6.0;
     float b = 3.7;
 
-    auto c = a - b;
+    meters x = 5.3;
+    inches y = 3.0;
+
+    //auto c = a - b;
+    //auto z = x * y;
 }
