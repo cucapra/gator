@@ -1,0 +1,13 @@
+type meters is float;
+
+with T < float: T +(T x, T y);
+with T < float: T -(T x, T y);
+with T < float: T *(T x, T y);
+with T < float: T /(T x, T y);
+
+void main(){
+    float a = 6.0;
+    float b = 3.7;
+
+    auto c = a - b;
+}
