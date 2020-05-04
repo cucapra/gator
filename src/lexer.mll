@@ -88,6 +88,7 @@ rule read = parse
   | "."             { DOT }
   | ":"             { COLON }
   | "#"             { POUND }
+  | "%"             { PERCENT }
   | "void"          { VOID }
   | "return"        { RETURN }
   | "declare"       { DECLARE }

@@ -82,6 +82,7 @@ exception ParseException of string
 %token UNIFORM
 %token VARYING
 %token POUND
+%token PERCENT
 
 (* Precedences *)
 
@@ -94,6 +95,8 @@ exception ParseException of string
 %left TIMES DIV CTIMES 
 %left AS IN
 %left DOT
+
+%left PERCENT
 
 (* After declaring associativity and precedence, we need to declare what
    the starting point is for parsing the language.  The following
@@ -291,6 +294,8 @@ let typ :=
     { ParTyp(x, []) }
   | GENTYPE; 
     { GenTyp }
+  | PERCENT; LPAREN; t = typ; RPAREN;
+    { Literal(t) }
 
 let storage_qual ==
   | IN;

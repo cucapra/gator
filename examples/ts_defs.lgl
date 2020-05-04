@@ -449,7 +449,7 @@ declare type lgl.Mesh;
 //misc
 declare string require(string someModule);
 //mat4
-declare hom<model>.transformation<world> mat4.create();
+declare %(%(%(float)[4])[4]) mat4.create();
 //vec3
 declare cart3<world>.point vec3.fromValues(float x, float y, float z);
 //gl
