@@ -29,5 +29,5 @@ void main() {
     auto reflectDir = normalize(reflect(-lightDir, normalize(vNormal in world)) in view);
     float specular = pow(max(dot((normalize(-vPosition in view)), reflectDir), 0.0), 32.);
 
-    auto gl_FragColor = extendColor(ambient + lambertian * diffuse + specular * spec);
+    gl_FragColor = extendColor(ambient + lambertian * diffuse + specular * spec);
 }

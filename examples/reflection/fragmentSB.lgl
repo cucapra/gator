@@ -9,5 +9,5 @@ type alphaColor is vec4;
 varying cart3<model>.point vPosition;
 uniform samplerCube<alphaColor> uSkybox;
 void main() {
-    auto gl_FragColor = textureCube(uSkybox, vPosition);
+    gl_FragColor = textureCube(uSkybox, vPosition);
 }

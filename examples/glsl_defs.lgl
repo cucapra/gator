@@ -5,6 +5,7 @@ declare type vec4 is float[4];
 declare type mat2 is float[2][2];
 declare type mat3 is float[3][3];
 declare type mat4 is float[4][4];
+declare float[4] gl_FragColor;
 with float[4] T:
 declare type sampler2D;
 with float[4] T:
@@ -36,7 +37,7 @@ with int T: declare bool >=(T f1, T f2);
 with int T: declare bool <=(T f1, T f2);
 with int T: declare bool >(T f1, T f2);
 with int T: declare bool <(T f1, T f2);
-// with int T: declare T ++(T f);
+with int T: declare T ++(T f);
 
 // GLSL Vector/Matrix Types
 with vec2 T: declare T +(T v1, T v2);
@@ -50,6 +51,7 @@ with vec2 T: declare vec2 *(T v1, T v2);
 with vec3 T: declare T +(T v1, T v2);
 with vec3 T: declare T -(T v1, T v2);
 with vec3 T: declare T -(T v);
+with vec3 T: declare T *(T v1, T v2);
 with vec3 T: with float U: declare T *(T v, U f);
 with vec3 T: with float U: declare T *(U f, T v);
 with vec3 T: with float U: declare T /(T f1, U f2);
@@ -60,6 +62,7 @@ with vec4 T: declare T -(T v);
 with vec4 T: with float U: declare T *(T v, U f);
 with vec4 T: with float U: declare T *(U f, T v);
 with vec4 T: declare vec4 *(T v1, T v2);
+with vec4 T: declare vec4 /(T v1, float v2);
 
 with mat2 T: with vec2 U: declare vec2 *(T m, U v);
 with mat2 T: with mat2 U: declare mat2 +(T m, U v);
@@ -101,6 +104,8 @@ declare float mix(float a, float b, float c);
 with vec2 T: declare T pow(T v, float f);
 with vec3 T: declare T pow(T v, float f);
 with vec4 T: declare T pow(T v, float f);
+with vec3 T: declare T pow(T v, T f);
+with vec3 T: declare T cross(T v, T f);
 with vec2 T: declare T floor(T v);
 with float T: declare T fract(T f);
 with vec2 T: declare T fract(T v);
