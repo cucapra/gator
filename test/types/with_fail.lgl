@@ -13,6 +13,6 @@ void main(){
     meters x = 5.3;
     inches y = 3.0;
 
-    //auto c = a - b;
-    //auto z = x * y;
+    auto c = a - b;
+    auto z = x * y;
 }
