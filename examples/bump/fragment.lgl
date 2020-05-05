@@ -19,8 +19,8 @@ varying mat3 vNormalMatrix;
 // varying vec3 vDerivV;
 void main() {
     float displacementScale = -4.;
-    vec3 vDerivV = [.1, .1, .1];
-    vec3 vDerivU = [.1, .1, .1];
+    vec3 vDerivV = [1., 1., 1.];
+    vec3 vDerivU = [1., 1., 1.];
     // Compute displaced normals as in the
     // displacement vertex shader, and use them for shading.
     // Lastly, implement Phong reflectance function.
@@ -44,7 +44,7 @@ void main() {
     
     float roughness = 0.2;
     color finalColor = [0.0, 0.0, 0.0];
-    vec3 lightPosition = [1., 2., 3.];
+    vec3 lightPosition = [1., 1., 1.];
     color lightColor = [0.1, 0.3, 0.5];
     for (int i = 0; i <= 1; i += 1) {
         float r = length(lightPosition - vPosition);
@@ -53,13 +53,12 @@ void main() {
         // calculate diffuse term
         vec3 Idiff = from_sRGB(vec3(texture2D(uDiffuseTexture, vUv)) as! sRGB);// * max(dot(N, L), 0.0);
         // calculate specular term
-        vec3 Ispec = [1.0, 1.0, 1.0];// * pow(max(dot(N, H), 0.0), 1.0 / roughness);
+        vec3 Ispec = [1.0, 1.0, 1.0] * pow(max(dot(N, H), 0.0), 1.0 / roughness);
         finalColor = finalColor + lightColor * ((Idiff + Ispec) as! color) / (r*r);
-        lightPosition = [-1., 0., -1.];
+        lightPosition = [-1., -1., -1.];
     }
-    // finalColor = from_sRGB(vec3(texture2D(uDiffuseTexture, vUv)) as! sRGB) as! color;
 
-    float exposure = 0.2;
+    float exposure = 0.8;
     // // Only shade if facing the light
     // // Color the back faces an identifiable color
     if (gl_FrontFacing) {

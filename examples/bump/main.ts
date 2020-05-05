@@ -45,10 +45,10 @@ function main() {
   let model = mat4.create();
 
   // Load image texture
-  lgl.load_texture(gl, earthmap1k);
+  lgl.load_texture_number(gl, earthmap1k, gl.TEXTURE0);
 
   // Load bump map
-  lgl.load_texture(gl, earthbump1k)
+  lgl.load_texture_number(gl, earthbump1k, gl.TEXTURE1)
 
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
@@ -64,7 +64,7 @@ function main() {
     
     // Use texture unit 0 for uTexture
     gl.uniform1i(loc_uTexture, 0);
-    gl.uniform1i(loc_uBumpMap, 0);
+    gl.uniform1i(loc_uBumpMap, 1);
   
     // Set the attribute arrays.
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
