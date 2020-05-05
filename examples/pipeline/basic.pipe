@@ -1,5 +1,3 @@
-@openGL
-
 int factor;
 
 void main() {

@@ -1,0 +1,76 @@
+// The goal of this program is to draw two objects
+// Each uses the same shader pair and meshes, but different model matrices and colors
+
+// Some kinda metaprogramming 
+with type T:
+declare type varying;
+
+mat4 uModel;
+mat4 uView;
+mat4 uProjection;
+
+// All functions must have a target language; this one is typescript
+typescript void main() {
+    // compiling a program recovers its member variables statically
+    // the set of writeable member variables of a program are as follows (U = union):
+    // { in(VERTEX) } U { uniform(VERTEX) } U { uniform(FRAGMENT) }
+    // the set of readable member variables of a program are the out variable of FRAGMENT
+    // We can't yet write or read these these variables
+    program = glsl_compile(vertex, fragment);
+    ...
+    model1 = mat4.create();
+    mat4.translate(model1, model1, [10., 10., 10.]);
+    model2 = mat4.create();
+    mat4.translate(model2, model2, [-10., -10., -10.]);
+    while (true) {
+        render(program, get_mesh(), get_view(), get_projection());
+    }
+}
+
+typescript void render(program, shadowProgram, mesh, view, projection) {
+    state.uView = view;
+    state.uProjection = projection;
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, shadowFramebuffer);
+
+    function buildShadowBuffers(mesh: lgl.Mesh, model: mat4) {
+      gl.uniformMatrix4fv(shadowLocations["uModel"], false, model);
+      lgl.bind_attrib_buffer(gl, shadowLocations["aPosition"] as number, mesh.positions, 3);
+      lgl.bind_element_buffer(gl, mesh.cells);
+
+      gl.drawElements(gl.TRIANGLES, mesh.cell_count, gl.UNSIGNED_SHORT, 0);
+      let errorCode = gl.getError();
+      if (errorCode != 0) {
+        throw errorCode;
+      }
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    with_mesh(color = [1, 1, 0]);
+
+    state.current = program;
+
+    with_mesh = partial(program, vPosition = mesh.positions);
+
+    with_mesh(color = [1, 0, 1], state.uModel = model1);
+    with_mesh(color = [1, 0, 1], state.uModel = model2);
+}
+
+program void vertex(vec3 aPosition, sampler2D shadowmap, vec2 uv) {
+    out vec3 vColor; // associated fragment must have 'in' associated with each out;
+
+    void main() {
+      vColor = color;
+      gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
+    }
+}
+
+program void fragment(vec3 vPosition, sampler2D shadowmap, vec2 uv) {
+    out vec4 gl_FragColor;
+
+    void main() {
+        ...
+        gl_FragColor = ...;
+    }
+
+}
