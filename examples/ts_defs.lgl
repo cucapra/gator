@@ -186,6 +186,8 @@ prototype geometry {
 
     with frame() T:
     transformation<T> rotateY(transformation<T> t1, transformation<T> t2, float f);
+    with frame() T:
+    transformation<T> rotateX(transformation<T> t1, transformation<T> t2, float f);
 }
 
 // Coordinate Scheme Definitions
@@ -369,6 +371,7 @@ coordinate cart3 : geometry {
 
 
 declare mat4 mat4.rotateY(mat4 m1, mat4 m2, float f);
+declare mat4 mat4.rotateX(mat4 m1, mat4 m2, float f);
 
 with frame(3) r:
 coordinate hom : geometry {
@@ -379,10 +382,16 @@ coordinate hom : geometry {
     with frame(3) r2: object transformation is float[4][4];
     with frame(3) r2: object normalTransformation is float[4][4];
 
+
+    with frame(3) T: 
+    transformation<T> rotateX(transformation<T> t1, transformation<T> t2, float f) {
+        return mat4.rotateX(t1 as! mat4, t2 as! mat4, f) as! transformation<T>;
+    }
     with frame(3) T: 
     transformation<T> rotateY(transformation<T> t1, transformation<T> t2, float f) {
         return mat4.rotateY(t1 as! mat4, t2 as! mat4, f) as! transformation<T>;
     }
+    
     // point +(point p, vector v) {
     //     return (p as! vec4 + v as! vec4 * p[3]) as! point;
     // }
