@@ -1,0 +1,310 @@
+//Imports
+#"import * as lgl from '../lglexample';";
+using "../ts_defs.lgl";
+
+//Gator Matrices
+frame model has dimension 3;
+frame world has dimension 3;
+frame view has dimension 3;
+frame proj has dimension 3;
+
+//Declare Types
+declare type WebGLTexture;
+declare type WebGLFramebuffer;
+
+declare type HTMLImageElement;
+declare type WebGLRenderbuffer;
+
+//Dirty hacks
+declare void null;
+
+//Globals
+const WebGLRenderingContext gl;
+const WebGLProgram program;
+const WebGLProgram programSB;
+const WebGLProgram programOBJ;
+const WebGLUniformLocation loc_uProjection;
+const WebGLUniformLocation loc_uProjectionSB;
+const WebGLUniformLocation loc_uProjectionOBJ;
+const WebGLUniformLocation loc_uView;
+const WebGLUniformLocation loc_uViewSB;
+const WebGLUniformLocation loc_uViewOBJ;
+const WebGLUniformLocation loc_uModel;
+const WebGLUniformLocation loc_uModelSB;
+const WebGLUniformLocation loc_uModelOBJ;
+const WebGLUniformLocation loc_uLight;
+const WebGLUniformLocation loc_uLightOBJ;
+const WebGLUniformLocation loc_uNormalMatrix;
+const WebGLUniformLocation loc_uInverseViewTransform;
+const NullableTexture frameBuffer;
+const float loc_aPosition;
+const float loc_aPositionOBJ;
+const float loc_aPositionSB;
+const float loc_aNormal;
+const float loc_aNormalOBJ;
+const hom<model>.transformation<world> model;
+const hom<model>.transformation<world> modelSB;
+const NullableTexture dynamicCubemap;
+const lgl.Mesh mesh;
+const lgl.Mesh teapot;
+const NullableTexture skyboxCubemap;
+const HTMLCanvasElement canvas;
+const lgl.Mesh skybox;
+const int frameNumber;
+const NullableTexture depthBuffer;
+
+//Declare globals
+declare WebGLBuffer mesh.normals;
+declare WebGLBuffer mesh.positions;
+
+//Skybox
+declare WebGLBuffer skybox.positions;
+
+//cubeMesh
+const lgl.Mesh cubeMesh;
+declare WebGLBuffer cubeMesh.normals;
+declare WebGLBuffer cubeMesh.positions;
+
+//teapot
+declare WebGLBuffer teapot.positions;
+declare WebGLBuffer teapot.normals;
+
+
+
+
+void renderSkyboxAndCubes(hom<view>.transformation<proj> projection, hom<world>.transformation<view> view){
+    gl.clearColor(0,0,0,1);
+    gl.clear(gl.COLOR_BUFFER_BIT| gl.DEPTH_BUFFER_BIT);
+
+    // Draw the skybox, with its static cubemap texture.
+    gl.useProgram(programSB);
+
+    // Set the shader "uniform" parameters.
+    gl.uniformMatrix4fv(loc_uProjectionSB, false, projection);
+    gl.uniformMatrix4fv(loc_uViewSB, false, view);
+    gl.uniformMatrix4fv(loc_uModelSB, false, modelSB);
+
+    // Set the attribute arrays.
+    lgl.bind_attrib_buffer(gl, loc_aPositionSB, skybox.positions, 3);
+
+    gl.clearColor(0,0,0,1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxCubemap);
+
+    // Draw the object.
+    gl.disable(gl.CULL_FACE);
+    lgl.drawMesh(gl, skybox);
+    gl.enable(gl.CULL_FACE);
+
+    // Draw the moving cubes, which are drawn with lighting.
+    gl.useProgram(programOBJ);
+
+    // Set the attribute arrays.
+    lgl.bind_attrib_buffer(gl, loc_aNormal, cubeMesh.normals, 3);
+    lgl.bind_attrib_buffer(gl, loc_aPosition, cubeMesh.positions, 3);
+
+    hom<model>.transformation<view> modelview = mat4.create();
+    multiply(modelview, view, model);
+
+    // Position the light source for the lighting effect.
+    hom<world>.point light = vec4.fromValues(0., 30., 0., 0.);
+
+    vec4 transformed = vec4.create();
+    vec4.transformMat4(transformed, light, modelview);
+
+    gl.uniform4fv( loc_uLightOBJ, transformed );
+
+    // Set the shader "uniform" parameters.
+    gl.uniformMatrix4fv(loc_uProjectionOBJ, false, projection);
+    gl.uniformMatrix4fv(loc_uViewOBJ, false, view);
+
+    lgl.drawCubes(gl, model, frameNumber, loc_uModelOBJ, cubeMesh);
+
+    gl.disableVertexAttribArray(loc_aPositionOBJ);
+    gl.disableVertexAttribArray(loc_aNormalOBJ);
+}
+
+void createDynamicCubemap() {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
+    gl.viewport(0.,0.,512.,512.);  //match size of the texture images
+    hom<view>.transformation<proj> projection = mat4.create();
+    perspective(projection, Math.PI/2., 1., 1., 300.);  // Set projection to give 90-degree field of view.
+
+    hom<world>.transformation<view> view = mat4.create();
+
+    identity(view);
+    scale(view, view,[-1.,-1.,1.]);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, dynamicCubemap, 0.);
+    renderSkyboxAndCubes(projection, view);
+
+    identity(view);
+    scale(view, view,[-1.,-1.,1.]);
+    rotateY(view,view,Math.PI/2.);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_POSITIVE_X, dynamicCubemap, 0.);
+    renderSkyboxAndCubes(projection, view);
+
+    identity(view);
+    scale(view, view,[-1.,-1.,1.]);
+    rotateY(view,view,Math.PI);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_POSITIVE_Z, dynamicCubemap, 0.);
+    renderSkyboxAndCubes(projection, view);
+
+    identity(view);
+    scale(view, view,[-1.,-1.,1.]);
+    rotateY(view,view,Math.PI/2.);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_NEGATIVE_X, dynamicCubemap, 0.);
+    renderSkyboxAndCubes(projection, view);
+
+    identity(view);
+    rotateX(view,view,Math.PI/2.);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, dynamicCubemap, 0.);
+    renderSkyboxAndCubes(projection, view);
+
+    identity(view);
+    rotateX(view,view,Math.PI/2.);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_POSITIVE_Y, dynamicCubemap, 0.);
+    renderSkyboxAndCubes(projection, view);
+
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, dynamicCubemap);
+    gl.generateMipmap( gl.TEXTURE_CUBE_MAP );
+}
+
+void render(hom<world>.transformation<view> view, hom<view>.transformation<proj> projection){
+
+    createDynamicCubemap();
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);  // draw to screen
+    canvas = lgl.getCanvas();
+    gl.viewport(0.,0.,canvas.width,canvas.height);
+
+    renderSkyboxAndCubes(projection, view);
+
+    // Use our shader pair.
+    gl.useProgram(program);
+
+    // Set the shader "uniform" parameters.
+    gl.uniformMatrix4fv(loc_uProjection, false, projection);
+    gl.uniformMatrix4fv(loc_uView, false, view);
+    gl.uniformMatrix4fv(loc_uModel, false, model);
+
+    hom<model>.transformation<view> modelView = mat4.create();
+    mat3 normalMatrix = mat3.create();
+    multiply(modelView, view, model);
+    mat3.normalFromMat4(normalMatrix, modelView);
+    gl.uniformMatrix3fv(loc_uNormalMatrix, false, normalMatrix);
+
+    mat3 inverseViewTransform = mat3.create();
+    mat3.fromMat4(inverseViewTransform, modelView);
+    mat3.invert(inverseViewTransform, inverseViewTransform);
+    gl.uniformMatrix3fv(loc_uInverseViewTransform, false, inverseViewTransform);
+
+    // Set the attribute arrays.
+    lgl.bind_attrib_buffer(gl, loc_aPosition, teapot.positions, 3);
+    lgl.bind_attrib_buffer(gl, loc_aNormal, teapot.normals, 3);
+
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, dynamicCubemap);
+
+    // Draw the object.
+    lgl.drawMesh(gl, teapot);
+
+    frameNumber = frameNumber + 1;
+}
+
+void main(){
+    frameNumber = 0;
+
+    #"gl = lgl.setup(render_0);";
+
+    // Compile our shaders.
+    programSB = lgl.compileProgram(gl,
+        require("./vertexSB.lgl"),
+        require("./fragmentSB.lgl")
+    );
+
+    // Uniform and attribute locations.
+    loc_uProjectionSB = lgl.uniformLoc(gl, programSB, "uProjection");
+    loc_uViewSB = lgl.uniformLoc(gl, programSB, "uView");
+    loc_uModelSB = lgl.uniformLoc(gl, programSB, "uModel");
+    loc_aPositionSB = lgl.attribLoc(gl, programSB, "aPosition");
+
+    // We'll draw a cube.
+    skybox = lgl.getCube(gl, 300., 300., 300., 1., 1.);
+
+    // Initialize the model position.
+    modelSB = mat4.create();
+
+    // Compile our shaders.
+    programOBJ = lgl.compileProgram(gl,
+        require("./vertexOBJ.lgl"),
+        require("./fragmentOBJ.lgl")
+    );
+
+    gl.useProgram(programOBJ);
+
+    // Uniform and attribute locations.
+    loc_uProjectionOBJ = lgl.uniformLoc(gl, programOBJ, "uProjection");
+    loc_uViewOBJ = lgl.uniformLoc(gl, programOBJ, "uView");
+    loc_uModelOBJ = lgl.uniformLoc(gl, programOBJ, "uModel");
+    loc_uLightOBJ = lgl.uniformLoc(gl, programOBJ, "uLight");
+    // let loc_uColorOBJ = lgl.uniformLoc(gl, programOBJ, 'uColor');
+    loc_aPositionOBJ = lgl.attribLoc(gl, programOBJ, "aPosition");
+    loc_aNormalOBJ = lgl.attribLoc(gl, programOBJ, "aNormal");
+
+    cubeMesh = lgl.getCube(gl, 10., 10., 10., 1., 1.);
+
+    // Compile our shaders.
+    program = lgl.compileProgram(gl,
+        require("./vertex.lgl"),
+        require("./fragment.lgl")
+    );
+
+    // Uniform and attribute locations.
+    loc_uProjection = lgl.uniformLoc(gl, program, "uProjection");
+    loc_uView = lgl.uniformLoc(gl, program, "uView");
+    loc_uModel = lgl.uniformLoc(gl, program, "uModel");
+    loc_uNormalMatrix = lgl.uniformLoc(gl, program, "uNormalMatrix");
+    loc_uInverseViewTransform = lgl.uniformLoc(gl, program, "uInverseViewTransform");
+    loc_aPosition = lgl.attribLoc(gl, program, "aPosition");
+    loc_aNormal = lgl.attribLoc(gl, program, "aNormal");
+
+    // We'll draw a teapot.
+    teapot = lgl.getBunny(gl);
+
+    // Initialize the model position.
+    model = mat4.create();
+
+    scale(model, model, [4., 4., 4.]);
+
+    string[6] urls = [
+        require("../resources/park/posx.jpg"), require("../resources/park/negx.jpg"),
+        require("../resources/park/posy.jpg"), require("../resources/park/negy.jpg"),
+        require("../resources/park/posz.jpg"), require("../resources/park/negz.jpg")
+    ];
+
+    float[6] cubemapTargets = [  // targets for use in some gl functions for working with cubemaps
+        gl.TEXTURE_CUBE_MAP_POSITIVE_X, gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+        gl.TEXTURE_CUBE_MAP_POSITIVE_Y, gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+        gl.TEXTURE_CUBE_MAP_POSITIVE_Z, gl.TEXTURE_CUBE_MAP_NEGATIVE_Z
+    ];
+
+    dynamicCubemap = gl.createTexture(); // Create the texture object for the reflection map
+
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, dynamicCubemap);  // create storage for the reflection map images
+    for (int i = 0; i <= 5; i = i + 1) {
+        gl.texImage2D(cubemapTargets[i], 0., gl.RGBA, 512., 512., 0., gl.RGBA, gl.UNSIGNED_BYTE, null);
+        //With null as the last parameter, the previous function allocates memory for the texture and fills it with zeros.
+    }
+
+    skyboxCubemap = gl.createTexture();  // Create the texture object for the skybox
+
+    lgl.loadSkyboxImages(gl, urls, skyboxCubemap);
+
+    frameBuffer = gl.createFramebuffer();  // create the framebuffer that will draw to the reflection map
+    gl.bindFramebuffer(gl.FRAMEBUFFER,frameBuffer);  // select the framebuffer, so we can attach the depth buffer to it
+    depthBuffer = gl.createRenderbuffer();   // renderbuffer for depth buffer in framebuffer
+    gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer); // so we can create storage for the depthBuffer
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 512., 512.);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthBuffer);
+
+}

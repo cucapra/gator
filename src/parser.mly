@@ -85,6 +85,7 @@ exception ParseException of string
 %token UNIFORM
 %token VARYING
 %token POUND
+%token PERCENT
 
 (* Precedences *)
 
@@ -301,6 +302,8 @@ let typ :=
     { ParTyp(x, []) }
   | GENTYPE; 
     { GenTyp }
+  | PERCENT; LPAREN; t = typ; RPAREN;
+    { Literal(t) }
 
 let storage_qual ==
   | IN;

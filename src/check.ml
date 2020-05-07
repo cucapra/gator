@@ -234,6 +234,7 @@ let check_typ_valid (cx: contexts) (ogt: typ) : unit =
             List.fold_left (fun _ -> check_typ_valid_rec) () tl
         | MemberTyp (c, o) ->
             ignore_typ (typ_step cx t);
+        | Literal lt -> error cx ("Cannot use literal type here. Can only use literal type as function return type.")
         | _ -> ()
     in check_typ_valid_rec ogt
 
