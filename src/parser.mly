@@ -96,8 +96,6 @@ exception ParseException of string
 %left AS IN
 %left DOT
 
-%left PERCENT
-
 (* After declaring associativity and precedence, we need to declare what
    the starting point is for parsing the language.  The following
    declaration says to start with a rule (defined below) named [prog].
