@@ -130,7 +130,7 @@ void createDynamicCubemap() {
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
     gl.viewport(0.,0.,512.,512.);  //match size of the texture images
     hom<view>.transformation<proj> projection = mat4.create();
-    mat4.perspective(projection, Math.PI/2., 1., 1., 300.);  // Set projection to give 90-degree field of view.
+    perspective(projection, Math.PI/2., 1., 1., 300.);  // Set projection to give 90-degree field of view.
 
     hom<world>.transformation<view> view = mat4.create();
 
