@@ -114,6 +114,7 @@ void renderSkyboxAndCubes(hom<view>.transformation<proj> projection, hom<world>.
 
     hom<model>.transformation<view> modelview = mat4.create();
     mat4.multiply(modelview, model, view);
+    // multiply(modelview, model, view);
 
     // Position the light source for the lighting effect.
     vec4 light = vec4.fromValues(0., 30., 0., 0.);
@@ -126,6 +127,8 @@ void renderSkyboxAndCubes(hom<view>.transformation<proj> projection, hom<world>.
     // Set the shader "uniform" parameters.
     gl.uniformMatrix4fv(loc_uProjectionOBJ, false, projection);
     gl.uniformMatrix4fv(loc_uViewOBJ, false, view);
+
+    lgl.drawCubes(gl, model, frameNumber, loc_uModelOBJ, cubeMesh);
 
     gl.disableVertexAttribArray(loc_aPositionOBJ);
     gl.disableVertexAttribArray(loc_aNormalOBJ);
