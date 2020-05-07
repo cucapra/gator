@@ -523,8 +523,8 @@ declare void gl.clear(int b);
 declare void gl.bindTexture(float f1, NullableTexture f2);
 declare void gl.bindFramebuffer(float f1, void f2);
 declare void gl.bindFramebuffer(float f1, NullableTexture f2);
-declare bool gl.COLOR_BUFFER_BIT;
-declare bool gl.DEPTH_BUFFER_BIT;
+declare int gl.COLOR_BUFFER_BIT;
+declare int gl.DEPTH_BUFFER_BIT;
 declare float gl.TEXTURE_CUBE_MAP;
 declare float gl.FRAMEBUFFER;
 declare float gl.COLOR_ATTACHMENT0;
@@ -566,6 +566,7 @@ declare void lgl.bind_attrib_buffer(WebGLRenderingContext gl, float someFloat, W
 declare lgl.Mesh lgl.getCube(WebGLRenderingContext gl, float f1, float f2, float f3, float f4, float f5);
 declare void lgl.drawCubes(WebGLRenderingContext gl, float[4][4] model, int frameNumber, WebGLUniformLocation loc_uModelOBJ, lgl.Mesh cubeMesh);
 declare void lgl.loadSkyboxImages(WebGLRenderingContext gl, string[6] urls, NullableTexture skyboxCubemap);
+declare int lgl.bitwiseOR(int n1, int n2);
 //html
 declare type HTMLCanvasElement;
 declare float canvas.width;

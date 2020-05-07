@@ -17,9 +17,6 @@ declare type WebGLRenderbuffer;
 
 //Dirty hacks
 declare void null;
-declare HTMLImageElement[6] img;
-
-
 
 //Globals
 const WebGLRenderingContext gl;
@@ -77,11 +74,7 @@ declare WebGLBuffer teapot.normals;
 
 void renderSkyboxAndCubes(hom<view>.transformation<proj> projection, hom<world>.transformation<view> view){
     gl.clearColor(0,0,0,1);
-    // int comparison = 0;
-    // if(gl.COLOR_BUFFER_BIT){ comparison = 1;}
-    // if(gl.DEPTH_BUFFER_BIT){ comparison = 1;}
-    // gl.clear(comparison);
-    #"gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);"; //Lack of bitwise OR
+    gl.clear(lgl.bitwiseOR(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT));
 
     // Draw the skybox, with its static cubemap texture.
     gl.useProgram(programSB);
@@ -95,8 +88,7 @@ void renderSkyboxAndCubes(hom<view>.transformation<proj> projection, hom<world>.
     lgl.bind_attrib_buffer(gl, loc_aPositionSB, skybox.positions, 3);
 
     gl.clearColor(0,0,0,1);
-    // gl.clear(comparison);
-    #"gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);"; //Lack of bitwise OR
+    gl.clear(lgl.bitwiseOR(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT));
 
     gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxCubemap);
 
@@ -184,13 +176,6 @@ void render(hom<world>.transformation<view> view, hom<view>.transformation<proj>
     createDynamicCubemap();
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);  // draw to screen
-    // let canvases = document.getElementsByTagName('canvas');
-    // if (canvases.length === 0) {
-    //   throw "no canvas found";
-    // }
-    // let canvas = canvases[0] as HTMLCanvasElement;
-    
-    // #"canvas = document.getElementsByTagName('canvas')[0] as HTMLCanvasElement;"; //Difficulty with the HTMLCollectionOf<HTMLCanvasElement> type
     canvas = lgl.getCanvas();
     gl.viewport(0.,0.,canvas.width,canvas.height);
 
@@ -269,18 +254,6 @@ void main(){
 
     cubeMesh = lgl.getCube(gl, 10., 10., 10., 1., 1.);
 
-    // let movingCubeData: MovingCube[] = [];
-    // for (var i = 0; i <= 3; i++) {
-    //   movingCubeData.push(new MovingCube(i));
-    //   vec3.normalize(movingCubeData[i].localRotationAxis, movingCubeData[i].localRotationAxis);
-    //   vec3.normalize(movingCubeData[i].globalRotationAxis, movingCubeData[i].globalRotationAxis);
-    //   vec3.normalize(movingCubeData[i].translation, movingCubeData[i].translation);
-    //   vec3.scale(movingCubeData[i].translation, movingCubeData[i].translation, 30);
-    //   if (Math.random() < 0.5) {
-    //     movingCubeData[i].globalAngularVelocity *= -1;
-    //   }
-    // }
-
     // Compile our shaders.
     program = lgl.compileProgram(gl,
         require("./vertex.lgl"),
@@ -302,11 +275,8 @@ void main(){
     // Initialize the model position.
     model = mat4.create();
 
-    // mat4.scale(model, model, [4.0, 4., 4.]);
     scale(model, model, [4., 4., 4.]);
 
-    // int ct = 0;
-    // #"var img = new Array(6);"; //Difficulty with arrays of custom types
     string[6] urls = [
         require("../resources/park/posx.jpg"), require("../resources/park/negx.jpg"),
         require("../resources/park/posy.jpg"), require("../resources/park/negy.jpg"),
