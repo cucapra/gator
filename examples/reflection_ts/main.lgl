@@ -109,7 +109,7 @@ void renderSkyboxAndCubes(hom<view>.transformation<proj> projection, hom<world>.
     // multiply(modelview, model, view);
 
     // Position the light source for the lighting effect.
-    vec4 light = vec4.fromValues(0., 30., 0., 0.);
+    hom<world>.point light = vec4.fromValues(0., 30., 0., 0.);
 
     vec4 transformed = vec4.create();
     vec4.transformMat4(transformed, light, modelview);

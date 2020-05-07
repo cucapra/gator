@@ -196,6 +196,7 @@ prototype geometry {
     with frame() T2:
     with frame() T3:
     transformation<T3> multiply(transformation<T3> t0,transformation<T1> t1, transformation<T2> t2);
+    
 }
 
 // Coordinate Scheme Definitions
@@ -399,9 +400,9 @@ declare vec3 vec3.normalize(vec3 x, vec3 y);
 declare cart3<world>.point vec3.fromValues(float x, float y, float z);
 
 //vec4
-declare vec4 vec4.fromValues(float f1, float f2, float f3, float f4);
-declare vec4 vec4.create();
-declare vec4 vec4.transformMat4(vec4 f1, vec4 f2, float[4][4] f3);
+declare %(%(float)[4]) vec4.fromValues(float f1, float f2, float f3, float f4);
+declare %(%(float)[4]) vec4.create();
+declare vec4 vec4.transformMat4(float[4] f1, float[4] f2, float[4][4] f3);
 
 
 
