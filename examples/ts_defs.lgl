@@ -440,9 +440,8 @@ coordinate hom : geometry {
     }
     with frame(3) T1: 
     with frame(3) T2: 
-    with frame(3) T3: 
-    transformation<T3> multiply(transformation<T3> t0,transformation<T1> t1, transformation<T2> t2) {
-        return mat4.multiply(t0 as! mat4, t1 as! mat4, t2 as! mat4) as! transformation<T3>;
+    transformation<T2> multiply(transformation<T2> t0,this<T1>.transformation<T2> t1, transformation<T1> t2) {
+        return mat4.multiply(t0 as! mat4, t1 as! mat4, t2 as! mat4) as! transformation<T2>;
     }
     // point +(point p, vector v) {
     //     return (p as! vec4 + v as! vec4 * p[3]) as! point;
@@ -561,6 +560,7 @@ declare void gl.framebufferRenderbuffer(float f1, float f2, float f3, NullableTe
 declare WebGLProgram lgl.compileProgram(WebGLRenderingContext gl, string vertex, string fragment);
 declare WebGLUniformLocation lgl.uniformLoc(WebGLRenderingContext gl, WebGLProgram prog, string someName);
 declare float lgl.attribLoc(WebGLRenderingContext gl, WebGLProgram program, string someName);
+declare lgl.Mesh lgl.getTeapot(WebGLRenderingContext gl);
 declare lgl.Mesh lgl.getBunny(WebGLRenderingContext gl);
 declare void lgl.drawMesh(WebGLRenderingContext gl, lgl.Mesh someMesh);
 declare void lgl.bind_attrib_buffer(WebGLRenderingContext gl, float someFloat, WebGLBuffer someBuffer, int someSize);
