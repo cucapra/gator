@@ -304,9 +304,8 @@ void main(){
     // mat4.scale(model, model, [4.0, 4., 4.]);
     scale(model, model, [4., 4., 4.]);
 
-    int ct = 0;
-    // const HTMLImageElement[6] asdf;
-    #"var img = new Array(6);"; //Difficulty with arrays of custom types
+    // int ct = 0;
+    // #"var img = new Array(6);"; //Difficulty with arrays of custom types
     string[6] urls = [
         require("../resources/park/posx.jpg"), require("../resources/park/negx.jpg"),
         require("../resources/park/posy.jpg"), require("../resources/park/negy.jpg"),
@@ -329,28 +328,7 @@ void main(){
 
     skyboxCubemap = gl.createTexture();  // Create the texture object for the skybox
 
-    //Problems with: "new" keyword, dot accessor on an indexing lookup, first class functions
-    #"for (let i = 0; i <= 5; i++) {";
-    #"    img[i] = new Image();";
-    #"    img[i].onload = function() {";
-    #"    ct++;";
-    #"    if (ct == 6) {";
-    #"        gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxCubemap);";
-    #"        var targets = [";
-    #"        gl.TEXTURE_CUBE_MAP_POSITIVE_X, gl.TEXTURE_CUBE_MAP_NEGATIVE_X,";
-    #"        gl.TEXTURE_CUBE_MAP_POSITIVE_Y, gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,";
-    #"        gl.TEXTURE_CUBE_MAP_POSITIVE_Z, gl.TEXTURE_CUBE_MAP_NEGATIVE_Z";
-    #"        ];";
-    #"        for (var j = 0; j < 6; j++) {";
-    #"        gl.texImage2D(targets[j], 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img[j]);";
-    #"        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);";
-    #"        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);";
-    #"        }";
-    #"        gl.generateMipmap(gl.TEXTURE_CUBE_MAP);";
-    #"    }";
-    #"    }";
-    #"    img[i].src = urls[i];";
-    #"}";
+    lgl.loadSkyboxImages(gl, urls, skyboxCubemap);
 
     frameBuffer = gl.createFramebuffer();  // create the framebuffer that will draw to the reflection map
     gl.bindFramebuffer(gl.FRAMEBUFFER,frameBuffer);  // select the framebuffer, so we can attach the depth buffer to it

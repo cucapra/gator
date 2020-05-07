@@ -530,3 +530,30 @@ export function drawCubes(gl:WebGLRenderingContext, model:mat4, frameNumber:numb
       drawMesh(gl, cubeMesh);
   }
 }
+
+export function loadSkyboxImages(gl:WebGLRenderingContext, urls:string[], skyboxCubemap:WebGLTexture | null){
+  var img = new Array(6);
+  var ct = 0;
+
+  for (var i = 0; i < 6; i++) {
+    img[i] = new Image();
+    img[i].onload = function() {
+      ct++;
+      if (ct == 6) {
+        gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxCubemap);
+        var targets = [
+          gl.TEXTURE_CUBE_MAP_POSITIVE_X, gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+          gl.TEXTURE_CUBE_MAP_POSITIVE_Y, gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+          gl.TEXTURE_CUBE_MAP_POSITIVE_Z, gl.TEXTURE_CUBE_MAP_NEGATIVE_Z
+        ];
+        for (var j = 0; j < 6; j++) {
+          gl.texImage2D(targets[j], 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img[j]);
+          gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        }
+        gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+      }
+    }
+    img[i].src = urls[i];
+  }
+}
