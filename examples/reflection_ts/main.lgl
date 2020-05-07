@@ -105,7 +105,6 @@ void renderSkyboxAndCubes(hom<view>.transformation<proj> projection, hom<world>.
     lgl.bind_attrib_buffer(gl, loc_aPosition, cubeMesh.positions, 3);
 
     hom<model>.transformation<view> modelview = mat4.create();
-    // mat4.multiply(modelview, view,);
     multiply(modelview, view, model);
 
     // Position the light source for the lighting effect.
@@ -191,7 +190,6 @@ void render(hom<world>.transformation<view> view, hom<view>.transformation<proj>
 
     hom<model>.transformation<view> modelView = mat4.create();
     mat3 normalMatrix = mat3.create();
-    // mat4.multiply(modelView, view, model);
     multiply(modelView, view, model);
     mat3.normalFromMat4(normalMatrix, modelView);
     gl.uniformMatrix3fv(loc_uNormalMatrix, false, normalMatrix);
