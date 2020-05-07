@@ -18,79 +18,6 @@ declare type WebGLRenderbuffer;
 //Dirty hacks
 declare void null;
 declare HTMLImageElement[6] img;
-declare type any; // = WebGLTexture | null
-
-//Declare Functions
-//misc
-declare string require(string someModule);
-//mat3
-declare mat3 mat3.create();
-declare mat3 mat3.normalFromMat4(mat3 f1, float[4][4] f2);
-declare mat3 mat3.fromMat4(mat3 f1, float[4][4] f2);
-declare mat3 mat3.invert(mat3 f1, mat3 f2);
-//mat4
-// with mat4 T: declare T mat4.rotateY(T model1, T model2, float someFloat);
-with float[4][4] T: declare T mat4.multiply(T f1, T f2, T f3);
-declare mat4 mat4.perspective(float[4][4] f1, float f2, float f3, float f4, float f5);
-declare mat4 mat4.identity(float[4][4] f1);
-declare mat4 mat4.scale(float[4][4] f1, float[4][4] f2, float[3] f3);
-// declare mat4 mat4.rotateX(mat4 f1, mat4 f2, float f3);
-
-//vec3
-declare vec3 vec3.fromValues(float x, float y, float z);
-//vec4
-declare vec4 vec4.fromValues(float f1, float f2, float f3, float f4);
-declare vec4 vec4.create();
-declare vec4 vec4.transformMat4(vec4 f1, vec4 f2, float[4][4] f3);
-//gl
-with WebGLProgram T: declare void gl.useProgram(T someProgram);
-declare void gl.uniform3fv(WebGLUniformLocation loc1, vec3 someVec3);
-declare void gl.uniform4fv(WebGLUniformLocation f1, vec4 f2);
-// declare void gl.uniformMatrix4fv(WebGLUniformLocation someLoc, bool someBool, float[4][4] someMat4);
-declare void gl.disableVertexAttribArray(float f1);
-declare void gl.disable(int someInt);
-declare void gl.enable(int someInt);
-declare void gl.clearColor(int f1, int f2, int f3, int f4);
-declare void gl.clear(int b);
-declare void gl.bindTexture(float f1, any f2);
-// declare void gl.bindFramebuffer(float f1, WebGLFramebuffer f2);
-declare void gl.bindFramebuffer(float f1, void f2);
-declare void gl.bindFramebuffer(float f1, any f2);
-declare bool gl.COLOR_BUFFER_BIT;
-declare bool gl.DEPTH_BUFFER_BIT;
-declare float gl.TEXTURE_CUBE_MAP;
-declare float gl.FRAMEBUFFER;
-declare float gl.COLOR_ATTACHMENT0;
-declare float gl.TEXTURE_CUBE_MAP_NEGATIVE_Z;
-declare float gl.TEXTURE_CUBE_MAP_POSITIVE_X;
-declare float gl.TEXTURE_CUBE_MAP_POSITIVE_Z;
-declare float gl.TEXTURE_CUBE_MAP_NEGATIVE_X;
-declare float gl.TEXTURE_CUBE_MAP_POSITIVE_Y;
-declare float gl.TEXTURE_CUBE_MAP_NEGATIVE_Y;
-declare float gl.RGBA; 
-declare float gl.DEPTH_COMPONENT16; 
-declare float gl.DEPTH_ATTACHMENT; 
-declare int gl.UNSIGNED_BYTE;
-declare float gl.RENDERBUFFER;
-declare void gl.viewport(float f1, float f2, float f3, float f4);
-declare void gl.framebufferTexture2D(float f1, float f2, float f3, any f4, float f5);
-declare void gl.generateMipmap(float f1);
-declare void gl.uniformMatrix3fv(WebGLUniformLocation f1, bool f2, mat3 f3);
-declare void gl.texImage2D(float f1, float f2, float f3, float f4, float f5, float f6, float f7, int f8, void f9);
-declare any gl.createTexture();
-declare any gl.createFramebuffer();
-declare any gl.createRenderbuffer();
-declare void gl.bindRenderbuffer(float f1, any f2);
-declare void gl.renderbufferStorage(float f1, float f2, float f3, float f4);
-declare void gl.framebufferRenderbuffer(float f1, float f2, float f3, any f4);
-//lgl
-declare WebGLProgram lgl.compileProgram(WebGLRenderingContext gl, string vertex, string fragment);
-declare WebGLUniformLocation lgl.uniformLoc(WebGLRenderingContext gl, WebGLProgram prog, string someName);
-declare float lgl.attribLoc(WebGLRenderingContext gl, WebGLProgram program, string someName);
-declare lgl.Mesh lgl.getBunny(WebGLRenderingContext gl);
-declare void lgl.drawMesh(WebGLRenderingContext gl, lgl.Mesh someMesh);
-declare void lgl.bind_attrib_buffer(WebGLRenderingContext gl, float someFloat, WebGLBuffer someBuffer, int someSize);
-declare lgl.Mesh lgl.getCube(WebGLRenderingContext gl, float f1, float f2, float f3, float f4, float f5);
 
 
 
@@ -112,7 +39,7 @@ const WebGLUniformLocation loc_uLight;
 const WebGLUniformLocation loc_uLightOBJ;
 const WebGLUniformLocation loc_uNormalMatrix;
 const WebGLUniformLocation loc_uInverseViewTransform;
-const any frameBuffer;
+const NullableTexture frameBuffer;
 const float loc_aPosition;
 const float loc_aPositionOBJ;
 const float loc_aPositionSB;
@@ -120,27 +47,18 @@ const float loc_aNormal;
 const float loc_aNormalOBJ;
 const hom<model>.transformation<world> model;
 const hom<model>.transformation<world> modelSB;
-const any dynamicCubemap;
+const NullableTexture dynamicCubemap;
 const lgl.Mesh mesh;
 const lgl.Mesh teapot;
-const any skyboxCubemap;
+const NullableTexture skyboxCubemap;
 const HTMLCanvasElement canvas;
 const lgl.Mesh skybox;
 const int frameNumber;
-const any depthBuffer;
+const NullableTexture depthBuffer;
 
 //Declare globals
 declare WebGLBuffer mesh.normals;
 declare WebGLBuffer mesh.positions;
-// declare int gl.CULL_FACE;
-
-//Math
-declare float Math.PI;
-declare float /(float f1, float f2);
-declare float -(float f1);
-declare int +(int f1, int f2);
-declare bool <=(int x, int y);
-declare int ++(int x);
 
 //Skybox
 declare WebGLBuffer skybox.positions;
@@ -149,10 +67,6 @@ declare WebGLBuffer skybox.positions;
 const lgl.Mesh cubeMesh;
 declare WebGLBuffer cubeMesh.normals;
 declare WebGLBuffer cubeMesh.positions;
-
-//html
-declare float canvas.width;
-declare float canvas.height;
 
 //teapot
 declare WebGLBuffer teapot.positions;
@@ -225,35 +139,35 @@ void createDynamicCubemap() {
 
     hom<world>.transformation<view> view = mat4.create();
 
-    mat4.identity(view);
-    mat4.scale(view,view,[-1.,-1.,1.]);
+    identity(view);
+    scale(view, view,[-1.,-1.,1.]);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, dynamicCubemap, 0.);
     renderSkyboxAndCubes(projection, view);
 
-    mat4.identity(view);
-    mat4.scale(view,view,[-1.,-1.,1.]);
+    identity(view);
+    scale(view, view,[-1.,-1.,1.]);
     rotateY(view,view,Math.PI/2.);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_POSITIVE_X, dynamicCubemap, 0.);
     renderSkyboxAndCubes(projection, view);
 
-    mat4.identity(view);
-    mat4.scale(view,view,[-1.,-1.,1.]);
+    identity(view);
+    scale(view, view,[-1.,-1.,1.]);
     rotateY(view,view,Math.PI);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_POSITIVE_Z, dynamicCubemap, 0.);
     renderSkyboxAndCubes(projection, view);
 
-    mat4.identity(view);
-    mat4.scale(view,view,[-1.,-1.,1.]);
+    identity(view);
+    scale(view, view,[-1.,-1.,1.]);
     rotateY(view,view,Math.PI/2.);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_NEGATIVE_X, dynamicCubemap, 0.);
     renderSkyboxAndCubes(projection, view);
 
-    mat4.identity(view);
+    identity(view);
     rotateX(view,view,Math.PI/2.);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, dynamicCubemap, 0.);
     renderSkyboxAndCubes(projection, view);
 
-    mat4.identity(view);
+    identity(view);
     rotateX(view,view,Math.PI/2.);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_POSITIVE_Y, dynamicCubemap, 0.);
     renderSkyboxAndCubes(projection, view);
@@ -384,7 +298,8 @@ void main(){
     // Initialize the model position.
     model = mat4.create();
 
-    mat4.scale(model, model, [4.0, 4., 4.]);
+    // mat4.scale(model, model, [4.0, 4., 4.]);
+    scale(model, model, [4., 4., 4.]);
 
     int ct = 0;
     // const HTMLImageElement[6] asdf;
