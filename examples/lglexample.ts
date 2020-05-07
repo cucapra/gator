@@ -568,7 +568,3 @@ export function loadSkyboxImages(gl:WebGLRenderingContext, urls:string[], skybox
 export function getCanvas(){
   return document.getElementsByTagName('canvas')[0] as HTMLCanvasElement;
 }
-
-export function bitwiseOR(n1:number, n2:number){
-  return n1 | n2;
-}

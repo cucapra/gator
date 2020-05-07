@@ -573,7 +573,7 @@ declare void lgl.bind_attrib_buffer(WebGLRenderingContext gl, float someFloat, W
 declare lgl.Mesh lgl.getCube(WebGLRenderingContext gl, float f1, float f2, float f3, float f4, float f5);
 declare void lgl.drawCubes(WebGLRenderingContext gl, float[4][4] model, int frameNumber, WebGLUniformLocation loc_uModelOBJ, lgl.Mesh cubeMesh);
 declare void lgl.loadSkyboxImages(WebGLRenderingContext gl, string[6] urls, NullableTexture skyboxCubemap);
-declare int lgl.bitwiseOR(int n1, int n2);
+
 //html
 declare type HTMLCanvasElement;
 declare float canvas.width;
@@ -588,6 +588,7 @@ declare int +(int f1, int f2);
 declare bool <=(int x, int y);
 declare int ++(int x);
 declare float Math.random();
+declare int |(int i1, int i2);
 
 //misc
 declare string require(string someModule);

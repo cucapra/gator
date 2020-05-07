@@ -74,7 +74,7 @@ declare WebGLBuffer teapot.normals;
 
 void renderSkyboxAndCubes(hom<view>.transformation<proj> projection, hom<world>.transformation<view> view){
     gl.clearColor(0,0,0,1);
-    gl.clear(lgl.bitwiseOR(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT));
+    gl.clear(gl.COLOR_BUFFER_BIT| gl.DEPTH_BUFFER_BIT);
 
     // Draw the skybox, with its static cubemap texture.
     gl.useProgram(programSB);
@@ -88,7 +88,7 @@ void renderSkyboxAndCubes(hom<view>.transformation<proj> projection, hom<world>.
     lgl.bind_attrib_buffer(gl, loc_aPositionSB, skybox.positions, 3);
 
     gl.clearColor(0,0,0,1);
-    gl.clear(lgl.bitwiseOR(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT));
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxCubemap);
 
