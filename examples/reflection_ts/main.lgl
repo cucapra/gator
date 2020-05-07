@@ -11,7 +11,7 @@ frame proj has dimension 3;
 //Declare Types
 declare type WebGLTexture;
 declare type WebGLFramebuffer;
-declare type HTMLCanvasElement;
+
 declare type HTMLImageElement;
 declare type WebGLRenderbuffer;
 
@@ -190,7 +190,8 @@ void render(hom<world>.transformation<view> view, hom<view>.transformation<proj>
     // }
     // let canvas = canvases[0] as HTMLCanvasElement;
     
-    #"canvas = document.getElementsByTagName('canvas')[0] as HTMLCanvasElement;"; //Difficulty with the HTMLCollectionOf<HTMLCanvasElement> type
+    // #"canvas = document.getElementsByTagName('canvas')[0] as HTMLCanvasElement;"; //Difficulty with the HTMLCollectionOf<HTMLCanvasElement> type
+    canvas = lgl.getCanvas();
     gl.viewport(0.,0.,canvas.width,canvas.height);
 
     renderSkyboxAndCubes(projection, view);

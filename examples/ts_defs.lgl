@@ -567,8 +567,10 @@ declare lgl.Mesh lgl.getCube(WebGLRenderingContext gl, float f1, float f2, float
 declare void lgl.drawCubes(WebGLRenderingContext gl, float[4][4] model, int frameNumber, WebGLUniformLocation loc_uModelOBJ, lgl.Mesh cubeMesh);
 declare void lgl.loadSkyboxImages(WebGLRenderingContext gl, string[6] urls, NullableTexture skyboxCubemap);
 //html
+declare type HTMLCanvasElement;
 declare float canvas.width;
 declare float canvas.height;
+declare HTMLCanvasElement lgl.getCanvas();
 
 //Math
 declare float Math.PI;

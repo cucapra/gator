@@ -557,3 +557,7 @@ export function loadSkyboxImages(gl:WebGLRenderingContext, urls:string[], skybox
     img[i].src = urls[i];
   }
 }
+
+export function getCanvas(){
+  return document.getElementsByTagName('canvas')[0] as HTMLCanvasElement;
+}
