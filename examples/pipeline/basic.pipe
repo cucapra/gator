@@ -1,13 +1,15 @@
 int factor;
 
 void main() {
-    state.current = doubler;
-    auto result = doubler(var1 = [1, 2, 3, 4, 5]);
-    result = doubler(var1 = result);
-    print result;
+    bind multiplier to state.current {
+        bind 3 to factor {
+            result = multiplier([1., 2., 3.]);
+            print result;
+        }
+    }   
 }
 
-program int doubler (int var1) {
+program int multiplier (int var1) {
     void main() {
         var2 = var1 * factor;
     }
