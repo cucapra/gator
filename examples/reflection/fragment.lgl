@@ -21,5 +21,5 @@ void main() {
     auto N = normalize(uNormalMatrix * vNormal);
     auto V = -(vPosition in view);
     auto R = -reflect(V,N);
-    auto gl_FragColor = textureCube(uSkybox, R in model);
+    gl_FragColor = textureCube(uSkybox, R in model);
 }

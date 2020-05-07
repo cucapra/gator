@@ -39,6 +39,9 @@ exception ParseException of string
 %token GEQ
 %token AND
 %token OR
+%token BITAND
+%token BITXOR
+%token BITOR
 %token NOT
 %token COMMA
 %token DOT
@@ -87,10 +90,14 @@ exception ParseException of string
 (* Precedences *)
 
 %left ID THIS
-%left AND OR
+%left OR
+%left AND
 %left NOT EQ LEQ GEQ LBRACK 
 %left LWICK RWICK 
 
+%left BITOR
+%left BITXOR
+%left BITAND
 %left PLUS MINUS
 %left TIMES DIV CTIMES 
 %left AS IN
@@ -164,7 +171,9 @@ let prototype_element ==
 
 let modification ==
   | WITH; t = typ; r = separated_list(COMMA, ID); COLON;
-    <With>
+    { With(t, r, false) }
+  | WITH; t2 = ID; LWICK; t1 = typ; COLON; 
+    { With(t1, [t2], true) }
   | CANON;
     { Canon }
   | DECLARE;
@@ -260,6 +269,7 @@ let dexp :=
     <DimNum>
   | x = ID;
     <DimVar>
+
 
 let typ :=
   | AUTOTYP;
@@ -387,6 +397,9 @@ let infix ==
   | EQ; { "==" }
   | LEQ; { "<=" }
   | GEQ; { ">=" }
+  | BITXOR; { "^" }
+  | BITOR; { "|" }
+  | BITAND; { "&" }
   | OR; { "||" }
   | AND; { "&&" }
 

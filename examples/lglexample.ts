@@ -273,14 +273,20 @@ export function load_obj(gl: WebGLRenderingContext, obj_src: string): Mesh {
 }
 
 export function load_texture(gl: WebGLRenderingContext, img_src: string) {
-  return load_texture_clamp(gl, img_src, gl.CLAMP_TO_EDGE);
+  return load_texture_number(gl, img_src, gl.TEXTURE0);
+}
+
+export function load_texture_number(gl: WebGLRenderingContext, 
+  img_src: string, tex_num: number) {
+  return load_texture_clamp(gl, img_src, tex_num, gl.CLAMP_TO_EDGE);
 }
 
 /**
  * Load image texture.
  * @param gl rendering context
  */
-export function load_texture_clamp(gl: WebGLRenderingContext, img_src: string, clamp: number) {
+export function load_texture_clamp(gl: WebGLRenderingContext, 
+  img_src: string, tex_num: number, clamp: number) {
   // Create a texture.
   // Asynchronously load an image
   var image = new Image();
@@ -288,6 +294,7 @@ export function load_texture_clamp(gl: WebGLRenderingContext, img_src: string, c
   var texture = gl.createTexture();
 
   image.addEventListener('load', function () {
+    gl.activeTexture(tex_num);
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
 

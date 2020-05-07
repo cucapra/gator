@@ -24,19 +24,16 @@ function main() {
   let loc_uProjection = lgl.uniformLoc(gl, program, 'uProjection');
   let loc_uView = lgl.uniformLoc(gl, program, 'uView');
   let loc_uModel = lgl.uniformLoc(gl, program, 'uModel');
-  let loc_aPosition = lgl.attribLoc(gl, program, 'aPosition');
-  let loc_uNormal = lgl.attribLoc(gl, location, 'uNormal');
+  // let loc_uNormal = lgl.uniformLoc(gl, program, 'uNormal');
 
-  
   // Texture things
-  let loc_aTexCoord = lgl.attribLoc(gl, program, 'aTexCoord');
-  let loc_uTexture = lgl.uniformLoc(gl, program, 'uTexture');
-  let loc_aDerivU = lgl.uniformLoc(gl, program, 'aDerivU');
-  let loc_aDerivV = lgl.uniformLoc(gl, program, 'aDerivV');
-  let loc_aNormal = lgl.uniformLoc(gl, program, 'aNormal');
-  let loc_aUv = lgl.uniformLoc(gl, program, 'aUv');
-
-
+  let loc_uTexture = lgl.uniformLoc(gl, program, 'uDiffuseTexture');
+  let loc_uBumpMap = lgl.uniformLoc(gl, program, 'uDisplacementMap');
+  let loc_aPosition = lgl.attribLoc(gl, program, 'aPosition');
+  // let loc_aDerivU = lgl.attribLoc(gl, program, 'aDerivU');
+  // let loc_aDerivV = lgl.attribLoc(gl, program, 'aDerivV');
+  let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
+  let loc_aUv = lgl.attribLoc(gl, program, 'aUv');
 
   // Read in lpshead obj
   // URL must be statically analyzable other than (__dirname) and (__filename)
@@ -48,7 +45,10 @@ function main() {
   let model = mat4.create();
 
   // Load image texture
-  lgl.load_texture(gl, earthmap1k);
+  lgl.load_texture_number(gl, earthmap1k, gl.TEXTURE0);
+
+  // Load bump map
+  lgl.load_texture_number(gl, earthbump1k, gl.TEXTURE1)
 
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
@@ -64,10 +64,12 @@ function main() {
     
     // Use texture unit 0 for uTexture
     gl.uniform1i(loc_uTexture, 0);
+    gl.uniform1i(loc_uBumpMap, 1);
   
     // Set the attribute arrays.
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
-    lgl.bind_attrib_buffer(gl, loc_aTexCoord, mesh.texcoords, 2);
+    lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.normals, 3);
+    lgl.bind_attrib_buffer(gl, loc_aUv, mesh.texcoords, 2);
     // lgl.bind_attrib_buffer(gl, loc_aDerivU, mesh.derivU, 2); // TODO 
    
     // Draw the object.

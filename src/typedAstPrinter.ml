@@ -49,6 +49,7 @@ let string_of_global_var ((s, t, i, v) : global_var) =
 let string_of_parameterization (pm : parameterization) : string = 
   Assoc.to_string string_of_typ pm
 
+(*Modified*)
 let rec string_of_comm (c: comm) : string =
   let block_string c = "{\n " ^ string_of_comm_list c ^ "}" in
   match c with
@@ -64,7 +65,7 @@ let rec string_of_comm (c: comm) : string =
     "if (" ^ string_of_texp b ^ ")" ^ block_string c1 
     ^ string_of_list (fun (b, c) -> "elif (" ^ string_of_texp b ^ ")" ^ block_string c) elif_list
     ^ string_of_option_removed (fun x -> "else " ^ block_string x) c2
-  | For (d, b, u, cl) -> "for (" ^ string_of_comm d ^ string_of_texp b ^ "; " 
+  | For (d, b, u, cl) -> "for (" ^ string_of_comm d ^ string_of_texp b ^ "; "
     ^ string_of_comm u ^ ") " ^ block_string cl
   | Return x -> "return" ^ string_of_option_removed (fun x -> " " ^ string_of_texp x) x ^ ";"
   | ExactCodeComm ec -> ec

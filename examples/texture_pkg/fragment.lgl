@@ -1,8 +1,11 @@
-declare vec4 texture2D(sampler2D txt, vec2 texCoord);
+#"precision mediump float;";
+using "../glsl_defs.lgl";
 
-uniform sampler2D uTexture;
+type alphaColor is vec4;
+
+uniform sampler2D<alphaColor> uTexture;
 varying vec2 vTexCoord;
 
 void main() {
-  vec4 gl_FragColor = texture2D(uTexture, vTexCoord);
+  alphaColor gl_FragColor = texture2D(uTexture, vTexCoord);
 }
