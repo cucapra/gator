@@ -103,13 +103,14 @@ vec3 promote(float f) {
 }
 
 void main() {
-  vec4 gl_FragColor = vec4(0., 0., 0., 1.);
+  	alphaColor final_color = [0., 0., 0., 1.];
 	auto i = normalize(light_eyePosition - geom_position);
 	auto o = normalize(-geom_position);
 	auto m = get_halfdir(i, o);
 	auto n = geom_normal;
 	auto kd = getDiffuseColor();
-	gl_FragColor += alphatize(
+	final_color += alphatize(
 		(kd + promote(F(i,m) * D(m,n) * G(i,o,m,n) / (4.0 * abs (dot(i,n)) * abs(dot(o,n))))) * max(0., dot(n,i)) 
 		* I(light_color, light_eyePosition, geom_position, light_attenuation));
+	gl_FragColor = final_color;
 }

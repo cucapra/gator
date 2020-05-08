@@ -16,8 +16,6 @@ export type Vec3Array = [number, number, number][];
 
 let app = {thing: mat4.create()}
 
-app = {thing : mat4.create()}
-
 /**
  * Compile a single GLSL shader source file.
  */

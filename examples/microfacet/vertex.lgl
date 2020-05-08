@@ -29,5 +29,5 @@ void main() {
   geom_texCoord = aTexCoord;
   // geom_tangent = aTangent in view;
   // geom_bitangent = aBitangent in view;
-  auto gl_Position = aPosition in hom<proj>;
+  gl_Position = aPosition in hom<proj>;
 }
