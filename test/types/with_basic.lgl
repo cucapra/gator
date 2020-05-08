@@ -1,0 +1,10 @@
+type meters is float;
+with T < float: T +(T x, T y);
+
+void main(){
+    meters a = 27.0;
+    meters b = 12.5;
+
+    auto c = a + b;
+    print c;
+}

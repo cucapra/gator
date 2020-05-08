@@ -66,5 +66,5 @@ void main() {
   color phong_color = phong_light(uLight, vPosition in world, normalize(vNormal in world), 
     uBaseColor, uSpecStrength, .08, .0001);
 
-  auto gl_FragColor = extendColor(ambient + phong_color * amountInLight);
+  gl_FragColor = extendColor(ambient + phong_color * amountInLight);
 }

@@ -1,3 +1,5 @@
+#"precision mediump float;";
+
 using "../glsl_defs.lgl";
 
 frame model has dimension 3;
@@ -5,14 +7,14 @@ frame world has dimension 3;
 frame camera has dimension 3;
 frame projective has dimension 3;
 
+
 attribute cart3<model>.point aPosition;
+varying cart3<model>.point vPosition;
 canon uniform hom<camera>.transformation<projective> uProjection;
 canon uniform hom<world>.transformation<camera> uView;
 canon uniform hom<model>.transformation<world> uModel;
-attribute vec2 aTexCoord;
-varying vec2 vTexCoord;
 
 void main() {
-  vTexCoord = aTexCoord;
+  vPosition = aPosition;
   auto gl_Position = aPosition in hom<projective>;
 }
