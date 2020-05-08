@@ -39,8 +39,8 @@ float specStrength, float linear, float quad) {
     if (0. <= lambertian) {
         specular = pow(max(0., dot(normalize(-fragPos), reflectDir)), 32.);
     }
-    float distance = length(lightPos - fragPos);
-    auto temp = (linear * distance + quad * distance * distance);
+    float dist = length(lightPos - fragPos);
+    auto temp = (linear * dist + quad * dist * dist);
     float attenuation = 1.0 / temp;
     auto tempColor = (lambertian * baseColor + specStrength * specular * [1., 1., 1.]);
     return tempColor * attenuation;

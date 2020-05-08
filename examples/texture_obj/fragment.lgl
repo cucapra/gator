@@ -7,5 +7,5 @@ uniform sampler2D<alphaColor> uTexture;
 varying vec2 vTexCoord;
 
 void main() {
-  alphaColor gl_FragColor = texture2D(uTexture, vTexCoord);
+  gl_FragColor = texture2D(uTexture, vTexCoord);
 }

@@ -25,7 +25,7 @@ varying cart2<tex>.point vUv;
 varying cart3<model>.normalTransformation<view> vNormalMatrix;
 
 void main() {
-  auto gl_Position = aPosition in hom<projection>;
+  gl_Position = aPosition in hom<projection>;
   vUv = aUv;
   vNormal = aNormal;
   vPosition = aPosition in world;

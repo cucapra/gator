@@ -29,5 +29,5 @@ void main() {
   vShadowPos = hom_reduce(texUnitConverter * (aPosition in hom<lightProjective>));
   vPosition = aPosition;
   vNormal = aNormal;
-  auto gl_Position = aPosition in hom<projective>;
+  gl_Position = aPosition in hom<projective>;
 }

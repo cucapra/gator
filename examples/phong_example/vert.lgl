@@ -26,5 +26,5 @@ canon hom<projection>.vector app_uMVP(hom<model>.vector v) {
 void main() {
   vPos = aPos;
   vNormal = aNormal;
-  auto gl_Position = aPos in hom<projection>;
+  gl_Position = aPos in hom<projection>;
 }

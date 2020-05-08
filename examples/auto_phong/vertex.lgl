@@ -5,6 +5,7 @@ using "../glsl_defs.lgl";
 frame model has dimension 3;
 frame world has dimension 3;
 frame camera has dimension 3;
+<<<<<<< HEAD
 frame proj has dimension 3;
 
 attribute cart3<model>.point aPosition;
@@ -12,11 +13,24 @@ attribute cart3<model>.vector aNormal;
 varying cart3<model>.point vPosition;
 varying cart3<model>.vector vNormal;
 canon uniform hom<camera>.transformation<proj> uProjection;
+=======
+frame projective has dimension 3;
+
+attribute cart3<model>.vector aNormal;
+attribute cart3<model>.point aPosition;
+varying cart3<model>.vector vNormal;
+varying cart3<model>.point vPosition;
+canon uniform hom<camera>.transformation<projective> uProjection;
+>>>>>>> 8b730935d4a4b2f1ade0569d5b7b36b36b5176e2
 canon uniform hom<world>.transformation<camera> uView;
 canon uniform hom<model>.transformation<world> uModel;
 
 void main() {
   vNormal = aNormal;
   vPosition = aPosition;
+<<<<<<< HEAD
   auto gl_Position = homify(aPosition in proj);
+=======
+  gl_Position = aPosition in hom<projective>;
+>>>>>>> 8b730935d4a4b2f1ade0569d5b7b36b36b5176e2
 }

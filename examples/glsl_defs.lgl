@@ -6,6 +6,7 @@ declare type mat2 is float[2][2];
 declare type mat3 is float[3][3];
 declare type mat4 is float[4][4];
 declare float[4] gl_FragColor;
+declare float[4] gl_Position;
 with float[4] T:
 declare type sampler2D;
 with float[4] T:
