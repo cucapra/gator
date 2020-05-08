@@ -56,7 +56,6 @@ with vec3 T: declare T *(T v1, T v2);
 with vec3 T: with float U: declare T *(T v, U f);
 with vec3 T: with float U: declare T *(U f, T v);
 with vec3 T: with float U: declare T /(T f1, U f2);
-declare vec3 *(vec3 v, vec3 f);
 
 with vec4 T: declare T +(T v1, T v2);
 with vec4 T: declare T -(T v1, T v2);
@@ -125,12 +124,19 @@ declare T textureCube(samplerCube<T> texture, float[3] coord);
 declare vec2 vec2(float x, float y);
 declare vec3 vec3(float x, float y, float z);
 declare vec4 vec4(float x, float y, float z, float w);
-with float T: declare vec3 vec3(T f);
-with float[4] T: declare vec3 vec3(T v);
-with float T: declare vec4 vec4(T f);
-with float[3] T: with float U: declare vec4 vec4(T v, U f);
-with float[4][4] T: declare mat3 mat3(T v);
-with float[3][3] T: declare mat4 mat4(T v);
+declare vec2 vec2(float x);
+declare vec2 vec2(float[3] v);
+declare vec2 vec2(float[4] v);
+declare vec3 vec3(float x);
+declare vec3 vec3(float[2] v, float z);
+declare vec3 vec3(float[4] v);
+declare vec4 vec4(float[2] v, float x, float y);
+declare vec4 vec4(float[2] v1, float[2] v2);
+declare vec4 vec4(float[3] v, float x);
+declare vec4 vec4(float x);
+
+declare mat3 mat3(float[4][4] v);
+declare mat4 mat4(float[3][3] v);
 
 with vec2 T: declare float dot(T v1, T v2);
 with vec3 T: declare float dot(T v1, T v2);

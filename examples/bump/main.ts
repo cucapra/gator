@@ -68,7 +68,7 @@ function main() {
   
     // Set the attribute arrays.
     lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
-    lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.normals, 3);
+    lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
     lgl.bind_attrib_buffer(gl, loc_aUv, mesh.texcoords, 2);
     // lgl.bind_attrib_buffer(gl, loc_aDerivU, mesh.derivU, 2); // TODO 
    
