@@ -14,5 +14,5 @@ varying vec2 vTexCoord;
 
 void main() {
   vTexCoord = aTexCoord;
-  auto gl_Position = aPosition in hom<projective>;
+  gl_Position = aPosition in hom<projective>;
 }

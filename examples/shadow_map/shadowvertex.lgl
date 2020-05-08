@@ -13,5 +13,5 @@ canon uniform hom<world>.transformation<light> uLightView;
 canon uniform hom<light>.transformation<lightProjective> uLightProjection;
 
 void main() {
-    auto gl_Position = aPosition in hom<lightProjective>;
+    gl_Position = aPosition in hom<lightProjective>;
 }
