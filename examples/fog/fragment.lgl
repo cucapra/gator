@@ -1,0 +1,99 @@
+#"precision mediump float;";
+using "../glsl_defs.lgl";
+
+type color is vec3;
+type alphaColor is vec4;
+
+
+// Reference Frame Declarations
+
+frame model has dimension 3;
+frame world has dimension 3;
+frame camera has dimension 3;
+frame light has dimension 3;
+
+// Global Variables
+
+varying cart3<model>.point vPosition;
+canon uniform hom<model>.transformation<world> uModel;
+canon uniform hom<world>.transformation<camera> uView;
+varying cart3<model>.vector vNormal;
+uniform cart3<light>.point uLight;
+uniform cart3<light>.point uViewPoint;
+canon uniform hom<light>.transformation<world> uLightTrans;
+
+
+declare float atan(float f1, float f2);
+// declare vec3 cross(vec3 a, vec3 b);
+declare float[3] crossmanual(float[3] a, float[3] b);
+
+vec3 crossmanual(float[3] a, float[3] b) {
+  return vec3(a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]);
+}
+// with float[1] T: declare T acos(T f);
+
+// float[3] cross(float[3] x, float[3] y);
+// float[3] cross(float[3] x, float[3] y);
+// float atan(float x, float y);
+// Shader Code
+
+// float[3] cross(float[3] x, float[3] y) {
+//     return  cross(x as! vec3, y as! vec3));
+// }
+// float atan(float x, float y) {
+//     return (atan(x,y)) as! float;
+// }
+
+void main() {
+    color ambient = [.1, 0., 0.];
+    color diffColor = [0.2, 0.8, 0.4];
+    color specColor = [1.0, 1.0, 1.0];
+
+    auto worldPos = vPosition in world;
+    auto camPos = worldPos in camera;
+    auto worldNorm = normalize(vNormal in world);
+
+    auto lightDir = normalize((uLight in world) - worldPos);
+    auto lightWorldDot = dot(lightDir, worldNorm);
+    scalar diffuse = max(lightWorldDot, 0.0);
+
+    auto reflectDir = normalize(reflect(-lightDir, worldNorm) in camera);
+
+    scalar specular = pow(max(dot(normalize(-camPos), reflectDir), 0.), 32.);
+
+
+    //Note: C = camera, A = light, B = object
+    // cart3<world>.point objectPos = vPosition in world;
+    // cart3<world>.point lightPos = (uLight in world) - objectPos;
+    // cart3<world>.point viewPos = uViewPoint in world;
+    // vec3 BA = (lightPos - objectPos) as! vec3;
+    // // cart3<world>.vector BC = viewPos - objectPos;
+    // vec3 BC = (viewPos - objectPos) as! vec3;
+
+    // float bcMagnitude = length(BC);
+    // float H = length(crossmanual(BA, BC));
+    // float r = atan(bcMagnitude, H)/H;
+    // vec4 rvec = vec4(r,r,r, 1.0);
+    // gl_FragColor = rvec;
+
+//----------
+
+    //worldPos
+    auto lightPos = (uLight in world) - (worldPos);//vector
+    auto viewPos = uViewPoint in world;
+    // // vec3 BA = vec3(lightPos.x - worldPos, lightPos[0] - worldPos[0], lightPos[0] - worldPos[0]) ;
+    auto BA = lightPos - (worldPos - [.0,.0,.0]);
+    auto BC = viewPos - worldPos;
+    // // float test = BA[0];
+    float bcMagnitude = length(BC);
+    float H = length(crossmanual(BA, BC));
+    float fogVal = atan(bcMagnitude, H)/H;
+    float fogStr = 100.0;
+    float r = fogVal*fogStr;
+
+    vec3 rvec = vec3(r,r,r);
+    // gl_FragColor = rvec;
+    // gl_FragColor = vec4(ambient + r*diffuse * diffColor, 1.0);
+    // gl_FragColor = vec4(ambient + (diffuse * diffColor)*r, 1.0);
+    gl_FragColor = vec4((ambient + diffuse * diffColor + specular * specColor)*r, 1.0);
+}
