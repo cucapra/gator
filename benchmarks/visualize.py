@@ -11,6 +11,7 @@ import os.path
 import statsmodels.stats.weightstats as sm
 
 DELTA = 1.0  # Tolerance for the TOST.
+ALPHA = 0.01  # p-value threshold.
 FILE_NAME = 'data/run.json'
 if len(sys.argv) > 1:
     FILE_NAME = sys.argv[1]
@@ -53,10 +54,13 @@ for bench in bench_names:
         alternative='smaller',
         value=DELTA,
     )[1]
-    print(f" TOST p: smaller {p_left:.1e} larger {p_right:.1e}")
+    print(f" TOST  : smaller {p_left:.3f} larger {p_right:.3f}")
 
     # Now, if we have *rejected* both of the null hypotheses, we know
     # that the difference is smaller than DELTA in both directions.
+    p_tost = max(p_left, p_right)
+    print(f" TOST p: {p_tost:.2f} " +
+          ("*" if p_tost < ALPHA else ""))
 
     print('---------')
 
