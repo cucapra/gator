@@ -1,0 +1,28 @@
+using "../..//glsl_defs.lgl";
+
+frame model has dimension 3;
+frame world has dimension 3;
+frame camera has dimension 3;
+frame projective has dimension 3;
+
+attribute cart3<model>.point aPosition;
+uniform hom<camera>.transformation<projective> uProjection;
+uniform hom<world>.transformation<camera> uView;
+uniform hom<model>.transformation<world> uModel;
+attribute vec2 aTexCoord;
+varying vec2 vTexCoord;
+
+canon hom<world>.point app_uModel(hom<model>.point v) {
+    return uModel * v;
+}
+canon hom<camera>.point app_uView(hom<world>.point v) {
+    return uView * v;
+}
+canon hom<projective>.point app_uLightTrans(hom<camera>.point v) {
+    return uProjection * v;
+}
+
+void main() {
+  vTexCoord = aTexCoord;
+  auto gl_Position = aPosition in hom<projective>;
+}
