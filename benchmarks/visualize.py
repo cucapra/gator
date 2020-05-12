@@ -1,5 +1,6 @@
 import matplotlib.patches as mpatches
 import scipy.stats
+from scipy.stats import sem
 import json
 import numpy as np
 import seaborn as sns
@@ -7,7 +8,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sys
 import os.path
+import statsmodels.stats.weightstats as sm
 
+DELTA = 1.0  # Tolerance for the TOST.
+ALPHA = 0.05  # p-value threshold.
 FILE_NAME = 'data/run.json'
 if len(sys.argv) > 1:
     FILE_NAME = sys.argv[1]
@@ -18,29 +22,52 @@ df = pd.DataFrame([(d, *(tup[1:])) for tup in df1.itertuples()
                    for d in tup.fpsData])
 df.columns = ['frame'] + list(df1.columns)
 bench_names = list(set(list(df['bench_name'])))
-for bench in bench_names:
+for bench in sorted(bench_names):
     data_raw = df.loc[(df['shader'] == 'raw') & (
         df['bench_name'] == bench)]['frame']
     data_default = df.loc[(df['shader'] ==
                            'default') & (df['bench_name'] == bench)]['frame']
     data_raw, data_default = list(data_raw), list(data_default)
-    diff = []
-    for i in range(len(data_raw)):
-        diff.append(data_raw[i] - data_default[i])
 
     print(bench)
-    print(f"Means \n GLSL: {np.mean(data_raw)} Gator: {np.mean(data_default)}")
-    print(f" Ttest : {scipy.stats.ttest_ind(data_raw, data_default).pvalue}")
-    print(f" Wilcox: {scipy.stats.wilcoxon(data_raw, data_default).pvalue}")
-    print(np.mean(diff))
-    print(np.std(diff))
-    low = -.1
-    upp = .1
-    pv1 = scipy.stats.ttest_1samp(diff, low).pvalue
-    pv2 = scipy.stats.ttest_1samp(diff, upp).pvalue
-    print(pv1)
-    print(pv2)
-    print(f" TOST  : {max(pv1,pv2) / 2.}")
+    print(f"Means  : "
+          f"GLSL {np.mean(data_raw):.2f} ± {sem(data_raw):.2f}  "
+          f"Gator {np.mean(data_default):.2f} ± {sem(data_default):.2f}")
+    print(f" Diff  : {np.mean(data_raw) - np.mean(data_default) : .2f}")
+
+    # Difference of means tests.
+    p_t = scipy.stats.ttest_ind(data_raw, data_default).pvalue
+    p_wilcoxon = scipy.stats.wilcoxon(data_raw, data_default).pvalue
+    print(f" Ttest : {p_t:.3f} " +
+          ("*" if p_t < ALPHA else ""))
+    print(f" Wilcox: {p_wilcoxon:.3f} " +
+          ("*" if p_wilcoxon < ALPHA else ""))
+
+    # TOST! We first perform two one-tailed t-tests where the null
+    # hypothesis H0 is that the difference of means is *large* (so the
+    # alternative hypothesis H1 is that the difference is *small*). By
+    # using different alternative hypotheses and inverting the sign, we
+    # get one test in each "direction."
+    p_left = sm.ttest_ind(
+        data_raw,
+        data_default,
+        alternative='larger',
+        value=-DELTA,
+    )[1]
+    p_right = sm.ttest_ind(
+        data_raw,
+        data_default,
+        alternative='smaller',
+        value=DELTA,
+    )[1]
+    print(f" TOST  : smaller {p_left:.3f} larger {p_right:.3f}")
+
+    # Now, if we have *rejected* both of the null hypotheses, we know
+    # that the difference is smaller than DELTA in both directions.
+    p_tost = max(p_left, p_right)  # Take the *worst* p-value.
+    print(f" TOST p: {p_tost:.3f} " +
+          ("*" if p_tost < ALPHA else ""))
+
     print('---------')
 
 # PLOT_TYPE = "bar"
