@@ -1,5 +1,6 @@
 import matplotlib.patches as mpatches
 import scipy.stats
+from scipy.stats import sem
 import json
 import numpy as np
 import seaborn as sns
@@ -7,7 +8,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sys
 import os.path
+import statsmodels.stats.weightstats as sm
 
+DELTA = 0.1  # Tolerance for the TOST.
 FILE_NAME = 'data/run.json'
 if len(sys.argv) > 1:
     FILE_NAME = sys.argv[1]
@@ -24,21 +27,36 @@ for bench in bench_names:
     data_default = df.loc[(df['shader'] ==
                            'default') & (df['bench_name'] == bench)]['frame']
     data_raw, data_default = list(data_raw), list(data_default)
-    diff = []
-    for i in range(len(data_raw)):
-        diff.append(data_raw[i] - data_default[i])
 
     print(bench)
-    print(f"Means \n GLSL: {np.mean(data_raw)} Gator: {np.mean(data_default)}")
+    print(f"Means\n"
+          f"GLSL: {np.mean(data_raw):.2f} ± {sem(data_raw):.2f}  "
+          f"Gator: {np.mean(data_default):.2f} ± {sem(data_default):.2f}")
     print(f" Ttest : {scipy.stats.ttest_ind(data_raw, data_default).pvalue}")
     print(f" Wilcox: {scipy.stats.wilcoxon(data_raw, data_default).pvalue}")
-    print(f" diff  : mean {np.mean(diff):.2f}, std {np.std(diff):.2f} "
-          f" stderr {scipy.stats.sem(diff):.2f}")
-    low = -.1
-    upp = .1
-    pv1 = scipy.stats.ttest_1samp(diff, low).pvalue
-    pv2 = scipy.stats.ttest_1samp(diff, upp).pvalue
-    print(f" TOST  : {max(pv1,pv2) / 2.:.2f} (pv1={pv1:.2f}, pv2={pv2:.2f})")
+
+    # TOST! We first perform two one-tailed t-tests where the null
+    # hypothesis H0 is that mean(x) - mean(y) > DELTA (and the
+    # alternative hypothesis H1 is that the differences is < DELTA), but
+    # swapping x and y so we test whether the difference exists in
+    # either direction.
+    left_p = sm.ttest_ind(
+        data_raw,
+        data_default,
+        alternative='smaller',
+        value=DELTA,
+    )[1]
+    right_p = sm.ttest_ind(
+        data_default,
+        data_raw,
+        alternative='smaller',
+        value=DELTA,
+    )[1]
+    print(f" TOST p: left {left_p:.2f} right {right_p:.2f}")
+
+    # Now, if we have *rejected* both of those tests, we know that the
+    # difference is smaller than DELTA in both directions.
+
     print('---------')
 
 # PLOT_TYPE = "bar"
