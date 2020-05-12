@@ -32,15 +32,13 @@ for bench in bench_names:
     print(f"Means \n GLSL: {np.mean(data_raw)} Gator: {np.mean(data_default)}")
     print(f" Ttest : {scipy.stats.ttest_ind(data_raw, data_default).pvalue}")
     print(f" Wilcox: {scipy.stats.wilcoxon(data_raw, data_default).pvalue}")
-    print(np.mean(diff))
-    print(np.std(diff))
+    print(f" diff  : mean {np.mean(diff):.2f}, std {np.std(diff):.2f} "
+          f" stderr {scipy.stats.sem(diff):.2f}")
     low = -.1
     upp = .1
     pv1 = scipy.stats.ttest_1samp(diff, low).pvalue
     pv2 = scipy.stats.ttest_1samp(diff, upp).pvalue
-    print(pv1)
-    print(pv2)
-    print(f" TOST  : {max(pv1,pv2) / 2.}")
+    print(f" TOST  : {max(pv1,pv2) / 2.:.2f} (pv1={pv1:.2f}, pv2={pv2:.2f})")
     print('---------')
 
 # PLOT_TYPE = "bar"
