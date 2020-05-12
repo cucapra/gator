@@ -22,7 +22,7 @@ df = pd.DataFrame([(d, *(tup[1:])) for tup in df1.itertuples()
                    for d in tup.fpsData])
 df.columns = ['frame'] + list(df1.columns)
 bench_names = list(set(list(df['bench_name'])))
-for bench in bench_names:
+for bench in sorted(bench_names):
     data_raw = df.loc[(df['shader'] == 'raw') & (
         df['bench_name'] == bench)]['frame']
     data_default = df.loc[(df['shader'] ==
@@ -58,8 +58,8 @@ for bench in bench_names:
 
     # Now, if we have *rejected* both of the null hypotheses, we know
     # that the difference is smaller than DELTA in both directions.
-    p_tost = max(p_left, p_right)
-    print(f" TOST p: {p_tost:.2f} " +
+    p_tost = max(p_left, p_right)  # Take the *worst* p-value.
+    print(f" TOST p: {p_tost:.3f} " +
           ("*" if p_tost < ALPHA else ""))
 
     print('---------')
