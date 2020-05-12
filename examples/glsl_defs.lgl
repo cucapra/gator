@@ -107,6 +107,7 @@ with vec2 T: declare T pow(T v, float f);
 with vec3 T: declare T pow(T v, float f);
 with vec4 T: declare T pow(T v, float f);
 with vec3 T: declare T pow(T v, T f);
+with vec2 T: declare T cross(T v, T f);
 with vec3 T: declare T cross(T v, T f);
 with vec2 T: declare T floor(T v);
 with float T: declare T fract(T f);
@@ -179,6 +180,8 @@ prototype geometry {
     vector *(scalar s, vector v);
     point +(point p, vector v);
     point +(vector p, point v);
+    point -(point p, vector v);
+    vector -(vector p, point v);
     vector -(point x, point y);
     vector -(point x);
     with frame() target:
@@ -208,6 +211,7 @@ prototype geometry {
     normal normalNormalize(vector v);
     vector reflect(direction v1, direction v2);
     vector reflect(vector v1, direction v2);
+    vector cross(vector v1, vector v2);
     vector mix(vector v1, vector v2, vector v3);
 }
 
@@ -246,7 +250,13 @@ coordinate cart2 : geometry {
         return (p as! vec2 + v as! vec2) as! point;
     }
     point +(vector v, point p) {
-        return (p as! vec2 + v as! vec2) as! point;
+        return (v as! vec2 + p as! vec2) as! point;
+    }
+    point -(point p, vector v) {
+        return (p as! vec2 - v as! vec2) as! point;
+    }
+    vector -(vector v, point p) {
+        return (v as! vec2 - p as! vec2) as! vector;
     }
     vector -(point x, point y) {
         return (x as! vec2 - y as! vec2) as! vector;
@@ -295,6 +305,9 @@ coordinate cart2 : geometry {
     direction normalize(direction v) {
         return v;
     }
+    vector cross(vector v1, vector v2) {
+        return (cross(v1 as! vec2, v2 as! vec2) as! vector);
+    }
     canon normal normalNormalize(vector v) {
         return (normalize(v as! vec2) as! normal);
     }
@@ -342,7 +355,13 @@ coordinate cart3 : geometry {
         return (p as! vec3 + v as! vec3) as! point;
     }
     point +(vector v, point p) {
-        return (p as! vec3 + v as! vec3) as! point;
+        return (v as! vec3 + p as! vec3) as! point;
+    }
+    point -(point p, vector v) {
+        return (p as! vec3 - v as! vec3) as! point;
+    }
+    vector -(vector v, point p) {
+        return (v as! vec3 - p as! vec3) as! vector;
     }
     vector -(point x, point y) {
         return (x as! vec3 - y as! vec3) as! vector;
@@ -396,6 +415,9 @@ coordinate cart3 : geometry {
     // }
     vector reflect(direction v1, direction v2) {
         return (reflect(v1 as! vec3, v2 as! vec3) as! vector);
+    }
+    vector cross(vector v1, vector v2) {
+        return (cross(v1 as! vec3, v2 as! vec3) as! vector);
     }
     vector reflect(vector v1, direction v2) {
         return (reflect(v1 as! vec3, v2 as! vec3) as! vector);

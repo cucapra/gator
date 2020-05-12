@@ -25,11 +25,6 @@ canon uniform hom<light>.transformation<world> uLightTrans;
 
 declare float atan(float f1, float f2);
 // declare vec3 cross(vec3 a, vec3 b);
-declare float[3] crossmanual(float[3] a, float[3] b);
-
-vec3 crossmanual(float[3] a, float[3] b) {
-  return vec3(a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]);
-}
 // with float[1] T: declare T acos(T f);
 
 // float[3] cross(float[3] x, float[3] y);
@@ -45,7 +40,7 @@ vec3 crossmanual(float[3] a, float[3] b) {
 // }
 
 void main() {
-    color ambient = [.1, 0., 0.];
+    color ambient = [.1, 0.1, 0.1];
     color diffColor = [0.2, 0.8, 0.4];
     color specColor = [1.0, 1.0, 1.0];
 
@@ -79,14 +74,12 @@ void main() {
 //----------
 
     //worldPos
-    auto lightPos = (uLight in world) - (worldPos);//vector
+    auto lightVec = uLight in world - worldPos;//vector
     auto viewPos = uViewPoint in world;
-    // // vec3 BA = vec3(lightPos.x - worldPos, lightPos[0] - worldPos[0], lightPos[0] - worldPos[0]) ;
-    auto BA = lightPos - (worldPos - [.0,.0,.0]);
+    auto BA = lightVec - worldPos;
     auto BC = viewPos - worldPos;
-    // // float test = BA[0];
     float bcMagnitude = length(BC);
-    float H = length(crossmanual(BA, BC));
+    float H = length(cross(BA as! vec3, BC as! vec3));
     float fogVal = atan(bcMagnitude, H)/H;
     float fogStr = 100.0;
     float r = fogVal*fogStr;

@@ -41,7 +41,7 @@ void main() {
 
 
     //Setup potlight pointing towards the world center at all times
-    cart3<world>.direction spotlightDir = normalize(-uLight in world);
+    auto spotlightDir = normalize(-uLight in world);
     scalar thetaLimit = -.999;
     scalar dirDot = dot(lightDir, spotlightDir);
 
