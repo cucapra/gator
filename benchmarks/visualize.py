@@ -10,7 +10,7 @@ import sys
 import os.path
 import statsmodels.stats.weightstats as sm
 
-DELTA = 0.1  # Tolerance for the TOST.
+DELTA = 1.0  # Tolerance for the TOST.
 FILE_NAME = 'data/run.json'
 if len(sys.argv) > 1:
     FILE_NAME = sys.argv[1]
@@ -29,33 +29,34 @@ for bench in bench_names:
     data_raw, data_default = list(data_raw), list(data_default)
 
     print(bench)
-    print(f"Means\n"
-          f"GLSL: {np.mean(data_raw):.2f} ± {sem(data_raw):.2f}  "
-          f"Gator: {np.mean(data_default):.2f} ± {sem(data_default):.2f}")
+    print(f"Means  : "
+          f"GLSL {np.mean(data_raw):.2f} ± {sem(data_raw):.2f}  "
+          f"Gator {np.mean(data_default):.2f} ± {sem(data_default):.2f}")
+    print(f" Diff  : {np.mean(data_raw) - np.mean(data_default) : .2f}")
     print(f" Ttest : {scipy.stats.ttest_ind(data_raw, data_default).pvalue}")
     print(f" Wilcox: {scipy.stats.wilcoxon(data_raw, data_default).pvalue}")
 
     # TOST! We first perform two one-tailed t-tests where the null
-    # hypothesis H0 is that mean(x) - mean(y) > DELTA (and the
-    # alternative hypothesis H1 is that the differences is < DELTA), but
-    # swapping x and y so we test whether the difference exists in
-    # either direction.
-    left_p = sm.ttest_ind(
+    # hypothesis H0 is that the difference of means is *large* (so the
+    # alternative hypothesis H1 is that the difference is *small*). By
+    # using different alternative hypotheses and inverting the sign, we
+    # get one test in each "direction."
+    p_left = sm.ttest_ind(
+        data_raw,
+        data_default,
+        alternative='larger',
+        value=-DELTA,
+    )[1]
+    p_right = sm.ttest_ind(
         data_raw,
         data_default,
         alternative='smaller',
         value=DELTA,
     )[1]
-    right_p = sm.ttest_ind(
-        data_default,
-        data_raw,
-        alternative='smaller',
-        value=DELTA,
-    )[1]
-    print(f" TOST p: left {left_p:.2f} right {right_p:.2f}")
+    print(f" TOST p: smaller {p_left:.1e} larger {p_right:.1e}")
 
-    # Now, if we have *rejected* both of those tests, we know that the
-    # difference is smaller than DELTA in both directions.
+    # Now, if we have *rejected* both of the null hypotheses, we know
+    # that the difference is smaller than DELTA in both directions.
 
     print('---------')
 
