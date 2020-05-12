@@ -34,8 +34,14 @@ for bench in sorted(bench_names):
           f"GLSL {np.mean(data_raw):.2f} ± {sem(data_raw):.2f}  "
           f"Gator {np.mean(data_default):.2f} ± {sem(data_default):.2f}")
     print(f" Diff  : {np.mean(data_raw) - np.mean(data_default) : .2f}")
-    print(f" Ttest : {scipy.stats.ttest_ind(data_raw, data_default).pvalue}")
-    print(f" Wilcox: {scipy.stats.wilcoxon(data_raw, data_default).pvalue}")
+
+    # Difference of means tests.
+    p_t = scipy.stats.ttest_ind(data_raw, data_default).pvalue
+    p_wilcoxon = scipy.stats.wilcoxon(data_raw, data_default).pvalue
+    print(f" Ttest : {p_t:.3f} " +
+          ("*" if p_t < ALPHA else ""))
+    print(f" Wilcox: {p_wilcoxon:.3f} " +
+          ("*" if p_wilcoxon < ALPHA else ""))
 
     # TOST! We first perform two one-tailed t-tests where the null
     # hypothesis H0 is that the difference of means is *large* (so the
