@@ -11,7 +11,7 @@ import os.path
 import statsmodels.stats.weightstats as sm
 
 DELTA = 1.0  # Tolerance for the TOST.
-ALPHA = 0.01  # p-value threshold.
+ALPHA = 0.05  # p-value threshold.
 FILE_NAME = 'data/run.json'
 if len(sys.argv) > 1:
     FILE_NAME = sys.argv[1]
