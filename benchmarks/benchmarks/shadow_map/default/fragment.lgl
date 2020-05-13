@@ -1,3 +1,5 @@
+#"precision mediump float;";
+
 using "../../glsl_defs.lgl";
 
 type color is vec3;
@@ -14,31 +16,18 @@ uniform sampler2D<alphaColor> uTexture;
 varying cart3<model>.point vPosition;
 varying cart3<model>.vector vNormal;
 varying cart3<lightProjective>.point vShadowPos;
-uniform hom<model>.transformation<world> uModel;
-uniform hom<world>.transformation<camera> uCamera;
+canon uniform hom<model>.transformation<world> uModel;
+canon uniform hom<world>.transformation<camera> uCamera;
 uniform cart3<world>.point uLight;
 uniform color uBaseColor;
 uniform float uSpecStrength;
-
-canon hom<world>.point app_uModel(hom<model>.point v) {
-    return uModel * v;
-}
-canon hom<world>.vector app_uModel(hom<model>.vector v) {
-    return uModel * v;
-}
-canon hom<camera>.point app_uView(hom<world>.point v) {
-    return uCamera * v;
-}
-canon hom<camera>.vector app_uView(hom<world>.vector v) {
-    return uCamera * v;
-}
 
 alphaColor extendColor(color c) {
   return vec4(c, 1.) as! alphaColor;
 }
 
 float decodeFloat (alphaColor c) {
-  alphaColor bitShift = [1.0 / (16777216.), 1.0 / (65536.), 1.0 / (256.0), 1.];
+  alphaColor bitShift = [1.0 / (256. * 256. * 256.), 1.0 / (256. * 256.), 1.0 / (256.0), 1.];
   return dot(c, bitShift);
 }
 
@@ -50,8 +39,8 @@ float specStrength, float linear, float quad) {
     if (0. <= lambertian) {
         specular = pow(max(0., dot(normalize(-fragPos), reflectDir)), 32.);
     }
-    float distance = length(lightPos - fragPos);
-    auto temp = (linear * distance + quad * distance * distance);
+    float dist = length(lightPos - fragPos);
+    auto temp = (linear * dist + quad * dist * dist);
     float attenuation = 1.0 / temp;
     auto tempColor = (lambertian * baseColor + specStrength * specular * [1., 1., 1.]);
     return tempColor * attenuation;
@@ -77,5 +66,5 @@ void main() {
   color phong_color = phong_light(uLight, vPosition in world, normalize(vNormal in world), 
     uBaseColor, uSpecStrength, .08, .0001);
 
-  auto gl_FragColor = extendColor(ambient + phong_color * amountInLight);
+  gl_FragColor = extendColor(ambient + phong_color * amountInLight);
 }

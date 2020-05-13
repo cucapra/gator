@@ -1,3 +1,5 @@
+#"precision mediump float;";
+
 using "../../glsl_defs.lgl";
 
 frame model has dimension 3;
@@ -8,30 +10,11 @@ frame projective has dimension 3;
 
 attribute cart3<model>.point aPosition;
 varying cart3<model>.point vPosition;
-uniform hom<camera>.transformation<projective> uProjection;
-uniform hom<world>.transformation<camera> uView;
-uniform hom<model>.transformation<world> uModel;
-
-canon hom<world>.point app_uModel(hom<model>.point v) {
-    return uModel * v;
-}
-canon hom<world>.vector app_uModel(hom<model>.vector v) {
-    return uModel * v;
-}
-canon hom<camera>.point app_uView(hom<world>.point v) {
-    return uView * v;
-}
-canon hom<camera>.vector app_uView(hom<world>.vector v) {
-    return uView * v;
-}
-canon hom<projective>.point app_uView(hom<camera>.point v) {
-    return uProjection * v;
-}
-canon hom<projective>.vector app_uView(hom<camera>.vector v) {
-    return uProjection * v;
-}
+canon uniform hom<camera>.transformation<projective> uProjection;
+canon uniform hom<world>.transformation<camera> uView;
+canon uniform hom<model>.transformation<world> uModel;
 
 void main() {
   vPosition = aPosition;
-  auto gl_Position = aPosition in hom<projective>;
+  gl_Position = aPosition in hom<projective>;
 }

@@ -19,7 +19,7 @@ def openNode():
 node_thread = Thread(target=openNode)
 node_thread.start()
 
-default_args = {'time': 300}
+default_args = {'time': 10}
 phong = {'name': 'phong',
          'shaders': ['default', 'raw', 'raw', 'default'],
          'args': {
@@ -35,9 +35,24 @@ shadow_map = {'name': 'shadow_map',
 reflection = {'name': 'reflection',
               'shaders': ['default', 'raw', 'default', 'raw'],
               'args': {}}
-synthetic = {'name': 'synthetic',
-             'shaders': ['default', 'raw', 'default', 'raw'],
-             'args': {}}
+fog = {'name': 'fog',
+              'shaders': ['default', 'raw', 'default', 'raw'],
+              'args': {}}
+spotlight = {'name': 'spotlight',
+              'shaders': ['default', 'raw', 'default', 'raw'],
+              'args': {}}
+bump = {'name': 'bump',
+              'shaders': ['default', 'raw', 'default', 'raw'],
+              'args': {}}
+microfacet = {'name': 'microfacet',
+              'shaders': ['default', 'raw', 'default', 'raw'],
+              'args': {}}
+multilight = {'name': 'multilight',
+              'shaders': ['default', 'raw', 'default', 'raw'],
+              'args': {}}
+# synthetic = {'name': 'synthetic',
+#              'shaders': ['default', 'raw', 'default', 'raw'],
+#              'args': {}}
 # bump = {
 #     'name': 'bump',
 #     'shaders': ['raw'],
@@ -50,7 +65,8 @@ synthetic = {'name': 'synthetic',
 # }
 
 # benchmarks = [shadow_map]*3 + [synthetic]*2
-benchmarks = ([phong] + [texture] + [shadow_map] + [reflection]) * 3
+# benchmarks = ([phong] + [texture] + [shadow_map] + [reflection]) * 3
+benchmarks = [reflection]
 shuffle(benchmarks)
 browser = webdriver.Chrome()
 for bench in benchmarks:

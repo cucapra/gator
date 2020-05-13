@@ -1,82 +1,56 @@
-// Phong lighting with top types
-// Referenced https://learnopengl.com/Lighting/Basic-Lighting
+using "../../glsl_defs.lgl";
 
+type color is vec3;
+type alphaColor is vec4;
 
-declare float dot(vec3 v1, vec3 v2);
-declare vec3 normalize(vec3 v1);
+// Reference Frame Declarations
 
-void main(vec3 uPosition, vec4->vec4 uModel, vec4->vec4 uView, vec3 vNormal, vec3 uLight, vec3 vPosition) {
-    vec4->vec3 v4_v3 = [
-        [1.,0.,0.,0.],
-        [0.,1.,0.,0.],
-        [0.,0.,1.,0.]
-    ];
+frame model has dimension 3;
+frame world has dimension 3;
+frame camera has dimension 3;
+frame light has dimension 3;
 
-    vec3->vec4 v3_v4 = [
-        [1., 0., 0.],
-        [0., 1., 0.],
-        [0., 0., 1.],
-        [0., 0., 0.]
-    ];
+// Global Variables
 
-    vec3 color = [0.9, 0.8, 0.9]; // tasty orange
-    vec3 lightColor = [0.4, 0.3, 0.9];
+varying cart3<model>.point vPosition;
+uniform hom<model>.transformation<world> uModel;
+uniform hom<world>.transformation<camera> uView;
+varying cart3<model>.vector vNormal;
+uniform cart3<world>.point uLight;
 
-    // ****************
-    // Ambient lighting
-    // ****************
-    float ambientStrength = 0.5;
-    vec3 ambient = ambientStrength * lightColor;
+// Can't canonicalize matrices for now, so we do this
+canon hom<world>.point app_uModel(hom<model>.point v) {
+    return uModel * v;
+}
+canon hom<world>.vector app_uModel(hom<model>.vector v) {
+    return uModel * v;
+}
+canon hom<camera>.point app_uView(hom<world>.point v) {
+    return uView * v;
+}
+canon hom<camera>.vector app_uView(hom<world>.vector v) {
+    return uView * v;
+}
 
-    // ****************
-    // Diffuse lighting
-    // ****************
-    // Calculate the real position of this pixel in 3d space
-    vec3 worldPos = v4_v3 * (uModel * ((v3_v4 * vPosition) + [0., 0., 0., 1.]));
+// Shader Code
 
-    // Calculate the normal including the model rotation and scale
-    vec3 worldNorm = normalize(v4_v3 * (uModel * (v3_v4 * vNormal)));
+void main() {
+    color ambient = [.1, 0., 0.];
+    color diffColor = [0.4, 0.3, 0.9];
+    color specColor = [1.0, 1.0, 1.0];
 
-    vec3 lightDir = normalize(uLight - worldPos);
+    // auto temp = vPosition in hom.point<model>;
+    auto worldPos = vPosition in world;
+    auto camPos = worldPos in camera;
+    auto worldNorm = normalize(vNormal in world);
 
-    // An example simple lighting effect, taking the dot product of the normal
-    float diff = (dot (worldNorm, lightDir));
-    bool diff_is_neg = (diff <= 0.);
-    if (diff_is_neg) {
-        diff = 0.;
-    } else { skip; }
+    auto lightDir = normalize(uLight - worldPos);
+    auto lightWorldDot = dot(lightDir, worldNorm);
+    scalar diffuse = max(lightWorldDot, 0.0);
 
-    vec3 diffuse = diff * lightColor;
+    auto reflectDir = normalize(reflect(-lightDir, worldNorm) in camera);
 
-    // ****************
-    // Specular lighting
-    // ****************
+    scalar specular = pow(max(dot(normalize(-camPos), reflectDir), 0.), 32.);
 
-    float specularStrength = 3.;
-
-    vec3 viewDir = normalize([0., 0., 0.] - v4_v3 * (uView * ((v3_v4 * worldPos) + [0., 0., 0., 1.])));
-
-    vec3->vec3 neg = [
-        [-1., 0., 0.],
-        [0., -1., 0.],
-        [0., 0., -1.]
-    ];
-
-    vec3 reflectDir = (neg * lightDir) - 2. * (dot ((neg * lightDir), worldNorm)) * worldNorm;
-    vec3 cameraReflect = v4_v3 * (uView * (v3_v4 * reflectDir));
-    float spec = dot(viewDir, cameraReflect);
-    bool spec_is_neg = (spec <= 0.);
-    if (spec_is_neg) {
-        spec = 0.;
-    } else { skip; }
-
-    spec = spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec * spec; // We don't have a pow function yet..
-    vec3 specular = specularStrength * spec * [1., 1., 1.];
-
-    // Combining ambient, diffuse, and spectral lighting
-    vec3 result = (color .* (ambient + diffuse + specular));
-    vec4 gl_FragColor = (v3_v4 * result) + [0., 0., 0., 1.];
-
-    //vec4 gl_FragColor = [0., 0., 0., 1.];
-    print gl_FragColor;
+    vec4 gl_FragColor = vec4(ambient + diffuse * diffColor + specular * specColor, 1.0);
 }
