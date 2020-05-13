@@ -109,8 +109,9 @@ with vec2 T: declare T pow(T v, float f);
 with vec3 T: declare T pow(T v, float f);
 with vec4 T: declare T pow(T v, float f);
 with vec3 T: declare T pow(T v, T f);
-with vec2 T: declare T cross(T v, T f);
-with vec3 T: declare T cross(T v, T f);
+with vec3 T: T cross(T a, T b) {
+    return [a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]];
+}
 with vec2 T: declare T floor(T v);
 with float T: declare T fract(T f);
 with vec2 T: declare T fract(T v);
@@ -307,9 +308,6 @@ coordinate cart2 : geometry {
     direction normalize(direction v) {
         return v;
     }
-    vector cross(vector v1, vector v2) {
-        return (cross(v1 as! vec2, v2 as! vec2) as! vector);
-    }
     canon normal normalNormalize(vector v) {
         return (normalize(v as! vec2) as! normal);
     }
@@ -418,9 +416,9 @@ coordinate cart3 : geometry {
     vector reflect(direction v1, direction v2) {
         return (reflect(v1 as! vec3, v2 as! vec3) as! vector);
     }
-    vector cross(vector v1, vector v2) {
-        return (cross(v1 as! vec3, v2 as! vec3) as! vector);
-    }
+    // vector cross(vector v1, vector v2) {
+    //     return (cross(v1 as! vec3, v2 as! vec3) as! vector);
+    // }
     vector reflect(vector v1, direction v2) {
         return (reflect(v1 as! vec3, v2 as! vec3) as! vector);
     }

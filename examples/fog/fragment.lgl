@@ -20,11 +20,11 @@ canon uniform hom<world>.transformation<camera> uView;
 varying cart3<model>.vector vNormal;
 uniform cart3<light>.point uLight;
 uniform cart3<light>.point uViewPoint;
+uniform color diffColor;
 canon uniform hom<light>.transformation<world> uLightTrans;
 
 void main() {
     color ambient = [.1, 0.1, 0.1];
-    color diffColor = [0.2, 0.8, 0.4];
     color specColor = [1.0, 1.0, 1.0];
 
     auto worldPos = vPosition in world;
@@ -51,5 +51,5 @@ void main() {
     float r = fogVal*fogStr;
 
     vec3 rvec = vec3(r,r,r);
-    gl_FragColor = vec4((ambient + diffuse * diffColor + specular * specColor)*r, 1.0);
+    gl_FragColor = vec4(ambient + (diffuse * diffColor + specular * specColor)*r, 1.0);
 }
