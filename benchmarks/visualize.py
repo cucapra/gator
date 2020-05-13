@@ -70,27 +70,27 @@ for bench in sorted(bench_names):
 
     print('---------')
 
-# PLOT_TYPE = "bar"
-# if PLOT_TYPE == "violin":
-#     fig, ax = plt.subplots()
-#     sns.violinplot(
-#         ax=ax, data=df.loc[df['shader'] == 'default'], x="frame", y="bench_name", color='red')
-#     sns.violinplot(
-#         ax=ax, data=df.loc[df['shader'] == 'raw'], x="frame", y="bench_name", color='blue')
-#     plt.setp(ax.collections, alpha=.3)
-#     red_patch = mpatches.Patch(color='red', label='default')
-#     blue_patch = mpatches.Patch(color='blue', label='raw')
+PLOT_TYPE = "bar"
+if PLOT_TYPE == "violin":
+    fig, ax = plt.subplots()
+    sns.violinplot(
+        ax=ax, data=df.loc[df['shader'] == 'default'], x="frame", y="bench_name", color='red')
+    sns.violinplot(
+        ax=ax, data=df.loc[df['shader'] == 'raw'], x="frame", y="bench_name", color='blue')
+    plt.setp(ax.collections, alpha=.3)
+    red_patch = mpatches.Patch(color='red', label='default')
+    blue_patch = mpatches.Patch(color='blue', label='raw')
 
-#     plt.legend(handles=[blue_patch, red_patch])
-#     plt.show()
-# elif PLOT_TYPE == "bar":
-#     fig, ax = plt.subplots()
-#     g = sns.barplot(x="bench_name", y="frame",
-#                     data=df, hue="shader", ci="sd", ax=ax, hue_order=["default", "raw"])
-#     L = ax.legend()
-#     L.get_texts()[0].set_text('Lathe')
-#     L.get_texts()[1].set_text('GLSL')
-#     plt.xlabel('Shader')
-#     plt.ylabel('fps')
+    plt.legend(handles=[blue_patch, red_patch])
+    plt.show()
+elif PLOT_TYPE == "bar":
+    fig, ax = plt.subplots()
+    g = sns.barplot(x="bench_name", y="frame",
+                    data=df, hue="shader", ci="sd", ax=ax, hue_order=["default", "raw"])
+    L = ax.legend()
+    L.get_texts()[0].set_text('Lathe')
+    L.get_texts()[1].set_text('GLSL')
+    plt.xlabel('Shader')
+    plt.ylabel('fps')
 
-#     plt.show()
+    plt.show()
