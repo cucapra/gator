@@ -1,0 +1,10 @@
+using "../../glsl_defs.lgl";
+
+type alphaColor is vec4;
+
+uniform sampler2D<alphaColor> uTexture;
+varying vec2 vTexCoord;
+
+void main() {
+  alphaColor gl_FragColor = texture2D(uTexture, vTexCoord);
+}

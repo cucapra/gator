@@ -1,0 +1,26 @@
+using "../../glsl_defs.lgl";
+
+declare varying float[4] gl_FragCoord;
+
+vec4 encodeFloat (float depth) {
+  vec4 bitShift = [
+    256. * 256. * 256.,
+    256. * 256.,
+    256.,
+    1.0
+  ];
+  vec4 bitMask = [
+    0.,
+    1.0 / 256.0,
+    1.0 / 256.0,
+    1.0 / 256.0
+  ];
+  vec4 comp = fract(depth * bitShift);
+  vec4 temp = [comp[0], comp[0], comp[1], comp[2]];
+  comp -= temp * bitMask;
+  return comp;
+}
+
+void main() {
+    vec4 gl_FragColor = encodeFloat(gl_FragCoord[2]);
+}
