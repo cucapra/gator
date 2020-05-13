@@ -83,7 +83,9 @@ declare float sin(float f);
 declare float cos(float f);
 declare float tan(float f);
 declare float sqrt(float f);
+declare float asin(float f);
 declare float acos(float f);
+declare float atan(float f1, float f2);
 with float[2] T: declare T sin(T f);
 with float[2] T: declare T cos(T f);
 with float[2] T: declare T sqrt(T f);
@@ -233,7 +235,7 @@ coordinate cart2 : geometry {
     }
     vector -(vector x, vector y) {
         return (x as! vec2 - y as! vec2) as! vector;
-    }
+    }declare float atan(float f1, float f2);
     vector *(vector v, scalar s) {
         return (v as! vec2 * s) as! vector;
     }
