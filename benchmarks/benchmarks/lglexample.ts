@@ -260,19 +260,29 @@ export function load_obj(gl: WebGLRenderingContext, obj_src: string): Mesh {
 
   // .obj files can have normals, but if they don't, this parser library
   // (confusingly) fills the array with NaN.
-  if (!isNaN(mesh.vertexNormals[0])) {
-    out.normals = group_array(mesh.vertexNormals, 3) as Vec3Array;
-  }
+  // if (!isNaN(mesh.vertexNormals[0])) {
+  //   out.normals = group_array(mesh.vertexNormals, 3) as Vec3Array;
+  // }
 
   return out;
 }
 
 
+export function load_texture(gl: WebGLRenderingContext, img_src: string) {
+  return load_texture_number(gl, img_src, gl.TEXTURE0);
+}
+
+export function load_texture_number(gl: WebGLRenderingContext, 
+  img_src: string, tex_num: number) {
+  return load_texture_clamp(gl, img_src, tex_num, gl.CLAMP_TO_EDGE);
+}
+
 /**
  * Load image texture.
  * @param gl rendering context
  */
-export function load_texture(gl: WebGLRenderingContext, img_src: string) {
+export function load_texture_clamp(gl: WebGLRenderingContext, 
+  img_src: string, tex_num: number, clamp: number) {
   // Create a texture.
   // Asynchronously load an image
   var image = new Image();
@@ -280,16 +290,19 @@ export function load_texture(gl: WebGLRenderingContext, img_src: string) {
   var texture = gl.createTexture();
 
   image.addEventListener('load', function () {
+    gl.activeTexture(tex_num);
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
 
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     // clamp to edge gives us non-power-of-2 support
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, clamp);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, clamp);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
   });
+
+  return texture;
 }
 
 

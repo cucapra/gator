@@ -25,6 +25,7 @@ function main() {
     location['uView'] = lgl.uniformLoc(gl, program, 'uView');
     location['uModel'] = lgl.uniformLoc(gl, program, 'uModel');
     location['uLight'] = lgl.uniformLoc(gl, program, 'uLight');
+    location['uLightTrans'] = lgl.uniformLoc(gl, program, 'uLightTrans');
     location['aPosition'] = lgl.attribLoc(gl, program, 'aPosition');
     location['aNormal'] = lgl.attribLoc(gl, program, 'aNormal');
     locations.push(location);
@@ -44,6 +45,7 @@ function main() {
       mat4.translate(models[i * block + j], models[i * block + j], [OFFSET * i, OFFSET * j, 0]);
     }
   }
+  let lightTrans = mat4.create();
 
   // Position the light source for the lighting effect.
   let light = vec3.fromValues(20., 0., 20.);
@@ -60,6 +62,7 @@ function main() {
       gl.uniformMatrix4fv(locations[i]["uProjection"], false, projection);
       gl.uniformMatrix4fv(locations[i]["uView"], false, view);
       gl.uniformMatrix4fv(locations[i]["uModel"], false, models[i]);
+      gl.uniformMatrix4fv(locations[i]["uLightTrans"], false, lightTrans);
       gl.uniform3fv(locations[i]["uLight"], light);
 
       // Set the attribute arrays.

@@ -37,10 +37,10 @@ reflection = {'name': 'reflection',
               'args': {}}
 fog = {'name': 'fog',
               'shaders': ['default', 'raw', 'default', 'raw'],
-              'args': {}}
+              'args': {'num_objects': 1}}
 spotlight = {'name': 'spotlight',
               'shaders': ['default', 'raw', 'default', 'raw'],
-              'args': {}}
+              'args': {'num_objects': 10}}
 bump = {'name': 'bump',
               'shaders': ['default', 'raw', 'default', 'raw'],
               'args': {}}
@@ -66,7 +66,7 @@ multilight = {'name': 'multilight',
 
 # benchmarks = [shadow_map]*3 + [synthetic]*2
 # benchmarks = ([phong] + [texture] + [shadow_map] + [reflection]) * 3
-benchmarks = [reflection]
+benchmarks = [bump]
 shuffle(benchmarks)
 browser = webdriver.Chrome()
 for bench in benchmarks:

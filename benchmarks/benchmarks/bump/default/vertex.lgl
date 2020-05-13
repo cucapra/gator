@@ -1,23 +1,35 @@
-type vec3 is float[3];
-type vec4 is float[4];
-type mat4 is float[4][4];
+#"precision mediump float;";
+using "../../glsl_defs.lgl";
 
-with mat4 T: declare T *(T m1, T m2);
-with mat4 T: with vec4 U: declare U *(T m, U v);
+frame model has dimension 3;
+frame world has dimension 3;
+frame view has dimension 3;
+frame projection has dimension 3;
+frame tex has dimension 2;
 
-declare vec4 vec4(vec3 v, float f);
-declare vec3 vec3(vec4 v);
+attribute cart3<model>.point aPosition;
+attribute cart3<world>.vector aDerivU;
+attribute cart3<world>.vector aDerivV;
+attribute cart3<world>.normal aNormal;
+attribute cart2<tex>.point aUv;
+canon uniform hom<view>.transformation<projection> uProjection;
+canon uniform hom<world>.transformation<view> uView;
+canon uniform hom<model>.transformation<world> uModel;
+canon uniform cart3<model>.normalTransformation<view> uNormal;
 
-attribute vec3 aPosition;
-attribute vec3 aNormal;
-varying vec3 vPosition;
-varying vec3 vNormal;
-uniform mat4 uProjection;
-uniform mat4 uView;
-uniform mat4 uModel;
+varying cart3<world>.point vPosition;
+varying cart3<world>.vector vDerivU;
+varying cart3<world>.vector vDerivV;
+varying cart3<world>.normal vNormal;
+varying cart2<tex>.point vUv;
+varying cart3<model>.normalTransformation<view> vNormalMatrix;
 
 void main() {
+  gl_Position = aPosition in hom<projection>;
+  vUv = aUv;
   vNormal = aNormal;
-  vPosition = aPosition;
-  vec4 gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
+  vPosition = aPosition in world;
+  vNormalMatrix = uNormal;
+  vDerivU = aDerivU;
+  vDerivV = aDerivV;
 }

@@ -1,23 +1,22 @@
-type vec3 is float[3];
-type vec4 is float[4];
-type mat4 is float[4][4];
+#"precision mediump float;";
 
-with mat4 T: declare T *(T m1, T m2);
-with mat4 T: with vec4 U: declare U *(T m, U v);
+using "../../glsl_defs.lgl";
 
-declare vec4 vec4(vec3 v, float f);
-declare vec3 vec3(vec4 v);
+frame model has dimension 3;
+frame world has dimension 3;
+frame camera has dimension 3;
+frame projective has dimension 3;
 
-attribute vec3 aPosition;
-attribute vec3 aNormal;
-varying vec3 vPosition;
-varying vec3 vNormal;
-uniform mat4 uProjection;
-uniform mat4 uView;
-uniform mat4 uModel;
+attribute cart3<model>.vector aNormal;
+attribute cart3<model>.point aPosition;
+varying cart3<model>.vector vNormal;
+varying cart3<model>.point vPosition;
+canon uniform hom<camera>.transformation<projective> uProjection;
+canon uniform hom<world>.transformation<camera> uView;
+canon uniform hom<model>.transformation<world> uModel;
 
 void main() {
   vNormal = aNormal;
   vPosition = aPosition;
-  vec4 gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
+  gl_Position = aPosition in hom<projective>;
 }

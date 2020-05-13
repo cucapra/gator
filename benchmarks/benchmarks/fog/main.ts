@@ -62,8 +62,8 @@ function main() {
   function render(view: mat4, projection: mat4) {
     for (let i = 0; i < NUM_OBJECTS; i++) {
       // Rotate the model a little bit on each frame.
-      mat4.rotateY(model, model, .001);
-      mat4.rotateZ(bunnyModel, bunnyModel, .001);
+      mat4.rotateY(model, model, .01);
+      mat4.rotateZ(bunnyModel, bunnyModel, .01);
       // mat4.rotateZ(lightTrans, lightTrans, .01);
 
       // Use our shader pair.

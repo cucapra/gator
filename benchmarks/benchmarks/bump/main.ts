@@ -1,6 +1,14 @@
 import * as lgl from '../lglexample';
 import { mat4, vec3 } from 'gl-matrix';
 
+// Textures
+const earthmap1k : string = require('../resources/textures/earthmap1k.jpg');
+const earthbump1k : string = require('../resources/textures/earthbump1k.jpg');
+
+// Loads file system implementation in parcel
+// * can only call synchronous functions *
+const fs : any = require('fs');
+
 function main() {
   let [gl, params] = lgl.setup(render);
   const NUM_OBJECTS = parseInt(params['num_objects'] || "100");
@@ -10,65 +18,68 @@ function main() {
     'default': [require('./default/vertex.lgl'), require('./default/fragment.lgl')],
     'raw': [require('./raw/vertex.glsl'), require('./raw/fragment.glsl')]
   };
-  const vertices: string[] = new Array(NUM_OBJECTS).fill(shaders[SHADER][0]);
-  const frags: string[] = new Array(NUM_OBJECTS).fill(shaders[SHADER][1]);
-  const programs: WebGLProgram[] = [];
-  for (let i = 0; i < NUM_OBJECTS; i++) {
-    programs.push(lgl.compileProgram(gl, vertices[i], frags[i]));
-  }
 
-  let locations: { [locname: string]: WebGLUniformLocation | number; }[] = [];
-  programs.forEach((program) => {
-    // Uniform and attribute locations.
-    let location: { [locname: string]: WebGLUniformLocation | number; } = {}
-    location['uProjection'] = lgl.uniformLoc(gl, program, 'uProjection');
-    location['uView'] = lgl.uniformLoc(gl, program, 'uView');
-    location['uModel'] = lgl.uniformLoc(gl, program, 'uModel');
-    location['uLight'] = lgl.uniformLoc(gl, program, 'uLight');
-    location['aPosition'] = lgl.attribLoc(gl, program, 'aPosition');
-    location['aNormal'] = lgl.attribLoc(gl, program, 'aNormal');
-    locations.push(location);
-  });
+  let vert = shaders[SHADER][0];
+  let frag = shaders[SHADER][1];
 
-  // We'll draw a teapot.
-  let meshes = new Array(NUM_OBJECTS).fill(lgl.getBunny(gl));
+  // Compile our shaders.
+  let program = lgl.compileProgram(gl,
+    vert, frag
+  );
+  // Uniform and attribute locations.
+  let loc_uProjection = lgl.uniformLoc(gl, program, 'uProjection');
+  let loc_uView = lgl.uniformLoc(gl, program, 'uView');
+  let loc_uModel = lgl.uniformLoc(gl, program, 'uModel');
+  // let loc_uNormal = lgl.uniformLoc(gl, program, 'uNormal');
+
+  // Texture things
+  let loc_uTexture = lgl.uniformLoc(gl, program, 'uDiffuseTexture');
+  let loc_uBumpMap = lgl.uniformLoc(gl, program, 'uDisplacementMap');
+  let loc_aPosition = lgl.attribLoc(gl, program, 'aPosition');
+  // let loc_aDerivU = lgl.attribLoc(gl, program, 'aDerivU');
+  // let loc_aDerivV = lgl.attribLoc(gl, program, 'aDerivV');
+  let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
+  let loc_aUv = lgl.attribLoc(gl, program, 'aUv');
+
+  // Read in lpshead obj
+  // URL must be statically analyzable other than (__dirname) and (__filename)
+  let src = fs.readFileSync(__dirname + '/../resources/OBJ/sphere_highres.obj', 'utf8');
+
+  let mesh = lgl.load_obj (gl, src);
 
   // Initialize the model position.
-  let models: mat4[] = [];
-  for (let i = 0; i < NUM_OBJECTS; i++)
-    models.push(mat4.create());
-  const block = Math.floor(Math.sqrt(NUM_OBJECTS));
-  const OFFSET = 1;
-  for (let i = 0; i < block; i++) {
-    for (let j = 0; j < block; j++) {
-      mat4.translate(models[i * block + j], models[i * block + j], [OFFSET * i, OFFSET * j, 0]);
-    }
-  }
+  let model = mat4.create();
 
-  // Position the light source for the lighting effect.
-  let light = vec3.fromValues(20., 0., 20.);
+  // Load image texture
+  lgl.load_texture_number(gl, earthmap1k, gl.TEXTURE0);
+
+  // Load bump map
+  lgl.load_texture_number(gl, earthbump1k, gl.TEXTURE1)
+
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
+    mat4.rotateY(model, model, .01);
 
-    for (let i = 0; i < NUM_OBJECTS; i++) {
-      mat4.rotateY(models[i], models[i], .01);
+    // Use our shader pair.
+    gl.useProgram(program);
 
-      // Use our shader pair.
-      gl.useProgram(programs[i]);
-
-      // Set the shader "uniform" parameters.
-      gl.uniformMatrix4fv(locations[i]["uProjection"], false, projection);
-      gl.uniformMatrix4fv(locations[i]["uView"], false, view);
-      gl.uniformMatrix4fv(locations[i]["uModel"], false, models[i]);
-      gl.uniform3fv(locations[i]["uLight"], light);
-
-      // Set the attribute arrays.
-      lgl.bind_attrib_buffer(gl, locations[i]["aNormal"] as number, meshes[i].normals, 3);
-      lgl.bind_attrib_buffer(gl, locations[i]["aPosition"] as number, meshes[i].positions, 3);
-
-      // Draw the object.
-      lgl.drawMesh(gl, meshes[i]);
-    }
+    // Set the shader "uniform" parameters.
+    gl.uniformMatrix4fv(loc_uProjection, false, projection);
+    gl.uniformMatrix4fv(loc_uView, false, view);
+    gl.uniformMatrix4fv(loc_uModel, false, model);
+    
+    // Use texture unit 0 for uTexture
+    gl.uniform1i(loc_uTexture, 0);
+    gl.uniform1i(loc_uBumpMap, 1);
+  
+    // Set the attribute arrays.
+    lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
+    lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
+    lgl.bind_attrib_buffer(gl, loc_aUv, mesh.texcoords, 2);
+    // lgl.bind_attrib_buffer(gl, loc_aDerivU, mesh.derivU, 2); // TODO 
+   
+    // Draw the object.
+    lgl.drawMesh(gl, mesh);
   }
 }
 
