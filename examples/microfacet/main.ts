@@ -3,7 +3,7 @@ import { mat4, vec3 } from 'gl-matrix';
 
 
 // Texture for flower
-const flower : string = require('../resources/textures/Flower.png');
+const earthmap1k : string = require('../resources/textures/earthmap1k.jpg');
 
 // Loads file system implementation in parcel
 // * can only call synchronous functions *
@@ -52,7 +52,9 @@ function main() {
   // let mesh = lgl.load_obj (gl, src);
 
   // We'll draw a teapot.
-  let mesh = lgl.getTeapot(gl);
+  let src = fs.readFileSync(__dirname + './../resources/OBJ/sphere_highres.obj', 'utf8');
+
+  let mesh = lgl.load_obj (gl, src);
 
   // Initialize the model position.
   let model = mat4.create();
@@ -64,7 +66,7 @@ function main() {
   // mat4.lookAt(lightModel, offset, [0., 0., 0.], [0., 1., 0.]);
 
   // Load image texture
-  lgl.load_texture(gl, flower);
+  lgl.load_texture(gl, earthmap1k);
 
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
