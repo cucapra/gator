@@ -4,6 +4,7 @@ import { mat4, vec3 } from 'gl-matrix';
 
 // Texture for flower
 const earthmap1k : string = require('../resources/textures/earthmap1k.jpg');
+const earthnormalmap : string = require('../resources/textures/earthNormalMap_1k.png');
 
 // Loads file system implementation in parcel
 // * can only call synchronous functions *
@@ -38,9 +39,9 @@ function main() {
   let loc_mat_alpha = lgl.uniformLoc(gl, program, 'mat_alpha');
   let loc_mat_hasAlphaTexture = lgl.uniformLoc(gl, program, 'mat_hasAlphaTexture');
   let loc_mat_alphaTexture = lgl.uniformLoc(gl, program, 'mat_alphaTexture');
-  // let loc_mat_hasNormalTexture = lgl.uniformLoc(gl, program, 'mat_hasNormalTexture');
-  // let loc_mat_normalTexture = lgl.uniformLoc(gl, program, 'mat_normalTexture');
-  // let loc_mat_normalTextureScale = lgl.uniformLoc(gl, program, 'mat_normalTextureScale');
+  let loc_mat_hasNormalTexture = lgl.uniformLoc(gl, program, 'mat_hasNormalTexture');
+  let loc_mat_normalTexture = lgl.uniformLoc(gl, program, 'mat_normalTexture');
+  let loc_mat_normalTextureScale = lgl.uniformLoc(gl, program, 'mat_normalTextureScale');
   let loc_light_eyePosition = lgl.uniformLoc(gl, program, 'light_eyePosition');
   let loc_light_attenuation = lgl.uniformLoc(gl, program, 'light_attenuation');
   let loc_light_color = lgl.uniformLoc(gl, program, 'light_color');
@@ -84,6 +85,7 @@ function main() {
     gl.uniform1i(loc_mat_diffuseTexture, 0);
     gl.uniform1i(loc_mat_hasDiffuseTexture, 1);
     gl.uniform1i(loc_mat_hasAlphaTexture, 0);
+    gl.uniform1i(loc_mat_hasNormalTexture, 0);
     
     vec3.set(light, 0., 0., 0.);
     vec3.transformMat4(light, light, lightModel);
