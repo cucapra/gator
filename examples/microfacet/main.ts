@@ -4,7 +4,7 @@ import { mat4, vec3 } from 'gl-matrix';
 
 // Texture for flower
 const earthmap1k : string = require('../resources/textures/earthmap1k.jpg');
-const earthnormalmap : string = require('../resources/textures/earthNormalMap_1k.png');
+// const earthnormalmap : string = require('../resources/textures/earthNormalMap_1k.png');
 
 // Loads file system implementation in parcel
 // * can only call synchronous functions *
@@ -23,7 +23,6 @@ function main() {
   );
 
   // Uniform and attribute locations.
-  // I hate everything about these declarations, btw
   let loc_uProjection = lgl.uniformLoc(gl, program, 'uProjection');
   let loc_uView = lgl.uniformLoc(gl, program, 'uView');
   let loc_uModel = lgl.uniformLoc(gl, program, 'uModel');
