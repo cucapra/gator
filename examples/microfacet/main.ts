@@ -41,6 +41,7 @@ function main() {
   let loc_mat_hasNormalTexture = lgl.uniformLoc(gl, program, 'mat_hasNormalTexture');
   let loc_mat_normalTexture = lgl.uniformLoc(gl, program, 'mat_normalTexture');
   let loc_mat_normalTextureScale = lgl.uniformLoc(gl, program, 'mat_normalTextureScale');
+  let loc_anisotropic = lgl.uniformLoc(gl, program, 'anisotropic');
   let loc_light_eyePosition = lgl.uniformLoc(gl, program, 'light_eyePosition');
   let loc_light_attenuation = lgl.uniformLoc(gl, program, 'light_attenuation');
   let loc_light_color = lgl.uniformLoc(gl, program, 'light_color');
@@ -95,6 +96,7 @@ function main() {
     gl.uniform1f(loc_mat_alpha, 0.03);
     gl.uniform1f(loc_mat_indexOfRefraction, 1.33);
     gl.uniform1i(loc_mat_alphaTexture, 0);
+    gl.uniform1i(loc_anisotropic, 0);
     // gl.uniform1i(loc_mat_hasNormalTexture, 0);
 
     // Set the attribute arrays.

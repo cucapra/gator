@@ -88,7 +88,7 @@ elif PLOT_TYPE == "bar":
     g = sns.barplot(x="bench_name", y="frame",
                     data=df, hue="shader", ci="sd", ax=ax, hue_order=["default", "raw"])
     L = ax.legend()
-    L.get_texts()[0].set_text('Lathe')
+    L.get_texts()[0].set_text('Gator')
     L.get_texts()[1].set_text('GLSL')
     plt.xlabel('Shader')
     plt.ylabel('fps')

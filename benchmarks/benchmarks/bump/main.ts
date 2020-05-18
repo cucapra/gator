@@ -9,6 +9,8 @@ const earthbump1k : string = require('../resources/textures/earthbump1k.jpg');
 // * can only call synchronous functions *
 const fs : any = require('fs');
 
+var __dirname : string;
+
 function main() {
   let [gl, params] = lgl.setup(render);
   const NUM_OBJECTS = parseInt(params['num_objects'] || "100");
@@ -21,6 +23,16 @@ function main() {
 
   let vert = shaders[SHADER][0];
   let frag = shaders[SHADER][1];
+  let models: mat4[] = [];
+  for (let i = 0; i < NUM_OBJECTS; i++)
+    models.push(mat4.create());
+  const block = Math.floor(Math.sqrt(NUM_OBJECTS));
+  const OFFSET = 1;
+  for (let i = 0; i < block; i++) {
+    for (let j = 0; j < block; j++) {
+      mat4.translate(models[i * block + j], models[i * block + j], [OFFSET * i, OFFSET * j, 0]);
+    }
+  }
 
   // Compile our shaders.
   let program = lgl.compileProgram(gl,
@@ -47,9 +59,6 @@ function main() {
 
   let mesh = lgl.load_obj (gl, src);
 
-  // Initialize the model position.
-  let model = mat4.create();
-
   // Load image texture
   lgl.load_texture_number(gl, earthmap1k, gl.TEXTURE0);
 
@@ -58,28 +67,30 @@ function main() {
 
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
-    mat4.rotateY(model, model, .01);
+    for (let i = 0; i < NUM_OBJECTS; i++) {
+      mat4.rotateY(models[i], models[i], .01);
 
-    // Use our shader pair.
-    gl.useProgram(program);
+      // Use our shader pair.
+      gl.useProgram(program);
 
-    // Set the shader "uniform" parameters.
-    gl.uniformMatrix4fv(loc_uProjection, false, projection);
-    gl.uniformMatrix4fv(loc_uView, false, view);
-    gl.uniformMatrix4fv(loc_uModel, false, model);
+      // Set the shader "uniform" parameters.
+      gl.uniformMatrix4fv(loc_uProjection, false, projection);
+      gl.uniformMatrix4fv(loc_uView, false, view);
+      gl.uniformMatrix4fv(loc_uModel, false, models[i]);
+      
+      // Use texture unit 0 for uTexture
+      gl.uniform1i(loc_uTexture, 0);
+      gl.uniform1i(loc_uBumpMap, 1);
     
-    // Use texture unit 0 for uTexture
-    gl.uniform1i(loc_uTexture, 0);
-    gl.uniform1i(loc_uBumpMap, 1);
-  
-    // Set the attribute arrays.
-    lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
-    lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
-    lgl.bind_attrib_buffer(gl, loc_aUv, mesh.texcoords, 2);
-    // lgl.bind_attrib_buffer(gl, loc_aDerivU, mesh.derivU, 2); // TODO 
-   
-    // Draw the object.
-    lgl.drawMesh(gl, mesh);
+      // Set the attribute arrays.
+      lgl.bind_attrib_buffer(gl, loc_aPosition, mesh.positions, 3);
+      lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
+      lgl.bind_attrib_buffer(gl, loc_aUv, mesh.texcoords, 2);
+      // lgl.bind_attrib_buffer(gl, loc_aDerivU, mesh.derivU, 2); // TODO 
+    
+      // Draw the object.
+      lgl.drawMesh(gl, mesh);
+    }
   }
 }
 
