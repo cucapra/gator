@@ -14,10 +14,8 @@ binding mat4 uProjection;
 // All functions must have a target language; this one is typescript
 typescript void main() {
     // compiling a program recovers its member variables statically
-    // the set of writeable member variables of a program are as follows (U = union):
-    // { in(VERTEX) } U { uniform(VERTEX) } U { uniform(FRAGMENT) }
     // the set of readable member variables of a program are the out variable of FRAGMENT
-    // We can't yet write or read these these variables
+    // We can't yet write or read to these variables
     program = glsl_compile(vertex, fragment);
     ...
     model1 = mat4.create();
@@ -35,39 +33,38 @@ typescript void render(program, mesh, view, projection) {
     // Binds the current program (restricted to a value)
     model1;
     model2;
-    color1;
-    color2;
-    bind program to state.current {
+    with vertex {
         bind view to uView and projection to uProjection {
-            with_mesh = program(aPosition = mesh.positions);
-            with_mesh2 = program(aPosition = mesh2.positions);
-            bind model1 to uModel {
-                with_mesh(color = color1);
-            } 
-            bind model2 to uModel {
-                result = with_mesh(color = color1);
-                result.gl_Position;
+            bind mesh to vertex.aPosition {
+                bind model1 to uModel {
+                    run();
+                }
+                bind model2 to uModel {
+                    run();
+                }
             }
         }
     }
 }
 
-glsl_vertex program void vertex (vec3 aPosition, vec3 color) {
-
-    out vec3 vColor; // associated fragment must have 'in' associated with each out;
+program vertex {
+    in vec3 aPosition;
     out vec4 gl_Position;
-
     void main() {
-      vColor = color;
-      gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
+        with fragment {
+            pos = vec3(uView * uModel * vec4(aPosition, 1.));
+            bind pos to fragment.vPosition {
+                run();
+            }
+        }
+        gl_Position = uProjection * uView * uModel * vec4(aPosition, 1.);
     }
 }
 
-glsl program void fragment(vec3 vColor) {
+program fragment {
+    in vec3 vPosition;
     out vec4 gl_FragColor;
-
     void main() {
-        gl_FragColor = vColor;
+        gl_FragColor = vPosition;
     }
-
 }
