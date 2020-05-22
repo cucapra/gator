@@ -1,15 +1,22 @@
 int factor;
 
 void main() {
-    bind multiplier to state.current {
+    with multiplier {
         bind 3 to factor {
-            result = multiplier([1., 2., 3.]);
+            int[3] result;
+            bind [1, 2, 3] to multiplier.var1 {
+                run() {
+                    result = multiplier.var2;
+                }
+            }
             print result;
         }
     }   
 }
 
-program int multiplier (int var1) {
+program multiplier {
+    in int var1;
+    out int var2;
     void main() {
         var2 = var1 * factor;
     }
