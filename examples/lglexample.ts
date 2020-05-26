@@ -566,3 +566,44 @@ export function loadSkyboxImages(gl:WebGLRenderingContext, urls:string[], skybox
 export function getCanvas(){
   return document.getElementsByTagName('canvas')[0] as HTMLCanvasElement;
 }
+
+let pathGraph : number[][] = [];
+let pathNames : { [names : string] : number } = {} ;
+// Maps from a type to a list of (type x matrix) pairs
+let transformStorage : {[names : number] : { [targets : number] :  number[][]} } = {};
+
+// Adds the given type to the graph of paths
+// Initially unconnected from all other types
+export function addType(name : string) {
+  // Keep length as a constant
+  let index = pathGraph.length;
+  pathNames[name] = index;
+  for(let i = 0; i < index; i++) {
+    pathGraph[i].push(-1);
+  }
+  let newArr : number[] = [];
+  for (let i = 0; i <= index; i++) {
+    newArr.push(-1);
+  }
+  pathGraph.push(newArr);
+}
+
+// Resets all paths in the graph
+// Maintains all types previously given
+export function resetGraph() {
+  for (let i = 0; i < pathGraph.length; i++) {
+    for (let j = 0; j < pathGraph.length; j++) {
+      pathGraph[i][j] = -1;
+    }
+  }
+}
+
+export function addMatrixEdge(type1 : string, type2: string, matrix : number[][]) {
+  let index1 = pathNames[type1];
+  let index2 = pathNames[type2];
+  if (pathGraph[index1][index2] == -1) {
+    throw "Attempting to add existing edge" + type1 + ", " + type2
+  }
+  pathGraph[index1][index2] = 1;
+  transformStorage[index1][index2] = matrix;
+}
