@@ -2,7 +2,7 @@
  * This module contains common functionality shared across Linguine's WebGL
  * examples.
  */
-import { mat4 } from 'gl-matrix';
+import { mat4, vec3 } from 'gl-matrix';
 import * as teapot from 'teapot';
 import * as bunny from 'bunny';
 import cube from 'primitive-cube';
@@ -15,8 +15,6 @@ import * as obj_loader from 'webgl-obj-loader';
 export type Vec3Array = [number, number, number][];
 
 let app = {thing: mat4.create()}
-
-app = {thing : mat4.create()}
 
 /**
  * Compile a single GLSL shader source file.
@@ -273,14 +271,20 @@ export function load_obj(gl: WebGLRenderingContext, obj_src: string): Mesh {
 }
 
 export function load_texture(gl: WebGLRenderingContext, img_src: string) {
-  return load_texture_clamp(gl, img_src, gl.CLAMP_TO_EDGE);
+  return load_texture_number(gl, img_src, gl.TEXTURE0);
+}
+
+export function load_texture_number(gl: WebGLRenderingContext, 
+  img_src: string, tex_num: number) {
+  return load_texture_clamp(gl, img_src, tex_num, gl.CLAMP_TO_EDGE);
 }
 
 /**
  * Load image texture.
  * @param gl rendering context
  */
-export function load_texture_clamp(gl: WebGLRenderingContext, img_src: string, clamp: number) {
+export function load_texture_clamp(gl: WebGLRenderingContext, 
+  img_src: string, tex_num: number, clamp: number) {
   // Create a texture.
   // Asynchronously load an image
   var image = new Image();
@@ -288,6 +292,7 @@ export function load_texture_clamp(gl: WebGLRenderingContext, img_src: string, c
   var texture = gl.createTexture();
 
   image.addEventListener('load', function () {
+    gl.activeTexture(tex_num);
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
 
@@ -482,4 +487,82 @@ export function uniformLoc(gl: WebGLRenderingContext, program: WebGLProgram, nam
  */
 export function attribLoc(gl: WebGLRenderingContext, program: WebGLProgram, name: string) {
   return check_null(gl.getAttribLocation(program, name), name);
+}
+
+class MovingCube {
+  translation: vec3;
+  localRotationAxis: vec3;
+  localAngularVelocity: number;
+  globalRotationAxis: vec3;
+  globalAngularVelocity: number;
+  color: vec3;
+
+  constructor(i: number){
+    this.translation = vec3.fromValues(Math.random()-.5,Math.random()-.5,Math.random()-.5);
+    this.localRotationAxis = vec3.fromValues(Math.random(),Math.random(),Math.random());
+    this.localAngularVelocity = 0.005 + 0.1*Math.random();
+    this.globalRotationAxis = vec3.fromValues(Math.random(),Math.random(),Math.random());
+    this.globalAngularVelocity = 0.005 + 0.02*Math.random();
+    this.color = vec3.fromValues(Math.random(),Math.random(),Math.random());
+  }
+}
+
+
+let movingCubeData: MovingCube[] = [];
+for (var i = 0; i <= 3; i++) {
+  movingCubeData.push(new MovingCube(i));
+  vec3.normalize(movingCubeData[i].localRotationAxis, movingCubeData[i].localRotationAxis);
+  vec3.normalize(movingCubeData[i].globalRotationAxis, movingCubeData[i].globalRotationAxis);
+  vec3.normalize(movingCubeData[i].translation, movingCubeData[i].translation);
+  vec3.scale(movingCubeData[i].translation, movingCubeData[i].translation, 30);
+  if (Math.random() < 0.5) {
+    movingCubeData[i].globalAngularVelocity *= -1;
+  }
+}
+export function drawCubes(gl:WebGLRenderingContext, model:mat4, frameNumber:number, loc_uModelOBJ:WebGLUniformLocation, cubeMesh:Mesh   ){
+
+  for (var i = 0; i < movingCubeData.length; i++) {  // draw the cubes
+      var cd = movingCubeData[i];
+      let cdModel = mat4.create();
+      mat4.rotate(cdModel, model, frameNumber*cd.globalAngularVelocity, cd.globalRotationAxis);
+      mat4.translate(cdModel, cdModel, cd.translation);
+      mat4.rotate(cdModel, cdModel, frameNumber*cd.localAngularVelocity, cd.localRotationAxis);
+
+      gl.uniformMatrix4fv(loc_uModelOBJ, false, cdModel);
+      // gl.uniform3fv(loc_uColorOBJ, cd.color);
+
+      // Draw the cube.
+      drawMesh(gl, cubeMesh);
+  }
+}
+
+export function loadSkyboxImages(gl:WebGLRenderingContext, urls:string[], skyboxCubemap:WebGLTexture | null){
+  var img = new Array(6);
+  var ct = 0;
+
+  for (var i = 0; i < 6; i++) {
+    img[i] = new Image();
+    img[i].onload = function() {
+      ct++;
+      if (ct == 6) {
+        gl.bindTexture(gl.TEXTURE_CUBE_MAP, skyboxCubemap);
+        var targets = [
+          gl.TEXTURE_CUBE_MAP_POSITIVE_X, gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+          gl.TEXTURE_CUBE_MAP_POSITIVE_Y, gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+          gl.TEXTURE_CUBE_MAP_POSITIVE_Z, gl.TEXTURE_CUBE_MAP_NEGATIVE_Z
+        ];
+        for (var j = 0; j < 6; j++) {
+          gl.texImage2D(targets[j], 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img[j]);
+          gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        }
+        gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+      }
+    }
+    img[i].src = urls[i];
+  }
+}
+
+export function getCanvas(){
+  return document.getElementsByTagName('canvas')[0] as HTMLCanvasElement;
 }

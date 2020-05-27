@@ -1,0 +1,33 @@
+#"precision mediump float;";
+
+using "../../glsl_defs.lgl";
+
+frame model has dimension 3;
+frame world has dimension 3;
+frame light has dimension 3;
+frame camera has dimension 3;
+frame lightProjective has dimension 3;
+frame projective has dimension 3;
+
+attribute cart3<model>.point aPosition;
+varying cart3<model>.point vPosition;
+attribute cart3<model>.direction aNormal;
+varying cart3<model>.direction vNormal;
+varying cart3<lightProjective>.point vShadowPos;
+canon uniform hom<model>.transformation<world> uModel;
+canon uniform hom<world>.transformation<light> uLightView;
+canon uniform hom<light>.transformation<lightProjective> uLightProjection;
+canon uniform hom<world>.transformation<camera> uCamera;
+canon uniform hom<camera>.transformation<projective> uProjection;
+
+void main() {
+  hom<lightProjective>.transformation<lightProjective> texUnitConverter = 
+                                                         [[0.5, 0.0, 0.0, 0.5], 
+                                                         [0.0, 0.5, 0.0, 0.5], 
+                                                         [0.0, 0.0, 0.5, 0.5], 
+                                                         [0.0, 0.0, 0.0, 1.0]];
+  vShadowPos = hom_reduce(texUnitConverter * (aPosition in hom<lightProjective>));
+  vPosition = aPosition;
+  vNormal = aNormal;
+  gl_Position = aPosition in hom<projective>;
+}

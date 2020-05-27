@@ -23,7 +23,7 @@ let rec reduce_dexp (cx: contexts) (d : dexp) : int =
 
 let rec unwrap_abstyp (cx: contexts) (s: string) : typ =
     debug_print ">> unwrap_abstyp";
-    match get_pm cx s with
+    match fst (get_pm cx s) with
         | ParTyp (s, tl) -> debug_fail cx "unimplemented partyp unwrapping"
         | p -> p
 
@@ -34,7 +34,7 @@ let rec replace_abstype_query (c: typ Assoc.context) (t: typ) : typ * bool =
     let is_abs s = Assoc.mem s c in    
     match t with
     | ParTyp (s, tl) -> 
-        if is_abs s then Assoc.lookup s c, true else 
+        if is_abs s then (Assoc.lookup s c), true else 
         let tl', b = List.fold_right (fun t (acc, b) -> 
             let t', b' = replace_abstype_query c t in t'::acc, b || b') tl ([], false) 
         in
@@ -106,7 +106,7 @@ let rec is_subtype (cx: contexts) (to_check : typ) (target : typ) : bool =
     
     (* Type lookup cases *)
     (* Note that the primitive of a given type is the top representation of that type *)
-    | Literal t, _ -> is_subtype cx target (primitive cx to_check)
+    | Literal t, _ -> is_subtype cx target (primitive_deep cx to_check)
     | ParTyp (s, tl), _ -> is_subtype cx (typ_step cx to_check) target
     | MemberTyp (c, o), _ -> is_subtype cx (typ_step cx to_check) target
     | FrameTyp _, _ -> is_subtype cx (typ_step cx to_check) target
@@ -125,8 +125,8 @@ and match_parameterization_safe (cx : contexts) (pml : typ list)
     debug_print (">> match_parameterization <" ^ string_of_list string_of_typ pml ^ ">");
     let pmb = Assoc.bindings cx.pm in
     if List.length pmb == List.length pml
-        && List.fold_left2 (fun acc (s, c) t -> is_subtype cx t c && acc) true pmb pml
-    then Some (List.fold_left2 (fun tcacc (s, c) t -> Assoc.update s t tcacc)
+        && List.fold_left2 (fun acc (s, (t1, b)) t -> is_subtype cx t t1 &&  not ((is_typ_eq cx t t1) && b) && acc) true pmb pml
+    then Some (List.fold_left2 (fun tcacc (s, _) t -> Assoc.update s t tcacc)
         Assoc.empty (Assoc.bindings cx.pm) pml)
     else None
 
@@ -166,7 +166,7 @@ and tau_lookup (cx: contexts) (x: id) (pml: typ list) : typ =
  * illegal geometric type, or external type (they have no supertype) *)
 and typ_step (cx : contexts) (t : typ) : typ =
     debug_print (">> typ_step " ^ string_of_typ t);
-    let t', modified = replace_abstype_query (Assoc.union cx.scheme_pm cx.pm) t in
+    let t', modified = replace_abstype_query (Assoc.map fst (Assoc.union cx.scheme_pm cx.pm)) t in
     if modified then t' else
     match t with
     | ParTyp (s, tl) -> 
@@ -185,12 +185,21 @@ and typ_step (cx : contexts) (t : typ) : typ =
     | _ -> AnyTyp
 
 (* Produces the primitive of the given type (non-declared non-literal) *)
-and primitive (cx : contexts) (t : typ) : typ =
+and primitive_deep (cx : contexts) (t : typ) : typ =
     debug_print (">> primitive " ^ string_of_typ t);
     let rec is_primitive t' : bool =
     match t' with
     | ParTyp _ | MemberTyp _ | Literal _ -> false
     | ArrTyp (t'', _) | GenArrTyp t'' -> is_primitive t''
+    | _ -> true
+    in
+    if is_primitive t then t else primitive_deep cx (typ_step cx t)
+
+let rec primitive (cx : contexts) (t : typ) : typ =
+    debug_print (">> primitive " ^ string_of_typ t);
+    let rec is_primitive t' : bool =
+    match t' with
+    | ParTyp _ | MemberTyp _ | Literal _ -> false
     | _ -> true
     in
     if is_primitive t then t else primitive cx (typ_step cx t)
@@ -199,8 +208,8 @@ let rec greatest_common_child (cx: contexts) (t1: typ) (t2: typ): typ =
     debug_print ">> greatest_common_child";
     if is_subtype cx t1 t2 then t1 else 
     if is_subtype cx t2 t1 then t2 else 
-    let top = primitive cx t1 in
-    if is_typ_eq cx top (primitive cx t2) then Literal top else
+    let top = primitive_deep cx t1 in
+    if is_typ_eq cx top (primitive_deep cx t2) then Literal top else
     error cx ("Cannot unify " ^ string_of_typ t1 ^ " and " ^ string_of_typ t2)
 
 let rec least_common_parent (cx: contexts) (t1: typ) (t2: typ): typ =
@@ -234,6 +243,7 @@ let check_typ_valid (cx: contexts) (ogt: typ) : unit =
             List.fold_left (fun _ -> check_typ_valid_rec) () tl
         | MemberTyp (c, o) ->
             ignore_typ (typ_step cx t);
+        | Literal lt -> error cx ("Cannot use literal type here. Can only use literal type as function return type.")
         | _ -> ()
     in check_typ_valid_rec ogt
 
@@ -260,7 +270,7 @@ let rec typ_erase (cx: contexts) (t : typ) : TypedAst.etyp =
             then TypedAst.ParTyp (s, List.map (typ_erase cx) tl)
             else typ_erase cx (typ_step cx t)
     | MemberTyp _ | Literal _ -> 
-        typ_erase cx (primitive cx t)
+        typ_erase cx (primitive_deep cx t)
     | AutoTyp -> error cx ("Cannot infer the type of auto")
     | AnyTyp -> TypedAst.AnyTyp
     | GenTyp -> TypedAst.GenTyp
@@ -358,7 +368,7 @@ let check_fn_inv (cx: contexts) (x : id)
         in
         match inferred_pml with | None -> None | Some ipml ->
         (* Check that the parameterization conforms to the bounds provided *)
-        let ipml_clean = List.map (replace_abstype cx.pm) ipml in
+        let ipml_clean = List.map (replace_abstype (Assoc.map fst cx.pm)) ipml in
         let param_check = match_parameterization_safe (with_pm cx pm) ipml_clean in
         let scheme_check = (match c with | None -> None
             | Some scheme -> let scx = (with_pm cx (fst (get_scheme cx scheme))) in
@@ -418,12 +428,12 @@ let check_fn_inv (cx: contexts) (x : id)
  * and returns the contexts updated with that pm *)
 let check_parameterization (cx: contexts) (pm: parameterization) : contexts =
     debug_print (">> check_parameterization " ^ string_of_parameterization pm);
-    let check_parameter found (s, t) =
+    let check_parameter found (s, (t, b)) =
         if Assoc.mem s found then error cx ("Duplicate parameter `" ^ s)
         else check_typ_valid (with_pm cx found) t;
-        Assoc.update s t found
+        Assoc.update s (t,b) found
     in
-    ignore_typ_context (List.fold_left check_parameter Assoc.empty (Assoc.bindings pm));
+    ignore_typ_bool_context (List.fold_left check_parameter Assoc.empty (Assoc.bindings pm));
     with_pm cx pm
 
 let update_psi (cx: contexts) (f : fn_typ) : contexts =
@@ -518,7 +528,7 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
                     | Some s -> get_var cx s) args in
                 match infer_pml cxf args' params with | None -> [] | Some pml ->
                 match match_parameterization_safe cxf pml with | None -> [] | Some mpm ->
-                let pr1 = List.map snd (Assoc.bindings pm) in
+                let pr1 = List.map (fst |- snd) (Assoc.bindings pm) in
                 let rtr = replace_abstype mpm rt in
                 let ptr = List.map (replace_abstype mpm |- tr_snd) params in
                 let scheme_check = (match c with | None -> None
@@ -580,7 +590,7 @@ let find_in_path (cx: contexts) (start_exp: aexp) (start: typ) (target: typ) : a
             match fns with
             | [] -> List.map (fun s -> 
                 let c, (ml,rt,id,pr,_) = get_valid_fn (get_functions_safe cx s) in
-                (rt, (id, Assoc.values (get_ml_pm cx ml), []), [])) ps_lst 
+                (rt, (id, List.map fst (Assoc.values (get_ml_pm cx ml)), []), [])) ps_lst 
             | (_, fs) :: t ->
                 search_fns fs @ search_phi_rec t
             in
@@ -815,7 +825,7 @@ let check_typ_decl (cx: contexts) (x : string) (b,pm,t : tau) : contexts =
         | ArrTyp (t', _) -> check_valid_supertype t'
         | ParTyp (s, pml) -> 
             if Assoc.mem s cx'.pm 
-            then check_valid_supertype(Assoc.lookup s cx'.pm)
+            then check_valid_supertype(fst (Assoc.lookup s cx'.pm))
             else let _,tpm,_ = get_typ cx' s in
             let pmb = Assoc.bindings tpm in
             if List.length pmb == List.length pml
@@ -823,7 +833,7 @@ let check_typ_decl (cx: contexts) (x : string) (b,pm,t : tau) : contexts =
                 if is_subtype cx' t' c then () else
                 error cx ("Invalid typ used in the parameterization " 
                     ^ string_of_typ t ^ " for parameter " ^ s))
-                () (Assoc.bindings tpm) (List.map check_valid_supertype pml); t)
+                () (List.map (fun (s, (t, _)) -> (s,t)) (Assoc.bindings tpm)) (List.map check_valid_supertype pml); t)
             else error cx ("Invalid number of parameters 
                 provided to parameterized type " ^ s)
         | _ -> error cx ("Invalid type declaration " ^ string_of_typ t)
@@ -840,7 +850,7 @@ contexts * (TypedAst.params * TypedAst.parameterization) option =
     let cx' = check_parameterization cx pm in
     let cx'',pr = check_params cx' pl in
     let pme = List.fold_right (fun (s, t) acc -> if is_subtype cx t AnyFrameTyp then acc 
-        else Assoc.update s (typ_erase cx t) acc) (Assoc.bindings pm) Assoc.empty 
+        else Assoc.update s (typ_erase cx t) acc) (List.map (fun (s, (t, _)) -> (s,t))(Assoc.bindings pm)) Assoc.empty 
     in
     if has_modification cx ml External then cx'', None else cx'', Some (pr, pme)
 

@@ -1,34 +1,5 @@
-//Declare Types
-declare type WebGLRenderingContext;
-declare type WebGLProgram;
-declare type WebGLUniformLocation;
-declare type mat4;
-declare type vec3;
-declare type lgl.Mesh;
-declare type WebGLBuffer;
-
-//Declare Functions
-//misc
-declare string require(string someModule);
-//mat4
-declare mat4 mat4.create();
-with mat4 T: declare T mat4.rotateY(T model1, T model2, float someFloat);
-//vec3
-declare vec3 vec3.fromValues(float x, float y, float z);
-//gl
-with WebGLProgram T: declare void gl.useProgram(T someProgram);
-declare void gl.uniform3fv(WebGLUniformLocation loc1, vec3 someVec3);
-declare void gl.uniformMatrix4fv(WebGLUniformLocation someLoc, bool someBool, mat4 someMat4);
-declare void gl.disable(int someInt);
-//lgl
-declare WebGLProgram lgl.compileProgram(WebGLRenderingContext gl, string vertex, string fragment);
-declare WebGLUniformLocation lgl.uniformLoc(WebGLRenderingContext gl, WebGLProgram prog, string someName);
-declare float lgl.attribLoc(WebGLRenderingContext gl, WebGLProgram program, string someName);
-declare lgl.Mesh lgl.getBunny(WebGLRenderingContext gl);
-declare void lgl.drawMesh(WebGLRenderingContext gl, lgl.Mesh someMesh);
-declare void lgl.bind_attrib_buffer(WebGLRenderingContext gl, float someFloat, WebGLBuffer someBuffer, int someSize);
-
 //Imports
+using "../ts_defs.lgl";
 #"import * as lgl from '../lglexample';";
 
 //Globals
@@ -40,25 +11,32 @@ const WebGLUniformLocation loc_uModel;
 const WebGLUniformLocation loc_uLight;
 const float loc_aPosition;
 const float loc_aNormal;
-const mat4 model;
-const vec3 light;
 const lgl.Mesh mesh;
 declare WebGLBuffer mesh.normals;
 declare WebGLBuffer mesh.positions;
-declare int gl.CULL_FACE;
 
-void render(mat4 view, mat4 projection){
+//Gator Matrices
+frame model has dimension 3;
+frame world has dimension 3;
+frame camera has dimension 3;
+frame proj has dimension 3;
+
+const hom<model>.transformation<world> uModel;
+const cart3<world>.point uLight;
+
+
+void render(hom<world>.transformation<camera> uView,  hom<camera>.transformation<proj> projection){
     // Rotate the model a little bit on each frame.
-    mat4.rotateY(model, model, 0.1);
+    rotateY(uModel, uModel, 0.1);
 
     // Use our shader pair.
     gl.useProgram(program);
 
     // Set the shader "uniform" parameters.
     gl.uniformMatrix4fv(loc_uProjection, false, projection);
-    gl.uniformMatrix4fv(loc_uView, false, view);
-    gl.uniformMatrix4fv(loc_uModel, false, model);
-    gl.uniform3fv(loc_uLight, light);
+    gl.uniformMatrix4fv(loc_uView, false, uView);
+    gl.uniformMatrix4fv(loc_uModel, false, uModel);
+    gl.uniform3fv(loc_uLight, uLight);
 
     // Set the attribute arrays.
     lgl.bind_attrib_buffer(gl, loc_aNormal, mesh.normals, 3);
@@ -88,8 +66,8 @@ void main(){
     mesh = lgl.getBunny(gl);
 
     // Initialize the model position.
-    model = mat4.create();
+    uModel = mat4.create();
 
     // Position the light source for the lighting effect.
-    light = vec3.fromValues(20., 0., 20.);
+    uLight = vec3.fromValues(20., 0., 20.);
 }

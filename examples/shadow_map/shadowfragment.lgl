@@ -24,5 +24,5 @@ vec4 encodeFloat (float depth) {
 }
 
 void main() {
-    vec4 gl_FragColor = encodeFloat(gl_FragCoord[2]);
+    gl_FragColor = encodeFloat(gl_FragCoord[2]);
 }

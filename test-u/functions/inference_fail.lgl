@@ -1,18 +1,36 @@
+declare type vec3 is float[3];
+declare vec3 +(vec3 v1, vec3 v2);
+declare vec3 normalize(vec3 v);
+
 prototype geometry {
     object vector;
+    object dir;
+    vector +(vector v1, vector v2);
 }
 
 with frame(3) r:
 coordinate cart3 : geometry {
     object vector is float[3];
+    object dir is float[3];
+    vector +(vector v1, vector v2) {
+        return (v1 as! vec3 + v2 as! vec3) as! vector;
+    }
+    dir normalize(vector v1) {
+        return normalize(v1 as! vec3) as! dir;
+    }
 }
 
 with frame(3) r1:
 with frame(3) r2:
 with cart3<r1>.vector T:
 with cart3<r2>.vector U:
-canon T any(U v) {
+T any(U v) {
     return v as! T;
+}
+
+with frame(3) r:
+cart3<r>.dir abs_plus(cart3<r>.vector v1, cart3<r>.vector v2) {
+    return normalize(v1 + v2);
 }
 
 void main() {}

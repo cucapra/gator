@@ -1,74 +1,69 @@
-tag model is vec3;
-tag modelHom is vec4;
-tag world is vec3;
-tag worldHom is vec4;
-tag camera is vec3;
-tag cameraHom is vec4;
-tag color is vec3;
-tag alphaColor is vec4;
+#"precision mediump float;";
+using "../glsl_defs.lgl";
+type color is vec3;
+type sRGB is vec3;
+type alphaColor is vec4;
 
 declare bool gl_FrontFacing;
-declare float abs(float x);
-declare float exp(float x);
-declare float sqrt(float x);
-declare float max(float v1, float v2);
-declare float length<`t : vec>(`t x);
-declare float dot<`t: genType>(`t v1, `t v2);
-declare `t normalize<`t : genType>(`t x);
-declare `t pow<`t : genType>(`t v1, `t v2);
-declare vec4 vec4<`t : genType>(`t v, float x);
-declare `t cross<`t : genType>(`t x1, `t x2);
 
-declare vec4 texture2D<`t : vec3>(sampler2D<`t> txt, vec2 texCoord);
-
-vec3 to_sRGB(vec3 c) { return pow<vec3>(c, [1.0/2.2, 1.0/2.2, 1.0/2.2]); }
-vec3 from_sRGB(vec3 c) { return pow<vec3>(c, [2.2, 2.2, 2.2]); }
-
-void main(sampler2D<vec3> uDiffuseTexture, sampler2D<vec3> uDisplacementMap, vec2 vTexCoord, vec2 vUv, vec3 vNormal, vec4 vPosition, vec3->vec3 vNormalMatrix, vec3 vDerivU, vec3 vDerivV) {
-    float displacementScale = -4.;
+sRGB to_sRGB(color c) { return pow(c, [1.0/2.2, 1.0/2.2, 1.0/2.2]) as! sRGB; }
+color from_sRGB(sRGB c) { return pow(c, [2.2, 2.2, 2.2]) as! color; }
+uniform sampler2D<vec4> uDiffuseTexture;
+uniform sampler2D<vec4> uDisplacementMap;
+uniform float uDisplacementScale;
+varying vec2 vUv;
+varying vec3 vNormal;
+varying vec3 vPosition;
+varying mat3 vNormalMatrix;
+// varying vec3 vDerivU;
+// varying vec3 vDerivV;
+void main() {
+    float displacementScale = -10.;
+    vec3 vDerivV = [1.0, -1.0, 1.0];
+    vec3 vDerivU = [-1.0, 1.0, -1.0];
     // Compute displaced normals as in the
     // displacement vertex shader, and use them for shading.
     // Lastly, implement Phong reflectance function.
     float delta = 0.001;
     // Approximate the partial derivatives of a texture
-    vec2 d_u = [delta, 0];
-    vec2 d_v = [0, delta];
-    vec4 dh_du = (texture2D<vec4>(uDisplacementMap, vUv - d_u) - texture2D<vec4>(uDisplacementMap, vUv + d_u)) / (2.0 * delta);
-    vec4 dh_dv = (texture2D<vec4>(uDisplacementMap, vUv - d_v) - texture2D<vec4>(uDisplacementMap, vUv + d_v)) / (2.0 * delta);
+    vec2 d_u = [delta, 1.];
+    vec2 d_v = [0., delta];
+    vec4 dh_du = (texture2D(uDisplacementMap, vUv - d_u) - texture2D(uDisplacementMap, vUv + d_u)) / (2.0 * delta);
+    vec4 dh_dv = (texture2D(uDisplacementMap, vUv - d_v) - texture2D(uDisplacementMap, vUv + d_v)) / (2.0 * delta);
     
     // Calculate derivatives of the surface
-    vec4 t_u = vec4<vec3>(vDerivU, 0.) + uDisplacementScale * dh_du .* vec4<vec3>(vNormal, 0.);
-    vec4 t_v = vec4<vec3>(vDerivV, 0.) + uDisplacementScale * dh_dv .* vec4<vec3>(vNormal, 0.);
+    vec4 t_u = vec4(vDerivU, 0.) + uDisplacementScale * dh_du * vec4(vNormal, 0.);
+    vec4 t_v = vec4(vDerivV, 0.) + uDisplacementScale * dh_dv * vec4(vNormal, 0.);
     
     // Calculate displaced normal
-    vec3 dispNorm = cross<vec3>(t_u.xyz, t_v.xyz);
-    dispNorm = normalize<vec3>((vNormalMatrix * dispNorm).xyz);
+    vec3 dispNorm = cross(vec3(t_u), vec3(t_v));
+    dispNorm = normalize(vNormalMatrix * dispNorm);
     // interpolating normals will change the length of the normal, so renormalize the normal.
-    vec3 N = normalize<vec3>(dispNorm);
-    vec3 V = normalize<vec3>(-vPosition.xyz);
+    vec3 N = normalize(dispNorm);
+    vec3 V = normalize(-vPosition);
     
     float roughness = 0.2;
-    vec3 finalColor = [0.0, 0.0, 0.0];
-    vec3 lightPosition = [10., 20., 30.];
-    vec3 lightColor = [0., 0.3, 0.5];
-    for (int i = 0; i <= 1; i++) {
-        float r = length<vec3>(lightPosition - vPosition.xyz);
-        vec3 L = normalize<vec3>(lightPosition - vPosition.xyz);
-        vec3 H = normalize<vec3>(L + V);
+    color finalColor = [0.0, 0.0, 0.0];
+    vec3 lightPosition = [1., 1., 1.];
+    color lightColor = [0.1, 0.3, 0.5];
+    for (int i = 0; i <= 1; i += 1) {
+        float r = length(lightPosition - vPosition);
+        vec3 L = normalize(lightPosition - vPosition);
+        vec3 H = normalize(L + V);
         // calculate diffuse term
-       // vec3 Idiff = from_sRGB(texture2D<vec3>(uDiffuseTexture, vUv).xyz) * max(dot(N, L), 0.0);
+        vec3 Idiff = from_sRGB(vec3(texture2D(uDiffuseTexture, vUv)) as! sRGB) * max(dot(N, L), 0.2);
         // calculate specular term
-        vec3 Ispec = [1.0, 1.0, 1.0] * pow<float>(max(dot<vec3>(N, H), 0.0), 1.0 / roughness);
-        //finalColor = finalColor + lightColor * (Idiff + Ispec) / (r*r);
-        lightPosition = [-10., 0., -10.];
+        vec3 Ispec = [1.0, 1.0, 1.0] * pow(max(dot(N, H), 0.0), 1.0 / roughness);
+        finalColor = finalColor + lightColor * ((Idiff + Ispec) as! color) / (r*r);
+        lightPosition = [-1., -1., -1.];
     }
 
-    float exposure = 0.2;
+    float exposure = 10.;
     // Only shade if facing the light
     // Color the back faces an identifiable color
-    //if (gl_FrontFacing) {
-        vec4 gl_FragColor = vec4<vec3>(to_sRGB(finalColor * exposure), 1.0);
-    //} else {
-    //    gl_FragColor = vec4(170.0/255.0, 160.0/255.0, 0.0, 1.0);
-    //}
+    if (gl_FrontFacing) {
+        gl_FragColor = vec4(to_sRGB(finalColor * exposure), 1.0);
+    } else {
+        gl_FragColor = vec4(170.0/255.0, 160.0/255.0, 0.0, 1.0);
+    }
 }

@@ -35,7 +35,7 @@ void main() {
         vec3 reflectDir = vec3(uView*vec4(reflect(-lightDir, worldNorm), 0.));
 
         float specular = pow(max(dot(normalize(-camPos), reflectDir), 0.), 32.);
-        vec4 gl_FragColor = vec4(ambient + diffuse * diffColor + specular * specColor, 1.);
+        gl_FragColor = vec4(ambient + diffuse * diffColor + specular * specColor, 1.);
     }
     // Example phong model with errors
     else {        
@@ -58,6 +58,6 @@ void main() {
         vec3 reflectDir = vec3(uView*vec4(reflect(-lightDir, worldNorm), 0.));
 
         float specular = pow(max(dot(normalize(-camPos), reflectDir), 0.), 32.);
-        vec4 gl_FragColor = vec4(ambient + diffuse * diffColor + specular * specColor, 1.0);
+        gl_FragColor = vec4(ambient + diffuse * diffColor + specular * specColor, 1.0);
     }
 }

@@ -29,5 +29,5 @@ void main() {
   auto diff = max(dot(normalize(vNormal in world), lightDir), 0.);
   auto reflection = reflect(-lightDir, normalize(vNormal in world));
   auto spec = pow(max(dot(normalize(-(vPos in view)), normalize(reflection in view)), 0.), 32.);
-  auto gl_FragColor = alphatize(diff * diffuse + spec * specular);
+  gl_FragColor = alphatize(diff * diffuse + spec * specular);
 }

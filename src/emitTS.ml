@@ -35,7 +35,7 @@ let rec comp_value (v : value) : string =
     | Bool b -> "<boolean>" ^ string_of_bool b
     | Num n -> "<number>" ^ string_of_int n
     | Float f -> string_of_float f
-    | StringVal s -> s
+    | StringVal s -> "'"^ s ^ "'"
 
 (* Note the column parameter for padding the matrix size *)
 let rec string_of_no_paren_vec (v: exp list) (padding: int) (s : SS.t) : string = 
@@ -62,7 +62,7 @@ and comp_exp (e : exp) (s : SS.t) : string =
     | Var x -> x
     | Arr a -> (match a with
         | [] -> failwith "cannot have an empty array"
-        | (_, t)::_ -> (match t with
+        | (e, t)::_ -> (match t with
             (* | FloatTyp | IntTyp -> "vec" ^ (string_of_int (List.length a)) ^ ".fromValues(" ^ (String.concat ", " (List.map (fun (e, t) -> comp_exp e s) a)) ^ ")" *)
             | FloatTyp | IntTyp | BoolTyp->  "[" ^ (String.concat ", " (List.map (fun (e, t) -> comp_exp e s) a)) ^ "]"
             (* | VecTyp n -> let as_vec_list = (fun v -> (match v with | (Arr a', _) -> (List.map fst a') | _ -> failwith "Typechecker error, a matrix must be a list of vectors")) in
@@ -73,7 +73,10 @@ and comp_exp (e : exp) (s : SS.t) : string =
                 | _ -> failwith "Typechecker error, a matrix must be a list of vectors")) in
                 string_of_mat (List.map as_vec_list a) *)
             | ArrTyp (someTyp, d) -> "[" ^ (String.concat ", " (List.map (fun (e, t) -> comp_exp e s) a)) ^ "]"
-            | _ -> failwith "Typechecker error, every array must be a list of ints, floats, or vectors"))
+            | StringTyp -> "[" ^ (String.concat ", " (List.map (fun (e, t) -> comp_exp e s) a)) ^ "]"
+            | _ -> failwith "Typechecker error, every array must be a list of ints, floats, or vectors"
+            (* | _ -> comp_exp e s *)
+            ))
     (* | Unop (op, (e, t)) ->
         begin
             match t with
@@ -155,7 +158,7 @@ and comp_exp (e : exp) (s : SS.t) : string =
             else (String.concat "__" (List.map comp_fn_arg_type tpl)) ^ "." ^ f
         in
         fn_name ^ "(" ^ (String.concat "," (List.map (fun (e, _) -> comp_exp e s) args)) ^ ")" *)
-        "(" ^ string_of_fn_util f (List.map string_of_texp args) ^ ")"
+        "(" ^ string_of_fn_util f (List.map (fun x -> comp_texp x s) args) ^ ")"
         (* failwith "unimplemented function invocation writing" *)
 
 let comp_assign (x : texp) ((e, t) : texp) (s : SS.t) : string =
@@ -224,14 +227,14 @@ let rec comp_prog (f : prog) (s : SS.t) : string =
         | BuiltIn -> ""
         | _ ->
             let e_str = string_of_option_removed (fun x -> "= " ^ comp_texp x SS.empty) e in
-            let ts_type = match (string_of_typ et) with
+            (* let ts_type = match (string_of_typ et) with
                 | "int" | "float" -> "number"
                 | a -> a
-            in
+            in *)
             match et with
             (* | VecTyp n -> "var " ^ x ^ "= vec" ^ (string_of_int n) ^ ".create();" ^ x ^ e_str ^ (decl_attribs t)
             | MatTyp (m,n) -> "var " ^ x ^ "= mat" ^ (string_of_int (max m n)) ^ ".create();" ^ e_str ^ (decl_attribs t) *)
-            | _ -> "var " ^ x  ^ ":" ^ ts_type ^ e_str ^ ";" ^ "\n" ^ (comp_prog t s)
+            | _ -> "var " ^ x  (*^ ":" ^ ts_type*) ^ e_str ^ ";" ^ "\n" ^ (comp_prog t s)
 
 (* let rec decl_attribs (gv : global_vars) : string = 
     debug_print ">> decl_attribs";

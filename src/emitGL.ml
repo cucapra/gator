@@ -34,12 +34,27 @@ and string_of_glsl_mat (m: texp list list) : string =
     "mat" ^ (string_of_int dim) ^ string_of_mat_padded tm dim
 
 and string_of_typ (t : etyp) : string =
+    let is_2_4 d =
+        match d with
+        | ConstInt d' -> d' >= 2 && d' <= 4
+        | _ -> false
+    in
+    let arr_string =
+        match t with
+        | ArrTyp (t', d) ->
+            string_of_typ t' ^ "[" ^ string_of_constvar d ^ "]"
+        | _ -> TypedAstPrinter.string_of_typ t
+    in
+    let dim_string s d =
+        if is_2_4 d then s ^ string_of_constvar d else 
+        arr_string
+    in
     match t with
-    | ArrTyp (IntTyp, d) -> "ivec" ^ string_of_constvar d
-    | ArrTyp (FloatTyp, d) -> "vec" ^ string_of_constvar d
-    | ArrTyp (BoolTyp, d) -> "bvec" ^ string_of_constvar d
-    | ArrTyp (ArrTyp (FloatTyp, _), d)
-    | ArrTyp (ArrTyp (IntTyp, _), d) -> "mat" ^ string_of_constvar d
+    | ArrTyp (IntTyp, d) -> dim_string "ivec" d
+    | ArrTyp (FloatTyp, d) -> dim_string "vec" d
+    | ArrTyp (BoolTyp, d) -> dim_string "bvec" d
+    | ArrTyp (ArrTyp (FloatTyp, _), d) -> dim_string "mat" d
+    | ArrTyp _ -> arr_string
     | ParTyp (s, _) -> s
     | _ -> TypedAstPrinter.string_of_typ t
 

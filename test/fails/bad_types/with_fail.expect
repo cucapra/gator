@@ -1,0 +1,1 @@
+Fatal error: exception Gatorl__CheckUtil.TypeException("Cannot apply a matrix of type vec3lit->b to a vector of type b")

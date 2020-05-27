@@ -1,0 +1,35 @@
+#"precision mediump float;";
+using "../../glsl_defs.lgl";
+
+frame model has dimension 3;
+frame world has dimension 3;
+frame view has dimension 3;
+frame projection has dimension 3;
+frame tex has dimension 2;
+
+attribute cart3<model>.point aPosition;
+attribute cart3<world>.vector aDerivU;
+attribute cart3<world>.vector aDerivV;
+attribute cart3<world>.normal aNormal;
+attribute cart2<tex>.point aUv;
+canon uniform hom<view>.transformation<projection> uProjection;
+canon uniform hom<world>.transformation<view> uView;
+canon uniform hom<model>.transformation<world> uModel;
+canon uniform cart3<model>.normalTransformation<view> uNormal;
+
+varying cart3<world>.point vPosition;
+varying cart3<world>.vector vDerivU;
+varying cart3<world>.vector vDerivV;
+varying cart3<world>.normal vNormal;
+varying cart2<tex>.point vUv;
+varying cart3<model>.normalTransformation<view> vNormalMatrix;
+
+void main() {
+  gl_Position = aPosition in hom<projection>;
+  vUv = aUv;
+  vNormal = aNormal;
+  vPosition = aPosition in world;
+  vNormalMatrix = uNormal;
+  vDerivU = aDerivU;
+  vDerivV = aDerivV;
+}

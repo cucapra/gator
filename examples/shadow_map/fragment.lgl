@@ -39,8 +39,8 @@ float specStrength, float linear, float quad) {
     if (0. <= lambertian) {
         specular = pow(max(0., dot(normalize(-fragPos), reflectDir)), 32.);
     }
-    float distance = length(lightPos - fragPos);
-    auto temp = (linear * distance + quad * distance * distance);
+    float dist = length(lightPos - fragPos);
+    auto temp = (linear * dist + quad * dist * dist);
     float attenuation = 1.0 / temp;
     auto tempColor = (lambertian * baseColor + specStrength * specular * [1., 1., 1.]);
     return tempColor * attenuation;
@@ -66,5 +66,5 @@ void main() {
   color phong_color = phong_light(uLight, vPosition in world, normalize(vNormal in world), 
     uBaseColor, uSpecStrength, .08, .0001);
 
-  auto gl_FragColor = extendColor(ambient + phong_color * amountInLight);
+  gl_FragColor = extendColor(ambient + phong_color * amountInLight);
 }

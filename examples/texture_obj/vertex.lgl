@@ -1,3 +1,4 @@
+#"precision mediump float;";
 using "../glsl_defs.lgl";
 
 frame model has dimension 3;
@@ -14,5 +15,5 @@ varying vec2 vTexCoord;
 
 void main() {
   vTexCoord = aTexCoord;
-  auto gl_Position = aPosition in hom<projective>;
+  gl_Position = aPosition in hom<projective>;
 }

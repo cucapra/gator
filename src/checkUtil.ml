@@ -10,6 +10,7 @@ let rename_fn (f : string -> string) (a,b,id,c,d:fn_typ) : fn_typ = a,b,f id,c,d
 let ignore_typ (t : typ) : unit = ignore t
 let ignore_dexp (d : dexp) : unit = ignore d
 let ignore_typ_context (t : typ Assoc.context) : unit = ignore t
+let ignore_typ_bool_context (t : (typ * bool) Assoc.context) : unit = ignore t
 let string_of_fn_inv ((s, tl) : fn_inv) : string = 
   s ^ "<" ^ string_of_list string_of_typ tl ^ ">"
 let string_of_tau (b, pm, t : tau) =
@@ -139,10 +140,10 @@ let bind_typ (cx : contexts) (id : string) (ml : modification list) (t : typ) : 
 let get_ml_pm (cx : contexts) (ml : modification list) : parameterization =
   let get_ml_pm_rec (pm : parameterization) (m : modification) =
     match m with
-    | With (t, sl) -> 
+    | With (t, sl, b) -> 
       let fail s = error cx ("Duplicate parameterization assignments to variable " ^ s) in
       List.fold_right (fun s acc -> if Assoc.mem s acc then fail s
-        else Assoc.update s t acc) sl pm
+        else Assoc.update s (t,b) acc) sl pm
     | _ -> pm
   in
   List.fold_left get_ml_pm_rec (Assoc.empty) ml
@@ -231,7 +232,7 @@ let rec map_aexp (cx : contexts) (fs : string -> string) (f : typ -> typ) (ae : 
 let map_mod (cx : contexts) (f : typ -> typ) (m : modification) : modification =
   debug_print (">> map_mod " ^ string_of_modification m);
   match m with
-  | With(t, b) -> With(f t, b)
+  | With(t, b, v) -> With(f t, b, v)
   | _ -> m
 
 let rec map_acomm (cx : contexts) (fs : string -> string) (fe : exp -> exp) (ft : typ -> typ) (ac : acomm) 

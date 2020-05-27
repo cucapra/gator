@@ -1,0 +1,21 @@
+type meters is float;
+type centimeters is meters;
+type milli is centimeters;
+
+with T < float: T +(T x, T y);
+with T < float: T -(T x, T y);
+with T < float: T *(T x, T y);
+
+void main(){
+    meters a = 10.0;
+    centimeters b = 12.1;
+    milli c = 6.3;
+
+    auto d = a + b;
+    auto e = b - c;
+    auto f = a - b * c;
+
+    print d;
+    print e;
+    print f;
+}

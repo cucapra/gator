@@ -1,230 +1,156 @@
-// Microfacet BDRF Shader
+#"precision mediump float;";
+#"precision mediump int;";
+using "../glsl_defs.lgl";
 
-tag model is vec3;
-tag modelHom is vec4;
-tag world is vec3;
-tag worldHom is vec4;
-tag camera is vec3;
-tag cameraHom is vec4;
-tag color is vec3;
-tag alphaColor is vec4;
+type color is vec3;
+type uv is vec2;
+type alphaColor is vec4;
+type attenuation is vec3;
 
-declare bool gl_FrontFacing;
-declare float abs(float x);
-declare float exp(float x);
-declare float sqrt(float x);
-declare float max(float v1, float v2);
-declare float length<`t : vec>(`t x);
-declare float dot<`t: genType>(`t v1, `t v2);
-declare `t normalize<`t : genType>(`t x);
-declare `t pow<`t : genType>(`t v1, `t v2);
-declare vec4 vec4<`t : genType>(`t v, float x);
-declare alphaColor texture2D<`t : vec3>(sampler2D<`t> txt, vec2 texCoord);
+frame view has dimension 3;
+frame normal_localframe has dimension 3;
 
-color to_sRGB(color c) { return pow<color>(c, [1.0/2.2, 1.0/2.2, 1.0/2.2]); }
-color from_sRGB(color c) { return pow<color>(c, [2.2, 2.2, 2.2]); }
+const float PI = 3.14159265359;
+varying cart3<view>.position geom_position;
+varying uv geom_texCoord;
+canon varying cart3<view>.normal geom_normal;
+varying cart3<view>.vector geom_tangent;
+varying cart3<view>.vector geom_bitangent;
+uniform color mat_diffuseColor;
+uniform int mat_hasDiffuseTexture;
+uniform sampler2D<alphaColor> mat_diffuseTexture;
+uniform float mat_indexOfRefraction;
+uniform float mat_alpha;
+uniform int mat_hasAlphaTexture;
+uniform sampler2D<vec4> mat_alphaTexture;
+uniform int mat_hasNormalTexture;
+uniform sampler2D<alphaColor> mat_normalTexture;
+uniform float mat_normalTextureScale;
+uniform int anisotropic;
+uniform cart3<view>.position light_eyePosition;
+uniform attenuation light_attenuation;
+uniform color light_color;
 
-// Compute Fresnel term for microfacet shading
-//    L: vector from the light source
-//    H: half vector between the vector from the light source and the vector to the camera with unit length
-// (for unpolarized light)
-float computeF(model L, model H) {
-    // material-dependent constants for Beckmann distribution
-    float ni = 1.0;
-    float nt = 2.0;
-
-    float c = abs(dot<model>(L, H));
-    float gSquared = (nt * nt) / (ni * ni) - 1.0 + c * c;
-    // clamp if irrational
-    float f = 1.0;
-    if (0.0 <= gSquared) {
-        float g = sqrt(gSquared);
-        f = 0.5 * ((g - c) * (g - c)) / ((g + c) * (g + c));
-        f = f * (1.0 + ((c * (g + c) - 1.0) / (c * (g - c) + 1.0)) * ((c * (g + c) - 1.0) / (c * (g - c) + 1.0)));
-    } else {
-        skip;
+canon cart3<normal_localframe>.halfdir proj_normlocalframe (cart3<view>.halfdir m, canon cart3<view>.normal n) {
+    auto nhat = normalize(n);
+    auto t = normalize(geom_tangent - dot(geom_tangent,nhat));
+	// Unfortunate hack due to bug
+    auto b = (cross(nhat as! vec3, t as! vec3) as! cart3<view>.direction);
+    if (dot(geom_bitangent, b) <= 0.) {
+		///??????
+        b = (-b) as! cart3<view>.direction;
     }
-    return f;
+    return [dot(m, t), dot(m,b), dot(m,nhat)];
 }
 
-// Compute microfacet distribution using Beckmann distribution
-// Arguments:
-//    N: normal vector
-//    H: half vector between the vector from the light and the vector to the camera with unit length
-float computeD(model N, model H) {
-    float pi = 3.141592653589793238;
-    float alpha = 0.7;
-    float d = 0.0;
-    float d2 = dot<model>(H, N);
-    if (0.0 <= d2) { 
-        float cos_thetam = dot<model>(H, N);
-        float cos_thetam2 = cos_thetam * cos_thetam;
-        float sin_thetam2 = 1.0 - cos_thetam2;
-        float cos_thetam4 = cos_thetam2 * cos_thetam2;
-        float tan_thetam2 = sin_thetam2 / cos_thetam2;
-        d = exp(-tan_thetam2 / (alpha * alpha));
-        d = d / (pi * alpha * alpha * cos_thetam4);
-    } else {
-        skip;
-    }
-    return d;
-}
+cart3<view>.normal getShadingNormal() {
+    auto nhat = normalize(geom_normal);
+    if (mat_hasNormalTexture == 1) {
+        color rgb = vec3(texture2D(mat_normalTexture, geom_texCoord)) as! color;
+        nhat = [2.*rgb[0] - 1., 2.*rgb[1] - 1., 2. * rgb[2] - 1.];
 
-// Called only by computeG()
-// Arguments:
-//   I: vector
-//   H: half vector between the vector from the light and the vector to the camera with unit length
-//   N: normal vector
-float gHelper(model I, model H, model N) {
-    float alpha = 0.7;
-    float g = 0.0;
-    float vm = dot<model>(I, H);
-    float vn = dot<model>(I, N);
-    float vm_over_vn = vm / vn;
-    if (0.0 <= vm_over_vn) {
-        float cos_thetav = dot<model>(normalize<model>(I), normalize<model>(N));
-        float sin_thetav = sqrt(1.0 - cos_thetav * cos_thetav);
-        float tan_thetav = sin_thetav / cos_thetav;
-        float a = 1.0 / (alpha * tan_thetav);
-        if (1.6 <= a) {
-            g = 1.0;
-        } else {
-            g = 3.535 * a + 2.181 * a * a;
-            g = g / (1.0 + 2.276 * a + 2.577 * a * a);
+        auto n = normalize(geom_normal);
+        auto t = normalize(geom_tangent - dot(geom_tangent,n) * n);
+        auto b = (cross(n as! vec3, t as! vec3) as! cart3<view>.direction);
+        if (dot(geom_bitangent, b) < 0.) {
+            b = (-b) as! cart3<view>.direction;
         }
-    } else {
-        skip;
+
+        float s = mat_normalTextureScale;
+
+        return normalize(s * nhat[0] * t + s * nhat[1] * b + nhat[2] * n);
     }
-    return g;
+    else {return nhat as! cart3<view>.normal;}
 }
 
-// Compute geometric attenuation for Beckmann microfacet shading
-//    N: normal vector
-//    H: half vector between the vector from the light and the vector to the camera with unit length
-//    L: vector from the light source
-//    V: vector to the camera
-float computeG(model N, model H, model L, model V) {
-    float g_im = gHelper(L, H, N);
-    float g_om = gHelper(V, H, N);
-    float g = g_im * g_om;
-    return g;
+cart3<view>.halfdir get_halfdir(cart3<view>.direction n1, cart3<view>.direction n2){
+	return normalize(n1 + n2) as! cart3<view>.halfdir;
 }
 
-void main(model vPosition, modelHom->worldHom uModel, worldHom->cameraHom uView, model vNormal, sampler2D<color> uTexture, vec2 vTexCoord) {
-    model->modelHom extendModel = [
-        [1., 0., 0.],
-        [0., 1., 0.],
-        [0., 0., 1.],
-        [0., 0., 0.]
-    ];
+alphaColor alphatize(vec3 c)  {return vec4(c, 1.) as! alphaColor;}
 
-    modelHom modelScale = [0., 0., 0., 1.];
-    modelHom->model collapseModel = [ 
-        [1., 0., 0., 0.],
-        [0., 1., 0., 0.], 
-        [0., 0., 1., 0.]
-    ];
+float F(cart3<view>.direction i, cart3<view>.halfdir m) {
+	float c = abs(dot(i, m));
+	float g = sqrt(mat_indexOfRefraction * mat_indexOfRefraction - 1. + c * c);
 
-    world->worldHom extendWorld = [
-        [1., 0., 0.],
-        [0., 1., 0.],
-        [0., 0., 1.],
-        [0., 0., 0.]
-    ];
-    worldHom worldScale = [0., 0., 0., 1.];
-    worldHom->world collapseWorld = [ 
-        [1., 0., 0., 0.],
-        [0., 1., 0., 0.], 
-        [0., 0., 1., 0.]
-    ];
+	return (1. / 2.) * ((g-c)*(g-c)) / ((g+c)*(g+c)) * 
+    (1. + ((c * (g + c) - 1.)*(c * (g + c) - 1.)) / ((c * (g - c) + 1.)*(c * (g - c) + 1.)));
+}
 
-    camera->cameraHom extendCamera = [
-        [1., 0., 0.],
-        [0., 1., 0.],
-        [0., 0., 1.],
-        [0., 0., 0.]
-    ];
-    cameraHom cameraScale = [0., 0., 0., 1.];
-    cameraHom->camera collapseCamera = [ 
-        [1., 0., 0., 0.],
-        [0., 1., 0., 0.], 
-        [0., 0., 1., 0.]
-    ];
+float getRoughness() {
+	float a = mat_alpha;
+	if (mat_hasAlphaTexture == 1){
+		auto temp = texture2D(mat_alphaTexture, geom_texCoord);
+		a *= temp[0];
+	}
+	return a;
+}
 
-    color->alphaColor extendColor = [
-        [1., 0., 0.],
-        [0., 1., 0.],
-        [0., 0., 1.],
-        [0., 0., 0.]
-    ];
+with float[3] T:
+float getAngle(T v1, T v2) { 
+	return acos(dot(v1 as! vec3, v2 as! vec3));
+}
 
-    alphaColor->color collapseColor = [
-        [1., 0., 0., 0.],
-        [0., 1., 0., 0.], 
-        [0., 0., 1., 0.]
-    ];
-
-    vec4->vec3 v4_v3 = [
-        [1., 0., 0., 0.],
-        [0., 1., 0., 0.],
-        [0., 0., 1., 0.]
-    ];
-
-    alphaColor opaque = [0., 0., 0., 1.];
-
-    worldHom getWorldW = [0., 0., 0., 1.];
-
-    model->color modelAsColor = [
-        [1., 0., 0.],
-        [0., 1., 0.],
-        [0., 0., 1.]
-    ];
-
-    world->color worldAsColor = [
-        [1., 0., 0.],
-        [0., 1., 0.],
-        [0., 0., 1.]
-    ];
-
-    vec3->world vecAsWorld = [
-        [1., 0., 0.],
-        [0., 1., 0.],
-        [0., 0., 1.]
-    ]; 
-
-    // Microfacet
-    float alpha = 0.7;
-    model N = normalize<model>(vNormal);
-    model V = normalize<model>(-vPosition);
-
-    model lightPosition = [10., 20., 30.];
-    color finalColor = [0.002, 0.004, 0.009];
-
-    for (int i = 1; i <= 2; i++) {
-        float r = length<model>(lightPosition - vPosition);
-        model L = normalize<model>(lightPosition - vPosition);
-        model H = normalize<model>(L + V);
-        float f = computeF(L, H);
-        float g = computeG(N, H, L, V);
-        float d = computeD(N, H);
-        float fr = f * g * d / (4.0 * dot<model>(L, N) * dot<model>(V, N));
-        color Idiff = [0., 0., 0.];
-        color IdiffColor = collapseColor * texture2D<color>(uTexture, vTexCoord);
-        Idiff = from_sRGB(IdiffColor); // error if called as function call
-        color Ispec = [0., 0., 0.];
-        Ispec = [alpha, alpha, alpha] * fr; 
-        finalColor = finalColor + (Idiff + Ispec) * max(dot<model>(N, L), 0.0) / (r * r);
-        lightPosition = [-10., 0., -10.];
+float D(cart3<view>.halfdir m, cart3<view>.normal n) {
+	if ((dot(m, n) > 0.)) {  
+		float roughness = getRoughness();
+    float theta = 0.;
+    if (anisotropic == 1) {
+      theta = getAngle(m in normal_localframe, n);
     }
-
-    float exposure = 0.2;
-    color sRGBColor = to_sRGB(finalColor * exposure);
-    vec4 gl_FragColor = vec4<color>(sRGBColor, 1.0); // how to convert this to alphaColor appropriately
-
-    if(gl_FrontFacing) {
-        skip;
-    } else {
-        skip;
+    else {
+		  theta = getAngle(m, n);
     }
-    
+		return (roughness*roughness) / (PI * (cos(theta)*cos(theta)*cos(theta)*cos(theta))
+      * (((roughness*roughness) + (tan(theta)*tan(theta)))*((roughness*roughness) + (tan(theta)*tan(theta)))));
+	}
+	else { 
+		return 0.;
+	}
+}
+
+float G1(cart3<view>.direction v, cart3<view>.halfdir m, cart3<view>.normal n) { 
+  if (dot(v, m) * dot(v, n) > 0.) { 
+	  float roughness = getRoughness();
+	  float theta = getAngle(v, normalize(n));
+	  return (2. / (1. + sqrt(1. + (roughness*roughness) * (tan(theta)*tan(theta)))));
+  }
+  else { return 0.; }
+}
+
+float G(cart3<view>.direction i, cart3<view>.direction o, cart3<view>.halfdir m, cart3<view>.normal n) {
+  return (G1(i, m, getShadingNormal()) * G1(o, m, getShadingNormal()));
+}
+
+vec3 getDiffuseColor() {
+  vec3 kd = mat_diffuseColor;
+  if (mat_hasDiffuseTexture == 1) { 
+    auto tmp = texture2D(mat_diffuseTexture, geom_texCoord);
+    kd[0] *= tmp[0];
+    kd[1] *= tmp[1];
+    kd[2] *= tmp[2];
+  }
+  return kd;
+}
+
+vec3 I(color c, cart3<view>.point source, cart3<view>.point target, attenuation a) { 
+  float d = distance(source, target);
+  return (c / (a[0] + a[1] * d + a[2] * d * d));
+}
+
+vec3 promote(float f) {
+  return [f, f, f];
+}
+
+void main() {
+  	alphaColor final_color = [0., 0., 0., 1.];
+	auto i = normalize(light_eyePosition - geom_position);
+	auto o = normalize(-geom_position);
+	auto m = get_halfdir(i, o);
+	auto n = getShadingNormal();
+	auto kd = getDiffuseColor();
+	final_color += alphatize(
+		(kd + promote(F(i,m) * D(m,n) * G(i,o,m,n) / (4.0 * abs (dot(i,n)) * abs(dot(o,n))))) * max(0., dot(n,i)) 
+		* I(light_color, light_eyePosition, geom_position, light_attenuation));
+	gl_FragColor = final_color;
 }

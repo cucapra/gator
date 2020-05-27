@@ -1,0 +1,33 @@
+#"precision mediump float;";
+
+using "../../glsl_defs.lgl";
+
+frame model has dimension 3;
+frame world has dimension 3;
+frame view has dimension 3;
+frame proj has dimension 3;
+
+type uv is vec2;
+
+attribute cart3<model>.point aPosition;
+attribute cart3<model>.vector aNormal;
+attribute uv aTexCoord;
+attribute cart3<view>.vector aTangent;
+attribute cart3<view>.vector aBitangent;
+varying cart3<view>.point geom_position;
+varying uv geom_texCoord;
+varying cart3<view>.vector geom_normal;
+varying cart3<view>.vector geom_tangent;
+varying cart3<view>.vector geom_bitangent;
+canon uniform hom<view>.transformation<proj> uProjection;
+canon uniform hom<world>.transformation<view> uView;
+canon uniform hom<model>.transformation<world> uModel;
+
+void main() {
+  geom_position = aPosition in view;
+  geom_normal = aNormal in view;
+  geom_texCoord = aTexCoord;
+  geom_tangent = aTangent in view;
+  geom_bitangent = aBitangent in view;
+  gl_Position = aPosition in hom<proj>;
+}

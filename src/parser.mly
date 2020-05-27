@@ -85,6 +85,7 @@ exception ParseException of string
 %token UNIFORM
 %token VARYING
 %token POUND
+%token PERCENT
 
 (* Precedences *)
 
@@ -170,7 +171,9 @@ let prototype_element ==
 
 let modification ==
   | WITH; t = typ; r = separated_list(COMMA, ID); COLON;
-    <With>
+    { With(t, r, false) }
+  | WITH; t2 = ID; LWICK; t1 = typ; COLON; 
+    { With(t1, [t2], true) }
   | CANON;
     { Canon }
   | DECLARE;
@@ -267,6 +270,7 @@ let dexp :=
   | x = ID;
     <DimVar>
 
+
 let typ :=
   | AUTOTYP;
     { AutoTyp }
@@ -298,6 +302,8 @@ let typ :=
     { ParTyp(x, []) }
   | GENTYPE; 
     { GenTyp }
+  | PERCENT; LPAREN; t = typ; RPAREN;
+    { Literal(t) }
 
 let storage_qual ==
   | IN;
