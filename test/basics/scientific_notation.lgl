@@ -7,5 +7,7 @@ void main() {
   float x = 2.0e10;
   float y = 3.0e1;
 
+  float w = 3.0e-10;
+
   float z = x + y;
 }
