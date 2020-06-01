@@ -1,7 +1,9 @@
-.PHONY: all clean repl run build
+BUILD_ARGS=$(if (command -v ocamlformat),@install @fmt --auto-promote,@install)
+
+.PHONY: all clean repl run build test
 
 all:
-	dune exec bin/gatorc.bc
+	dune exec bin/gatorc.ml
 
 repl:
 	dune utop src
@@ -13,8 +15,13 @@ run:
 	cd examples/; SRC=$(src) yarn run start
 
 build:
-	dune build bin/gatorc.bc
-	dune build && dune install
+	dune build ${BUILD_ARGS} bin/gatorc.ml
+	dune build ${BUILD_ARGS} && dune install
 
 clean:
 	dune clean
+	rm test/**/*.out || true
+	# rm test-u/**/*.out || true
+
+test:
+	python3 test.py

@@ -35,7 +35,6 @@ val create : (string * 'a) list -> 'a context
 (* val state_to_string : ('a, 'a) context -> string *)
 
 val map : ('a -> 'b) -> 'a context -> 'b context
-
 val size : 'a context -> int
 
 (* Gives a string resprentation of this association list, seperated by sep *)

@@ -5,7 +5,7 @@
   "main": "main.js",
   "license": "MIT",
   "scripts": {
-    "start": "parcel serve $SRC/index.html"
+    "start": "if test -f $SRC/main.lgl; then gatorc -t $SRC/main.lgl > $SRC/main.ts; fi; parcel serve $SRC/index.html"
   },
   "devDependencies": {
     "parcel-bundler": "^1.9.7",

@@ -1,8 +1,8 @@
 (menhir
-  (modules parser))
+ (modules parser))
 
 (ocamllex lexer)
 
 (library
-  (name gatorl)
-  (libraries str))
+ (name gatorl)
+ (libraries str))
