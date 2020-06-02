@@ -144,35 +144,35 @@ let term ==
     <Using>
   | POUND; s = STRING; SEMI;
     <ExactCode>
-  | PROTOTYPE; x = ID; LBRACE; p = list(node(prototype_element)); RBRACE;
+  | PROTOTYPE; x = id_hack; LBRACE; p = list(node(prototype_element)); RBRACE;
     <Prototype>
-  | m = modification*; COORDINATE; x = ID; COLON; p = ID;
+  | m = modification*; COORDINATE; x = id_hack; COLON; p = id_hack;
     LBRACE; c = list(node(coordinate_element)); RBRACE;
     <Coordinate>
-  | FRAME; x = ID; HAS; DIMENSION; d = dexp; SEMI;
+  | FRAME; x = id_hack; HAS; DIMENSION; d = dexp; SEMI;
     <Frame>
-  | (m, t) = terminated_list(modification, typ); x = ID; SEMI;
+  | (m, t) = terminated_list(modification, typ); x = id_hack; SEMI;
     { GlobalVar(m, BuiltIn, t, x, None) }
-  | m = modification*; TYP; x = ID; SEMI;
+  | m = modification*; TYP; x = id_hack; SEMI;
     { Typ(m, x, AnyTyp) }
-  | m = modification*; TYP; x = ID; IS; t = typ; SEMI;
+  | m = modification*; TYP; x = id_hack; IS; t = typ; SEMI;
     <Typ>
   | m = modification*; sq = storage_qual; t = typ;
-    x = ID; v = preceded(GETS, node(exp))?; SEMI;
+    x = id_hack; v = preceded(GETS, node(exp))?; SEMI;
     <GlobalVar>
   | f = fn;
     <Fn>
 
 let prototype_element ==
-  | m = modification*; OBJECT; x = ID; t = snd(combined(IS, typ))?; SEMI;
+  | m = modification*; OBJECT; x = id_hack; t = snd(combined(IS, typ))?; SEMI;
     <ProtoObject>
   | f = fn_typ; SEMI;
     <ProtoFn>
 
 let modification ==
-  | WITH; t = typ; r = separated_list(COMMA, ID); COLON;
+  | WITH; t = typ; r = separated_list(COMMA, id_hack); COLON;
     { With(t, r, false) }
-  | WITH; t2 = ID; LWICK; t1 = typ; COLON;
+  | WITH; t2 = id_hack; LWICK; t1 = typ; COLON;
     { With(t1, [t2], true) }
   | CANON;
     { Canon }
@@ -180,13 +180,13 @@ let modification ==
     { External }
 
 let coordinate_element ==
-  | m = modification*; OBJECT; x = ID; IS; t = typ; SEMI;
+  | m = modification*; OBJECT; x = id_hack; IS; t = typ; SEMI;
     <CoordObjectAssign>
   | f = fn;
     <CoordFn>
 
 let parameter ==
-  | (ml, t) = terminated_list (modification, typ); x = ID;
+  | (ml, t) = terminated_list (modification, typ); x = id_hack;
     { (ml, t, x) }
 
 let parameters(L, P, R) ==
@@ -196,7 +196,7 @@ let arguments ==
   | x = parameters(LPAREN, node(exp), RPAREN); <>
 
 let id_expanded ==
-  | x = ID; <>
+  | x = id_hack; <>
   | NOT; { "!" }
   | x = unop_effectful; <>
   | x = infix; <>
@@ -247,7 +247,7 @@ let assignop ==
 let comm_element ==
   | SKIP;
     { Skip }
-  | (m, t) = terminated_list(modification, typ); x = ID; GETS; e = node(exp);
+  | (m, t) = terminated_list(modification, typ); x = id_hack; GETS; e = node(exp);
     { Decl(m, t, x, e) }
   | e = node(effectful_exp);
     < Exp >
@@ -267,7 +267,7 @@ let dexp :=
     <DimPlus>
   | n = NUM;
     <DimNum>
-  | x = ID;
+  | x = id_hack;
     <DimVar>
 
 
@@ -294,11 +294,11 @@ let typ :=
     { List.fold_right (fun d acc -> ArrTyp(acc, d)) dl t }
   | t1 = typ; DOT; t2 = typ;
     <MemberTyp>
-  | x = ID; pt = parameters(LWICK, typ, RWICK);
+  | x = id_hack; pt = parameters(LWICK, typ, RWICK);
     <ParTyp>
   | THIS; pt = parameters(LWICK, typ, RWICK);
     { ParTyp("this", pt) }
-  | x = ID; /* explicit for clarity and to help out the parser */
+  | x = id_hack; /* explicit for clarity and to help out the parser */
     { ParTyp(x, []) }
   | GENTYPE;
     { GenTyp }
@@ -354,15 +354,17 @@ let exp:=
     <As>
   | e = node(exp); IN; t = typ;
     <In>
-  | e = node(exp); DOT; s = ID;
-    { FnInv("swizzle",[],[Var s, $startpos; e]) }
+  | e = node(assign_exp); DOT; s = ID;
+    { FnInv("swizzle",[],[e; Val (StringVal(s)), $startpos]) }
 
 /* A strict subset of expressions that can have effects, separated to help parse commands */
 /* In other words, we syntactically reject commands that have no effect on the program */
 /* See comm_element for more details */
 let effectful_exp ==
-  | x = ID; p = oplist(parameters(LWICK, typ, RWICK)); a = arguments;
+  | x = id_hack; p = parameters(LWICK, typ, RWICK); a = arguments;
     <FnInv>
+  | x = id_hack; LPAREN; a = separated_list(COMMA, node(exp)); RPAREN;
+    { FnInv(x, [], a) }
   | op = unop_effectful; x = node(ID);
     { FnInv(op, [], [(Var (fst x), snd x)]) }
   | x = node(ID); op = unop_effectful;
@@ -371,11 +373,18 @@ let effectful_exp ==
 /* A strict subset of expressions that can be in assignments to help the parser */
 /* We syntactically reject assignments to anything but Indexes and Vars */
 /* Note that indexes may _recurse_ on expressions, this is fine */
+/* It seems like we have to list out cases so that assign_exp can be inlined. This allows us to avoid parser conflicts with typ */
 let assign_exp ==
   | x = ID;
     <Var>
   | x = ID; LBRACK; e = node(exp); RBRACK;
     { Index((Var x, $startpos), e) }
+  | x = ID; LBRACK; e1 = node(exp); RBRACK; LBRACK; e2 = node(exp); RBRACK;
+    { Index((Index((Var x, $startpos), e1), $startpos), e2) }
+
+let id_hack ==
+  | x = ID; {x}
+  | x = ID; DOT; y = ID; {x ^ "." ^ y}
 
 let unop ==
   /* NOTE: if you update this, update id_extended, which is built to avoid MINUS conflicts */

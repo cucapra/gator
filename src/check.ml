@@ -6,6 +6,7 @@ open Printf
 open Str
 open CheckUtil
 open CheckContexts
+open Glsl_ops
 
 (* The set of types that can't be written down shouldn't be
  * inferred by things like 'auto' *)
@@ -565,6 +566,7 @@ let check_params (cx : contexts) (pl : params) : contexts * TypedAst.params =
 
 let check_index_exp (cx : contexts) (t1 : typ) (t2 : typ) : typ =
   match (primitive cx t1, primitive cx t2) with
+  | ArrTyp ((ArrTyp _ as t), _), IntTyp -> Literal t
   | ArrTyp (t, _), IntTyp -> t
   | _ ->
       error cx
@@ -832,6 +834,30 @@ let check_in_exp (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
     | _ -> fail () in
   find_in_path cx start_exp start target'
 
+let check_swizzle (cx : contexts) (args : (TypedAst.exp * typ) list) :
+    TypedAst.exp * typ =
+  match args with
+  | [((arr, ArrTyp (t, _)) as tarr); (Val (StringVal s), Literal _)]
+   |[((arr, Literal (ArrTyp (t, _))) as tarr); (Val (StringVal s), Literal _)]
+    -> (
+    try
+      let indices =
+        List.init (String.length s) (fun i -> s.[i] |> char_to_index) in
+      let index_type = typ_erase cx t in
+      let create_index i : TypedAst.exp =
+        Index (exp_to_texp cx tarr, (Val (Num (List.nth indices i)), IntTyp))
+      in
+      if List.length indices == 1 then (create_index 0, t)
+      else
+        ( Arr (List.map (fun i -> (create_index i, index_type)) indices)
+        , Literal (ArrTyp (t, DimNum (List.length indices))) )
+    with Failure s -> error cx ("We had an error in swizzling: " ^ s) )
+  | _ ->
+      error cx
+        ( "Expected array and string for swizzling, got "
+        ^ ( List.map (fun (_, typ) -> string_of_typ typ) args
+          |> String.concat " and " ) )
+
 let rec check_aexp (cx : contexts) ((e, meta) : aexp) : TypedAst.exp * typ =
   check_exp (with_meta cx meta) e
 
@@ -852,6 +878,14 @@ and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
       let er = check_aexp cx r in
       ( TypedAst.Index (exp_to_texp cx el, exp_to_texp cx er)
       , check_index_exp cx (snd el) (snd er) )
+  | FnInv ("swizzle", _, args) -> (
+    try check_swizzle cx (List.map (check_aexp cx) args)
+    with TypeException e -> (
+      match args with
+      (* See if this is actually something like mesh.normals in which case treat it like one var *)
+      | [(Var s1, _); (Val (StringVal s2), _)] ->
+          check_exp cx (Var (s1 ^ "." ^ s2))
+      | _ -> raise (TypeException e) ) )
   | FnInv (x, pr, args) ->
       let (a, b, c), t = check_fn_inv cx x pr (List.map (check_aexp cx) args) in
       (TypedAst.FnInv (a, b, c), t)
@@ -955,11 +989,7 @@ and check_assign (cx : contexts) (t : typ) (x : exp) (etyp : typ) : unit =
     ^ " assigned " ^ string_of_typ etyp ) ;
   (* Check that t, if not a core type, is a registered tag *)
   let rec check_tag (t : typ) : unit =
-    match t with
-    | ParTyp _ ->
-        typ_step cx t |> ignore_typ ;
-        ()
-    | _ -> () in
+    match t with ParTyp _ -> typ_step cx t |> ignore_typ | _ -> () in
   check_tag t ;
   if is_subtype cx etyp t then ()
   else
@@ -1023,7 +1053,7 @@ let check_typ_decl (cx : contexts) (x : string) ((b, pm, t) : tau) : contexts =
             t )
           else
             error cx
-              ( "Invalid number of parameters \n\
+              ( "Invalid number of parameters\n\
                 \                provided to parameterized type " ^ s )
     | _ -> error cx ("Invalid type declaration " ^ string_of_typ t) in
   check_valid_supertype t |> ignore_typ ;
@@ -1170,7 +1200,7 @@ let check_coordinate_element (cx : contexts) (c : string)
       if List.length s != List.length fl then
         error cx
           ( id
-          ^ " does not have the same number of \n\
+          ^ " does not have the same number of\n\
             \                frame parameterizations as in " ^ proto ) ;
       (* Check that the object has a resolvable type *)
       let pm = Assoc.create (List.map (fun x -> x) fl) in
@@ -1187,10 +1217,10 @@ let check_coordinate_element (cx : contexts) (c : string)
       let has_binding = true in
       (* If there's no expected declaration, then this is an internal function *)
       (* List.length fns = 0 ||
-             List.fold_right (fun (_, (ml,prt,_,ppr,_)) acc ->
-             acc || (is_subtype cxpm rt prt &&
-             is_subtype_list cxpm (List.map fst pr) (List.map fst ppr)))
-             fns false
+         List.fold_right (fun (_, (ml,prt,_,ppr,_)) acc ->
+         acc || (is_subtype cxpm rt prt &&
+         is_subtype_list cxpm (List.map fst pr) (List.map fst ppr)))
+         fns false
          in *)
       if not has_binding then
         error cx
