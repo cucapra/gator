@@ -267,9 +267,12 @@ let dexp :=
     <DimPlus>
   | n = NUM;
     <DimNum>
-  | x = id_hack;
+  | x = ID;
     <DimVar>
 
+let nonempty_list_array_brackets(T) :=
+  | LBRACK; hd = T; RBRACK; { [hd]}
+  | LBRACK; hd = T; RBRACK; e2 = nonempty_list_array_brackets(T); { hd:: e2}
 
 let typ :=
   | AUTOTYP;
@@ -290,8 +293,8 @@ let typ :=
     { AnyFrameTyp }
   | FRAME; LPAREN; d = dexp; RPAREN;
     <FrameTyp>
-  | t = typ; LBRACK; dl = separated_list(combined(LBRACK, RBRACK), dexp); RBRACK;
-    { List.fold_right (fun d acc -> ArrTyp(acc, d)) dl t }
+  | t = typ; LBRACK; d = dexp; RBRACK;
+    { ArrTyp(t, d) }
   | t1 = typ; DOT; t2 = typ;
     <MemberTyp>
   | x = id_hack; pt = parameters(LWICK, typ, RWICK);
@@ -377,10 +380,8 @@ let effectful_exp ==
 let assign_exp ==
   | x = ID;
     <Var>
-  | x = ID; LBRACK; e = node(exp); RBRACK;
-    { Index((Var x, $startpos), e) }
-  | x = ID; LBRACK; e1 = node(exp); RBRACK; LBRACK; e2 = node(exp); RBRACK;
-    { Index((Index((Var x, $startpos), e1), $startpos), e2) }
+  | x = ID; el = nonempty_list_array_brackets(node(exp));
+    { List.fold_right (fun e acc -> (Index((acc, $startpos), e))) el (Var x) }
 
 let id_hack ==
   | x = ID; {x}

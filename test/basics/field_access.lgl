@@ -2,7 +2,7 @@ declare int +(int x, int y);
 declare type vec2 is float[2];
 declare type vec3 is float[3];
 declare type vec4 is float[4];
-declare type mat2x3 is float[2][3];
+declare type mat2x3 is float[3][2];
 
 with vec2 T:    declare T +(T v1, T v2);
 with vec2 T:    declare T .*(T v1, T v2);
@@ -43,11 +43,11 @@ void main() {
     float[3] s31 = m[2]; // = vec3(1.3, 2.3, 3.3) OR vec3(3.1, 3.2, 3.3) -- we're keeping the first for now
     float s32 = m[2][0]; // = 1.3 OR 3.1
     float s33 = m[2].y; // = 2.3 OR 3.2
-/*     mat2x3 m2 = [[1.1, 1.2, 1.3], [2.1, 2.2, 2.3]];
-    vec2 s34 = m2[0];  // [1.1, 2.1] */
+    mat2x3 m2 = [[1.1, 1.2, 1.3], [2.1, 2.2, 2.3]];
+    vec3 s34 = m2[0];  // [1.1, 2.1]
 
     print s31;
     print s32;
     print s33;
-/*     print s34; */
+    print s34;
 }
