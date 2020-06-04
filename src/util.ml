@@ -23,7 +23,8 @@ let nonempty x = List.length x > 0
 let string_of_option_removed (f : 'a -> string) (o : 'a option) : string =
   match o with Some v -> f v | None -> ""
 
-let string_of_pair (a : string) (b : string) : string = "(" ^ a ^ ", " ^ b ^ ")"
+let string_of_pair (a : string) (b : string) : string =
+  "(" ^ a ^ ", " ^ b ^ ")"
 
 let string_of_separated_list (sep : string) (f : 'a -> string) (l : 'a list) :
     string =

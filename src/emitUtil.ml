@@ -15,7 +15,8 @@ let binop_list =
   ; "^" ]
 
 let replace_list =
-  [ (Str.regexp "+", "_gator_plus"); (Str.regexp "-", "_gator_minus")
+  [ (Str.regexp "+", "_gator_plus")
+  ; (Str.regexp "-", "_gator_minus")
   ; (Str.regexp "*", "_gator_times") ]
 
 let replace_all_in_name id =
@@ -23,7 +24,8 @@ let replace_all_in_name id =
 
 let string_of_fn_util (id : string) (args : string list) : string =
   let base =
-    replace_all_in_name id ^ "(" ^ string_of_list (fun x -> x) args ^ ")" in
+    replace_all_in_name id ^ "(" ^ string_of_list (fun x -> x) args ^ ")"
+  in
   match args with
   | [a] -> if List.mem id unop_list then id ^ a else base
   | [a; b] -> if List.mem id binop_list then "(" ^ a ^ id ^ b ^ ")" else base
@@ -42,7 +44,8 @@ let rec replace_type (et : etyp) (t : etyp) (r : etyp) : etyp =
        | MatTyp(k, l), MatTyp(m, n) -> k == m && l == n
        | TransTyp(et1, et2), TransTyp(et3, et4) -> eq et1 et3 && eq et2 et4
        | AbsTyp(x, _), AbsTyp(y, _) -> debug_print (x ^ " " ^ y); debug_print (string_of_bool (x = y)); x = y *)
-    | _, _ -> false in
+    | _, _ -> false
+  in
   if eq et t then r
   else
     match et with
@@ -61,7 +64,8 @@ let rec replace_type_in_texp ((e, et) : texp) (t : etyp) (r : etyp) : texp =
           ( x
           , List.map (fun pt -> replace_type pt t r) tl
           , replace_type_in_args a t r )
-    | _ -> e in
+    | _ -> e
+  in
   let et' = replace_type et t r in
   (e', et')
 
@@ -85,11 +89,13 @@ let rec replace_type_in_comm (c : comm) (t : etyp) (r : etyp) : comm =
         | [] -> []
         | (te, cl) :: tl ->
             (replace_type_in_texp te t r, replace_type_in_comm_list cl t r)
-            :: replace_type_in_if_block_list tl in
+            :: replace_type_in_if_block_list tl
+      in
       let clo' =
         match clo with
         | None -> None
-        | Some cl -> Some (replace_type_in_comm_list cl t r) in
+        | Some cl -> Some (replace_type_in_comm_list cl t r)
+      in
       If
         ( (replace_type_in_texp te t r, replace_type_in_comm_list cl t r)
         , replace_type_in_if_block_list ibl
@@ -106,8 +112,8 @@ let rec replace_type_in_comm (c : comm) (t : etyp) (r : etyp) : comm =
     | Some te -> Return (Some (replace_type_in_texp te t r)) )
   | _ -> c
 
-and replace_type_in_comm_list (cl : comm list) (t : etyp) (r : etyp) : comm list
-    =
+and replace_type_in_comm_list (cl : comm list) (t : etyp) (r : etyp) :
+    comm list =
   match cl with
   | [] -> []
   | c :: tl -> replace_type_in_comm c t r :: replace_type_in_comm_list tl t r
@@ -125,7 +131,7 @@ let rec replace_type_in_parameterization (pm : parameterization) (t : etyp)
        (fun (n, c) ->
          match t with
          | ParTyp (x, _) -> if x = n then (x, r) else (n, c)
-         | _ -> (n, c))
+         | _ -> (n, c) )
        pm_list)
 
 let rec replace_type_in_fn (((rt, n, pm, p), cl) : fn) (t : etyp) (r : etyp) :
@@ -136,7 +142,8 @@ let rec replace_type_in_fn (((rt, n, pm, p), cl) : fn) (t : etyp) (r : etyp) :
   let pm' = replace_type_in_parameterization pm t r in
   ((rt', n, pm', p'), cl')
 
-let rec replace_type_in_fn_list (fl : fn list) (t : etyp) (r : etyp) : fn list =
+let rec replace_type_in_fn_list (fl : fn list) (t : etyp) (r : etyp) : fn list
+    =
   match fl with
   | [] -> []
   | f :: tl -> replace_type_in_fn f t r :: replace_type_in_fn_list tl t r
@@ -160,9 +167,11 @@ let generate_generics_for_fn (((rt, s, pm, p), cl) : fn) (int_and_float : bool)
           List.fold_left
             (fun acc t ->
               debug_print (string_of_typ t) ;
-              replace_type_in_fn_list orig (ParTyp (s, [c])) t @ acc)
-            [] lst in
-        replace_generic result tl in
+              replace_type_in_fn_list orig (ParTyp (s, [c])) t @ acc )
+            [] lst
+        in
+        replace_generic result tl
+  in
   replace_generic [((rt, s, pm, p), cl)] pm_list
 
 (* let rec generate_generics_in_prog (p : fn list) (int_and_float : bool) : prog =

@@ -38,8 +38,9 @@ let rec replace_abstype_query (c : typ Assoc.context) (t : typ) : typ * bool =
           List.fold_right
             (fun t (acc, b) ->
               let t', b' = replace_abstype_query c t in
-              (t' :: acc, b || b'))
-            tl ([], false) in
+              (t' :: acc, b || b') )
+            tl ([], false)
+        in
         (ParTyp (s, tl'), b)
   | MemberTyp (t1, t2) ->
       let t1', b1 = replace_abstype_query c t1 in
@@ -132,7 +133,7 @@ and match_parameterization_safe (cx : contexts) (pml : typ list) :
     List.length pmb == List.length pml
     && List.fold_left2
          (fun acc (s, (t1, b)) t ->
-           is_subtype cx t t1 && (not (is_typ_eq cx t t1 && b)) && acc)
+           is_subtype cx t t1 && (not (is_typ_eq cx t t1 && b)) && acc )
          true pmb pml
   then
     Some
@@ -163,7 +164,8 @@ and chi_object_lookup (cx : contexts) (c : typ) (o : typ) : typ =
         error cx
           ( "Invalid geometric type " ^ string_of_typ c ^ "." ^ string_of_typ o
           ^ "(Note that all geometric types must be of the form \
-             scheme<frame>.object)" ) in
+             scheme<frame>.object)" )
+  in
   (* For now, we just check that the parameterization on c is valid;
    * it doesn't mean anything when looking up the supertype *)
   let stc = match_parameterization (with_pm cx (fst (get_scheme cx cn))) f1 in
@@ -215,13 +217,15 @@ and primitive_deep (cx : contexts) (t : typ) : typ =
     match t' with
     | ParTyp _ | MemberTyp _ | Literal _ -> false
     | ArrTyp (t'', _) | GenArrTyp t'' -> is_primitive t''
-    | _ -> true in
+    | _ -> true
+  in
   if is_primitive t then t else primitive_deep cx (typ_step cx t)
 
 let rec primitive (cx : contexts) (t : typ) : typ =
   debug_print (">> primitive " ^ string_of_typ t) ;
   let rec is_primitive t' : bool =
-    match t' with ParTyp _ | MemberTyp _ | Literal _ -> false | _ -> true in
+    match t' with ParTyp _ | MemberTyp _ | Literal _ -> false | _ -> true
+  in
   if is_primitive t then t else primitive cx (typ_step cx t)
 
 let rec greatest_common_child (cx : contexts) (t1 : typ) (t2 : typ) : typ =
@@ -269,9 +273,10 @@ let check_typ_valid (cx : contexts) (ogt : typ) : unit =
     | MemberTyp (c, o) -> ignore_typ (typ_step cx t)
     | Literal lt ->
         error cx
-          "Cannot use literal type here. Can only use literal type as function \
-           return type."
-    | _ -> () in
+          "Cannot use literal type here. Can only use literal type as \
+           function return type."
+    | _ -> ()
+  in
   check_typ_valid_rec ogt
 
 let rec typ_erase (cx : contexts) (t : typ) : TypedAst.etyp =
@@ -341,15 +346,16 @@ let exp_to_texp (cx : contexts) ((exp, t) : TypedAst.exp * typ) : TypedAst.texp
 let infer_pml (cx : contexts) (args : typ list) (target : params) :
     typ list option =
   debug_print ">> infer_pml" ;
-  let update_inference (t : typ) (s : string) (fpm : typ Assoc.context option) :
-      typ Assoc.context option =
+  let update_inference (t : typ) (s : string) (fpm : typ Assoc.context option)
+      : typ Assoc.context option =
     match fpm with
     | None -> None
     | Some p ->
         if Assoc.mem s p then
           let t' = least_common_parent cx t (Assoc.lookup s p) in
           if is_illegal_typ cx t' then None else Some (Assoc.update s t' p)
-        else Some (Assoc.update s t p) in
+        else Some (Assoc.update s t p)
+  in
   let rec unify_param (fpm : typ Assoc.context option) (arg_typ : typ)
       (par_typ : typ) : typ Assoc.context option =
     (* Only update our inference if we are working on an abstract type *)
@@ -365,9 +371,11 @@ let infer_pml (cx : contexts) (args : typ list) (target : params) :
         unify_param (unify_param fpm t2 t4) t1 t3
     | _, ParTyp (s, _) -> new_fpm s
     | ArrTyp (t1, _), ArrTyp (t2, _) -> unify_param fpm t1 t2
-    | _ -> fpm in
+    | _ -> fpm
+  in
   let inferred =
-    List.fold_left2 unify_param (Some Assoc.empty) args (List.map tr_snd target)
+    List.fold_left2 unify_param (Some Assoc.empty) args
+      (List.map tr_snd target)
   in
   (* Correctly sort the produced parameter list *)
   match inferred with
@@ -378,7 +386,8 @@ let infer_pml (cx : contexts) (args : typ list) (target : params) :
           match a with
           | None -> None
           | Some acc ->
-              if Assoc.mem x inf then Some (Assoc.lookup x inf :: acc) else None)
+              if Assoc.mem x inf then Some (Assoc.lookup x inf :: acc)
+              else None )
         (Assoc.keys cx.pm) (Some [])
 
 let check_fn_inv (cx : contexts) (x : id) (pml : typ list)
@@ -407,15 +416,18 @@ let check_fn_inv (cx : contexts) (x : id) (pml : typ list)
         if Assoc.size pm == List.length pml then Some pml
         else if List.length pml == 0 then
           infer_pml (with_pm cx pm) arg_typs params
-        else None in
+        else None
+      in
       match inferred_pml with
       | None -> None
       | Some ipml -> (
           (* Check that the parameterization conforms to the bounds provided *)
           let ipml_clean =
-            List.map (replace_abstype (Assoc.map fst cx.pm)) ipml in
+            List.map (replace_abstype (Assoc.map fst cx.pm)) ipml
+          in
           let param_check =
-            match_parameterization_safe (with_pm cx pm) ipml_clean in
+            match_parameterization_safe (with_pm cx pm) ipml_clean
+          in
           let scheme_check =
             match c with
             | None -> None
@@ -423,7 +435,8 @@ let check_fn_inv (cx : contexts) (x : id) (pml : typ list)
                 let scx = with_pm cx (fst (get_scheme cx scheme)) in
                 match infer_pml scx arg_typs params with
                 | None -> None
-                | Some spml -> match_parameterization_safe scx spml ) in
+                | Some spml -> match_parameterization_safe scx spml )
+          in
           match param_check with
           | None -> None
           | Some pm_map ->
@@ -433,7 +446,8 @@ let check_fn_inv (cx : contexts) (x : id) (pml : typ list)
               let param_typs'' =
                 match scheme_check with
                 | None -> param_typs'
-                | Some spm_map -> List.map (replace_abstype spm_map) param_typs'
+                | Some spm_map ->
+                    List.map (replace_abstype spm_map) param_typs'
               in
               (* TODO: something's wrong here: see the note at the top of canon_basics *)
               (* Finally, check that the arg and parameter types match *)
@@ -442,9 +456,10 @@ let check_fn_inv (cx : contexts) (x : id) (pml : typ list)
                   (fun x -> (scheme_check, f, x))
                   (List.fold_left2
                      (fun acc arg param ->
-                       if is_subtype cx arg param then acc else None)
+                       if is_subtype cx arg param then acc else None )
                      param_check arg_typs param_typs'')
-              else None ) in
+              else None )
+  in
   (* Check if this function should be treated as a scheme function *)
   let fn_invocated = get_functions_safe cx x in
   match
@@ -472,7 +487,7 @@ let check_fn_inv (cx : contexts) (x : id) (pml : typ list)
             else
               error cx
                 ( "Ambiguous choice of functions to call" ^ string_of_fn_typ ft1
-                ^ " and " ^ string_of_fn_typ ft2 ))
+                ^ " and " ^ string_of_fn_typ ft2 ) )
       fn_invocated None
   with
   | Some (spm, fn_found, pmt) ->
@@ -481,11 +496,14 @@ let check_fn_inv (cx : contexts) (x : id) (pml : typ list)
       let pme =
         List.fold_left
           (fun acc (_, t) ->
-            if is_subtype cx t AnyFrameTyp then acc else typ_erase cx t :: acc)
-          [] (Assoc.bindings pmt) in
+            if is_subtype cx t AnyFrameTyp then acc else typ_erase cx t :: acc
+            )
+          [] (Assoc.bindings pmt)
+      in
       let xr = if has_modification cx ml External then x else x' in
       let rt' =
-        match spm with None -> rt | Some spmt -> replace_abstype spmt rt in
+        match spm with None -> rt | Some spmt -> replace_abstype spmt rt
+      in
       ((xr, pme, List.map (exp_to_texp cx) args), replace_abstype pmt rt')
   | None ->
       error cx
@@ -504,7 +522,8 @@ let check_parameterization (cx : contexts) (pm : parameterization) : contexts =
   let check_parameter found (s, (t, b)) =
     if Assoc.mem s found then error cx ("Duplicate parameter `" ^ s)
     else check_typ_valid (with_pm cx found) t ;
-    Assoc.update s (t, b) found in
+    Assoc.update s (t, b) found
+  in
   ignore_typ_bool_context
     (List.fold_left check_parameter Assoc.empty (Assoc.bindings pm)) ;
   with_pm cx pm
@@ -516,25 +535,30 @@ let update_psi (cx : contexts) (f : fn_typ) : contexts =
   let ml, rt, id, pr, _ = f in
   if not (has_modification cx ml Canon) then cx
   else
-    let fail _ = error cx ("Invalid canonical function " ^ string_of_fn_typ f) in
+    let fail _ =
+      error cx ("Invalid canonical function " ^ string_of_fn_typ f)
+    in
     debug_print (">> update_psi " ^ string_of_fn_typ f) ;
     let target = rt in
     let prc =
       List.fold_right
         (fun (ml, t, _) acc ->
-          if not (has_modification cx ml Canon) then t :: acc else acc)
-        pr [] in
+          if not (has_modification cx ml Canon) then t :: acc else acc )
+        pr []
+    in
     if List.length prc != 1 then fail ()
     else
       let start = List.hd prc in
       let is_valid (t : typ) : bool =
-        match t with MemberTyp _ -> true | _ -> false in
+        match t with MemberTyp _ -> true | _ -> false
+      in
       if (not (is_valid start)) || not (is_valid target) then fail ()
       else
         let as_geo_typ (t : typ) : (string * string) option =
           match t with
           | MemberTyp (ParTyp (c, _), ParTyp (o, _)) -> Some (c, o)
-          | _ -> None in
+          | _ -> None
+        in
         match as_geo_typ start with
         | None -> fail ()
         | Some (c1, o1) -> (
@@ -549,8 +573,8 @@ let update_psi (cx : contexts) (f : fn_typ) : contexts =
 
 (* Type check parameter; check parameter typ validity *)
 (* Returns gamma *)
-let check_param (cx : contexts) ((ml, t, id) : modification list * typ * string)
-    : contexts =
+let check_param (cx : contexts)
+    ((ml, t, id) : modification list * typ * string) : contexts =
   debug_print ">> check_param" ;
   check_typ_valid cx t ;
   bind_typ cx id ml t
@@ -576,8 +600,8 @@ let check_as_exp (cx : contexts) (start : typ) (target : typ) : typ =
   target
 
 (* Super expensive.  We're essentially relying on small contexts *)
-let find_in_path (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
-    : aexp =
+let find_in_path (cx : contexts) (start_exp : aexp) (start : typ)
+    (target : typ) : aexp =
   debug_print
     (">> find_in_path " ^ string_of_typ start ^ " " ^ string_of_typ target) ;
   let rec psi_path_rec (to_search : (typ * aexp) Queue.t) (found : typ list) :
@@ -606,9 +630,10 @@ let find_in_path (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
             (fun acc (ml, _, _) arg ->
               if acc > 0 then acc
               else if has_modification cx ml Canon && is_none arg then -acc
-              else acc - 1)
+              else acc - 1 )
             (-1) params args
-          - 1 in
+          - 1
+        in
         let pm = get_ml_pm cx ml in
         let cxf = with_pm cx pm in
         if next_index >= 0 then
@@ -616,13 +641,15 @@ let find_in_path (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
           (* Is needlessly slow as a result *)
           List.fold_right
             (fun x acc ->
-              search_fn (c, ft) (list_replace (Some x) args next_index) @ acc)
+              search_fn (c, ft) (list_replace (Some x) args next_index) @ acc
+              )
             (get_canonical_vars cx) []
         else
           let args' =
             List.map
               (fun x -> match x with None -> tl | Some s -> get_var cx s)
-              args in
+              args
+          in
           match infer_pml cxf args' params with
           | None -> []
           | Some pml -> (
@@ -644,11 +671,13 @@ let find_in_path (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
                 let ptr' =
                   match scheme_check with
                   | None -> ptr
-                  | Some spm_map -> List.map (replace_abstype spm_map) ptr in
+                  | Some spm_map -> List.map (replace_abstype spm_map) ptr
+                in
                 let fail id2 s =
                   error cxf
                     ( "Ambiguity between viable canonical functions " ^ id
-                    ^ " and " ^ id2 ^ " (" ^ s ^ ")" ) in
+                    ^ " and " ^ id2 ^ " (" ^ s ^ ")" )
+                in
                 let compare_parameterizations (acc : bool option) t1 t2 :
                     bool option =
                   let result = is_subtype cxf t1 t2 in
@@ -698,7 +727,7 @@ let find_in_path (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
                                      duplicates in phi"
                               | Some b -> b
                             then (rt, (id2, pml2, pr2), args)
-                            else (rtr, (id, pml, pr1), args))
+                            else (rtr, (id, pml, pr1), args) )
                           rec_result
                         (* No duplicate type result found, just add this function to the list *)
                       else (rtr, (id, pml, pr1), args) :: rec_result
@@ -706,8 +735,9 @@ let find_in_path (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
                       debug_fail cxf
                         ( "Canonical function " ^ id ^ " resulted in type "
                         ^ string_of_typ rtr
-                        ^ ", while canonical functions should always result in \
-                           a coordtyp" ) ) ) in
+                        ^ ", while canonical functions should always result \
+                           in a coordtyp" ) ) )
+      in
       let rec search_fns (fns : (string option * fn_typ) list) :
           (typ * (id * typ list * typ list) * string option list) list =
         match fns with
@@ -718,17 +748,21 @@ let find_in_path (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
             else if
               List.fold_right
                 (fun (ml, _, _) acc ->
-                  if not (has_modification cx ml Canon) then acc + 1 else acc)
+                  if not (has_modification cx ml Canon) then acc + 1 else acc
+                  )
                 params 0
               != 1
             then debug_fail cx "Permitted function with not-1 non-canon param"
             else
               let start_args =
-                List.fold_right (fun _ -> List.cons None) params [] in
-              search_fn (c, fn) start_args @ search_fns t in
+                List.fold_right (fun _ -> List.cons None) params []
+              in
+              search_fn (c, fn) start_args @ search_fns t
+      in
       let rec get_valid_fn (fns : (string option * fn_typ) list) :
           string option * fn_typ =
-        List.hd fns in
+        List.hd fns
+      in
       let rec search_phi_rec
           (fns : (string * (string option * fn_typ) list) list) :
           (typ * (id * typ list * 'a list) * string option list) list =
@@ -737,16 +771,21 @@ let find_in_path (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
             List.map
               (fun s ->
                 let c, (ml, rt, id, pr, _) =
-                  get_valid_fn (get_functions_safe cx s) in
-                (rt, (id, List.map fst (Assoc.values (get_ml_pm cx ml)), []), []))
+                  get_valid_fn (get_functions_safe cx s)
+                in
+                ( rt
+                , (id, List.map fst (Assoc.values (get_ml_pm cx ml)), [])
+                , [] ) )
               ps_lst
-        | (_, fs) :: t -> search_fns fs @ search_phi_rec t in
+        | (_, fs) :: t -> search_fns fs @ search_phi_rec t
+      in
       (* TODO: using _bindings here is kinda janky, but it's hard to fix rn, so... *)
       List.map
         (fun (t, (x, y, _), z) -> (t, (x, y), z))
-        (search_phi_rec (Assoc.bindings cx._bindings.p)) in
-    let rec psi_lookup_rec (nt : typ) : (typ * fn_inv * string option list) list
-        =
+        (search_phi_rec (Assoc.bindings cx._bindings.p))
+    in
+    let rec psi_lookup_rec (nt : typ) :
+        (typ * fn_inv * string option list) list =
       (* NOTE: paths which would send to a type with more than
        * 5 generic levels are rejected to avoid infinite explosion *)
       let rec check_typ_ignore (t : typ) (count : int) : bool =
@@ -757,7 +796,8 @@ let find_in_path (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
               List.fold_left
                 (fun acc t -> acc || check_typ_ignore t (count + 1))
                 false tl
-          | _ -> false in
+          | _ -> false
+      in
       if check_typ_ignore nt 0 then []
       else
         let s_lookup = string_of_typ nt in
@@ -766,10 +806,12 @@ let find_in_path (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
         in
         let to_return = search_phi nt ps_lst in
         let next_step =
-          match nt with MemberTyp _ -> typ_step cx nt | _ -> nt in
+          match nt with MemberTyp _ -> typ_step cx nt | _ -> nt
+        in
         match next_step with
         | MemberTyp _ -> to_return @ psi_lookup_rec next_step
-        | _ -> to_return in
+        | _ -> to_return
+    in
     let rec update_search_and_found
         (vals : (typ * fn_inv * string option list) list) (e : aexp) : typ list
         =
@@ -777,7 +819,9 @@ let find_in_path (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
       | [] -> found
       | (t1, (v, pml), exps) :: t ->
           if
-            List.fold_left (fun acc t2 -> acc || is_typ_eq cx t1 t2) false found
+            List.fold_left
+              (fun acc t2 -> acc || is_typ_eq cx t1 t2)
+              false found
           then update_search_and_found t e
           else
             (* Erase the specific invocation found above for future typechecking *)
@@ -786,17 +830,20 @@ let find_in_path (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
             let aes =
               List.map
                 (fun so -> match so with None -> e | Some s -> (Var s, snd e))
-                exps in
+                exps
+            in
             let e' = (FnInv (v', pml, aes), snd e) in
             (* Note the update to the stateful queue *)
             Queue.push (t1, e') to_search ;
-            t1 :: update_search_and_found t e in
+            t1 :: update_search_and_found t e
+    in
     let nt, e =
       if Queue.is_empty to_search then
         error cx
           ( "Cannot find a path from " ^ string_of_typ start ^ " to "
           ^ string_of_typ target )
-      else Queue.pop to_search in
+      else Queue.pop to_search
+    in
     if is_subtype cx nt target then e
     else psi_path_rec to_search (update_search_and_found (psi_lookup_rec nt) e)
   in
@@ -806,20 +853,22 @@ let find_in_path (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
     Queue.push (start, start_exp) q ;
     psi_path_rec q []
 
-let check_in_exp (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
-    : aexp =
+let check_in_exp (cx : contexts) (start_exp : aexp) (start : typ)
+    (target : typ) : aexp =
   debug_print ">> check_in_exp" ;
   let fail _ =
     error cx
       ( "Invalid type as 'in' target " ^ string_of_typ target
-      ^ ", expected a scheme or frame" ) in
+      ^ ", expected a scheme or frame" )
+  in
   let c, p, o =
     match start with
     | MemberTyp (ParTyp (c, p), o) -> (c, p, o)
     | _ ->
         error cx
           ( "Invalid application of 'in' to type " ^ string_of_typ start
-          ^ ", expected a geometric type" ) in
+          ^ ", expected a geometric type" )
+  in
   let target' =
     match target with
     | ParTyp (s, tl) -> (
@@ -829,7 +878,8 @@ let check_in_exp (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
           let tl' = if List.length tl == 0 then p else tl in
           MemberTyp (ParTyp (s, tl'), o)
       | _ -> fail () )
-    | _ -> fail () in
+    | _ -> fail ()
+  in
   find_in_path cx start_exp start target'
 
 let rec check_aexp (cx : contexts) ((e, meta) : aexp) : TypedAst.exp * typ =
@@ -853,7 +903,9 @@ and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
       ( TypedAst.Index (exp_to_texp cx el, exp_to_texp cx er)
       , check_index_exp cx (snd el) (snd er) )
   | FnInv (x, pr, args) ->
-      let (a, b, c), t = check_fn_inv cx x pr (List.map (check_aexp cx) args) in
+      let (a, b, c), t =
+        check_fn_inv cx x pr (List.map (check_aexp cx) args)
+      in
       (TypedAst.FnInv (a, b, c), t)
 
 and check_arr (cx : contexts) (a : aexp list) : TypedAst.exp * typ =
@@ -896,7 +948,8 @@ and check_comm (cx : contexts) (c : comm) : contexts * TypedAst.comm =
             | Literal _ | BotTyp ->
                 error cx ("Cannot infer the type of " ^ string_of_aexp e)
             | _ -> t' )
-        | _ -> t in
+        | _ -> t
+      in
       check_assign cx t' (Var s) (snd result) ;
       ( bind_typ cx s ml t'
       , TypedAst.Decl (typ_erase cx t', s, exp_to_texp cx result) )
@@ -919,11 +972,13 @@ and check_comm (cx : contexts) (c : comm) : contexts * TypedAst.comm =
         let er = check_aexp cx b in
         let _, cr = check_comm_lst cx c in
         if is_subtype cx (snd er) BoolTyp then (exp_to_texp cx er, cr)
-        else error cx "Expected boolean expression for if condition" in
+        else error cx "Expected boolean expression for if condition"
+      in
       let c2r =
         match c2 with
         | Some e -> Some (snd (check_comm_lst cx e))
-        | None -> None in
+        | None -> None
+      in
       ( cx
       , TypedAst.If
           (check_if b c1, List.map (fun (b, c) -> check_if b c) el, c2r) )
@@ -959,7 +1014,8 @@ and check_assign (cx : contexts) (t : typ) (x : exp) (etyp : typ) : unit =
     | ParTyp _ ->
         typ_step cx t |> ignore_typ ;
         ()
-    | _ -> () in
+    | _ -> ()
+  in
   check_tag t ;
   if is_subtype cx etyp t then ()
   else
@@ -1016,7 +1072,7 @@ let check_typ_decl (cx : contexts) (x : string) ((b, pm, t) : tau) : contexts =
                 else
                   error cx
                     ( "Invalid typ used in the parameterization "
-                    ^ string_of_typ t ^ " for parameter " ^ s ))
+                    ^ string_of_typ t ^ " for parameter " ^ s ) )
               ()
               (List.map (fun (s, (t, _)) -> (s, t)) (Assoc.bindings tpm))
               (List.map check_valid_supertype pml) ;
@@ -1025,7 +1081,8 @@ let check_typ_decl (cx : contexts) (x : string) ((b, pm, t) : tau) : contexts =
             error cx
               ( "Invalid number of parameters \n\
                 \                provided to parameterized type " ^ s )
-    | _ -> error cx ("Invalid type declaration " ^ string_of_typ t) in
+    | _ -> error cx ("Invalid type declaration " ^ string_of_typ t)
+  in
   check_valid_supertype t |> ignore_typ ;
   bind cx x (Tau (b, pm, t))
 
@@ -1041,9 +1098,10 @@ let check_fn_decl (cx : contexts) (f : fn_typ) :
     List.fold_right
       (fun (s, t) acc ->
         if is_subtype cx t AnyFrameTyp then acc
-        else Assoc.update s (typ_erase cx t) acc)
+        else Assoc.update s (typ_erase cx t) acc )
       (List.map (fun (s, (t, _)) -> (s, t)) (Assoc.bindings pm))
-      Assoc.empty in
+      Assoc.empty
+  in
   if has_modification cx ml External then (cx'', None)
   else (cx'', Some (pr, pme))
 
@@ -1076,7 +1134,8 @@ let check_global_variable (cx : contexts) ((ml, sq, t, id, e) : global_var) :
   (match e' with Some (_, te) -> check_assign cx t (Var id) te | None -> ()) ;
   let gvr =
     if has_modification cx ml External then None
-    else Some (sq, typ_erase cx t, id, option_map (fun x -> exp_to_texp cx x) e')
+    else
+      Some (sq, typ_erase cx t, id, option_map (fun x -> exp_to_texp cx x) e')
   in
   (bind_typ cx id ml t, gvr)
 
@@ -1106,8 +1165,10 @@ let rewrite_scheme_typ (cx : contexts) (scheme : id) : typ -> typ =
       | MemberTyp (t1, t2) -> MemberTyp (map_typ_rec t1, map_typ_rec t2)
       | ArrTyp (tl, a) -> ArrTyp (map_typ_rec tl, a)
       | GenArrTyp t'' -> GenArrTyp (map_typ_rec t'')
-      | _ -> t' in
-    map_typ_rec t in
+      | _ -> t'
+    in
+    map_typ_rec t
+  in
   match get_scheme cx scheme with
   | pm, None -> f scheme []
   | pm, Some _ -> f scheme (List.map (fun s -> ParTyp (s, [])) (Assoc.keys pm))
@@ -1147,7 +1208,8 @@ let check_aprototype_element cx p ape : contexts =
     map_aprototype_element cx
       (rewrite_scheme_fn_inv cx p)
       (fun x -> x)
-      (rewrite_scheme_typ cx p) ape in
+      (rewrite_scheme_typ cx p) ape
+  in
   check_prototype_element (with_meta cx meta) p pe'
 
 (* Updates tau or phi with the coordinate scheme element being checked *)
@@ -1200,7 +1262,8 @@ let check_coordinate_element (cx : contexts) (c : string)
       let fn' =
         if List.length fns = 0 then
           (rename_fn (fun x -> c ^ "." ^ x) (ml, rt, id, pr, meta), cl)
-        else fn in
+        else fn
+      in
       let cx', tfn = check_fn cxpm fn' (Some c) in
       (cx', tfn)
 
@@ -1209,7 +1272,8 @@ let check_acoordinate_element cx c ace : contexts * TypedAst.fn option =
     map_acoordinate_element cx
       (rewrite_scheme_fn_inv cx c)
       (fun x -> x)
-      (rewrite_scheme_typ cx c) ace in
+      (rewrite_scheme_typ cx c) ace
+  in
   check_coordinate_element (with_meta cx meta) c ce'
 
 (* Returns the context with a checked prototype *)
@@ -1232,8 +1296,9 @@ let check_coordinate (cx : contexts) ((ml, id, p, ce) : coordinate) :
     List.fold_left
       (fun (cx', fnl) (ce, meta) ->
         let cx'', tf = check_acoordinate_element cx' id (ce, meta) in
-        (cx'', match tf with None -> fnl | Some f -> f :: fnl))
-      (cx', []) ce in
+        (cx'', match tf with None -> fnl | Some f -> f :: fnl) )
+      (cx', []) ce
+  in
   (with_scheme cxr Assoc.empty, fl)
 
 (* Check that there is a void main() defined *)
@@ -1255,7 +1320,8 @@ let check_main_fn (cx : contexts) : unit =
         else
           match rt with
           | UnitTyp -> ()
-          | _ -> raise (TypeException "Expected main function to return void") )
+          | _ -> raise (TypeException "Expected main function to return void")
+      )
 
 let check_exactCode (ec : string) : TypedAst.prog =
   let test = Assoc.empty in
@@ -1281,7 +1347,8 @@ let rec check_term (cx : contexts) (t : term) : contexts * TypedAst.prog =
       let cx', f' = check_fn cx f None in
       (cx', match f' with None -> [] | Some f' -> [Fn f']) )
 
-and check_aterm (cx : contexts) ((t, meta) : aterm) : contexts * TypedAst.prog =
+and check_aterm (cx : contexts) ((t, meta) : aterm) : contexts * TypedAst.prog
+    =
   check_term (with_meta cx meta) t
 
 (* This might end up being really bad --
@@ -1291,8 +1358,9 @@ and check_exprog (tl : prog) (cx : contexts) : contexts * TypedAst.prog =
     List.fold_left
       (fun acc t ->
         let cx', f' = check_aterm (fst acc) t in
-        (cx', f' @ snd acc))
-      (cx, []) tl in
+        (cx', f' @ snd acc) )
+      (cx, []) tl
+  in
   (cx', List.rev f)
 
 let rec check_term_list (tl : prog) (externs : prog Assoc.context) :
@@ -1303,9 +1371,10 @@ let rec check_term_list (tl : prog) (externs : prog Assoc.context) :
     List.fold_left
       (fun acc t ->
         let cx', f' = check_aterm (fst acc) t in
-        (cx', f' @ snd acc))
+        (cx', f' @ snd acc) )
       (init (snd (List.hd tl)) externs, [])
-      tl in
+      tl
+  in
   (cx, List.rev f)
 
 (* Returns the list of fn's which represent the program
@@ -1321,14 +1390,15 @@ let check_prog (tl : prog) (externs : prog Assoc.context) : TypedAst.prog =
 
 (* Searches the program for files which need to be loaded *)
 (* If we have any duplicate names, throws an exception to avoid cycles *)
-let rec search_prog (p : prog) (found : string list) : string list * string list
-    =
+let rec search_prog (p : prog) (found : string list) :
+    string list * string list =
   match p with
   | [] -> ([], found)
   | (Using s, meta) :: t ->
       let name =
         String.split_on_char '.'
-          (List.hd (List.rev (String.split_on_char '/' s))) in
+          (List.hd (List.rev (String.split_on_char '/' s)))
+      in
       if List.length name != 2 then
         error_meta meta "Imported filenames must only have one extension"
       else
@@ -1337,7 +1407,8 @@ let rec search_prog (p : prog) (found : string list) : string list * string list
         if not (extension = "lgl") then
           error_meta meta ("Extension " ^ extension ^ " not supported")
         else if List.mem filename found then
-          error_meta meta ("Duplicate filename " ^ filename ^ " in import chain")
+          error_meta meta
+            ("Duplicate filename " ^ filename ^ " in import chain")
         else
           let tr, found' = search_prog t (filename :: found) in
           (s :: tr, found')

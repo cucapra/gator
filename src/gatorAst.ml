@@ -11,7 +11,8 @@ type dexp = DimVar of string | DimNum of int | DimPlus of dexp * dexp
     | MultTyp of dtyp * dtyp *)
 (* types *)
 type typ =
-  | BotTyp (* Useful exactly for empty lists *)
+  | BotTyp
+  (* Useful exactly for empty lists *)
   | AutoTyp
   | UnitTyp
   | BoolTyp
@@ -19,15 +20,21 @@ type typ =
   | FloatTyp
   | StringTyp
   (* | DimTyp of dtyp *)
-  | ThisTyp (* Used for coordinate/class declarations *)
+  | ThisTyp
+  (* Used for coordinate/class declarations *)
   | Literal of typ
-  | ArrTyp of typ * dexp (* i.e. float[5] or bool[2][3] *)
-  | MemberTyp of typ * typ (* i.e. cart.point *)
+  | ArrTyp of typ * dexp
+  (* i.e. float[5] or bool[2][3] *)
+  | MemberTyp of typ * typ
+  (* i.e. cart.point *)
   (* Note that ParTyp is overloaded to act as the variable type when parameterization length is 0 *)
-  | ParTyp of string * typ list (* i.e. color or matrix<model, world> *)
+  | ParTyp of string * typ list
+  (* i.e. color or matrix<model, world> *)
   | AnyTyp
-  | AnyFrameTyp (* top type for frames (used in prototype declarations) *)
-  | FrameTyp of dexp (* i.e. frame<3> or frame<n> *)
+  | AnyFrameTyp
+  (* top type for frames (used in prototype declarations) *)
+  | FrameTyp of dexp
+  (* i.e. frame<3> or frame<n> *)
   | GenTyp
   | GenArrTyp of typ
   | ExactCodeTyp
@@ -39,7 +46,8 @@ and exp =
   | Val of value
   | Var of string
   | Arr of aexp list
-  | Index of aexp * aexp (* a[3] -- special operation that can't be user-defined *)
+  | Index of aexp * aexp
+  (* a[3] -- special operation that can't be user-defined *)
   | As of aexp * typ
   | In of aexp * typ
   | FnInv of string * typ list * args
@@ -48,7 +56,8 @@ and exp =
 and args = aexp list
 
 type modification =
-  | With of typ * string list * bool (*bool to  specify whether we are restricting ops on types*)
+  | With of typ * string list * bool
+  (*bool to  specify whether we are restricting ops on types*)
   | Canon
   | External
 
@@ -62,7 +71,8 @@ and comm =
   | Decl of modification list * typ * string * aexp
   | Assign of aexp * aexp
   | AssignOp of aexp * string * aexp
-  | If of if_block * if_block list * acomm list option (* if - elif list - else *)
+  | If of if_block * if_block list * acomm list option
+  (* if - elif list - else *)
   | For of acomm * aexp * acomm * acomm list
   | Return of aexp option
   | ExactCodeComm of string

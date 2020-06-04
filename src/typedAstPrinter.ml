@@ -21,7 +21,8 @@ and string_of_pml (p : etyp list) : string =
   if List.length p > 0 then "<" ^ string_of_list string_of_typ p ^ ">" else ""
 
 let string_of_parameterization (pm : parameterization) : string =
-  if Assoc.size pm > 0 then "<" ^ Assoc.to_string string_of_typ pm ^ ">" else ""
+  if Assoc.size pm > 0 then "<" ^ Assoc.to_string string_of_typ pm ^ ">"
+  else ""
 
 let rec string_of_texp ((e, _) : texp) : string = string_of_exp e
 
@@ -58,9 +59,11 @@ let rec string_of_comm (c : comm) : string =
   | Skip -> "skip;"
   | Print e -> "print " ^ string_of_texp e ^ ";"
   | Exp e -> string_of_texp e ^ ";"
-  | Decl (t, s, e) -> string_of_typ t ^ " " ^ s ^ " = " ^ string_of_texp e ^ ";"
+  | Decl (t, s, e) ->
+      string_of_typ t ^ " " ^ s ^ " = " ^ string_of_texp e ^ ";"
   | Assign (b, x) -> string_of_texp b ^ " = " ^ string_of_texp x ^ ";"
-  | AssignOp (x, op, e) -> string_of_texp x ^ " " ^ op ^ "= " ^ string_of_texp e
+  | AssignOp (x, op, e) ->
+      string_of_texp x ^ " " ^ op ^ "= " ^ string_of_texp e
   | If ((b, c1), elif_list, c2) ->
       "if (" ^ string_of_texp b ^ ")" ^ block_string c1
       ^ string_of_list

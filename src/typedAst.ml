@@ -8,7 +8,8 @@ type etyp =
   | IntTyp
   | FloatTyp
   | StringTyp
-  | ArrTyp of etyp * constvar (* i.e. vec3[5] *)
+  | ArrTyp of etyp * constvar
+  (* i.e. vec3[5] *)
   | ParTyp of string * etyp list
   | AnyTyp
   | GenTyp
@@ -34,7 +35,8 @@ type comm =
   | Decl of etyp * id * texp
   | Assign of texp * texp
   | AssignOp of texp * string * texp
-  | If of if_block * if_block list * comm list option (* if - elif list - else *)
+  | If of if_block * if_block list * comm list option
+  (* if - elif list - else *)
   | For of comm * texp * comm * comm list
   | Return of texp option
   | ExactCodeComm of string

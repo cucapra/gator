@@ -13,7 +13,7 @@ let vec_mult (m : mat) (v : vec) : vec =
   List.rev
     (List.fold_left
        (fun vacc mv ->
-         List.fold_left2 (fun acc x y -> acc +. (x *. y)) 0. v mv :: vacc)
+         List.fold_left2 (fun acc x y -> acc +. (x *. y)) 0. v mv :: vacc )
        [] m)
 
 let mat_mult (m1 : mat) (m2 : mat) : mat =

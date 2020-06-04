@@ -32,7 +32,7 @@ let string_of_chi ((pm, c) : chi) =
 let string_of_phi (p : phi) =
   string_of_list
     (fun (c, f) ->
-      string_of_option_removed (fun x -> x ^ "->") c ^ string_of_fn_typ f)
+      string_of_option_removed (fun x -> x ^ "->") c ^ string_of_fn_typ f )
     (List.map
        (fun (c, f) ->
          ( c
@@ -41,9 +41,10 @@ let string_of_phi (p : phi) =
                "%"
                ^
                let cut =
-                 if String.contains x '_' then String.rindex x '_' else 0 in
-               String.sub x cut (String.length x - cut))
-             f ))
+                 if String.contains x '_' then String.rindex x '_' else 0
+               in
+               String.sub x cut (String.length x - cut) )
+             f ) )
        p)
 
 let string_of_psi (ps : psi) : string = string_of_list (fun x -> x) ps
@@ -120,14 +121,16 @@ let init meta progs =
     ; c= Assoc.empty
     ; p= Assoc.empty
     ; el= Assoc.empty
-    ; tl= Assoc.empty } in
+    ; tl= Assoc.empty }
+  in
   let cx =
     { ps= Assoc.empty
     ; pm= Assoc.empty
     ; scheme_pm= Assoc.empty
     ; externs= Assoc.empty
     ; meta
-    ; _bindings= b } in
+    ; _bindings= b }
+  in
   List.fold_left (fun acc (x, p) -> add_prog acc x p) cx (Assoc.bindings progs)
 
 let with_ps cx ps' = {cx with ps= ps'}
@@ -202,9 +205,11 @@ let clear (cx : contexts) (b : exp_bindings) : contexts =
     Assoc.create
       (List.fold_left
          (fun acc (x, v) -> if List.mem x xs then acc else (x, v) :: acc)
-         [] l) in
+         [] l)
+  in
   let clear c =
-    build_l (Assoc.bindings _b.el) (List.map fst (Assoc.bindings c)) in
+    build_l (Assoc.bindings _b.el) (List.map fst (Assoc.bindings c))
+  in
   match b with
   | CGamma -> update_bindings {_b with el= clear _b.g; g= Assoc.empty}
   | CPhi -> update_bindings {_b with el= clear _b.p; p= Assoc.empty}
@@ -223,8 +228,8 @@ let reset (cx : contexts) (cx_ref : contexts) (b : exp_bindings) : contexts =
         (clear cx b)
         (Assoc.bindings cx_ref._bindings.p)
 
-let has_modification (cx : contexts) (ml : modification list) (m : modification)
-    : bool =
+let has_modification (cx : contexts) (ml : modification list)
+    (m : modification) : bool =
   List.fold_right (fun mc acc -> mc = m || acc) ml false
 
 let bind_typ (cx : contexts) (id : string) (ml : modification list) (t : typ) :
@@ -240,9 +245,10 @@ let get_ml_pm (cx : contexts) (ml : modification list) : parameterization =
         in
         List.fold_right
           (fun s acc ->
-            if Assoc.mem s acc then fail s else Assoc.update s (t, b) acc)
+            if Assoc.mem s acc then fail s else Assoc.update s (t, b) acc )
           sl pm
-    | _ -> pm in
+    | _ -> pm
+  in
   List.fold_left get_ml_pm_rec Assoc.empty ml
 
 let option_clean (x : 'a option) : 'a =
@@ -304,7 +310,8 @@ let bind_function (cx : contexts) (f : fn_typ) (scheme : string option) :
   if Assoc.mem id _b.p then
     let fnl = Assoc.lookup id _b.p in
     let f_write =
-      rename_fn (fun x -> x ^ "_" ^ string_of_int (List.length fnl)) f in
+      rename_fn (fun x -> x ^ "_" ^ string_of_int (List.length fnl)) f
+    in
     let _, _, id_write, _, _ = f_write in
     let p' = (scheme, f_write) :: fnl in
     (id_write, update_bindings {_b with p= Assoc.update id p' _b.p})
@@ -326,7 +333,8 @@ let rec map_aexp (cx : contexts) (fs : string -> string) (f : typ -> typ)
   | FnInv (s, tl, ael) -> (FnInv (fs s, List.map f tl, List.map mt ael), meta)
   | _ -> ae
 
-let map_mod (cx : contexts) (f : typ -> typ) (m : modification) : modification =
+let map_mod (cx : contexts) (f : typ -> typ) (m : modification) : modification
+    =
   debug_print (">> map_mod " ^ string_of_modification m) ;
   match m with With (t, b, v) -> With (f t, b, v) | _ -> m
 
@@ -336,7 +344,8 @@ let rec map_acomm (cx : contexts) (fs : string -> string) (fe : exp -> exp)
   let c, meta = ac in
   let map_if_block (cx : contexts) (fe : exp -> exp) (ft : typ -> typ)
       ((e, c) : aexp * acomm list) : aexp * acomm list =
-    (map_aexp cx fs ft e, List.map (map_acomm cx fs fe ft) c) in
+    (map_aexp cx fs ft e, List.map (map_acomm cx fs fe ft) c)
+  in
   let et = map_aexp cx fs ft in
   let it = map_if_block cx fe ft in
   let ct = map_acomm cx fs fe ft in
