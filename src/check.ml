@@ -837,6 +837,12 @@ let check_in_exp (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
 let check_swizzle (cx : contexts) (args : (TypedAst.exp * typ) list) :
     TypedAst.exp * typ =
   match args with
+  | [(arr, ArrTyp (ArrTyp _, _)); (Val (StringVal s), Literal _)]
+   |[(arr, ArrTyp (Literal (ArrTyp _), _)); (Val (StringVal s), Literal _)]
+   |[(arr, Literal (ArrTyp (ArrTyp _, _))); (Val (StringVal s), Literal _)]
+   |[ (arr, Literal (ArrTyp (Literal (ArrTyp _), _)))
+    ; (Val (StringVal s), Literal _) ] ->
+      error cx "You cannot swizzle on a matrix "
   | [((arr, ArrTyp (t, _)) as tarr); (Val (StringVal s), Literal _)]
    |[((arr, Literal (ArrTyp (t, _))) as tarr); (Val (StringVal s), Literal _)]
     -> (
