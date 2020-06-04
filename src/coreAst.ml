@@ -1,11 +1,7 @@
 (* Standard type definitions*)
 type id = string
-
 type exactCode = string
-
-type constvar =
-  | ConstInt of int
-  | ConstVar of id
+type constvar = ConstInt of int | ConstVar of id
 
 (* values *)
 type value =
