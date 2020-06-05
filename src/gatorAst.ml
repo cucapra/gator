@@ -27,9 +27,9 @@ type typ =
   (* i.e. float[5] or bool[2][3] *)
   | MemberTyp of typ * typ
   (* i.e. cart.point *)
-  (* Note that ParTyp is overloaded to act as the variable type when parameterization length is 0 *)
   | ParTyp of string * typ list
   (* i.e. color or matrix<model, world> *)
+  (* Note that ParTyp is overloaded to act as the variable type when parameterization length is 0 *)
   | AnyTyp
   | AnyFrameTyp
   (* top type for frames (used in prototype declarations) *)
