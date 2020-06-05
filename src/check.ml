@@ -848,7 +848,7 @@ let check_swizzle (cx : contexts) (args : (TypedAst.exp * typ) list) :
     -> (
     try
       let indices =
-        List.init (String.length s) (fun i -> s.[i] |> char_to_index) in
+        list_init (String.length s) (fun i -> s.[i] |> char_to_index) in
       let index_type = typ_erase cx t in
       let create_index i : TypedAst.exp =
         Index (exp_to_texp cx tarr, (Val (Num (List.nth indices i)), IntTyp))

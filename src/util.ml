@@ -15,6 +15,14 @@ let is_none x = match x with None -> true | _ -> false
 let option_map (f : 'a -> 'b) (o : 'a option) : 'b option =
   match o with None -> None | Some x -> Some (f x)
 
+let rec list_init_helper acc len f =
+  if len < 0 then acc else list_init_helper (f len :: acc) (len - 1) f
+
+(* The list is constructed from right to left so don't do stuff with side effects *)
+let list_init len f =
+  if len < 0 then failwith "we cannot initialize a negative length list"
+  else list_init_helper [] (len - 1) f
+
 let tr_fst ((x, _, _) : 'a * 'b * 'c) : 'a = x
 let tr_snd ((_, x, _) : 'a * 'b * 'c) : 'b = x
 let tr_thd ((_, _, x) : 'a * 'b * 'c) : 'c = x
