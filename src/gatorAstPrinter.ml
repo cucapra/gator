@@ -47,7 +47,9 @@ let string_of_modification (m : modification) : string =
   match m with
   | With (t, pm, b) ->
       if b then
-        "with " ^ string_of_list (fun x -> x) pm ^ " < " ^ string_of_typ t ^ ":"
+        "with "
+        ^ string_of_list (fun x -> x) pm
+        ^ " < " ^ string_of_typ t ^ ":"
       else
         "with " ^ string_of_typ t ^ " " ^ string_of_list (fun x -> x) pm ^ ":"
   | Canon -> "canon"
@@ -103,7 +105,8 @@ and string_of_comm (c : comm) : string =
       string_of_mod_list ml ^ string_of_typ t ^ " " ^ s ^ " = "
       ^ string_of_aexp e ^ ";"
   | Assign (b, x) -> string_of_aexp b ^ " = " ^ string_of_aexp x ^ ";"
-  | AssignOp (x, op, e) -> string_of_aexp x ^ " " ^ op ^ "= " ^ string_of_aexp e
+  | AssignOp (x, op, e) ->
+      string_of_aexp x ^ " " ^ op ^ "= " ^ string_of_aexp e
   | If ((b, c1), elif_list, c2) ->
       "if (" ^ string_of_aexp b ^ ")" ^ block_string c1
       ^ string_of_list

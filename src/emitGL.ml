@@ -19,7 +19,8 @@ let rec string_of_no_paren_vec (v : texp list) (padding : int) : string =
 
 and string_of_mat_padded (m : texp list list) (max_dim : int) : string =
   let string_of_vec_padded v =
-    string_of_no_paren_vec v (max_dim - List.length v) in
+    string_of_no_paren_vec v (max_dim - List.length v)
+  in
   "("
   ^ string_of_list string_of_vec_padded m
   ^ repeat (string_of_no_paren_vec [] max_dim) (max_dim - List.length m)
@@ -34,13 +35,17 @@ and string_of_glsl_mat (m : texp list list) : string =
   "mat" ^ string_of_int dim ^ string_of_mat_padded tm dim
 
 and string_of_typ (t : etyp) : string =
-  let is_2_4 d = match d with ConstInt d' -> d' >= 2 && d' <= 4 | _ -> false in
+  let is_2_4 d =
+    match d with ConstInt d' -> d' >= 2 && d' <= 4 | _ -> false
+  in
   let arr_string =
     match t with
     | ArrTyp (t', d) -> string_of_typ t' ^ "[" ^ string_of_constvar d ^ "]"
-    | _ -> TypedAstPrinter.string_of_typ t in
+    | _ -> TypedAstPrinter.string_of_typ t
+  in
   let dim_string s d =
-    if is_2_4 d then s ^ string_of_constvar d else arr_string in
+    if is_2_4 d then s ^ string_of_constvar d else arr_string
+  in
   match t with
   | ArrTyp (IntTyp, d) -> dim_string "ivec" d
   | ArrTyp (FloatTyp, d) -> dim_string "vec" d
@@ -118,7 +123,8 @@ and string_of_exp (e : exp) : string =
             match v with
             | Arr a', _ -> a'
             | _ ->
-                failwith "Typechecker error, a matrix must be a list of vectors"
+                failwith
+                  "Typechecker error, a matrix must be a list of vectors"
           in
           string_of_glsl_mat (List.map as_vec_list a)
       | _ ->
@@ -130,7 +136,8 @@ and string_of_exp (e : exp) : string =
 
 let rec string_of_comm (c : comm) : string =
   let block_string c =
-    "{ " ^ string_of_separated_list "" string_of_comm c ^ "}" in
+    "{ " ^ string_of_separated_list "" string_of_comm c ^ "}"
+  in
   match c with
   | Skip -> "skip;"
   | Print e -> "print " ^ string_of_texp e ^ ";"
@@ -166,11 +173,13 @@ let comp_fn (f : fn) : string =
   | ExactCodeTyp -> id ^ " "
   | _ ->
       let param_string =
-        string_of_list (fun (t, i) -> string_of_typ t ^ " " ^ i) p in
+        string_of_list (fun (t, i) -> string_of_typ t ^ " " ^ i) p
+      in
       let type_id_string =
         match id with
         | "main" -> "void main"
-        | _ -> string_of_typ rt ^ " " ^ replace_all_in_name id in
+        | _ -> string_of_typ rt ^ " " ^ replace_all_in_name id
+      in
       if !pretty_printer then
         type_id_string ^ "(" ^ param_string ^ "){"
         ^ string_of_separated_list "" string_of_comm cl
