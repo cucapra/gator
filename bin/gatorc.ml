@@ -32,11 +32,11 @@ let prog_path f =
 
 let parse_prog f : GatorAst.prog =
   let ch =
-    try open_in f with Sys_error s -> failwith ("Cannot open file: " ^ s)
-  in
+    try open_in f with Sys_error s -> failwith ("Cannot open file: " ^ s) in
   let prog : GatorAst.prog =
     let lexbuf = Lexing.from_channel ch in
-    try Parser.main Lexer.read lexbuf with _ ->
+    try Parser.main Lexer.read lexbuf
+    with _ ->
       close_in ch ;
       let pos = lexbuf.Lexing.lex_curr_p in
       let tok = Lexing.lexeme lexbuf in
@@ -45,8 +45,7 @@ let parse_prog f : GatorAst.prog =
       failwith
         ( "Parsing error at token '" ^ tok ^ "', line "
         ^ string_of_int pos.Lexing.pos_lnum
-        ^ ", column " ^ string_of_int cnum )
-  in
+        ^ ", column " ^ string_of_int cnum ) in
   close_in ch ; prog
 
 let rec search_progs path fs found : GatorAst.prog Assoc.context =
@@ -68,12 +67,10 @@ let _ =
       let progname =
         List.hd
           (String.split_on_char '.'
-             (List.hd (List.rev (String.split_on_char '/' f))))
-      in
+             (List.hd (List.rev (String.split_on_char '/' f)))) in
       let fs, found = Check.search_prog prog [progname] in
       let typedProg =
-        Check.check_prog prog (search_progs (prog_path f) fs found)
-      in
+        Check.check_prog prog (search_progs (prog_path f) fs found) in
       if !run_interp then Ops.eval_prog typedProg
       else if !emit_ts then print_string (EmitTS.compile_program typedProg)
       else if !pretty_printer then

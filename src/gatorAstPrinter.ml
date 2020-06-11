@@ -12,8 +12,8 @@ let rec string_of_dexp (d : dexp) : string =
   | DimNum n -> string_of_int n
   | DimVar s -> s
 
-(* let rec string_of_dtyp (d : dtyp) : string = 
-    match d with 
+(* let rec string_of_dtyp (d : dtyp) : string =
+    match d with
     | BaseTyp s -> s
     | MultTyp (x, y) -> string_of_dtyp x ^ " * " ^ string_of_dtyp y *)
 
@@ -47,9 +47,7 @@ let string_of_modification (m : modification) : string =
   match m with
   | With (t, pm, b) ->
       if b then
-        "with "
-        ^ string_of_list (fun x -> x) pm
-        ^ " < " ^ string_of_typ t ^ ":"
+        "with " ^ string_of_list (fun x -> x) pm ^ " < " ^ string_of_typ t ^ ":"
       else
         "with " ^ string_of_typ t ^ " " ^ string_of_list (fun x -> x) pm ^ ":"
   | Canon -> "canon"
@@ -105,14 +103,13 @@ and string_of_comm (c : comm) : string =
       string_of_mod_list ml ^ string_of_typ t ^ " " ^ s ^ " = "
       ^ string_of_aexp e ^ ";"
   | Assign (b, x) -> string_of_aexp b ^ " = " ^ string_of_aexp x ^ ";"
-  | AssignOp (x, op, e) ->
-      string_of_aexp x ^ " " ^ op ^ "= " ^ string_of_aexp e
+  | AssignOp (x, op, e) -> string_of_aexp x ^ " " ^ op ^ "= " ^ string_of_aexp e
   | If ((b, c1), elif_list, c2) ->
       "if (" ^ string_of_aexp b ^ ")" ^ block_string c1
       ^ string_of_list
           (fun (b, c) -> "elif (" ^ string_of_aexp b ^ ")" ^ block_string c)
           elif_list
-      ^ string_of_option_removed (fun x -> "else " ^ block_string x) c2
+      ^ Option.fold c2 ~some:(fun x -> "else " ^ block_string x) ~none:""
   | For (d, b, u, cl) ->
       "for (" ^ string_of_acomm d ^ "; " ^ string_of_aexp b ^ "; "
       ^ string_of_acomm u ^ ") " ^ block_string cl
@@ -132,7 +129,7 @@ let string_of_prototype_element (pe : prototype_element) : string =
   match pe with
   | ProtoObject (ml, x, t) ->
       string_of_mod_list ml ^ "Object " ^ x
-      ^ string_of_option_removed (fun t' -> " is " ^ string_of_typ t') t
+      ^ Option.fold ~none:"" ~some:(fun t' -> " is " ^ string_of_typ t') t
   | ProtoFn f -> string_of_fn_typ f ^ ";"
 
 let string_of_prototype ((x, p) : prototype) : string =
@@ -156,7 +153,7 @@ let string_of_coordinate ((ml, x, p, cl) : coordinate) : string =
 let string_of_global_var ((ml, sq, t, x, e) : global_var) : string =
   string_of_mod_list ml ^ string_of_storage_qual sq ^ " " ^ string_of_typ t
   ^ " " ^ x
-  ^ string_of_option_removed (fun x -> "= " ^ string_of_aexp x) e
+  ^ Option.fold ~none:"" ~some:(fun x -> "= " ^ string_of_aexp x) e
 
 let string_of_term (t : term) : string =
   match t with
