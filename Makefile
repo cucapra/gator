@@ -1,4 +1,4 @@
-BUILD_ARGS=$(if (command -v ocamlformat),@install @fmt --auto-promote,@install)
+BUILD_ARGS=$(if $(command -v ocamlformat),@install @fmt --auto-promote,@install)
 
 .PHONY: all clean repl run build test
 
