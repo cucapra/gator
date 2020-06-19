@@ -19,8 +19,7 @@ let rec string_of_no_paren_vec (v : texp list) (padding : int) : string =
 
 and string_of_mat_padded (m : texp list list) (max_dim : int) : string =
   let string_of_vec_padded v =
-    string_of_no_paren_vec v (max_dim - List.length v)
-  in
+    string_of_no_paren_vec v (max_dim - List.length v) in
   "("
   ^ string_of_list string_of_vec_padded m
   ^ repeat (string_of_no_paren_vec [] max_dim) (max_dim - List.length m)
@@ -35,17 +34,13 @@ and string_of_glsl_mat (m : texp list list) : string =
   "mat" ^ string_of_int dim ^ string_of_mat_padded tm dim
 
 and string_of_typ (t : etyp) : string =
-  let is_2_4 d =
-    match d with ConstInt d' -> d' >= 2 && d' <= 4 | _ -> false
-  in
+  let is_2_4 d = match d with ConstInt d' -> d' >= 2 && d' <= 4 | _ -> false in
   let arr_string =
     match t with
     | ArrTyp (t', d) -> string_of_typ t' ^ "[" ^ string_of_constvar d ^ "]"
-    | _ -> TypedAstPrinter.string_of_typ t
-  in
+    | _ -> TypedAstPrinter.string_of_typ t in
   let dim_string s d =
-    if is_2_4 d then s ^ string_of_constvar d else arr_string
-  in
+    if is_2_4 d then s ^ string_of_constvar d else arr_string in
   match t with
   | ArrTyp (IntTyp, d) -> dim_string "ivec" d
   | ArrTyp (FloatTyp, d) -> dim_string "vec" d
@@ -123,8 +118,7 @@ and string_of_exp (e : exp) : string =
             match v with
             | Arr a', _ -> a'
             | _ ->
-                failwith
-                  "Typechecker error, a matrix must be a list of vectors"
+                failwith "Typechecker error, a matrix must be a list of vectors"
           in
           string_of_glsl_mat (List.map as_vec_list a)
       | _ ->
@@ -136,8 +130,7 @@ and string_of_exp (e : exp) : string =
 
 let rec string_of_comm (c : comm) : string =
   let block_string c =
-    "{ " ^ string_of_separated_list "" string_of_comm c ^ "}"
-  in
+    "{ " ^ string_of_separated_list "" string_of_comm c ^ "}" in
   match c with
   | Skip -> "skip;"
   | Print e -> "print " ^ string_of_texp e ^ ";"
@@ -153,7 +146,7 @@ let rec string_of_comm (c : comm) : string =
       ^ string_of_list
           (fun (b, c) -> "elif (" ^ string_of_texp b ^ ")" ^ block_string c)
           elif_list
-      ^ string_of_option_removed (fun x -> "else " ^ block_string x) c2
+      ^ Option.fold ~none:"" ~some:(fun x -> "else " ^ block_string x) c2
   | For (d, b, u, cl) ->
       let us = string_of_comm u in
       (* Hack to get rid of the semicolon at the end of the for loop *)
@@ -162,7 +155,7 @@ let rec string_of_comm (c : comm) : string =
       ^ ") " ^ block_string cl
   | Return x ->
       "return"
-      ^ string_of_option_removed (fun x -> " " ^ string_of_texp x) x
+      ^ Option.fold ~none:"" ~some:(fun x -> " " ^ string_of_texp x) x
       ^ ";"
   | ExactCodeComm ec -> ec
 
@@ -173,13 +166,11 @@ let comp_fn (f : fn) : string =
   | ExactCodeTyp -> id ^ " "
   | _ ->
       let param_string =
-        string_of_list (fun (t, i) -> string_of_typ t ^ " " ^ i) p
-      in
+        string_of_list (fun (t, i) -> string_of_typ t ^ " " ^ i) p in
       let type_id_string =
         match id with
         | "main" -> "void main"
-        | _ -> string_of_typ rt ^ " " ^ replace_all_in_name id
-      in
+        | _ -> string_of_typ rt ^ " " ^ replace_all_in_name id in
       if !pretty_printer then
         type_id_string ^ "(" ^ param_string ^ "){"
         ^ string_of_separated_list "" string_of_comm cl
@@ -196,7 +187,7 @@ let rec comp_prog (f : term list) : string =
   | Fn h :: t -> comp_fn h ^ comp_prog t
   | GlobalVar (sq, et, x, e) :: t ->
       string_of_storage_qual sq ^ " " ^ string_of_typ et ^ " " ^ x
-      ^ string_of_option_removed (fun x -> " = " ^ string_of_texp x) e
+      ^ Option.fold ~none:"" ~some:(fun x -> " = " ^ string_of_texp x) e
       ^ ";" ^ comp_prog t
 
 let rec compile_program (prog : prog) : string =

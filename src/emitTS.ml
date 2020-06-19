@@ -50,8 +50,7 @@ and string_of_mat (m : exp list list) (s : SS.t) : string =
   let c = if r = 0 then 0 else List.length (List.hd tm) in
   let max_dim = max r c in
   let string_of_vec_padded v =
-    string_of_no_paren_vec v (max_dim - List.length v) s
-  in
+    string_of_no_paren_vec v (max_dim - List.length v) s in
   "mat" ^ string_of_int max_dim ^ ".fromValues("
   ^ String.concat ", " (List.map string_of_vec_padded tm)
   ^ repeat (string_of_no_paren_vec [] max_dim s) (max_dim - List.length tm)
@@ -96,8 +95,8 @@ and comp_exp (e : exp) (s : SS.t) : string =
           ^ "]"
       | _ ->
           failwith
-            "Typechecker error, every array must be a list of ints, floats, \
-             or vectors"
+            "Typechecker error, every array must be a list of ints, floats, or \
+             vectors"
           (* | _ -> comp_exp e s *) ) )
   (* | Unop (op, (e, t)) ->
          begin
@@ -205,13 +204,10 @@ let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
     | Exp (e, _) -> comp_exp e s ^ ";" ^ "\n" ^ comp_comm_lst tl s
     | Decl (et, x, e) ->
         let create_str =
-          match et
-          with
+          match et with
           (*| VecTyp n -> failwith "unimplemented VecTyp compile" (*"let " ^ x ^ "=vec" ^ (string_of_int n) ^ ".create();"*)*)
           (*| MatTyp (m, n) -> failwith "unimplemented MatTyp compile" (*"let " ^ x ^ "=mat" ^ (string_of_int (max m n)) ^ ".create();"*)*)
-          | _
-          -> "let "
-        in
+          | _ -> "let " in
         create_str ^ comp_assign (Var x, et) e s ^ "\n" ^ comp_comm_lst tl s
         (* failwith "unimplemented declaration" *)
         (* x ^ " = " ^ string_of_texp e ^ ";" *)
@@ -224,7 +220,7 @@ let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
         ^ List.fold_left
             (fun acc ((b, _), c) ->
               "if " ^ "(" ^ comp_exp b s ^ ")" ^ "{" ^ comp_comm_lst c s ^ "}"
-              ^ acc )
+              ^ acc)
             "" el
         ^ ( match c2 with
           | Some c2 -> " else {" ^ comp_comm_lst c2 s ^ "}"
@@ -248,18 +244,15 @@ let comp_fn (f : fn) (s : SS.t) : string =
   | ExactCodeTyp -> id ^ " "
   | _ ->
       let param_string =
-        string_of_list (fun (t, i) -> i ^ ":" ^ comp_type t) p
-      in
+        string_of_list (fun (t, i) -> i ^ ":" ^ comp_type t) p in
       (* let fn_name = id ^ "__" ^ (String.concat "__" (List.map (fun (_, t) -> comp_fn_arg_type t) (Assoc.bindings pm))) in *)
       let fn_name =
         id
         ^ String.concat "__"
-            (List.map (fun (_, t) -> comp_type t) (Assoc.bindings pm))
-      in
+            (List.map (fun (_, t) -> comp_type t) (Assoc.bindings pm)) in
       let fn_str =
         "function " ^ fn_name ^ "(" ^ param_string ^ "):" ^ comp_type rt ^ "{"
-        ^ "\n" ^ comp_comm_lst cl s ^ "}"
-      in
+        ^ "\n" ^ comp_comm_lst cl s ^ "}" in
       fn_str ^ "\n"
 
 let rec comp_prog (f : prog) (s : SS.t) : string =
@@ -274,21 +267,20 @@ let rec comp_prog (f : prog) (s : SS.t) : string =
     | BuiltIn -> ""
     | _ -> (
         let e_str =
-          string_of_option_removed (fun x -> "= " ^ comp_texp x SS.empty) e
+          Option.fold ~none:"" ~some:(fun x -> "= " ^ comp_texp x SS.empty) e
         in
         (* let ts_type = match (string_of_typ et) with
                | "int" | "float" -> "number"
                | a -> a
            in *)
-        match et
-        with
+        match et with
         (* | VecTyp n -> "var " ^ x ^ "= vec" ^ (string_of_int n) ^ ".create();" ^ x ^ e_str ^ (decl_attribs t)
            | MatTyp (m,n) -> "var " ^ x ^ "= mat" ^ (string_of_int (max m n)) ^ ".create();" ^ e_str ^ (decl_attribs t) *)
-        | _
-        -> "var " ^ x (*^ ":" ^ ts_type*) ^ e_str ^ ";" ^ "\n" ^ comp_prog t s
+        | _ ->
+            "var " ^ x (*^ ":" ^ ts_type*) ^ e_str ^ ";" ^ "\n" ^ comp_prog t s
         ) )
 
-(* let rec decl_attribs (gv : global_vars) : string = 
+(* let rec decl_attribs (gv : global_vars) : string =
     debug_print ">> decl_attribs";
     match gv with
     | [] -> ""
@@ -303,21 +295,20 @@ let util_funcs =
     (List.map
        (fun (t, f, args) ->
          "function __" ^ t ^ f ^ "(" ^ args ^ "):" ^ t ^ "{var out=" ^ t
-         ^ ".create();" ^ t ^ "." ^ f ^ "(out," ^ args ^ ");return out;}" )
+         ^ ".create();" ^ t ^ "." ^ f ^ "(out," ^ args ^ ");return out;}")
        [ ("vec2", "add", "a,b"); ("vec2", "sub", "a,b"); ("vec2", "mul", "a,b")
        ; ("vec2", "negate", "a"); ("vec2", "scale", "a,b")
-       ; ("vec2", "transformMat2", "a,m")
-       ; ("vec3", "add", "a,b"); ("vec3", "sub", "a,b"); ("vec3", "mul", "a,b")
-       ; ("vec3", "negate", "a"); ("vec3", "scale", "a,b")
-       ; ("vec3", "transformMat3", "a,m")
+       ; ("vec2", "transformMat2", "a,m"); ("vec3", "add", "a,b")
+       ; ("vec3", "sub", "a,b"); ("vec3", "mul", "a,b"); ("vec3", "negate", "a")
+       ; ("vec3", "scale", "a,b"); ("vec3", "transformMat3", "a,m")
        ; ("vec4", "add", "a,b"); ("vec4", "sub", "a,b"); ("vec4", "mul", "a,b")
        ; ("vec4", "negate", "a"); ("vec4", "scale", "a,b")
-       ; ("vec4", "transformMat4", "a,m")
-       ; ("mat2", "add", "a,b"); ("mat2", "sub", "a,b"); ("mat2", "mul", "a,b")
-       ; ("mat2", "multiplyScalar", "a,b")
-       ; ("mat3", "add", "a,b"); ("mat3", "sub", "a,b"); ("mat3", "mul", "a,b")
-       ; ("mat3", "multiplyScalar", "a,b")
-       ; ("mat4", "add", "a,b"); ("mat4", "sub", "a,b"); ("mat4", "mul", "a,b")
+       ; ("vec4", "transformMat4", "a,m"); ("mat2", "add", "a,b")
+       ; ("mat2", "sub", "a,b"); ("mat2", "mul", "a,b")
+       ; ("mat2", "multiplyScalar", "a,b"); ("mat3", "add", "a,b")
+       ; ("mat3", "sub", "a,b"); ("mat3", "mul", "a,b")
+       ; ("mat3", "multiplyScalar", "a,b"); ("mat4", "add", "a,b")
+       ; ("mat4", "sub", "a,b"); ("mat4", "mul", "a,b")
        ; ("mat4", "multiplyScalar", "a,b") ])
   ^ "function __vec2to2(v:vec2):vec2{return v;}"
   ^ "function __vec2to3(v:vec2):vec3{return vec3.fromValues(v[0],v[1],0);}"
@@ -346,4 +337,5 @@ let rec compile_program (prog : prog) : string =
   (* let prog' = generate_generics_in_prog prog false in *)
   "import {vec2,mat2,vec3,mat3,vec4,mat4} from 'gl-matrix';"
   (*util_funcs ^*)
-  ^ "\n" ^ comp_prog prog SS.empty ^ "main();"
+  ^ "\n"
+  ^ comp_prog prog SS.empty ^ "main();"

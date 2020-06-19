@@ -9,22 +9,11 @@ let compose f g x = f (g x)
 let ( |- ) = compose
 let curry f x y = f (x, y)
 let uncurry f (x, y) = f x y
-let is_none x = match x with None -> true | _ -> false
-
-(* Cause for some reason Option.map doesn't exist? *)
-let option_map (f : 'a -> 'b) (o : 'a option) : 'b option =
-  match o with None -> None | Some x -> Some (f x)
-
 let tr_fst ((x, _, _) : 'a * 'b * 'c) : 'a = x
 let tr_snd ((_, x, _) : 'a * 'b * 'c) : 'b = x
 let tr_thd ((_, _, x) : 'a * 'b * 'c) : 'c = x
 let nonempty x = List.length x > 0
-
-let string_of_option_removed (f : 'a -> string) (o : 'a option) : string =
-  match o with Some v -> f v | None -> ""
-
-let string_of_pair (a : string) (b : string) : string =
-  "(" ^ a ^ ", " ^ b ^ ")"
+let string_of_pair (a : string) (b : string) : string = "(" ^ a ^ ", " ^ b ^ ")"
 
 let string_of_separated_list (sep : string) (f : 'a -> string) (l : 'a list) :
     string =
