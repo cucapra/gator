@@ -8,7 +8,7 @@ This is a flexible language built around geometric types for tracking the geomet
 There is a compiler, pretty printer, and interpreter.
 
 OCaml 4.08 or higher required
-Dune 2.6.0 or higher required
+Dune 2.5.0 or higher required
 
 Optional Ocamlformat 0.14.2
 
