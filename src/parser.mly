@@ -92,14 +92,14 @@ exception ParseException of string
 %left ID THIS
 %left OR
 %left AND
-%left NOT EQ LEQ GEQ LBRACK 
-%left LWICK RWICK 
+%left NOT EQ LEQ GEQ LBRACK
+%left LWICK RWICK
 
 %left BITOR
 %left BITXOR
 %left BITAND
 %left PLUS MINUS
-%left TIMES DIV CTIMES 
+%left TIMES DIV CTIMES
 %left AS IN
 %left DOT
 
@@ -113,8 +113,8 @@ exception ParseException of string
 (* The explicit types of some key parser expressions to help with debugging *)
 %type <GatorAst.prog> main
 %type <GatorAst.exp> exp
-%type <GatorAst.comm> comm  
-%type <GatorAst.term> term 
+%type <GatorAst.comm> comm
+%type <GatorAst.term> term
 
 (* The following %% ends the declarations section of the grammar definition. *)
 
@@ -151,14 +151,14 @@ let term ==
     <Coordinate>
   | FRAME; x = ID; HAS; DIMENSION; d = dexp; SEMI;
     <Frame>
-  | (m, t) = terminated_list(modification, typ); x = ID; SEMI; 
+  | (m, t) = terminated_list(modification, typ); x = ID; SEMI;
     { GlobalVar(m, BuiltIn, t, x, None) }
   | m = modification*; TYP; x = ID; SEMI;
     { Typ(m, x, AnyTyp) }
   | m = modification*; TYP; x = ID; IS; t = typ; SEMI;
     <Typ>
   | m = modification*; sq = storage_qual; t = typ;
-    x = ID; v = preceded(GETS, node(exp))?; SEMI; 
+    x = ID; v = preceded(GETS, node(exp))?; SEMI;
     <GlobalVar>
   | f = fn;
     <Fn>
@@ -172,7 +172,7 @@ let prototype_element ==
 let modification ==
   | WITH; t = typ; r = separated_list(COMMA, ID); COLON;
     { With(t, r, false) }
-  | WITH; t2 = ID; LWICK; t1 = typ; COLON; 
+  | WITH; t2 = ID; LWICK; t1 = typ; COLON;
     { With(t1, [t2], true) }
   | CANON;
     { Canon }
@@ -185,7 +185,7 @@ let coordinate_element ==
   | f = fn;
     <CoordFn>
 
-let parameter == 
+let parameter ==
   | (ml, t) = terminated_list (modification, typ); x = ID;
     { (ml, t, x) }
 
@@ -202,7 +202,7 @@ let id_expanded ==
   | x = infix; <>
 
 let fn_typ ==
-  | (m, t) = terminated_list(modification, typ); x = id_expanded; 
+  | (m, t) = terminated_list(modification, typ); x = id_expanded;
     params = parameters(LPAREN, parameter, RPAREN);
     { (m, t, x, params, $startpos) }
 
@@ -225,11 +225,11 @@ let if_block(delim) ==
     <>
 
 let comm_block ==
-  | i = if_block(IF); el = if_block(ELIF)*; 
+  | i = if_block(IF); el = if_block(ELIF)*;
     e = option(preceded(ELSE, delimited(LBRACE, list(acomm), RBRACE)));
     <If>
   | FOR; LPAREN; c1 = node(comm_element); SEMI; b = node(exp); SEMI; c2 = node(comm_element); RPAREN;
-    LBRACE; cl = node(comm)*; RBRACE; 
+    LBRACE; cl = node(comm)*; RBRACE;
     <For>
 
 let assignop ==
@@ -244,22 +244,22 @@ let assignop ==
   | CTIMESEQ;
     { ".*" }
 
-let comm_element == 
+let comm_element ==
   | SKIP;
     { Skip }
-  | (m, t) = terminated_list(modification, typ); x = ID; GETS; e = node(exp); 
+  | (m, t) = terminated_list(modification, typ); x = ID; GETS; e = node(exp);
     { Decl(m, t, x, e) }
   | e = node(effectful_exp);
     < Exp >
-  | x = node(assign_exp); GETS; e = node(exp); 
+  | x = node(assign_exp); GETS; e = node(exp);
     < Assign >
-  | x = node(assign_exp); a = assignop; e = node(exp); 
+  | x = node(assign_exp); a = assignop; e = node(exp);
     < AssignOp >
-  | PRINT; e = node(exp); 
+  | PRINT; e = node(exp);
     < Print >
   | RETURN; e = node(exp)?;
     < Return >
-  | POUND; s = STRING; 
+  | POUND; s = STRING;
     < ExactCodeComm >
 
 let dexp :=
@@ -300,7 +300,7 @@ let typ :=
     { ParTyp("this", pt) }
   | x = ID; /* explicit for clarity and to help out the parser */
     { ParTyp(x, []) }
-  | GENTYPE; 
+  | GENTYPE;
     { GenTyp }
   | PERCENT; LPAREN; t = typ; RPAREN;
     { Literal(t) }
@@ -348,7 +348,7 @@ let exp:=
     { FnInv(op, [], [e1; e2]) }
   | e = effectful_exp;
     <>
-  | LBRACK; e = separated_list(COMMA, node(exp)); RBRACK; 
+  | LBRACK; e = separated_list(COMMA, node(exp)); RBRACK;
     <Arr>
   | e = node(exp); AS; t = typ;
     <As>
