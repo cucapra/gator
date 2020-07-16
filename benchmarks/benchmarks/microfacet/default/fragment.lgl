@@ -30,14 +30,22 @@ uniform cart3<view>.position light_eyePosition;
 uniform attenuation light_attenuation;
 uniform color light_color;
 
+// Accounts for a current bug in type inference
+cart3<view>.direction cross_vecs(cart3<view>.direction n, cart3<view>.direction t) {
+  return cross(n as! vec3, t as! vec3) as! cart3<view>.direction;
+}
+cart3<view>.direction dir_negate(cart3<view>.direction x) {
+  return (-x) as! cart3<view>.direction;
+}
+
 cart3<normal_localframe>.vector proj_normlocalframe (cart3<view>.halfdir m, cart3<view>.normal n) {
     auto nhat = normalize(n);
     auto t = normalize(geom_tangent - dot(geom_tangent,nhat));
 	// Unfortunate hack due to bug
-    auto b = (cross(nhat as! vec3, t as! vec3) as! cart3<view>.direction);
+    auto b = cross_vecs(nhat, t);
     if (dot(geom_bitangent, b) <= 0.) {
 		///??????
-        b = (-b) as! cart3<view>.direction;
+        b = dir_negate(b);
     }
     return [dot(m, t), dot(m,b), dot(m,nhat)];
 }
@@ -50,10 +58,10 @@ cart3<view>.normal getShadingNormal() {
 
         auto n = normalize(geom_normal);
         auto t = normalize(geom_tangent - dot(geom_tangent,n) * n);
-        auto b = (cross(n as! vec3, t as! vec3) as! cart3<view>.direction);
+        auto b = cross_vecs(n, t);
         if (dot(geom_bitangent, b) < 0.) {
 			///??????
-            b = (-b) as! cart3<view>.direction;
+            b = dir_negate(b);
         }
 
         float s = mat_normalTextureScale;
@@ -63,6 +71,7 @@ cart3<view>.normal getShadingNormal() {
     else {return nhat as! cart3<view>.normal;}
 }
 
+// Should be moved to a standard library
 cart3<view>.halfdir get_halfdir(cart3<view>.direction n1, cart3<view>.direction n2){
 	return normalize(n1 + n2) as! cart3<view>.halfdir;
 }
@@ -86,6 +95,7 @@ float getRoughness() {
 	return a;
 }
 
+// Should be moved to a standard library
 with float[3] T:
 float getAngle(T v1, T v2) { 
 	return acos(dot(v1 as! vec3, v2 as! vec3));
