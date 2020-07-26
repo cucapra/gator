@@ -21,8 +21,7 @@ and string_of_pml (p : etyp list) : string =
   if List.length p > 0 then "<" ^ string_of_list string_of_typ p ^ ">" else ""
 
 let string_of_parameterization (pm : parameterization) : string =
-  if Assoc.size pm > 0 then "<" ^ Assoc.to_string string_of_typ pm ^ ">"
-  else ""
+  if Assoc.size pm > 0 then "<" ^ Assoc.to_string string_of_typ pm ^ ">" else ""
 
 let rec string_of_texp ((e, _) : texp) : string = string_of_exp e
 
@@ -46,7 +45,7 @@ let rec string_of_params (p : params) : string =
 
 let string_of_global_var ((s, t, i, v) : global_var) =
   string_of_storage_qual s ^ " " ^ string_of_typ t ^ " " ^ i
-  ^ string_of_option_removed (fun x -> "= " ^ string_of_texp x) v
+  ^ Option.fold v ~some:(fun x -> "= " ^ string_of_texp x) ~none:""
   ^ ";"
 
 let string_of_parameterization (pm : parameterization) : string =
@@ -59,23 +58,21 @@ let rec string_of_comm (c : comm) : string =
   | Skip -> "skip;"
   | Print e -> "print " ^ string_of_texp e ^ ";"
   | Exp e -> string_of_texp e ^ ";"
-  | Decl (t, s, e) ->
-      string_of_typ t ^ " " ^ s ^ " = " ^ string_of_texp e ^ ";"
+  | Decl (t, s, e) -> string_of_typ t ^ " " ^ s ^ " = " ^ string_of_texp e ^ ";"
   | Assign (b, x) -> string_of_texp b ^ " = " ^ string_of_texp x ^ ";"
-  | AssignOp (x, op, e) ->
-      string_of_texp x ^ " " ^ op ^ "= " ^ string_of_texp e
+  | AssignOp (x, op, e) -> string_of_texp x ^ " " ^ op ^ "= " ^ string_of_texp e
   | If ((b, c1), elif_list, c2) ->
       "if (" ^ string_of_texp b ^ ")" ^ block_string c1
       ^ string_of_list
           (fun (b, c) -> "elif (" ^ string_of_texp b ^ ")" ^ block_string c)
           elif_list
-      ^ string_of_option_removed (fun x -> "else " ^ block_string x) c2
+      ^ Option.fold ~none:"" ~some:(fun x -> "else " ^ block_string x) c2
   | For (d, b, u, cl) ->
       "for (" ^ string_of_comm d ^ string_of_texp b ^ "; " ^ string_of_comm u
       ^ ") " ^ block_string cl
   | Return x ->
       "return"
-      ^ string_of_option_removed (fun x -> " " ^ string_of_texp x) x
+      ^ Option.fold ~none:"" ~some:(fun x -> " " ^ string_of_texp x) x
       ^ ";"
   | ExactCodeComm ec -> ec
 

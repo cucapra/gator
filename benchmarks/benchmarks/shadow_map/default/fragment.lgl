@@ -2,6 +2,7 @@
 
 using "../../glsl_defs.lgl";
 
+// Should be in standard library
 type color is vec3;
 type alphaColor is vec4;
 
@@ -22,6 +23,7 @@ uniform cart3<world>.point uLight;
 uniform color uBaseColor;
 uniform float uSpecStrength;
 
+// Should be in standard library
 alphaColor extendColor(color c) {
   return vec4(c, 1.) as! alphaColor;
 }

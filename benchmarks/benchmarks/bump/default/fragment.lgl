@@ -6,6 +6,7 @@ type alphaColor is vec4;
 
 declare bool gl_FrontFacing;
 
+// Add to standard library
 sRGB to_sRGB(color c) { return pow(c, [1.0/2.2, 1.0/2.2, 1.0/2.2]) as! sRGB; }
 color from_sRGB(sRGB c) { return pow(c, [2.2, 2.2, 2.2]) as! color; }
 uniform sampler2D<vec4> uDiffuseTexture;

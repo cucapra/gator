@@ -59,8 +59,7 @@ let vec_with_f_index (length : int) (f : float) (index : int) : vec =
   let rec vec_with_f_index_helper (wr_index : int) (length_minus_index : int) :
       vec =
     if wr_index - 1 == length_minus_index then f :: make_list 0. (wr_index - 1)
-    else 0. :: vec_with_f_index_helper (wr_index - 1) length_minus_index
-  in
+    else 0. :: vec_with_f_index_helper (wr_index - 1) length_minus_index in
   if length < 0 then failwith "Cannot make a vector with length < 0"
   else if index >= length || index < 0 then
     failwith ("Bad index " ^ string_of_int index)
@@ -69,20 +68,18 @@ let vec_with_f_index (length : int) (f : float) (index : int) : vec =
 let matf (size : int) (f : float) : mat =
   let rec __matf (size : int) (row : int) (f : float) : mat =
     if row >= size then []
-    else vec_with_f_index size f row :: __matf size (row + 1) f
-  in
+    else vec_with_f_index size f row :: __matf size (row + 1) f in
   __matf size 0 f
 
 (* This is tricky cause we don't have the syntax divisions for each vector *)
 let rec matfs (size : int) (fs : float list) : mat =
-  let rec add_to_nth_list (f : float) (lst_index : int)
-      (lsts : float list list) : mat =
+  let rec add_to_nth_list (f : float) (lst_index : int) (lsts : float list list)
+      : mat =
     match lsts with
     | [] -> failwith "bad lst_index"
     | h :: t ->
         if List.length lsts - 1 == lst_index then (f :: h) :: t
-        else h :: add_to_nth_list f lst_index t
-  in
+        else h :: add_to_nth_list f lst_index t in
   match fs with
   | [] -> make_list [] size
   | h :: t -> add_to_nth_list h ((List.length fs - 1) mod size) (matfs size t)
@@ -92,8 +89,7 @@ let matvs (vs : vec list) : mat = transpose vs
 let mat_expand (size : int) (m : mat) : mat =
   let rec build_base (row : int) (endpoint : int) : mat =
     if row = endpoint then []
-    else vec_with_f_index size 1. row :: build_base (row - 1) endpoint
-  in
+    else vec_with_f_index size 1. row :: build_base (row - 1) endpoint in
   let lm = List.length m in
   List.map (fun v -> v @ make_list 0. (size - lm)) m
   @ build_base (size - 1) (lm - 1)
@@ -104,8 +100,7 @@ let mat_contract (size : int) (m : mat) : mat =
     | [] -> []
     | h :: t ->
         if index >= size then []
-        else vec_contract size h :: remove_end (index + 1) t
-  in
+        else vec_contract size h :: remove_end (index + 1) t in
   remove_end 0 m
 
 let matn (size : int) (args : value list) : mat =
@@ -116,8 +111,7 @@ let matn (size : int) (args : value list) : mat =
     match args with
     | [] -> []
     | Float f :: t -> f :: as_fs t
-    | _ -> failwith fail_text
-  in
+    | _ -> failwith fail_text in
   (* let rec as_vs (args : value list) : vec list =
        match args with
        | [] -> []
