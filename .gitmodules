@@ -1,3 +1,4 @@
 [submodule "pathIndependence"]
 	path = pathIndependence
 	url = https://github.com/aditink/pathIndependence
+	ignore = dirty
