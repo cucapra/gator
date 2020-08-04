@@ -2,7 +2,7 @@ import matplotlib.patches as mpatches
 import scipy.stats
 from scipy.stats import sem
 import json
-import numpy as np
+# import numpy as np
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
