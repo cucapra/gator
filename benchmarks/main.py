@@ -64,8 +64,8 @@ multilight = {'name': 'multilight',
 #     'args': {}
 # }
 
-# benchmarks = [phong, reflection, shadow_map, texture, fog, spotlight, bump, microfacet] * 30
-benchmarks = [bump]
+benchmarks = [phong, reflection, shadow_map, texture, fog, spotlight, bump, microfacet] * 30
+#benchmarks = [bump]
 shuffle(benchmarks)
 browser = webdriver.Chrome()
 for bench in benchmarks:
