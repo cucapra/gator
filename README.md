@@ -33,25 +33,21 @@ Now `gatorc` should be available on your path.
 [dune]: https://github.com/ocaml/dune
 [menhir]: http://gallium.inria.fr/~fpottier/menhir/
 
+Tests
+-----
+
+There are a bunch of tests under the `test` directory.
+Use the `test.py` script to run them and check that the compiler is working.
+
 Run
 ---
 
-To simulate a Linguine-compiled shader on your browser, view the README in the `example` folder.
+To simulate a Gator-compiled shader on your browser, view the README in the `example` folder.
 
 You can run the compiler directly by passing a `*.lgl` source file as an argument to `gatorc`.
 For example:
 
     $ gatorc example.lgl
-
-To run our house interpreter, simply include the argument `-i`:
-
-    $ gatorc -i example.lgl
-
-Tests
------
-
-There are a bunch of tests under the `test` directory.
-Use the `test.py` script to run them.
 
 Technical Details
 -----------------
