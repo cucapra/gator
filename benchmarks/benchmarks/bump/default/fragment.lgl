@@ -1,5 +1,5 @@
 #"precision mediump float;";
-using "../glsl_defs.lgl";
+using "../../glsl_defs.lgl";
 type color is vec3;
 type sRGB is vec3;
 type alphaColor is vec4;

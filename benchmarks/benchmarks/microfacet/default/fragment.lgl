@@ -1,6 +1,6 @@
 #"precision mediump float;";
 #"precision mediump int;";
-using "../glsl_defs.lgl";
+using "../../glsl_defs.lgl";
 
 type color is vec3;
 type uv is vec2;
