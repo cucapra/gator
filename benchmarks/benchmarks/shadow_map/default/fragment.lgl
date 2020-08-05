@@ -55,7 +55,7 @@ void main() {
   float amountInLight = 0.;
   for (float x = -1.; x <= 1.; x += 1.) {
     for (float y = -1.; y <= 1.; y += 1.) {
-      float texelDepth = decodeFloat(texture2D(uTexture, temp + [x, y] * texelSize));
+      float texelDepth = decodeFloat(texture2D(uTexture, temp + ([x, y] as! vec2) * texelSize));
       // float texelDepth = texture2D(uTexture, vShadowPos.xy + [x, y] * texelSize).z;
       if (vShadowPos[2] - 0.007 <= texelDepth) {
         amountInLight += 1.0;
