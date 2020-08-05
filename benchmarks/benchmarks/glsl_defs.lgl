@@ -84,6 +84,7 @@ declare float cos(float f);
 declare float tan(float f);
 declare float sqrt(float f);
 declare float acos(float f);
+declare float atan(float f1, float f2);
 with float[2] T: declare T sin(T f);
 with float[2] T: declare T cos(T f);
 with float[2] T: declare T sqrt(T f);
@@ -107,8 +108,11 @@ with vec2 T: declare T pow(T v, float f);
 with vec3 T: declare T pow(T v, float f);
 with vec4 T: declare T pow(T v, float f);
 with vec3 T: declare T pow(T v, T f);
-with vec2 T: declare T cross(T v, T f);
-with vec3 T: declare T cross(T v, T f);
+with vec3 T: T cross(T v1, T v2) {
+        return [v1[1] * v2[2] - v1[2] * v2[1],
+            v1[2] * v2[0] - v1[0] * v2[2],
+            v1[0] * v2[1] - v1[1] * v2[0]];
+    }
 with vec2 T: declare T floor(T v);
 with float T: declare T fract(T f);
 with vec2 T: declare T fract(T v);
@@ -176,8 +180,10 @@ prototype geometry {
     vector -(vector x, vector y);
     vector -(vector x);
     direction -(direction x);
-    vector *(vector v, scalar s);
-    vector *(scalar s, vector v);
+    with float T: vector *(vector v, T s);
+    with float T: vector *(T s, vector v);
+    with float T: vector *(direction v, T s);
+    with float T: vector *(T s, direction v);
     point +(point p, vector v);
     point +(vector p, point v);
     point -(point p, vector v);
@@ -204,6 +210,7 @@ prototype geometry {
 
     // position point_pos_free(point p);
     angle dot(direction v1, direction v2);
+    angle dot(vector v1, direction v2);
     scalar length(vector v);
     scalar distance(point p1, point p2);
     direction normalize(vector v); // Only direction -> direction is allowed, so canonicalizing this is fine
@@ -234,10 +241,16 @@ coordinate cart2 : geometry {
     vector -(vector x, vector y) {
         return (x as! vec2 - y as! vec2) as! vector;
     }
-    vector *(vector v, scalar s) {
+    with float T: vector *(vector v, T s) {
         return (v as! vec2 * s) as! vector;
     }
-    vector *(scalar s, vector v) {
+    with float T: vector *(T s, vector v) {
+        return (s * v as! vec2) as! vector;
+    }
+    with float T: vector *(direction v, T s) {
+        return (v as! vec2 * s) as! vector;
+    }
+    with float T: vector *(T s, direction v) {
         return (s * v as! vec2) as! vector;
     }
     vector -(vector v) {
@@ -293,6 +306,9 @@ coordinate cart2 : geometry {
     angle dot(direction v1, direction v2) {
         return (dot(v1 as! vec2, v2 as! vec2) as! angle);
     }
+    angle dot(vector v1, direction v2) {
+        return (dot(v1 as! vec2, v2 as! vec2) as! angle);
+    }
     scalar length(vector v) {
         return (length(v as! vec2) as! scalar);
     }
@@ -304,9 +320,6 @@ coordinate cart2 : geometry {
     }
     direction normalize(direction v) {
         return v;
-    }
-    vector cross(vector v1, vector v2) {
-        return (cross(v1 as! vec2, v2 as! vec2) as! vector);
     }
     canon normal normalNormalize(vector v) {
         return (normalize(v as! vec2) as! normal);
@@ -339,10 +352,16 @@ coordinate cart3 : geometry {
     vector -(vector x, vector y) {
         return (x as! vec3 - y as! vec3) as! vector;
     }
-    vector *(vector v, scalar s) {
+    with float T: vector *(vector v, T s) {
         return (v as! vec3 * s) as! vector;
     }
-    vector *(scalar s, vector v) {
+    with float T: vector *(T s, vector v) {
+        return (s * v as! vec3) as! vector;
+    }
+    with float T: vector *(direction v, T s) {
+        return (v as! vec3 * s) as! vector;
+    }
+    with float T: vector *(T s, direction v) {
         return (s * v as! vec3) as! vector;
     }
     vector -(vector v) {
@@ -398,6 +417,9 @@ coordinate cart3 : geometry {
     angle dot(direction v1, direction v2) {
         return (dot(v1 as! vec3, v2 as! vec3) as! angle);
     }
+    angle dot(vector v1, direction v2) {
+        return (dot(v1 as! vec3, v2 as! vec3) as! angle);
+    }
     scalar length(vector v) {
         return (length(v as! vec3) as! scalar);
     }
@@ -417,7 +439,9 @@ coordinate cart3 : geometry {
         return (reflect(v1 as! vec3, v2 as! vec3) as! vector);
     }
     vector cross(vector v1, vector v2) {
-        return (cross(v1 as! vec3, v2 as! vec3) as! vector);
+        return [v1[1] * v2[2] - v1[2] * v2[1],
+            v1[2] * v2[0] - v1[0] * v2[2],
+            v1[0] * v2[1] - v1[1] * v2[0]];
     }
     vector reflect(vector v1, direction v2) {
         return (reflect(v1 as! vec3, v2 as! vec3) as! vector);

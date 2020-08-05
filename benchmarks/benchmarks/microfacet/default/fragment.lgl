@@ -1,6 +1,6 @@
 #"precision mediump float;";
 #"precision mediump int;";
-using "../../glsl_defs.lgl";
+using "../glsl_defs.lgl";
 
 type color is vec3;
 type uv is vec2;
@@ -13,7 +13,7 @@ frame normal_localframe has dimension 3;
 const float PI = 3.14159265359;
 varying cart3<view>.position geom_position;
 varying uv geom_texCoord;
-varying cart3<view>.normal geom_normal;
+canon varying cart3<view>.normal geom_normal;
 varying cart3<view>.vector geom_tangent;
 varying cart3<view>.vector geom_bitangent;
 uniform color mat_diffuseColor;
@@ -26,16 +26,17 @@ uniform sampler2D<vec4> mat_alphaTexture;
 uniform int mat_hasNormalTexture;
 uniform sampler2D<alphaColor> mat_normalTexture;
 uniform float mat_normalTextureScale;
+uniform int anisotropic;
 uniform cart3<view>.position light_eyePosition;
 uniform attenuation light_attenuation;
 uniform color light_color;
 
-cart3<normal_localframe>.vector proj_normlocalframe (cart3<view>.halfdir m, cart3<view>.normal n) {
+canon cart3<normal_localframe>.halfdir proj_normlocalframe (cart3<view>.halfdir m, canon cart3<view>.normal n) {
     auto nhat = normalize(n);
-    auto t = normalize(geom_tangent - dot(geom_tangent,nhat));
+    auto t = normalize(geom_tangent - dot(geom_tangent,nhat) * nhat);
 	// Unfortunate hack due to bug
     auto b = (cross(nhat as! vec3, t as! vec3) as! cart3<view>.direction);
-    if (dot(geom_bitangent, b) <= 0.) {
+    if (dot(normalize(geom_bitangent), b) <= 0.) {
 		///??????
         b = (-b) as! cart3<view>.direction;
     }
@@ -51,8 +52,7 @@ cart3<view>.normal getShadingNormal() {
         auto n = normalize(geom_normal);
         auto t = normalize(geom_tangent - dot(geom_tangent,n) * n);
         auto b = (cross(n as! vec3, t as! vec3) as! cart3<view>.direction);
-        if (dot(geom_bitangent, b) < 0.) {
-			///??????
+        if (dot(normalize(geom_bitangent), b) < 0.) {
             b = (-b) as! cart3<view>.direction;
         }
 
@@ -94,7 +94,13 @@ float getAngle(T v1, T v2) {
 float D(cart3<view>.halfdir m, cart3<view>.normal n) {
 	if ((dot(m, n) > 0.)) {  
 		float roughness = getRoughness();
-		float theta = getAngle(m, n);
+    float theta = 0.;
+    if (anisotropic == 1) {
+      theta = getAngle(m in normal_localframe, n);
+    }
+    else {
+		  theta = getAngle(m, n);
+    }
 		return (roughness*roughness) / (PI * (cos(theta)*cos(theta)*cos(theta)*cos(theta))
       * (((roughness*roughness) + (tan(theta)*tan(theta)))*((roughness*roughness) + (tan(theta)*tan(theta)))));
 	}
