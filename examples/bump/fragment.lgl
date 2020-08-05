@@ -53,7 +53,9 @@ void main() {
         // calculate diffuse term
         vec3 Idiff = from_sRGB(vec3(texture2D(uDiffuseTexture, vUv)) as! sRGB) * max(dot(N, L), 0.2);
         // calculate specular term
-        vec3 Ispec = [1.0, 1.0, 1.0] * pow(max(dot(N, H), 0.0), 1.0 / roughness);
+        vec3 Ispec = [1.0, 1.0, 1.0];
+        // This hack is because of a difficult-to-find bug in the standard library; nothing fundamental is wrong here
+        #"Ispec *= pow(max(dot(N, H), 0.0), 1.0 / roughness);";
         finalColor = finalColor + lightColor * ((Idiff + Ispec) as! color) / (r*r);
         lightPosition = [-1., -1., -1.];
     }
