@@ -40,8 +40,8 @@ For artifact evaluation, we would like the reviewers to go through the following
   - (_optional_) Write a custom shader
 * Regenerate Graphs and Sample Images from Paper
   - Run script on existing data to view graph
+  - (_optional_) examine statistics script
   - Run example shaders to view realtime images
-  - (_optional_) examine graph data
   - (_optional_) examine relevant shader code
 * Run Framerate Experiment
   - Run each shader for set amount of time in random order
@@ -57,7 +57,7 @@ python test.py
 ```
 If any tests fail, try running `make build` again to ensure the latest version of the compiler is built.
 
-Next, execute `cd examples` to navigate to the examples folder.  In this folder, run the following command to start a server to display a sample shader:
+Next, execute `cd examples` to navigate to the examples folder.  In this folder, run the following command to start a server to display a sample shader (use Ctrl-C to terminate the server):
 ```
 SRC=auto_phong/ yarn run start
 ```
@@ -77,4 +77,35 @@ When starting with a custom shader in Gator, we recommend starting by examining 
 
 In this section, we will examine how to generate the graph in Figure 8, the data for the table in Table 1, and the images for Figure 7.
 
-Navigate to `linguine/benchmarks`.  If not using the VM, you will need to follow the installation instructions for the python3 libraries (the Chromium installation is not required until a later step).  
+Navigate to `linguine/benchmarks`.  If not using the VM, you will need to follow the installation instructions for the python3 libraries (the Chromium installation is not required until a later step).  To regenerate the graph used in the paper, run the command:
+```
+python3 visualize.py run_oopsla.json
+```
+This script will output the graph used in the paper, as well as the data used in Table 1.  The calculations for the statistics included in the paper are all done in the script, so it can be examined if there are questions about our methodologies.
+
+Next, to generate the sample images used in Figure 7 of the paper, navigate to `linguine/examples`.  The images can be created on a server using the following commands in sequence, navigating to `localhost:1234` to view each associated image (and Ctrl-C to terminate the server):
+```
+SRC=texture/ yarn run start
+SRC=reflection/ yarn run start
+SRC=shadow_map/ yarn run start
+SRC=microfacet/ yarn run start
+```
+When viewing the image, you may use the mouse buttons and wheel to move the camera to capture the angle used for each image in the paper.
+
+The shader code associated with each of these examples can be seen in the `.lgl` files 
+
+## Run Framerate Experiments (~30 minutes)
+
+Finally, we will simulate running the experiments used to generate the data used when generating the graph in Figure 8 and the table in Table 1.  First, navigate to `linguine/benchmarks`.  Second, to start running the experiments, run the command:
+```
+python3 main.py
+```
+This script will open a chrome window with the appropriate test case automatically, and start recording framerate.  While running these experiments, we made sure to keep the window running in the foreground and to not run background processes to help ensure the framerate would not be affected by external processes.  
+
+For this expreriment, we shortened the length by a factor of 10 by reducing the number of benchmarks in `main.py` from `* 30` to `* 3`; this should make running the benchmarks more reasonable for the reviewer; however, we expect that the results will have a much higher error than in our paper results.  This change can be easily reverted if the reviewer would like to minimize error by changing line 67 of `main.py`.
+
+We also expect that running these experiments on a virtual machine will result in _much_ lower framerates for all experiments; running on a virtual machine likely uses software rendering rather than the GPU to render images, which results in choppier graphics and much slower framerates.  This can only be avoided by running the experiments on a non-virtual machine.  
+
+## Contact
+
+Please open an issue or email [Dietrich Geisler](dag368@cornell.edu)
