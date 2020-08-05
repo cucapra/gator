@@ -12,7 +12,7 @@ There are two main ways to access this artifact:
 * The included virtual machine image
 * Building this repository yourself
 
-With the virtual machine image, you will just need a hypervisor capable of running the image.  Otherwise, to build this repository, you will need to clone the `oopsla2020` branch of this repository, and follow the setup instructions in `README.md` of the root directory, the setup instructions in `examples/README.md`, _and_ the setup instrucitons in `benchmarks/README.md`.  These instructions require installation of the following tools:
+With the virtual machine image, you will just need a hypervisor capable of running the image.  Otherwise, to build this repository, you will need to clone the `oopsla2020` branch of this repository, and follow the setup instructions in `README.md` of the root directory, the setup instructions in `examples/README.md`, _and_ the setup instructions in `benchmarks/README.md`.  These instructions require installation of the following tools:
 
 * OCaml (version 4.04 or higher)
 * Dune
@@ -77,4 +77,4 @@ When starting with a custom shader in Gator, we recommend starting by examining 
 
 In this section, we will examine how to generate the graph in Figure 8, the data for the table in Table 1, and the images for Figure 7.
 
-Navigate to `linguine/benchmarks`.  If not using the VM, you will need to follow the installation instructions for the python3 libraries and Chromium.
+Navigate to `linguine/benchmarks`.  If not using the VM, you will need to follow the installation instructions for the python3 libraries (the Chromium installation is not required until a later step).  
