@@ -42,7 +42,7 @@ float specStrength, float linear, float quad) {
     float dist = length(lightPos - fragPos);
     auto temp = (linear * dist + quad * dist * dist);
     float attenuation = 1.0 / temp;
-    auto tempColor = (lambertian * baseColor + specStrength * specular * [1., 1., 1.]);
+    auto tempColor = (lambertian * baseColor + specStrength * specular * ([1., 1., 1.] as! color));
     return tempColor * attenuation;
 }
 
