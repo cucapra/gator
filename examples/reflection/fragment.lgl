@@ -18,7 +18,7 @@ canon uniform cart3<model>.normalTransformation<view> uNormalMatrix;
 canon uniform cart3<view>.transformation<model> uInverseViewTransform;
 
 void main() {
-    auto N = vNormal in view;
+    auto N = normalize(uNormalMatrix * vNormal);
     auto V = -(vPosition in view);
     auto R = -reflect(V,N);
     gl_FragColor = textureCube(uSkybox, R in model);

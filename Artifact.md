@@ -2,7 +2,7 @@ This repository contains the compiler, examples, and evaluation materials for th
 
 This artifact has 3 components:
 * The Gator compiler and test suite
-* A collection of graphics examples
+* A collection of graphics examples written in the Gator language with the infrastructure to run them in a web browser
 * A script for gathering timing information about these graphics examples.
 
 ## Prerequisites
@@ -12,15 +12,7 @@ There are two main ways to access this artifact:
 * The included virtual machine image
 * Building this repository yourself
 
-With the virtual machine image, you will just need a hypervisor capable of running the image.  Otherwise, to build this repository, you will need to clone the `oopsla2020` branch of this repository, and follow the setup instructions in `README.md` of the root directory, the setup instructions in `examples/README.md`, _and_ the setup instructions in `benchmarks/README.md`.  These instructions require installation of the following tools:
-
-* OCaml (version 4.04 or higher)
-* Dune
-* Menhir
-* NPM
-* Yarn
-* Python 3 + pip + various libraries
-* Chromium
+With the virtual machine image, you will just need a hypervisor capable of running the image.  Using the VM will produce results that work, but will be very slow since modern VMs will likely use software for rendering rather than the GPU.  Otherwise, to build this repository, you will need to clone the `oopsla2020` branch of this repository, and follow the setup instructions in `README.md` of the root directory, the setup instructions in `examples/README.md`, _and_ the setup instructions in `benchmarks/README.md`.
 
 ## Virtual Machine Overview
 
@@ -85,7 +77,7 @@ This script will output the graph used in the paper, as well as the data used in
 
 Next, to generate the sample images used in Figure 7 of the paper, navigate to `linguine/examples`.  The images can be created on a server using the following commands in sequence, navigating to `localhost:1234` to view each associated image (and Ctrl-C to terminate the server):
 ```
-SRC=texture/ yarn run start
+SRC=texture_obj/ yarn run start
 SRC=reflection/ yarn run start
 SRC=shadow_map/ yarn run start
 SRC=microfacet/ yarn run start
@@ -96,16 +88,16 @@ The shader code associated with each of these examples can be seen in the `.lgl`
 
 ## Run Framerate Experiments (~30 minutes)
 
-Finally, we will simulate running the experiments used to generate the data used when generating the graph in Figure 8 and the table in Table 1.  First, navigate to `linguine/benchmarks`.  Second, to start running the experiments, run the command:
+We expect that running these experiments on a virtual machine will result in _much_ lower framerates for all experiments; running on a virtual machine likely uses software rendering rather than the GPU to render images, which results in choppier graphics and much slower framerates.  This can only be avoided by running the experiments on a non-virtual machine.  
+
+We will simulate running the experiments used to generate the data used when generating the graph in Figure 8 and the table in Table 1.  This experiment works by launching a browser and remote-controlling it to simulate the web shaders in a real environemnt.
+
+To run this experiment, navigate to `linguine/benchmarks` and run the command:
 ```
 python3 main.py
 ```
-This script will open a chrome window with the appropriate test case automatically, and start recording framerate.  While running these experiments, we made sure to keep the window running in the foreground and to not run background processes to help ensure the framerate would not be affected by external processes.  
+This script will open a chrome window with the appropriate test case automatically, and start recording framerate.  While running these experiments, we made sure to keep the window running in the foreground and to not run background processes to help ensure the framerate would not be affected by external processes.
 
-For this expreriment, we shortened the length by a factor of 10 by reducing the number of benchmarks in `main.py` from `* 30` to `* 3`; this should make running the benchmarks more reasonable for the reviewer; however, we expect that the results will have a much higher error than in our paper results.  This change can be easily reverted if the reviewer would like to minimize error by changing line 67 of `main.py`.
+Results are written both to `data/run.json` and `data/[current_date]_run.json`. After running the experiments, you can run `visualize.py data/run.json` (or whichever file you wish to view) to see the table of results and plot of data.
 
-We also expect that running these experiments on a virtual machine will result in _much_ lower framerates for all experiments; running on a virtual machine likely uses software rendering rather than the GPU to render images, which results in choppier graphics and much slower framerates.  This can only be avoided by running the experiments on a non-virtual machine.  
-
-## Contact
-
-Please open an issue or email [Dietrich Geisler](dag368@cornell.edu)
+For this experiment, we shortened the length by a factor of 10 by reducing the number of benchmarks in `main.py` from `* 30` to `* 3`; this should make running the benchmarks more reasonable for the reviewer; however, we expect that the results will have a much higher error than in our paper results.  This change can be easily reverted if the reviewer would like to minimize error by changing line 67 of `main.py`.
