@@ -307,6 +307,8 @@ function main() {
     gl.uniformMatrix4fv(loc_uView, false, view);
     gl.uniformMatrix4fv(loc_uModel, false, model);
 
+    lgl.addMatrixEdge("model", "world", lgl.mat4ToNumArray(model));
+    lgl.addMatrixEdge("world", "camera", lgl.mat4ToNumArray(view));
     lgl.addMatrixEdge("camera", "projection", lgl.mat4ToNumArray(projection));
 
     let modelView = mat4.create();
