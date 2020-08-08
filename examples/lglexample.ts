@@ -2,7 +2,7 @@
  * This module contains common functionality shared across Linguine's WebGL
  * examples.
  */
-import { mat4, vec3 } from 'gl-matrix';
+import { mat3, mat4, vec3 } from 'gl-matrix';
 import * as teapot from 'teapot';
 import * as bunny from 'bunny';
 import cube from 'primitive-cube';
@@ -11,6 +11,7 @@ import * as normals from 'normals';
 import pack from 'array-pack-2d';
 import canvasOrbitCamera from 'canvas-orbit-camera';
 import * as obj_loader from 'webgl-obj-loader';
+import * as path from './optimalSetPathChecker';
 
 export type Vec3Array = [number, number, number][];
 
@@ -570,7 +571,51 @@ export function getCanvas(){
 let pathGraph : number[][] = [];
 let pathNames : { [names : string] : number } = {} ;
 // Maps from a type to a list of (type x matrix) pairs
-let transformStorage : {[names : number] : { [targets : number] :  number[][]} } = {};
+let transformGraph : number[][][][] = [];
+
+export function mat3ToNumArray(m : mat3) : number[][] {
+  let toReturn = [[0., 0., 0.],
+                  [0., 0., 0.],
+                  [0., 0., 0.]];
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      toReturn[i][j] = m[i * 3 + j];
+    }
+  }
+  return toReturn;            
+}
+
+export function mat4ToNumArray(m : mat4) : number[][] {
+  let toReturn = [[0., 0., 0., 0.],
+                  [0., 0., 0., 0.],
+                  [0., 0., 0., 0.],
+                  [0., 0., 0., 0.]];
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      toReturn[i][j] = m[i * 4 + j];
+    }
+  }
+  return toReturn;            
+}
+
+function dummy(g1 : number[][], g2 : number[][][][], edge : number[], oracle : (n1: number[][], n2: number[][]) => boolean) : boolean {
+  return oracle(g2[edge[0]][edge[1]], g2[edge[0]][edge[1]])
+}
+
+function oracle(m1 : number[][], m2 : number[][]) : boolean {
+  let epsilon = 0.0001;
+  if (m1.length != m2.length)
+    return false;
+  for (let i = 0; i < m1.length; i++) {
+    if (m1[i].length != m2[i].length)
+      return false;
+    for (let j = 0; j < m2.length; j++) {
+      if (m1[i][j] - m2[i][j] > epsilon)
+        return false;
+    }
+  }
+  return true;
+}
 
 // Adds the given type to the graph of paths
 // Initially unconnected from all other types
@@ -580,12 +625,16 @@ export function addType(name : string) {
   pathNames[name] = index;
   for(let i = 0; i < index; i++) {
     pathGraph[i].push(-1);
+    transformGraph[i].push([[]]);
   }
   let newArr : number[] = [];
+  let newTArr : number[][][] = [];
   for (let i = 0; i <= index; i++) {
     newArr.push(-1);
+    newTArr.push([[]]);
   }
   pathGraph.push(newArr);
+  transformGraph.push(newTArr);
 }
 
 // Resets all paths in the graph
@@ -601,9 +650,12 @@ export function resetGraph() {
 export function addMatrixEdge(type1 : string, type2: string, matrix : number[][]) {
   let index1 = pathNames[type1];
   let index2 = pathNames[type2];
-  if (pathGraph[index1][index2] == -1) {
+  if (pathGraph[index1][index2] == 1) {
     throw "Attempting to add existing edge" + type1 + ", " + type2
   }
   pathGraph[index1][index2] = 1;
-  transformStorage[index1][index2] = matrix;
+  transformGraph[index1][index2] = matrix;
+  if (!dummy(pathGraph, transformGraph, [index1, index2], oracle)) {
+    console.log("Error: invalid path between " + type1 + " and " + type2);
+  }
 }

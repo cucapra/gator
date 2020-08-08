@@ -30,7 +30,13 @@ function main() {
 
   // Initialize the model position.
   let model = mat4.create();
+  lgl.addType("model");
+  lgl.addType("world");
+  lgl.addType("camera");
+  lgl.addType("projective");
+  lgl.addType("light");
   let lightTrans = mat4.create();
+  let modelLightTrans = mat4.create();
 
   // Position the light source for the lighting effect.
   let light = vec3.fromValues(20., 0., 20.);
@@ -38,7 +44,15 @@ function main() {
   function render(view: mat4, projection: mat4) {
     // Rotate the model a little bit on each frame.
     // mat4.rotateY(model, model, .01);
+    lgl.resetGraph();
+    
     mat4.rotateZ(lightTrans, lightTrans, .01);
+    mat4.rotateZ(modelLightTrans, modelLightTrans, -.01);
+    lgl.addMatrixEdge("model", "world", lgl.mat4ToNumArray(model));
+    lgl.addMatrixEdge("model", "light", lgl.mat4ToNumArray(modelLightTrans));
+    lgl.addMatrixEdge("light", "camera", lgl.mat4ToNumArray(lightTrans));
+    lgl.addMatrixEdge("world", "camera", lgl.mat4ToNumArray(view));
+    lgl.addMatrixEdge("camera", "projective", lgl.mat4ToNumArray(projection));
 
     // Use our shader pair.
     gl.useProgram(program);

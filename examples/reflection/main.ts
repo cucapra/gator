@@ -88,6 +88,13 @@ function main() {
   let loc_aPosition = lgl.attribLoc(gl, program, 'aPosition');
   let loc_aNormal = lgl.attribLoc(gl, program, 'aNormal');
 
+  lgl.addType("model");
+  lgl.addType("world");
+  lgl.addType("camera");
+  lgl.addType("projection");
+  lgl.addType("normalWorld");
+  lgl.addType("normalCamera");
+
   // We'll draw a teapot.
   let teapot = lgl.getBunny(gl);
 
@@ -299,6 +306,8 @@ function main() {
     gl.uniformMatrix4fv(loc_uProjection, false, projection);
     gl.uniformMatrix4fv(loc_uView, false, view);
     gl.uniformMatrix4fv(loc_uModel, false, model);
+
+    lgl.addMatrixEdge("camera", "projection", lgl.mat4ToNumArray(projection));
 
     let modelView = mat4.create();
     let normalMatrix = mat3.create();
