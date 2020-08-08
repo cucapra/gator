@@ -20,7 +20,7 @@ We recommend using [VirtualBox](https://www.virtualbox.org/) as a mechanism for 
 
 The username and password of the VM are both `gator`.
 
-The repository containing this document is located in `~/linguine`.  To get started, type `cd ~/linguine`.  Note that we are using the latest version of the `oopsla2020` branch in this virtual machine.  We use this branch to simulate the compiler and examples in the state they were in when the paper was submitted, along with small updates to the README and this document.  Then run `make build` to build the latest version of the compiler and install `gatorc`.
+The repository containing this document is located in `~/linguine`.  To get started, type `cd ~/linguine`.  Note that we are using the latest version of the `oopsla2020` branch in this virtual machine.  We use this branch to simulate the compiler and examples in the state they were in when the paper was submitted, along with small updates to the README and this document.
 
 ## Host Machine Overview
 
