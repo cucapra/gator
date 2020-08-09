@@ -116,6 +116,11 @@ All example shaders included with Gator rely on the standard library located in 
 
 When starting with a custom shader in Gator, we recommend starting by examining existing shaders to get a sense of syntax and changing some basic values.  If you have a background in shader development, we would love it if you would try and write a custom shader using the Gator standard library.  Some GLSL functions may not be included yet, but similar syntax to existing functions can be used to include new functions in the standard library.
 
+To get started, we recommend duplicating the `auto_phong` folder.  The shader attached to this example is located in `fragment.lgl`, while the CPU backend code is included in `main.ts`.  To start, it may be worth looking at the shader in `fragment.lgl` and changing some values to change the color or lighting effects associated with this shader.  To run the example shader, run the command:
+```
+SRC=[folder_name] yarn run start
+```
+
 ## Regenerate Graphs and Sample Images (5-10 minutes)
 
 In this section, we will examine how to generate the graph in Figure 8, the data for the table in Table 1, and the images for Figure 7.
