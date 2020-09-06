@@ -15,7 +15,7 @@ uniform samplerCube<alphaColor> uSkybox;
 canon uniform hom<world>.transformation<view> uView;
 canon uniform hom<model>.transformation<world> uModel;
 canon uniform cart3<model>.normalTransformation<view> uNormalMatrix;
-canon uniform cart3<view>.transformation<model> uInverseViewTransform;
+canon uniform hom<view>.transformation<model> uInverseViewTransform;
 
 void main() {
     auto N = vNormal in view;

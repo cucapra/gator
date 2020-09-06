@@ -302,6 +302,8 @@ function main() {
     // Use our shader pair.
     gl.useProgram(program);
 
+    lgl.resetGraph();
+
     // Set the shader "uniform" parameters.
     gl.uniformMatrix4fv(loc_uProjection, false, projection);
     gl.uniformMatrix4fv(loc_uView, false, view);
@@ -317,10 +319,18 @@ function main() {
     mat3.normalFromMat4(normalMatrix, modelView);
     gl.uniformMatrix3fv(loc_uNormalMatrix, false, normalMatrix);
 
-    let inverseViewTransform = mat3.create();
-    mat3.fromMat4(inverseViewTransform, modelView);
-    mat3.invert(inverseViewTransform, inverseViewTransform);
-    gl.uniformMatrix3fv(loc_uInverseViewTransform, false, inverseViewTransform);
+    lgl.addMatrixEdge("model", "camera", lgl.mat4ToNumArray(modelView));
+    lgl.addMatrixEdge("normalWorld", "normalCamera", lgl.mat3ToNumArray(normalMatrix));
+    
+
+    let inverseViewTransform = mat4.create();
+    mat4.invert(inverseViewTransform, modelView);
+    let temp = mat4.create();
+    mat4.multiply(temp, inverseViewTransform, modelView);
+    console.log(temp[0]);
+    gl.uniformMatrix4fv(loc_uInverseViewTransform, false, inverseViewTransform);
+
+    lgl.addMatrixEdge("camera", "model", lgl.mat4ToNumArray(inverseViewTransform));
 
     // Set the attribute arrays.
     lgl.bind_attrib_buffer(gl, loc_aPosition, teapot.positions, 3);

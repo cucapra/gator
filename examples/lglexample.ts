@@ -11,7 +11,7 @@ import * as normals from 'normals';
 import pack from 'array-pack-2d';
 import canvasOrbitCamera from 'canvas-orbit-camera';
 import * as obj_loader from 'webgl-obj-loader';
-import * as path from './optimalSetPathChecker';
+import * as path from './__target__/hello';
 
 export type Vec3Array = [number, number, number][];
 
@@ -598,19 +598,33 @@ export function mat4ToNumArray(m : mat4) : number[][] {
   return toReturn;            
 }
 
-function dummy(g1 : number[][], g2 : number[][][][], edge : number[], oracle : (n1: number[][], n2: number[][]) => boolean) : boolean {
-  return oracle(g2[edge[0]][edge[1]], g2[edge[0]][edge[1]])
+function getIdentityMatrix(size : number) : number[][] {
+  if (size == 3)
+    return mat3ToNumArray(mat3.create())
+  return mat4ToNumArray(mat4.create())
 }
 
-function oracle(m1 : number[][], m2 : number[][]) : boolean {
+function oracle(m1 : number[][] | number, m2 : number[][] | number) : boolean {
   let epsilon = 0.0001;
-  if (m1.length != m2.length)
+  if (m1 == 1) {
+    if (m2 == 1)
+      return true;
+    m1 = getIdentityMatrix((m2 as number[][]).length);
+  }
+  if (m2 == 1) {
+    if (m1 == 1)
+      return true;
+    m2 = getIdentityMatrix((m1 as number[][]).length);
+  }
+  let mat1 = m1 as number[][]
+  let mat2 = m2 as number[][]
+  if (mat1.length != mat2.length)
     return false;
-  for (let i = 0; i < m1.length; i++) {
-    if (m1[i].length != m2[i].length)
+  for (let i = 0; i < mat1.length; i++) {
+    if (mat1[i].length != mat2[i].length)
       return false;
-    for (let j = 0; j < m2.length; j++) {
-      if (m1[i][j] - m2[i][j] > epsilon)
+    for (let j = 0; j < mat2.length; j++) {
+      if (mat1[i][j] - mat2[i][j] > epsilon)
         return false;
     }
   }
@@ -655,7 +669,7 @@ export function addMatrixEdge(type1 : string, type2: string, matrix : number[][]
   }
   pathGraph[index1][index2] = 1;
   transformGraph[index1][index2] = matrix;
-  if (!dummy(pathGraph, transformGraph, [index1, index2], oracle)) {
+  if (!path.verify(pathGraph, transformGraph, [index1, index2], oracle)) {
     console.log("Error: invalid path between " + type1 + " and " + type2);
   }
 }

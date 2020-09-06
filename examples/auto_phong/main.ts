@@ -47,10 +47,10 @@ function main() {
     lgl.resetGraph();
     
     mat4.rotateZ(lightTrans, lightTrans, .01);
-    mat4.rotateZ(modelLightTrans, modelLightTrans, -.01);
+    mat4.rotateZ(modelLightTrans, modelLightTrans, .01);
     lgl.addMatrixEdge("model", "world", lgl.mat4ToNumArray(model));
     lgl.addMatrixEdge("model", "light", lgl.mat4ToNumArray(modelLightTrans));
-    lgl.addMatrixEdge("light", "camera", lgl.mat4ToNumArray(lightTrans));
+    lgl.addMatrixEdge("light", "world", lgl.mat4ToNumArray(lightTrans));
     lgl.addMatrixEdge("world", "camera", lgl.mat4ToNumArray(view));
     lgl.addMatrixEdge("camera", "projective", lgl.mat4ToNumArray(projection));
 
