@@ -604,6 +604,12 @@ function getIdentityMatrix(size : number) : number[][] {
   return mat4ToNumArray(mat4.create())
 }
 
+function abs(n : number) : number {
+  if (n < 0)
+    return -n
+  return n
+}
+
 function oracle(m1 : number[][] | number, m2 : number[][] | number) : boolean {
   let epsilon = 0.0001;
   if (m1 == 1) {
@@ -624,8 +630,9 @@ function oracle(m1 : number[][] | number, m2 : number[][] | number) : boolean {
     if (mat1[i].length != mat2[i].length)
       return false;
     for (let j = 0; j < mat2.length; j++) {
-      if (mat1[i][j] - mat2[i][j] > epsilon)
+      if (abs(mat1[i][j] - mat2[i][j]) > epsilon) {
         return false;
+      }
     }
   }
   return true;
@@ -667,9 +674,9 @@ export function addMatrixEdge(type1 : string, type2: string, matrix : number[][]
   if (pathGraph[index1][index2] == 1) {
     throw "Attempting to add existing edge" + type1 + ", " + type2
   }
-  pathGraph[index1][index2] = 1;
   transformGraph[index1][index2] = matrix;
   if (!path.verify(pathGraph, transformGraph, [index1, index2], oracle)) {
     console.log("Error: invalid path between " + type1 + " and " + type2);
   }
+  pathGraph[index1][index2] = 1;
 }

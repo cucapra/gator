@@ -1,5 +1,6 @@
 import * as lgl from '../lglexample';
 import { mat4, mat3, vec3, vec4 } from 'gl-matrix';
+//import { inverse } from 'gl-matrix/src/gl-matrix/vec2';
 
 function main() {
   class MovingCube {
@@ -101,7 +102,7 @@ function main() {
   // Initialize the model position.
   let model = mat4.create();
 
-  mat4.scale(model, model, [4.0, 4., 4.]);
+  mat4.scale(model, model, [4.0, 4.0, 4.0]);
 
   var ct = 0;
   var img = new Array(6);
@@ -322,12 +323,9 @@ function main() {
     lgl.addMatrixEdge("model", "camera", lgl.mat4ToNumArray(modelView));
     lgl.addMatrixEdge("normalWorld", "normalCamera", lgl.mat3ToNumArray(normalMatrix));
     
-
+    let dummy = mat4.create();
     let inverseViewTransform = mat4.create();
     mat4.invert(inverseViewTransform, modelView);
-    let temp = mat4.create();
-    mat4.multiply(temp, inverseViewTransform, modelView);
-    console.log(temp[0]);
     gl.uniformMatrix4fv(loc_uInverseViewTransform, false, inverseViewTransform);
 
     lgl.addMatrixEdge("camera", "model", lgl.mat4ToNumArray(inverseViewTransform));
