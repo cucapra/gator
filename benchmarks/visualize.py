@@ -84,6 +84,7 @@ if PLOT_TYPE == "violin":
     plt.legend(handles=[blue_patch, red_patch])
     plt.show()
 elif PLOT_TYPE == "bar":
+    sns.set(font_scale=1.1)
     fig, ax = plt.subplots()
     g = sns.barplot(x="bench_name", y="frame",
                     data=df, hue="shader", ci="sd", ax=ax, hue_order=["default", "raw"])
