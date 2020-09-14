@@ -93,4 +93,5 @@ elif PLOT_TYPE == "bar":
     plt.xlabel('Shader')
     plt.ylabel('fps')
 
-    plt.show()
+    # plt.show()
+    plt.savefig('evalresultsgator.pdf')
