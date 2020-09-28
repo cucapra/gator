@@ -309,9 +309,6 @@ coordinate cart2 : geometry {
     direction normalize(direction v) {
         return v;
     }
-    vector cross(vector v1, vector v2) {
-        return (cross(v1 as! vec2, v2 as! vec2) as! vector);
-    }
     canon normal normalNormalize(vector v) {
         return (normalize(v as! vec2) as! normal);
     }
