@@ -18,5 +18,5 @@ canon uniform hom<model>.transformation<world> uModel;
 void main() {
   vNormal = aNormal;
   vPosition = aPosition;
-  vec4 gl_Position = aPosition in hom<projective>;
+  gl_Position = aPosition in hom<projective>;
 }
