@@ -507,7 +507,7 @@ let check_parameterization (cx : contexts) (pm : parameterization) : contexts =
     else check_typ_valid (with_pm cx found) t ;
     Assoc.update s (t, b) found in
   ignore_typ_bool_context
-    (List.fold_left check_parameter Assoc.empty (Assoc.bindings pm)) ;
+    (List.fold_left check_parameter Assoc.empty (List.rev (Assoc.bindings pm))) ;
   with_pm cx pm
 
 let update_psi (cx : contexts) (f : fn_typ) : contexts =
@@ -1081,8 +1081,8 @@ let check_fn_decl (cx : contexts) (f : fn_typ) :
   let pme =
     List.fold_right
       (fun (s, t) acc ->
-        if is_subtype cx t AnyFrameTyp then acc
-        else Assoc.update s (typ_erase cx t) acc)
+        if is_subtype cx'' t AnyFrameTyp then acc
+        else Assoc.update s (typ_erase cx'' t) acc)
       (List.map (fun (s, (t, _)) -> (s, t)) (Assoc.bindings pm))
       Assoc.empty in
   if has_modification cx ml External then (cx'', None)
