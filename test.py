@@ -118,7 +118,7 @@ def main():
     for path, _, files in os.walk("test"):
         lglfiles = [x for x in files if x.endswith(".lgl")]
         if len(lglfiles) > 0:
-            print("🏃‍   Running tests in " + path + ":")
+            print("Running tests in " + path + ":")
         for filename in lglfiles:
             filename = path + "/" + filename
             basename = filename[:-4]  # Remove the extension
@@ -191,16 +191,16 @@ def main():
                 # os.remove(tempname)
                 if failed:
                     any_fails = True
-                    print("\t❌ " + basename + " " +
-                        random.choice(fail_symbols))
+                    print(basename + " failed")
             except IOError:
                 any_fails = True
-                print("\t❌ " + expectname + " not found " +
+                print("\t" + expectname + " not found " +
                       random.choice(fail_symbols))
     if not any_fails:
-        print("No 👏 Failures 👏")
+        print()
+        print("No Failures")
         for _ in range(SUCCESS_COUNT):
-            print(random.choice(success_symbols) + "  "),
+            pass 
         print("")  # newline
     elif args.b:  # for CircleCI builds
         sys.exit(420)
