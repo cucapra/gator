@@ -6,6 +6,7 @@ prototype geometry {
     object vector;
     object dir;
     vector +(vector v1, vector v2);
+    dir normalize(vector v1);
 }
 
 with frame(3) r:
@@ -19,6 +20,8 @@ coordinate cart3 : geometry {
         return normalize(v1 as! vec3) as! dir;
     }
 }
+
+
 
 with frame(3) r1:
 with frame(3) r2:
