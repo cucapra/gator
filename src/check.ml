@@ -1344,10 +1344,10 @@ let rec check_term_list (tl : prog) (externs : prog Assoc.context) :
     List.fold_left
       (fun acc t ->
         let cx', f' = check_aterm (fst acc) t in
-        (cx', f' @ snd acc))
+        (cx', (snd acc) @ f'))
       (init (snd (List.hd tl)) externs, [])
       tl in
-  (cx, List.rev f)
+  (cx, f)
 
 (* Returns the list of fn's which represent the program
  * and params of the void main() fn *)
