@@ -100,6 +100,7 @@ rule read = parse
   | "attribute"     { ATTRIBUTE }
   | "uniform"       { UNIFORM }
   | "varying"       { VARYING }
+  | "typedef"       { TYPEDEF }
   | "break"
   | "continue"
   | "do"

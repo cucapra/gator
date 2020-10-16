@@ -86,6 +86,7 @@ exception ParseException of string
 %token VARYING
 %token POUND
 %token PERCENT
+%token TYPEDEF
 
 (* Precedences *)
 
@@ -162,6 +163,8 @@ let term ==
     <GlobalVar>
   | f = fn;
     <Fn>
+  | TYPEDEF ; t = typ; x = id_hack; SEMI;
+    <Typedef>
 
 let prototype_element ==
   | m = modification*; OBJECT; x = id_hack; t = snd(combined(IS, typ))?; SEMI;
@@ -307,6 +310,8 @@ let typ :=
     { GenTyp }
   | PERCENT; LPAREN; t = typ; RPAREN;
     { Literal(t) }
+(*  | x = id_hack;
+    { Alias(x) } *)
 
 let storage_qual ==
   | IN;
