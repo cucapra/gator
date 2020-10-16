@@ -32,3 +32,6 @@ dist/
 # Data
 data/
 .ipynb_checkpoints
+
+# PDFs
+*.pdf
