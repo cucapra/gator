@@ -54,7 +54,7 @@ let rec search_progs path fs found : GatorAst.prog Assoc.context =
   | f :: t ->
       let p = parse_prog (path ^ f) in
       let to_search, found' = Check.search_prog p found in
-      Assoc.update f p (search_progs (path ^ prog_path f) to_search found')
+      Assoc.update f p (search_progs (path ^ prog_path f) (t @ to_search) found')
 
 let _ =
   Arg.parse spec_list set_program_file usage_msg ;
