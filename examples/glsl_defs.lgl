@@ -84,6 +84,7 @@ declare float cos(float f);
 declare float tan(float f);
 declare float sqrt(float f);
 declare float acos(float f);
+declare float atan(float f, float f2);
 with float[2] T: declare T sin(T f);
 with float[2] T: declare T cos(T f);
 with float[2] T: declare T sqrt(T f);
@@ -418,9 +419,7 @@ coordinate cart3 : geometry {
         return (reflect(v1 as! vec3, v2 as! vec3) as! vector);
     }
     vector cross(vector v1, vector v2) {
-        return [v1[1] * v2[2] - v1[2] * v2[1],
-            v1[2] * v2[0] - v1[0] * v2[2],
-            v1[0] * v2[1] - v1[1] * v2[0]];
+        return (reflect(v1 as! vec3, v2 as! vec3) as! vector);
     }
     vector reflect(vector v1, direction v2) {
         return (reflect(v1 as! vec3, v2 as! vec3) as! vector);
