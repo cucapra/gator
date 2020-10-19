@@ -1,4 +1,5 @@
 (executable
  (name gatorc)
+ (modes exe byte js)
  (public_name gatorc)
  (libraries gatorl))
