@@ -1,6 +1,6 @@
 import matplotlib.patches as mpatches
 import scipy.stats
-from scipy.stats import sem
+from scipy.stats import sem,tstd
 import json
 import numpy as np
 import seaborn as sns
@@ -85,10 +85,11 @@ if PLOT_TYPE == "violin":
     plt.legend(handles=[blue_patch, red_patch])
     plt.show()
 elif PLOT_TYPE == "bar":
-    matplotlib.rcParams['text.usetex'] = True
-    matplotlib.rcParams['text.latex.preamble'] = [r'\usepackage{sansmath}', r'\sansmath'] #Force sans-serif math mode (for axes labels)
-    matplotlib.rcParams['font.family'] = "sans-serif"
-    matplotlib.rcParams['font.sans-serif'] = ['Helvetica']
+    # Uncomment to write using Latex
+    #matplotlib.rcParams['text.usetex'] = True
+    #matplotlib.rcParams['text.latex.preamble'] = [r'\usepackage{sansmath}', r'\sansmath'] #Force sans-serif math mode (for axes labels)
+    #matplotlib.rcParams['font.family'] = "sans-serif"
+    #matplotlib.rcParams['font.sans-serif'] = ['Helvetica']
     sns.set(font_scale=1.1)
     fig, ax = plt.subplots()
     g = sns.barplot(x="bench_name", y="frame",
