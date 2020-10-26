@@ -1,6 +1,13 @@
 open GatorAst
 open Util
 
+(*  This file contains a pass which is called between parsing and typechecking.
+ *  It removes all typedef terms from the program and propagates a context
+ *  containing the alias-type mappings.
+ *  One thing to note is that typedeffing another type which used the declare
+ *  keyword preserves the "fall-through" effect of the declare keyword.
+ *)
+
 (* Mapping from strings (typedef aliases) to types *)
 type gamma = typ Assoc.context
 
