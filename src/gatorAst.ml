@@ -122,6 +122,7 @@ type typedef = typ * id
  * External function declarations without bodies
  * Global variable declarations
  * Function declarations with bodies
+ * Typedef to create a new alias for a type
  *)
 type aterm = term astNode
 

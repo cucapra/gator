@@ -92,6 +92,7 @@ rule read = parse
   | ":"             { COLON }
   | "#"             { POUND }
   | "%"             { PERCENT }
+  | "~"             { TILDE }
   | "void"          { VOID }
   | "return"        { RETURN }
   | "declare"       { DECLARE }
