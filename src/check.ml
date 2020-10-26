@@ -305,6 +305,7 @@ let rec typ_erase (cx : contexts) (t : typ) : TypedAst.etyp =
   | GenTyp -> TypedAst.GenTyp
   | BotTyp | AnyFrameTyp | FrameTyp _ | GenArrTyp _ | ExactCodeTyp ->
       debug_fail cx ("Cannot erase " ^ string_of_typ t)
+  | Alias a -> debug_fail cx "Typedef alias found in typechecking pass!"
 
 let rec etyp_to_typ (e : TypedAst.etyp) : typ =
   debug_print ">> etyp_to_typ" ;
@@ -1321,6 +1322,7 @@ let rec check_term (cx : contexts) (t : term) : contexts * TypedAst.prog =
   | Fn f -> (
       let cx', f' = check_fn cx f None in
       (cx', match f' with None -> [] | Some f' -> [Fn f']) )
+  | Typedef t -> debug_fail cx "Typedef term found in typechecking pass!"
 
 and check_aterm (cx : contexts) ((t, meta) : aterm) : contexts * TypedAst.prog =
   check_term (with_meta cx meta) t

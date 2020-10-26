@@ -38,7 +38,8 @@ type typ =
   | GenTyp
   | GenArrTyp of typ
   | ExactCodeTyp
-  | Alias of id
+  | Alias of id (* Should be removed from ast before typechecking *)
+
 
 (* expressions *)
 type aexp = exp astNode
@@ -135,7 +136,7 @@ and term =
   | Typ of modification list * id * typ
   | GlobalVar of global_var
   | Fn of fn
-  | Typedef of typedef
+  | Typedef of typedef (* Should be removed from ast before typechecking *)
 
 (* program *)
 type prog = aterm list
