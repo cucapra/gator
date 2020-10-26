@@ -3,9 +3,19 @@ using "../glsl_defs.lgl";
 frame model has dimension 3;
 frame world has dimension 3;
 
+//This doesn't work
+
+/*type m_pt is cart3<model>.point;
+type w_vec is cart3<world>.vector;
+void main() {
+  m_pt x = [1., 2., 3.];
+  w_vec y = [2., 3., 4.];
+}*/
+
+//This does work
+
 typedef cart3<model>.point m_pt;
 typedef cart3<world>.vector w_vec;
-
 void main() {
   ~m_pt x = [1., 2., 3.];
   ~w_vec y = [2., 3., 4.];
