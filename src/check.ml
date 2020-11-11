@@ -1044,6 +1044,9 @@ let check_typ_decl (cx : contexts) (x : string) ((b, pm, t) : tau) : contexts =
     match t with
     | AnyTyp | BoolTyp | IntTyp | FloatTyp | StringTyp -> t
     | ArrTyp (t', _) -> check_valid_supertype t'
+    | MemberTyp (mem_c, mem_t) -> 
+        check_valid_supertype mem_c |> ignore_typ;
+        check_valid_supertype mem_t
     | ParTyp (s, pml) ->
         if Assoc.mem s cx'.pm then
           check_valid_supertype (fst (Assoc.lookup s cx'.pm))
@@ -1336,6 +1339,14 @@ and check_exprog (tl : prog) (cx : contexts) : contexts * TypedAst.prog =
       (cx, []) tl in
   (cx', List.rev f)
 
+let print_term_linenumbers (tl: prog) : unit =
+  debug_print ">> print_term_linenumbers";
+  List.iter
+  (fun ((t, meta) : aterm) ->
+    debug_print (string_of_term t);
+    debug_print (string_of_int (meta.pos_lnum))
+  ) tl
+
 let rec check_term_list (tl : prog) (externs : prog Assoc.context) :
     contexts * TypedAst.prog =
   debug_print ">> check_global_var_or_fn_lst" ;
@@ -1352,6 +1363,7 @@ let rec check_term_list (tl : prog) (externs : prog Assoc.context) :
 (* Returns the list of fn's which represent the program
  * and params of the void main() fn *)
 let check_prog (tl : prog) (externs : prog Assoc.context) : TypedAst.prog =
+  print_term_linenumbers tl;
   debug_print ">> check_prog" ;
   let cx, typed_prog = check_term_list tl externs in
   check_main_fn cx ;

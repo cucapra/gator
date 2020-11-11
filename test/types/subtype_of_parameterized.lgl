@@ -1,0 +1,4 @@
+using "../glsl_defs.lgl";
+
+frame model has dimension 3;
+type m_pt is cart3<model>.point;
