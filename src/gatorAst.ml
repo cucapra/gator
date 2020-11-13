@@ -38,7 +38,6 @@ type typ =
   | GenTyp
   | GenArrTyp of typ
   | ExactCodeTyp
-  | Alias of id (* Should be removed from ast before typechecking *)
 
 
 (* expressions *)

@@ -66,7 +66,6 @@ exception ParseException of string
 %token SKIP
 %token PRINT
 %token SEMI
-%token TILDE
 %token INTTYP
 %token FLOATTYP
 %token STRINGTYP
@@ -311,8 +310,6 @@ let typ :=
     { GenTyp }
   | PERCENT; LPAREN; t = typ; RPAREN;
     { Literal(t) }
-  | TILDE; x = ID;
-    { Alias(x) }
 
 let storage_qual ==
   | IN;
