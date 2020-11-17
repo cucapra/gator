@@ -1,4 +1,8 @@
-using "../glsl_defs.lgl";
-
-frame model has dimension 3;
+prototype geometry {
+  object point;
+}
+with frame(3) r:
+coordinate cart3 : geometry {
+  object point is float[3];
+}frame model has dimension 3;
 type m_pt is cart3<model>.point;

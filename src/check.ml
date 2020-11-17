@@ -1036,41 +1036,67 @@ let check_return (cx : contexts) (t : typ) (c : acomm) : unit =
           ^ ", found: " ^ string_of_typ rt )
   | _ -> ()
 
+let rec check_valid_supertype (cx : contexts) (cx' : contexts) (t : typ) : typ =
+  match t with
+  | AnyTyp | BoolTyp | IntTyp | FloatTyp | StringTyp -> t
+  | ArrTyp (t', _) -> check_valid_supertype cx cx' t'
+  (*| MemberTyp (mem_c, mem_t) ->*)
+  | MemberTyp (ParTyp (s1, pml1), ParTyp (s2, pml2)) ->
+      (* Matches something of the form "cart3<model>.point" *)
+      (* s1 is cart3, pml1 is [model], s2 is point, pml2 is [] *)
+      let tpm_scheme = match get_scheme_safe cx' s1 with
+      | Some c -> fst c
+      | None -> error cx ("Bad type declaration: Invalid scheme " ^ s1) in
+      let frame_typ = List.hd pml1 in
+      let _ = match frame_typ with
+      | ParTyp (s, pml) -> (match get_frame_safe cx' s with
+        | Some d -> ()
+        | None -> error cx ("Bad type declaration: Invalid frame " ^ s))
+      | _ -> error cx ("Bad type declaration: Invalid frame " ^ (string_of_typ frame_typ)) in
+      (*let new_cx = with_scheme cx' TODO in*)
+      let tpm_object = match get_typ_safe cx' s2 with
+      | Some (_, tpm', _) -> tpm'
+      | None -> error cx ("Bad type declaration: Invalid object " ^ s2) in
+      check_valid_supertype_helper cx cx' false s1 t pml1 tpm_scheme;
+      check_valid_supertype_helper cx cx' false s2 t pml1 tpm_object;
+      t
+  | ParTyp (s, pml) ->
+      if Assoc.mem s cx'.pm then
+        check_valid_supertype cx cx' (fst (Assoc.lookup s cx'.pm)) 
+      else
+        let tpm = match get_typ_safe cx' s with
+        | Some (_, tpm', _) -> tpm'
+        | None -> error cx ("5Bad type declaration: " ^ string_of_typ t) in
+        check_valid_supertype_helper cx cx' false s t pml tpm;
+        t
+  | _ -> error cx ("Invalid type declaration " ^ string_of_typ t)
+
+(* this factors out the tpm-dependent code *)
+and check_valid_supertype_helper (cx : contexts) (cx' : contexts) (recurse : bool)
+    (s : string) (t : typ) (pml : typ list) (tpm : parameterization) : unit =
+    let pmb = Assoc.bindings tpm in
+    if List.length pmb == List.length pml then (
+      List.fold_left2
+        (fun acc (s, c) t' ->
+        if is_subtype cx' t' c then ()
+        else
+          error cx
+            ( "Invalid typ used in the parameterization "
+            ^ string_of_typ t ^ " for parameter " ^ s ))
+      ()
+      (List.map (fun (s, (t, _)) -> (s, t)) (Assoc.bindings tpm))
+      (if recurse then (List.map (check_valid_supertype cx cx') pml) else pml) ;
+      ) 
+    else
+      error cx
+        ( "Invalid number of parameters\n\
+          \                provided to parameterized type " ^ s )
+
 (* Updates Tau with new typing information *)
-let check_typ_decl (cx : contexts) (x : string) ((b, pm, t) : tau) : contexts =
+and check_typ_decl (cx : contexts) (x : string) ((b, pm, t) : tau) : contexts =
   debug_print ">> check_typ_decl" ;
   let cx' = with_pm cx pm in
-  let rec check_valid_supertype (t : typ) : typ =
-    match t with
-    | AnyTyp | BoolTyp | IntTyp | FloatTyp | StringTyp -> t
-    | ArrTyp (t', _) -> check_valid_supertype t'
-    | MemberTyp (mem_c, mem_t) -> 
-        check_valid_supertype mem_c |> ignore_typ;
-        check_valid_supertype mem_t
-    | ParTyp (s, pml) ->
-        if Assoc.mem s cx'.pm then
-          check_valid_supertype (fst (Assoc.lookup s cx'.pm))
-        else
-          let _, tpm, _ = get_typ cx' s in
-          let pmb = Assoc.bindings tpm in
-          if List.length pmb == List.length pml then (
-            List.fold_left2
-              (fun acc (s, c) t' ->
-                if is_subtype cx' t' c then ()
-                else
-                  error cx
-                    ( "Invalid typ used in the parameterization "
-                    ^ string_of_typ t ^ " for parameter " ^ s ))
-              ()
-              (List.map (fun (s, (t, _)) -> (s, t)) (Assoc.bindings tpm))
-              (List.map check_valid_supertype pml) ;
-            t )
-          else
-            error cx
-              ( "Invalid number of parameters\n\
-                \                provided to parameterized type " ^ s )
-    | _ -> error cx ("Invalid type declaration " ^ string_of_typ t) in
-  check_valid_supertype t |> ignore_typ ;
+  check_valid_supertype cx cx' t |> ignore_typ ;
   bind cx x (Tau (b, pm, t))
 
 (* Updates Phi, and internal calls update gamma and psi *)
