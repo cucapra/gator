@@ -13,11 +13,21 @@ type gamma = typ Assoc.context
 
 let rec typedef_type (cx : gamma) (t : typ) : typ =
   match t with
-  | Alias id -> typedef_type cx (Assoc.lookup id cx)
+  (*| Alias id -> typedef_type cx (Assoc.lookup id cx)*)
   | Literal t -> Literal (typedef_type cx t)
   | ArrTyp (t, e) -> ArrTyp (typedef_type cx t, e)
   | MemberTyp (t1, t2) -> MemberTyp (typedef_type cx t1, typedef_type cx t2)
-  | ParTyp (str, tl) -> ParTyp(str, List.map (fun t -> typedef_type cx t) tl)
+  | ParTyp (str, tl) -> (
+    (* Some empty par typs can be aliases for typedef types *)
+    if List.length tl == 0 then (
+      if Assoc.mem str cx then
+        typedef_type cx (Assoc.lookup str cx)
+      else
+        ParTyp(str, List.map (fun t -> typedef_type cx t) tl)
+    )
+    else
+      ParTyp(str, List.map (fun t -> typedef_type cx t) tl)
+  )
   | GenArrTyp t -> GenArrTyp (typedef_type cx t)
   | _ -> t
 

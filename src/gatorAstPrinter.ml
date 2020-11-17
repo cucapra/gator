@@ -39,7 +39,6 @@ let rec string_of_typ (t : typ) : string =
   | AnyFrameTyp -> "frame"
   | AnyTyp -> "anyType"
   | ExactCodeTyp -> "ExactCodeTyp"
-  | Alias x -> x
 
 and string_of_pml (p : typ list) : string =
   if List.length p > 0 then "<" ^ string_of_list string_of_typ p ^ ">" else ""
