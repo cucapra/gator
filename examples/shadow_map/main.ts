@@ -7,7 +7,7 @@ function main() {
 
   // Compile our shadowmap
   let shadowmap = lgl.compileProgram(gl,
-    require('./shadowvertex_demo.lgl'),
+    require('./shadowvertex.lgl'),
     require('./shadowfragment.lgl')
   );
 

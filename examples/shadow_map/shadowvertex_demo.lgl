@@ -7,11 +7,11 @@ frame world has dimension 3;
 frame light has dimension 3;
 frame lightProjective has dimension 3;
 
-vec3 aPosition;
-mat4 uModel;
-mat4 uLightView;
-mat4 uLightProjection;
+attribute cart3<model>.point aPosition;
+canon uniform hom<model>.transformation<world> uModel;
+canon uniform hom<world>.transformation<light> uLightView;
+canon uniform hom<light>.transformation<lightProjective> uLightProjection;
 
 void main() {
-    gl_Position = vec3(uLightProjection * uLightView * uModel * vec4(aPosition, 1.));
+    gl_Position = aPosition in hom<lightProjective>;
 }
