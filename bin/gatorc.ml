@@ -10,6 +10,7 @@ let set_program_file (arg : string) : unit =
 
 let run_interp : bool ref = ref false
 let emit_ts : bool ref = ref false
+let emit_hl : bool ref = ref false
 let debug_flag : bool ref = ref false
 let pretty_printer : bool ref = ref false
 let usage_msg = "Gator Help Center\n"
@@ -20,6 +21,7 @@ let spec_list : (Arg.key * Arg.spec * Arg.doc) list =
     , "Runs the given file with the gator interpreter (replaces standard \
        output)" )
   ; ("-t", Arg.Set emit_ts, "Emits Typescript (replaces standard output)")
+  ; ("-hl", Arg.Set emit_hl, "Emits HLSL (replaces standard output)")
   ; ("-d", Arg.Set debug_flag, "Enable debug output")
   ; ("-p", Arg.Set pretty_printer, "Enable pretty printing") ]
 
@@ -73,6 +75,7 @@ let _ =
         Check.check_prog prog (search_progs (prog_path f) fs found) in
       if !run_interp then Ops.eval_prog typedProg
       else if !emit_ts then print_string (EmitTS.compile_program typedProg)
+      else if !emit_hl then print_string (EmitHL.compile_program typedProg)
       else if !pretty_printer then
         let compiled_program = EmitGL.compile_program typedProg in
         let r = Str.regexp ";\\s*}?" in
