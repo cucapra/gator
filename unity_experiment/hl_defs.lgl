@@ -63,9 +63,9 @@ with float4 T: with float U: declare T *(U f, T v);
 with float4 T: declare float4 *(T v1, T v2);
 with float4 T: declare float4 /(T v1, float v2);
 
-with float4x4 T: with float4 U: declare float4 *(T m, U v); //TODO:Remove
+// with float4x4 T: with float4 U: declare float4 *(T m, U v); //TODO:Remove
 //->
-// with float4x4 T: with float4 U: declare float4 mul(U v, T m);
+with float4x4 T: with float4 U: declare float4 mul(U v, T m);
 with float4x4 T: with float4x4 U: declare float4x4 +(T m, U v);
 with float4x4 T: with float4x4 U: declare float4x4 *(T m, U v);
 
@@ -391,15 +391,15 @@ coordinate hom : geometry {
     }
     with frame(3) target:
     canon this<target>.vector *(canon transformation<target> m, direction v) {
-        return (m as! float4x4 * v as! float4) as! this<target>.vector;
+        return mul(v as! float4, m as! float4x4) as! this<target>.vector;
     }
     with frame(3) target:
     canon this<target>.vector *(canon transformation<target> m, vector v) {
-        return (m as! float4x4 * v as! float4) as! this<target>.vector;
+        return mul(v as! float4, m as! float4x4) as! this<target>.vector;
     }
     with frame(3) target:
     canon this<target>.point *(canon transformation<target> m, point p) {
-        return (m as! float4x4 * p as! float4) as! this<target>.point;
+        return mul(p as! float4, m as! float4x4) as! this<target>.point;
     }
     with frame(3) target:
     transformation<target> +(transformation<target> m1, transformation<target> m2) {
