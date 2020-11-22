@@ -31,7 +31,7 @@ and string_of_glsl_mat (m : texp list list) : string =
   let r = List.length tm in
   let c = if r = 0 then 0 else List.length (List.hd tm) in
   let dim = max r c in
-  "mat" ^ string_of_int dim ^ string_of_mat_padded tm dim
+  "float" ^ string_of_int dim ^ "x" ^ string_of_int dim ^ string_of_mat_padded tm dim
 
 and string_of_typ (t : etyp) : string =
   let is_2_4 d = match d with ConstInt d' -> d' >= 2 && d' <= 4 | _ -> false in
@@ -45,7 +45,8 @@ and string_of_typ (t : etyp) : string =
   | ArrTyp (IntTyp, d) -> dim_string "int" d
   | ArrTyp (FloatTyp, d) -> dim_string "float" d
   | ArrTyp (BoolTyp, d) -> dim_string "bool" d
-  | ArrTyp (ArrTyp (FloatTyp, _), d) -> dim_string "mat" d
+  (* Previously mat *)
+  | ArrTyp (ArrTyp (FloatTyp, _), d) -> dim_string ((dim_string "float" d) ^ "x") d
   | ArrTyp _ -> arr_string
   | ParTyp (s, _) -> s
   | _ -> TypedAstPrinter.string_of_typ t

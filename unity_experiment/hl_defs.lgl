@@ -2,7 +2,7 @@
 declare type float2 is float[2];
 declare type float3 is float[3];
 declare type float4 is float[4];
-declare type Matrix4x4 is float[4][4];
+declare type float4x4 is float[4][4];
 declare float[4] gl_FragColor;
 declare float[4] gl_Position;
 with float[4] T:
@@ -63,11 +63,13 @@ with float4 T: with float U: declare T *(U f, T v);
 with float4 T: declare float4 *(T v1, T v2);
 with float4 T: declare float4 /(T v1, float v2);
 
-with Matrix4x4 T: with float4 U: declare float4 *(T m, U v);
-with Matrix4x4 T: with Matrix4x4 U: declare Matrix4x4 +(T m, U v);
-with Matrix4x4 T: with Matrix4x4 U: declare Matrix4x4 *(T m, U v);
+with float4x4 T: with float4 U: declare float4 *(T m, U v); //TODO:Remove
+//->
+// with float4x4 T: with float4 U: declare float4 mul(U v, T m);
+with float4x4 T: with float4x4 U: declare float4x4 +(T m, U v);
+with float4x4 T: with float4x4 U: declare float4x4 *(T m, U v);
 
-// GLSL function types
+// HLSL function types
 
 declare float sin(float f);
 declare float cos(float f);
@@ -93,7 +95,7 @@ with float[2] T: declare T abs(T f);
 with float[3] T: declare T abs(T f);
 with float[4] T: declare T abs(T f);
 
-declare float mix(float a, float b, float c);
+declare float lerp(float a, float b, float c);
 with float2 T: declare T pow(T v, float f);
 with float3 T: declare T pow(T v, float f);
 with float4 T: declare T pow(T v, float f);
@@ -131,7 +133,7 @@ declare float4 float4(float[2] v1, float[2] v2);
 declare float4 float4(float[3] v, float x);
 declare float4 float4(float x);
 
-declare Matrix4x4 Matrix4x4(float[3][3] v);
+declare float4x4 float4x4(float[3][3] v);
 
 with float2 T: declare float dot(T v1, T v2);
 with float3 T: declare float dot(T v1, T v2);
@@ -150,7 +152,7 @@ with float2 T: declare T reflect(T v1, T v2);
 with float3 T: declare T reflect(T v1, T v2);
 with float T: declare T pow(T f1, T f2);
 with float T: declare T pow(T f1, int e);
-with float2 T: declare T mix(T v1, T v2, T v3);
+with float2 T: declare T lerp(T v1, T v2, T v3);
 
 // Geometric Objects and Operations
 
@@ -206,7 +208,7 @@ prototype geometry {
     vector reflect(direction v1, direction v2);
     vector reflect(vector v1, direction v2);
     // vector cross(vector v1, vector v2);
-    vector mix(vector v1, vector v2, vector v3);
+    vector lerp(vector v1, vector v2, vector v3);
 }
 
 // Coordinate Scheme Definitions
@@ -284,8 +286,8 @@ coordinate cart2 : geometry {
     vector reflect(vector v1, direction v2) {
         return (reflect(v1 as! float2, v2 as! float2) as! vector);
     }
-    vector mix(vector v1, vector v2, vector v3) {
-        return (mix(v1 as! float2, v2 as! float2, v3 as! float2) as! vector);
+    vector lerp(vector v1, vector v2, vector v3) {
+        return (lerp(v1 as! float2, v2 as! float2, v3 as! float2) as! vector);
     }
 }
 
@@ -389,23 +391,23 @@ coordinate hom : geometry {
     }
     with frame(3) target:
     canon this<target>.vector *(canon transformation<target> m, direction v) {
-        return (m as! Matrix4x4 * v as! float4) as! this<target>.vector;
+        return (m as! float4x4 * v as! float4) as! this<target>.vector;
     }
     with frame(3) target:
     canon this<target>.vector *(canon transformation<target> m, vector v) {
-        return (m as! Matrix4x4 * v as! float4) as! this<target>.vector;
+        return (m as! float4x4 * v as! float4) as! this<target>.vector;
     }
     with frame(3) target:
     canon this<target>.point *(canon transformation<target> m, point p) {
-        return (m as! Matrix4x4 * p as! float4) as! this<target>.point;
+        return (m as! float4x4 * p as! float4) as! this<target>.point;
     }
     with frame(3) target:
     transformation<target> +(transformation<target> m1, transformation<target> m2) {
-        return (m1 as! Matrix4x4 + m2 as! Matrix4x4) as! transformation<target>;
+        return (m1 as! float4x4 + m2 as! float4x4) as! transformation<target>;
     }
     with frame(3) middle, target:
     transformation<target> *(this<middle>.transformation<target> m2, transformation<middle> m1) {
-        return (m2 as! Matrix4x4 * m1 as! Matrix4x4) as! transformation<target>;
+        return (m2 as! float4x4 * m1 as! float4x4) as! transformation<target>;
     }
 }
 
