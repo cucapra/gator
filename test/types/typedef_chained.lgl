@@ -5,20 +5,19 @@ frame world has dimension 3;
 
 //This doesn't work
 
-/*type m_pt is cart3<model>.point;
-type w_vec is cart3<world>.vector;
-void main() {
-  m_pt x = [1., 2., 3.];
-  w_vec y = [2., 3., 4.];
-}*/
+// type m_pt is cart3<model>.point;
+// type m_pt2 is cart3<model>.point;
+// void main() {
+//   m_pt x = [1., 2., 3.];
+//   m_pt2 y = x;
+// }
 
 //This does work
 
 typedef cart3<model>.point m_pt;
-typedef cart3<world>.vector w_vec;
 typedef m_pt my_m_pt;
-typedef w_vec my_w_vec;
-void main() {
+typedef m_pt my_m_pt2;
+void main2() {
   my_m_pt x = [1., 2., 3.];
-  my_w_vec y = [2., 3., 4.];
+  my_m_pt2 y = x;
 }
