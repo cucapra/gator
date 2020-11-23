@@ -312,7 +312,11 @@ let bind_function (cx : contexts) (f : fn_typ) (scheme : string option) :
     let p' = (scheme, f_write) :: fnl in
     (id_write, update_bindings {_b with p= Assoc.update id p' _b.p})
   else
-    let f_write = if id = "main" then f else rename_fn (fun x -> x ^ "_0") f in
+    (* let f_write = f in *)
+    (* Basically appends _0 to any function with a name ending with a digit *)
+    (* This is needed for later potential erasure with "in" expressions *)
+    let r = Str.regexp ".*_[0-9]+" in
+    let f_write = if Str.string_match r id 0 then rename_fn (fun x -> x ^ "_0") f else f in
     let _, _, id_write, _, _ = f_write in
     (id_write, bind cx id (Phi [(scheme, f_write)]))
 
