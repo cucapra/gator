@@ -120,6 +120,9 @@ and string_of_comm (c : comm) : string =
 let string_of_frame ((x, d) : frame) =
   "frame " ^ x ^ " is " ^ string_of_dexp d ^ ";"
 
+let string_of_typedef ((t, x) : typedef) : string =
+    "typedef " ^ (string_of_typ t) ^ " " ^ x ^ ";"
+
 let string_of_fn ((t, c) : fn_typ * acomm list) : string =
   string_of_fn_typ t ^ "{\n"
   ^ string_of_separated_list "\n" string_of_acomm c
@@ -166,6 +169,7 @@ let string_of_term (t : term) : string =
       string_of_mod_list ml ^ "type " ^ x ^ " is " ^ string_of_typ t
   | GlobalVar g -> string_of_global_var g
   | Fn f -> string_of_fn f
+  | Typedef t -> string_of_typedef t
 
 let string_of_aterm ((t, _) : aterm) : string = string_of_term t
 

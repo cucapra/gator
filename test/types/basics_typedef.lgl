@@ -1,0 +1,16 @@
+declare type a is float[2];
+type b is float[3];
+type c is b;
+type d is b;
+
+typedef a my_a;
+typedef b my_b;
+typedef c my_c;
+
+void main() {
+    ~my_a x = [1., 2.];
+    ~my_b y = [2., 1., 1.];
+    ~my_c z = [3., 3., 3.];
+
+    print z;
+}

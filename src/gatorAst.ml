@@ -39,6 +39,7 @@ type typ =
   | GenArrTyp of typ
   | ExactCodeTyp
 
+
 (* expressions *)
 type aexp = exp astNode
 
@@ -112,6 +113,8 @@ type acoordinate_element = coordinate_element astNode
 type coordinate = modification list * id * string * acoordinate_element list
 type global_var = modification list * storage_qual * typ * id * aexp option
 
+type typedef = typ * id
+
 (* Terms that make up a program *)
 (* In any order, we have:
  * ExactCode for exact code insertion
@@ -119,6 +122,7 @@ type global_var = modification list * storage_qual * typ * id * aexp option
  * External function declarations without bodies
  * Global variable declarations
  * Function declarations with bodies
+ * Typedef to create a new alias for a type
  *)
 type aterm = term astNode
 
@@ -131,6 +135,7 @@ and term =
   | Typ of modification list * id * typ
   | GlobalVar of global_var
   | Fn of fn
+  | Typedef of typedef (* Should be removed from ast before typechecking *)
 
 (* program *)
 type prog = aterm list

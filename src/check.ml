@@ -1347,6 +1347,7 @@ let rec check_term (cx : contexts) (t : term) : contexts * TypedAst.prog =
   | Fn f -> (
       let cx', f' = check_fn cx f None in
       (cx', match f' with None -> [] | Some f' -> [Fn f']) )
+  | Typedef t -> debug_fail cx "Typedef term found in typechecking pass!"
 
 and check_aterm (cx : contexts) ((t, meta) : aterm) : contexts * TypedAst.prog =
   check_term (with_meta cx meta) t
