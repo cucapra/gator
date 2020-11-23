@@ -1362,6 +1362,19 @@ and check_exprog (tl : prog) (cx : contexts) : contexts * TypedAst.prog =
       (cx, []) tl in
   (cx', List.rev f)
 
+let rec check_term_list (tl : prog) (externs : prog Assoc.context) :
+    contexts * TypedAst.prog =
+  debug_print ">> check_global_var_or_fn_lst" ;
+  (* Annoying bootstrapping hack *)
+  let cx, f =
+    List.fold_left
+      (fun acc t ->
+        let cx', f' = check_aterm (fst acc) t in
+        (cx', (snd acc) @ f'))
+      (init (snd (List.hd tl)) externs, [])
+      tl in
+  (cx, f)
+
 (* Returns the list of fn's which represent the program
  * and params of the void main() fn *)
 let check_prog (tl : prog) (externs : prog Assoc.context) : TypedAst.prog =
