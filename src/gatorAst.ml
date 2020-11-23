@@ -51,6 +51,7 @@ and exp =
   | As of aexp * typ
   | In of aexp * typ
   | FnInv of string * typ list * args
+  | FieldAccess of string * string
 
 (* function invocation *)
 and args = aexp list
@@ -112,6 +113,9 @@ type acoordinate_element = coordinate_element astNode
 type coordinate = modification list * id * string * acoordinate_element list
 type global_var = modification list * storage_qual * typ * id * aexp option
 
+type structure_member = typ * id
+type structure = id * (structure_member list)
+
 (* Terms that make up a program *)
 (* In any order, we have:
  * ExactCode for exact code insertion
@@ -131,6 +135,7 @@ and term =
   | Typ of modification list * id * typ
   | GlobalVar of global_var
   | Fn of fn
+  | Structure of structure
 
 (* program *)
 type prog = aterm list

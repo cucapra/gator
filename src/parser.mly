@@ -86,6 +86,7 @@ exception ParseException of string
 %token VARYING
 %token POUND
 %token PERCENT
+%token STRUCT
 
 (* Precedences *)
 
@@ -162,6 +163,8 @@ let term ==
     <GlobalVar>
   | f = fn;
     <Fn>
+  | st = structure;
+    <Structure>
 
 let prototype_element ==
   | m = modification*; OBJECT; x = id_hack; t = snd(combined(IS, typ))?; SEMI;
@@ -209,6 +212,14 @@ let fn_typ ==
 let fn ==
   | f = fn_typ; LBRACE; cl = acomm*; RBRACE; <>
   | f = fn_typ; SEMI; { (f, []) }
+
+let structure ==
+  | STRUCT; i = ID; LBRACE; ml = structure_member+; RBRACE; SEMI;
+  { (i, ml) }
+
+let structure_member ==
+  | t = typ; i = ID; SEMI;
+  {(t, i)}
 
 let acomm ==
   | c = comm;
@@ -374,7 +385,7 @@ let effectful_exp ==
     { FnInv(op, [], [(Var (fst x), snd x)]) }
 
 /* A strict subset of expressions that can be in assignments to help the parser */
-/* We syntactically reject assignments to anything but Indexes and Vars */
+/* We syntactically reject assignments to anything but Indexes, Vars, and Fields. */
 /* Note that indexes may _recurse_ on expressions, this is fine */
 /* It seems like we have to list out cases so that assign_exp can be inlined. This allows us to avoid parser conflicts with typ */
 let assign_exp ==
@@ -382,6 +393,8 @@ let assign_exp ==
     <Var>
   | x = ID; el = nonempty_list_array_brackets(node(exp));
     { List.fold_right (fun e acc -> (Index((acc, $startpos), e))) el (Var x) }
+  | s1 = ID; MINUS; RWICK; s2 = ID;
+    {FieldAccess(s1, s2)}
 
 let id_hack ==
   | x = ID; {x}
