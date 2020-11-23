@@ -269,10 +269,16 @@ let get_canonical_vars (cx : contexts) : string list =
     (Assoc.bindings cx._bindings.g)
     []
 
+let get_frame_safe (cx : contexts) (id : string) : delta option =
+  match find_typ cx id with Some (Delta d) -> Some d | _ -> None
+
 let get_frame (cx : contexts) (x : string) : delta =
-  match find_typ cx x with
-  | Some (Delta d) -> d
+  match get_frame_safe cx x with
+  | Some d -> d
   | _ -> error cx ("Undefined frame " ^ x)
+
+let get_scheme_safe (cx : contexts) (id : string) : chi option =
+  match find_typ cx id with Some (Chi c) -> Some c | _ -> None
 
 let get_scheme (cx : contexts) (x : string) : chi =
   match find_typ cx x with
