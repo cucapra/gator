@@ -1053,20 +1053,17 @@ let rec check_valid_supertype (cx : contexts) (cx' : contexts) (t : typ) : typ =
         | Some d -> ()
         | None -> error cx ("Bad type declaration: Invalid frame " ^ s))
       | _ -> error cx ("Bad type declaration: Invalid frame " ^ (string_of_typ frame_typ)) in
-      (*let new_cx = with_scheme cx' TODO in*)
-      let tpm_object = match get_typ_safe cx' s2 with
+      let tpm_object = match get_typ_safe cx' (s1 ^ "." ^ s2) with
       | Some (_, tpm', _) -> tpm'
       | None -> error cx ("Bad type declaration: Invalid object " ^ s2) in
       check_valid_supertype_helper cx cx' false s1 t pml1 tpm_scheme;
-      check_valid_supertype_helper cx cx' false s2 t pml1 tpm_object;
+      check_valid_supertype_helper cx cx' false s2 t pml2 tpm_object;
       t
   | ParTyp (s, pml) ->
       if Assoc.mem s cx'.pm then
         check_valid_supertype cx cx' (fst (Assoc.lookup s cx'.pm)) 
       else
-        let tpm = match get_typ_safe cx' s with
-        | Some (_, tpm', _) -> tpm'
-        | None -> error cx ("5Bad type declaration: " ^ string_of_typ t) in
+        let (_, tpm, _) = get_typ cx' s in
         check_valid_supertype_helper cx cx' false s t pml tpm;
         t
   | _ -> error cx ("Invalid type declaration " ^ string_of_typ t)
