@@ -231,6 +231,19 @@ let bind_typ (cx : contexts) (id : string) (ml : modification list) (t : typ) :
     contexts =
   bind cx id (Gamma (has_modification cx ml Canon, t))
 
+let get_ml_sq (cx : contexts) (ml : modification list) : CoreAst.storage_qual list =
+  let get_ml_sq_rec (ml : modification list) (sql : CoreAst.storage_qual list) =
+    match ml with
+    | Storage_Qualifier sq::ml' ->
+        let fail _ =
+          error cx ("Duplicate storage qualifier assignments to variable "
+            ^ (string_of_storage_qual sq))
+        in
+        if contains sql sq then fail ()
+        else sq :: sql
+    | _ -> sql in
+  get_ml_sq_rec ml []
+
 let get_ml_pm (cx : contexts) (ml : modification list) : parameterization =
   let get_ml_pm_rec (pm : parameterization) (m : modification) =
     match m with

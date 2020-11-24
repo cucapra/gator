@@ -1139,7 +1139,7 @@ let check_fn (cx : contexts) ((f, cl) : fn) (scheme : string option) :
 
 (* Type check global variable *)
 (* Updates gamma *)
-let check_global_variable (cx : contexts) ((ml, sq, t, id, e) : global_var) :
+let check_global_variable (cx : contexts) ((ml, t, id, e) : global_var) :
     contexts * TypedAst.global_var option =
   debug_print ">> check_global_variable" ;
   check_typ_valid cx t ;
@@ -1147,7 +1147,8 @@ let check_global_variable (cx : contexts) ((ml, sq, t, id, e) : global_var) :
   (match e' with Some (_, te) -> check_assign cx t (Var id) te | None -> ()) ;
   let gvr =
     if has_modification cx ml External then None
-    else Some (sq, typ_erase cx t, id, Option.map (fun x -> exp_to_texp cx x) e')
+    else 
+    Some (get_ml_sq cx ml, typ_erase cx t, id, Option.map (fun x -> exp_to_texp cx x) e')
   in
   (bind_typ cx id ml t, gvr)
 

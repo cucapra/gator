@@ -43,8 +43,8 @@ let string_of_param (i, e) : string = string_of_typ e ^ " " ^ i
 let rec string_of_params (p : params) : string =
   string_of_list (fun (x, y) -> string_of_typ x ^ " " ^ y) p
 
-let string_of_global_var ((s, t, i, v) : global_var) =
-  string_of_storage_qual s ^ " " ^ string_of_typ t ^ " " ^ i
+let string_of_global_var ((sq, t, i, v) : global_var) =
+  string_of_list string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ i
   ^ Option.fold v ~some:(fun x -> "= " ^ string_of_texp x) ~none:""
   ^ ";"
 

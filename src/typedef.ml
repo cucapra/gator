@@ -134,9 +134,9 @@ let typedef_coordinate (cx : gamma)
   List.map (fun ace -> typedef_acoordinate_element cx ace) acel)
 
 let typedef_global_var (cx : gamma)
-    ((ml, sq, t, id, aeo) : global_var) : global_var =
+    ((ml, t, id, aeo) : global_var) : global_var =
   (List.map (fun m -> typedef_modification cx m) ml,
-  sq, typedef_type cx t, id,
+  typedef_type cx t, id,
   match aeo with
   | Some ae -> Some (typedef_aexp cx ae)
   | None -> None)

@@ -61,6 +61,7 @@ type modification =
   (*bool to  specify whether we are restricting ops on types*)
   | Canon
   | External
+  | Storage_Qualifier of storage_qual
 
 (* commands *)
 type acomm = comm astNode
@@ -111,7 +112,7 @@ type coordinate_element =
 (* Name, underlying prototype, dimension, and list of definitions *)
 type acoordinate_element = coordinate_element astNode
 type coordinate = modification list * id * string * acoordinate_element list
-type global_var = modification list * storage_qual * typ * id * aexp option
+type global_var = modification list * typ * id * aexp option
 
 type typedef = typ * id
 
