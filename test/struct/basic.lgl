@@ -24,7 +24,7 @@ void main(){
   int x = 5;
   cart3<model>.point y = [1.0, 2.0, 3.0];
 
-  s s1 = new_s(x,y);
+  s s1 = {a: x, b: y};
   s s2 = foo(new_s(9, [4.0, 5.0, 6.0]));
 
   s1.a = s2.a;

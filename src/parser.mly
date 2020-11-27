@@ -306,8 +306,8 @@ let typ :=
     <FrameTyp>
   | t = typ; LBRACK; d = dexp; RBRACK;
     { ArrTyp(t, d) }
-  | t1 = typ; DOT; t2 = typ;
-    <MemberTyp>
+  | t1 = ID; pt = parameters(LWICK, typ, RWICK); DOT; t2 = typ;
+    { MemberTyp(ParTyp(t1, pt), t2) }
   | x = ID; pt = parameters(LWICK, typ, RWICK);
     <ParTyp>
   | THIS; pt = parameters(LWICK, typ, RWICK);
@@ -392,7 +392,7 @@ let assign_exp :=
   | x = ID; el = nonempty_list_array_brackets(node(exp));
     { List.fold_right (fun e acc -> (Index((acc, $startpos), e))) el (Var x) }
 /* In the typed AST, this can become a swizzle function invocation */
-  | e = assign_exp; DOT; s = ID;
+  | e = exp; DOT; s = ID;
     {FieldSelect(e, s, $startpos)}
 
 let id_hack ==
