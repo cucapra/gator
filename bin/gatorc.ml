@@ -64,6 +64,7 @@ let _ =
   | None -> print_string (Arg.usage_string spec_list usage_msg)
   | Some f ->
       let prog = parse_prog f in
+      if !debug_flag then print_endline (GatorAstPrinter.string_of_prog prog);
       let progname =
         List.hd
           (String.split_on_char '.'

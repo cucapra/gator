@@ -185,13 +185,14 @@ let rec comp_prog (f : term list) : string =
   debug_print ">> comp_fn_lst" ;
   match f with
   | [] -> ""
-  | Fn h :: t -> comp_fn h ^ "\n" ^ comp_prog t
+  | Fn h :: t -> comp_fn h ^ comp_prog t
   | GlobalVar (sq, et, x, e) :: t -> (
       string_of_storage_qual sq ^ " " ^ string_of_typ et ^ " " ^ x
       ^ Option.fold ~none:"" ~some:(fun x -> " = " ^ string_of_texp x) e
-      ^ ";" ^ "\n" ^ comp_prog t)
+      ^ ";" ^ comp_prog t)
   | Structure s :: t -> (
-    TypedAstPrinter.string_of_structure s ^ "\n" ^ comp_prog t
+    TypedAstPrinter.string_of_structure s ^
+    (if !pretty_printer then "\n" else "") ^comp_prog t
   )
 
 let rec compile_program (prog : prog) : string =

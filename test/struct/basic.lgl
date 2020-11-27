@@ -28,5 +28,5 @@ void main(){
   s s2 = foo(new_s(9, [4.0, 5.0, 6.0]));
 
   /*s1.a = s2.a;*/
-  int z = s1.a;
+  int z = (s1).a;
 }

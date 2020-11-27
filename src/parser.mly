@@ -368,9 +368,6 @@ let exp:=
     <As>
   | e = node(exp); IN; t = typ;
     <In>
-/* In the typed AST, this can become a swizzle function invocation */
-  | e = assign_exp; DOT; s = ID;
-    {FieldSelect(e, s, $startpos)}
 
 /* A strict subset of expressions that can have effects, separated to help parse commands */
 /* In other words, we syntactically reject commands that have no effect on the program */
@@ -394,6 +391,9 @@ let assign_exp ==
     <Var>
   | x = ID; el = nonempty_list_array_brackets(node(exp));
     { List.fold_right (fun e acc -> (Index((acc, $startpos), e))) el (Var x) }
+/* In the typed AST, this can become a swizzle function invocation */
+  | e = exp; DOT; s = ID;
+    {FieldSelect(e, s, $startpos)}
 
 let id_hack ==
   | x = ID; {x}
