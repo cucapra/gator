@@ -903,7 +903,7 @@ and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
             error cx ("Invalid field name " ^ s))
     | None -> (
         (* Treat as swizzle *)
-        let args = [(typed_e, t); check_aexp cx (Val (StringVal(s)), pos)] in
+        let args = [(typed_e, t); check_exp cx (Val (StringVal(s)))] in
         try check_swizzle cx args
         with TypeException e -> (
           match args with

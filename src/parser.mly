@@ -258,7 +258,7 @@ let assignop ==
 let comm_element ==
   | SKIP;
     { Skip }
-  | (m, t) = terminated_list(modification, typ); x = id_hack; GETS; e = node(exp);
+  | (m, t) = terminated_list(modification, typ); x = ID; GETS; e = node(exp);
     { Decl(m, t, x, e) }
   | e = node(effectful_exp);
     < Exp >
@@ -308,11 +308,11 @@ let typ :=
     { ArrTyp(t, d) }
   | t1 = typ; DOT; t2 = typ;
     <MemberTyp>
-  | x = id_hack; pt = parameters(LWICK, typ, RWICK);
+  | x = ID; pt = parameters(LWICK, typ, RWICK);
     <ParTyp>
   | THIS; pt = parameters(LWICK, typ, RWICK);
     { ParTyp("this", pt) }
-  | x = id_hack; /* explicit for clarity and to help out the parser */
+  | x = ID; /* explicit for clarity and to help out the parser */
     { ParTyp(x, []) }
   | GENTYPE;
     { GenTyp }
@@ -373,9 +373,9 @@ let exp:=
 /* In other words, we syntactically reject commands that have no effect on the program */
 /* See comm_element for more details */
 let effectful_exp ==
-  | x = id_hack; p = parameters(LWICK, typ, RWICK); a = arguments;
+  | x = ID; p = parameters(LWICK, typ, RWICK); a = arguments;
     <FnInv>
-  | x = id_hack; LPAREN; a = separated_list(COMMA, node(exp)); RPAREN;
+  | x = ID; LPAREN; a = separated_list(COMMA, node(exp)); RPAREN;
     { FnInv(x, [], a) }
   | op = unop_effectful; x = node(ID);
     { FnInv(op, [], [(Var (fst x), snd x)]) }
@@ -386,13 +386,13 @@ let effectful_exp ==
 /* We syntactically reject assignments to anything but Indexes, Vars, and Fields. */
 /* Note that indexes may _recurse_ on expressions, this is fine */
 /* It seems like we have to list out cases so that assign_exp can be inlined. This allows us to avoid parser conflicts with typ */
-let assign_exp ==
+let assign_exp :=
   | x = ID;
     <Var>
   | x = ID; el = nonempty_list_array_brackets(node(exp));
     { List.fold_right (fun e acc -> (Index((acc, $startpos), e))) el (Var x) }
 /* In the typed AST, this can become a swizzle function invocation */
-  | e = exp; DOT; s = ID;
+  | e = assign_exp; DOT; s = ID;
     {FieldSelect(e, s, $startpos)}
 
 let id_hack ==
