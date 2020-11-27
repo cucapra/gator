@@ -13,6 +13,9 @@ type tau = bool * parameterization * typ
 (* Also stores whether the variable is canonical *)
 type gamma = bool * typ
 
+(* Structure definitions *)
+type sigma = structure
+
 (* Dimension definitions *)
 (* Stores dimension information for reference frames *)
 type delta = dexp
@@ -42,7 +45,7 @@ type psi = string list
  * otherwise 'x' is in none of the variant types *)
 (* Note that the parameterization variable names are _not_ necessarily unique, 
  * so aren't tracked in the lookup *)
-type exp_bindings = CGamma | CPhi
+type exp_bindings = CGamma | CPhi | CSigma
 type typ_bindings = CTau | CChi | CDelta
 
 (* Variant type for correctly abstracting storage of a new variable
@@ -53,6 +56,7 @@ type binding =
   | Delta of delta
   | Chi of chi
   | Phi of phi
+  | Sigma of sigma
 
 (* The internal type of the lookup_contexts (which shouldn't be accessed directly) *)
 type binding_contexts =
@@ -61,6 +65,7 @@ type binding_contexts =
   ; d: delta Assoc.context
   ; c: chi Assoc.context
   ; p: phi Assoc.context
+  ; s: sigma Assoc.context
   ; el: exp_bindings Assoc.context
   ; tl: typ_bindings Assoc.context }
 

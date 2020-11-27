@@ -114,7 +114,8 @@ and eval_exp (e : exp) (t : etyp) (fns : fn list) (s : sigma) : ovalue * sigma =
         | (_, _, _, names), _ ->
             let add_arg acc (_, name) v = Assoc.update name v acc in
             eval_funct f fns (List.fold_left2 add_arg Assoc.empty names arg_vs)
-        ) )
+        ))
+  | FieldSelect (_, _) -> failwith "unimplemented op"
 
 and eval_comm (c : comm) (fns : fn list) (s : sigma) : sigma =
   match c with
@@ -197,6 +198,7 @@ let rec default_value (t : etyp) : ovalue =
   | ArrTyp (t', d) -> CoreValue Unit
   | AnyTyp | GenTyp -> CoreValue Unit
   | ExactCodeTyp -> CoreValue Unit
+  | StructureTyp -> CoreValue Unit
 
 let start_eval (fns : term list) : unit = failwith "unimplemented"
 

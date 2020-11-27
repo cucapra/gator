@@ -305,6 +305,7 @@ let rec typ_erase (cx : contexts) (t : typ) : TypedAst.etyp =
   | GenTyp -> TypedAst.GenTyp
   | BotTyp | AnyFrameTyp | FrameTyp _ | GenArrTyp _ | ExactCodeTyp ->
       debug_fail cx ("Cannot erase " ^ string_of_typ t)
+  | StructureTyp -> TypedAst.StructureTyp
 
 let rec etyp_to_typ (e : TypedAst.etyp) : typ =
   debug_print ">> etyp_to_typ" ;
@@ -322,6 +323,7 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
   | TypedAst.AnyTyp -> AnyTyp
   | TypedAst.GenTyp -> GenTyp
   | TypedAst.ExactCodeTyp -> ExactCodeTyp
+  | TypedAst.StructureTyp -> StructureTyp
 
 let rec check_val (cx : contexts) (v : value) : typ =
   debug_print (">> check_val " ^ string_of_value v) ;
@@ -885,17 +887,30 @@ and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
       let er = check_aexp cx r in
       ( TypedAst.Index (exp_to_texp cx el, exp_to_texp cx er)
       , check_index_exp cx (snd el) (snd er) )
-  | FnInv ("swizzle", _, args) -> (
-    try check_swizzle cx (List.map (check_aexp cx) args)
-    with TypeException e -> (
-      match args with
-      (* See if this is actually something like mesh.normals in which case treat it like one var *)
-      | [(Var s1, _); (Val (StringVal s2), _)] ->
-          check_exp cx (Var (s1 ^ "." ^ s2))
-      | _ -> raise (TypeException e) ) )
   | FnInv (x, pr, args) ->
       let (a, b, c), t = check_fn_inv cx x pr (List.map (check_aexp cx) args) in
       (TypedAst.FnInv (a, b, c), t)
+  | FieldSelect (e', s, pos) ->
+    (* if t is struct, treat as FieldSelect, otherwise, treat as swizzle *)
+    let (typed_e, t) = check_exp cx e' in
+    match structure_of_typ cx t with
+    | Some (st) -> (
+        (* Treat as FieldSelect *)
+        match struct_field_lookup st s with
+        | Some field_typ ->
+            (TypedAst.FieldSelect (typed_e, s), field_typ)
+        | None ->
+            error cx ("Invalid field name " ^ s))
+    | None -> (
+        (* Treat as swizzle *)
+        let args = [(typed_e, t); check_aexp cx (Val (StringVal(s)), pos)] in
+        try check_swizzle cx args
+        with TypeException e -> (
+          match args with
+          (* See if this is actually something like mesh.normals in which case treat it like one var *)
+          | [(Var s1, _); (Val (StringVal s2), _)] ->
+              check_exp cx (Var (s1 ^ "." ^ s2))
+          | _ -> raise (TypeException e) ))
 
 and check_arr (cx : contexts) (a : aexp list) : TypedAst.exp * typ =
   debug_print ">> check_arr" ;
@@ -1302,6 +1317,21 @@ let check_exactCode (ec : string) : TypedAst.prog =
   let test = Assoc.empty in
   [Fn ((ExactCodeTyp, ec, test, []), [])]
 
+let check_structure_member (cx : contexts) ((t, id) : structure_member) :
+    TypedAst.structure_member =
+  check_typ_valid cx t;
+  (typ_erase cx t, id)
+
+let check_structure (cx : contexts) ((name, field_list, pos) : structure) :
+    contexts * TypedAst.structure =
+  (bind (bind (bind cx
+  name (Sigma((name, field_list, pos))))
+  name (Tau(true, Assoc.empty, StructureTyp)))
+  ("new_"^name) (Phi([None, ([], ParTyp(name, []), name,
+  List.map (fun (t, id) -> ([], t, id)) field_list, pos)]))
+  ,
+  (name, List.map (check_structure_member cx) field_list))
+
 let rec check_term (cx : contexts) (t : term) : contexts * TypedAst.prog =
   match t with
   | Using s -> check_exprog (get_prog cx s) cx
@@ -1321,6 +1351,9 @@ let rec check_term (cx : contexts) (t : term) : contexts * TypedAst.prog =
   | Fn f -> (
       let cx', f' = check_fn cx f None in
       (cx', match f' with None -> [] | Some f' -> [Fn f']) )
+  | Structure s -> (
+      let cx', s' = check_structure cx s in
+      (cx', [Structure s']))
 
 and check_aterm (cx : contexts) ((t, meta) : aterm) : contexts * TypedAst.prog =
   check_term (with_meta cx meta) t

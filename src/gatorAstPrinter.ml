@@ -39,6 +39,7 @@ let rec string_of_typ (t : typ) : string =
   | AnyFrameTyp -> "frame"
   | AnyTyp -> "anyType"
   | ExactCodeTyp -> "ExactCodeTyp"
+  | StructureTyp -> "struct"
 
 and string_of_pml (p : typ list) : string =
   if List.length p > 0 then "<" ^ string_of_list string_of_typ p ^ ">" else ""
@@ -87,6 +88,7 @@ and string_of_exp (e : exp) : string =
   | In (e, t) -> string_of_aexp e ^ " in " ^ string_of_typ t
   | FnInv (i, pr, args) ->
       i ^ string_of_pml pr ^ "(" ^ string_of_list string_of_aexp args ^ ")"
+  | FieldSelect (e, s, _) -> string_of_exp e ^ "." ^ s
 
 let rec string_of_acomm ((c, m) : acomm) : string = string_of_comm c
 
@@ -155,6 +157,12 @@ let string_of_global_var ((ml, sq, t, x, e) : global_var) : string =
   ^ " " ^ x
   ^ Option.fold ~none:"" ~some:(fun x -> "= " ^ string_of_aexp x) e
 
+let string_of_structure (id, ml, _) : string =
+  (List.fold_left
+  (fun s (t, id) -> 
+    s ^ " " ^ string_of_typ t ^ " " ^ id ^ ";"
+  ) ("struct " ^ id ^ " {") ml) ^ " }"
+
 let string_of_term (t : term) : string =
   match t with
   | Using s -> "using " ^ s
@@ -166,6 +174,7 @@ let string_of_term (t : term) : string =
       string_of_mod_list ml ^ "type " ^ x ^ " is " ^ string_of_typ t
   | GlobalVar g -> string_of_global_var g
   | Fn f -> string_of_fn f
+  | Structure s -> string_of_structure s
 
 let string_of_aterm ((t, _) : aterm) : string = string_of_term t
 

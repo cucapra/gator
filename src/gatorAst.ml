@@ -38,6 +38,7 @@ type typ =
   | GenTyp
   | GenArrTyp of typ
   | ExactCodeTyp
+  | StructureTyp (* The supertype of structs *)
 
 (* expressions *)
 type aexp = exp astNode
@@ -51,7 +52,7 @@ and exp =
   | As of aexp * typ
   | In of aexp * typ
   | FnInv of string * typ list * args
-  | FieldAccess of string * string
+  | FieldSelect of exp * id * Lexing.position
 
 (* function invocation *)
 and args = aexp list
@@ -114,7 +115,7 @@ type coordinate = modification list * id * string * acoordinate_element list
 type global_var = modification list * storage_qual * typ * id * aexp option
 
 type structure_member = typ * id
-type structure = id * (structure_member list)
+type structure = id * (structure_member list) * metadata
 
 (* Terms that make up a program *)
 (* In any order, we have:

@@ -14,6 +14,7 @@ type etyp =
   | AnyTyp
   | GenTyp
   | ExactCodeTyp
+  | StructureTyp
 
 (* expressions *)
 type texp = exp * etyp
@@ -24,6 +25,7 @@ and exp =
   | Arr of texp list
   | Index of texp * texp
   | FnInv of id * etyp list * args
+  | FieldSelect of exp * id
 
 and args = texp list
 
@@ -49,5 +51,7 @@ type global_var = storage_qual * etyp * string * texp option
 type ret_typ = etyp
 type fn_decl = ret_typ * id * parameterization * params
 type fn = fn_decl * comm list
-type term = GlobalVar of global_var | Fn of fn
+type structure_member = etyp * id
+type structure = id * (structure_member list)
+type term = GlobalVar of global_var | Structure of structure | Fn of fn
 type prog = term list

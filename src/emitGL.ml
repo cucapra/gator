@@ -127,6 +127,7 @@ and string_of_exp (e : exp) : string =
              vectors, or bools" ) )
   | Index (l, r) -> string_of_texp l ^ "[" ^ string_of_texp r ^ "]"
   | FnInv (id, tl, args) -> string_of_fn_util id (List.map string_of_texp args)
+  | FieldSelect (e', s) -> string_of_exp e' ^ "." ^ s
 
 let rec string_of_comm (c : comm) : string =
   let block_string c =
@@ -184,11 +185,14 @@ let rec comp_prog (f : term list) : string =
   debug_print ">> comp_fn_lst" ;
   match f with
   | [] -> ""
-  | Fn h :: t -> comp_fn h ^ comp_prog t
-  | GlobalVar (sq, et, x, e) :: t ->
+  | Fn h :: t -> comp_fn h ^ "\n" ^ comp_prog t
+  | GlobalVar (sq, et, x, e) :: t -> (
       string_of_storage_qual sq ^ " " ^ string_of_typ et ^ " " ^ x
       ^ Option.fold ~none:"" ~some:(fun x -> " = " ^ string_of_texp x) e
-      ^ ";" ^ comp_prog t
+      ^ ";" ^ "\n" ^ comp_prog t)
+  | Structure s :: t -> (
+    TypedAstPrinter.string_of_structure s ^ "\n" ^ comp_prog t
+  )
 
 let rec compile_program (prog : prog) : string =
   debug_print ">> compile_program" ;

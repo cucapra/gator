@@ -48,6 +48,9 @@ let string_of_phi (p : phi) =
 
 let string_of_psi (ps : psi) : string = string_of_list (fun x -> x) ps
 
+let string_of_sigma (s : sigma) =
+  string_of_structure s
+
 let print_cxt (cx : contexts) =
   print_endline (Assoc.to_string_sep string_of_tau "\n" cx._bindings.t)
 
@@ -69,6 +72,9 @@ let print_cxps (cx : contexts) =
 let print_cxpm (cx : contexts) =
   print_endline (string_of_parameterization cx.pm)
 
+let print_cxs (cx : contexts) =
+  print_endline (Assoc.to_string_sep string_of_sigma "\n" cx._bindings.s)
+
 let print_bindings (cx : contexts) =
   print_endline "Bindings:" ;
   print_endline "tau:" ;
@@ -80,7 +86,9 @@ let print_bindings (cx : contexts) =
   print_endline "chi:" ;
   print_cxc cx ;
   print_endline "phi:" ;
-  print_cxp cx
+  print_cxp cx ;
+  print_endline "sigma:" ;
+  print_cxs cx 
 
 let print_context (cx : contexts) =
   print_endline "Current context:" ;
@@ -119,6 +127,7 @@ let init meta progs =
     ; d= Assoc.empty
     ; c= Assoc.empty
     ; p= Assoc.empty
+    ; s= Assoc.empty
     ; el= Assoc.empty
     ; tl= Assoc.empty } in
   let cx =
@@ -155,6 +164,7 @@ let find_exp cx x =
     match Assoc.lookup x cx._bindings.el with
     | CGamma -> Some (Gamma (Assoc.lookup x cx._bindings.g))
     | CPhi -> Some (Phi (Assoc.lookup x cx._bindings.p))
+    | CSigma -> Some (Sigma (Assoc.lookup x cx._bindings.s))
   else None
 
 let find_typ cx x =
@@ -193,6 +203,10 @@ let bind (cx : contexts) (x : string) (b : binding) : contexts =
       ce () ;
       update_bindings
         {_b with el= Assoc.update x CPhi _b.el; p= Assoc.update x p' _b.p}
+  | Sigma s' ->
+      ce () ;
+      update_bindings
+        {_b with el= Assoc.update x CSigma _b.el; s= Assoc.update x s' _b.s}
 
 (* Clears the given lookup context of elements *)
 let clear (cx : contexts) (b : exp_bindings) : contexts =
@@ -208,6 +222,7 @@ let clear (cx : contexts) (b : exp_bindings) : contexts =
   match b with
   | CGamma -> update_bindings {_b with el= clear _b.g; g= Assoc.empty}
   | CPhi -> update_bindings {_b with el= clear _b.p; p= Assoc.empty}
+  | CSigma -> update_bindings {_b with el= clear _b.s; s= Assoc.empty}
 
 (* Resets the contexts cx to the state provided by the reference contexts cx_ref *)
 let reset (cx : contexts) (cx_ref : contexts) (b : exp_bindings) : contexts =
@@ -222,6 +237,11 @@ let reset (cx : contexts) (cx_ref : contexts) (b : exp_bindings) : contexts =
         (fun acc (x, p) -> bind acc x (Phi p))
         (clear cx b)
         (Assoc.bindings cx_ref._bindings.p)
+  | CSigma ->
+      List.fold_left
+        (fun acc (x, s) -> bind acc x (Sigma s))
+        (clear cx b)
+        (Assoc.bindings cx_ref._bindings.s)
 
 let has_modification (cx : contexts) (ml : modification list) (m : modification)
     : bool =
@@ -278,6 +298,27 @@ let get_scheme (cx : contexts) (x : string) : chi =
   match find_typ cx x with
   | Some (Chi c) -> c
   | _ -> error cx ("Undefined coordinate scheme " ^ x)
+
+let get_structure_safe (cx : contexts) (x : string) : sigma option =
+  match find_exp cx x with
+  | Some (Sigma s) -> Some s
+  | _ -> None
+
+let get_structure (cx : contexts) (x : string) : sigma =
+  match get_structure_safe cx x with
+  | Some s -> s
+  | None -> error cx ("Undefined structure " ^ x)
+
+let structure_of_typ (cx : contexts) (ty : typ) : sigma option =
+  match ty with
+  | ParTyp (s, []) ->
+      get_structure_safe cx s
+  | _ -> None
+
+let struct_field_lookup ((_, field_list, _) : structure) (id : string) : typ option =
+  match List.find_opt (fun (_, name) -> String.equal name id) field_list with
+  | Some (t, _) -> Some t
+  | None -> None
 
 let get_functions_safe (cx : contexts) (id : string) : phi =
   let get_fn x = match find_exp cx x with Some (Phi p) -> p | _ -> [] in
