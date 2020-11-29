@@ -86,6 +86,7 @@ exception ParseException of string
 %token VARYING
 %token POUND
 %token PERCENT
+%token TYPEDEF
 
 (* Precedences *)
 
@@ -151,17 +152,17 @@ let term ==
     <Coordinate>
   | FRAME; x = id_hack; HAS; DIMENSION; d = dexp; SEMI;
     <Frame>
-  | (m, t) = terminated_list(modification, typ); x = id_hack; SEMI;
-    { GlobalVar(m, BuiltIn, t, x, None) }
   | m = modification*; TYP; x = id_hack; SEMI;
     { Typ(m, x, AnyTyp) }
   | m = modification*; TYP; x = id_hack; IS; t = typ; SEMI;
     <Typ>
-  | m = modification*; sq = storage_qual; t = typ;
+  | (m, t) = terminated_list(modification, typ);
     x = id_hack; v = preceded(GETS, node(exp))?; SEMI;
-    <GlobalVar>
+    { GlobalVar(m, t, x, v) }
   | f = fn;
     <Fn>
+  | TYPEDEF ; t = typ; x = id_hack; SEMI;
+    <Typedef>
 
 let prototype_element ==
   | m = modification*; OBJECT; x = id_hack; t = snd(combined(IS, typ))?; SEMI;
@@ -178,6 +179,8 @@ let modification ==
     { Canon }
   | DECLARE;
     { External }
+  | sq = storage_qual;
+    <Storage_Qualifier>
 
 let coordinate_element ==
   | m = modification*; OBJECT; x = id_hack; IS; t = typ; SEMI;

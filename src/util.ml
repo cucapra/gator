@@ -14,6 +14,7 @@ let tr_snd ((_, x, _) : 'a * 'b * 'c) : 'b = x
 let tr_thd ((_, _, x) : 'a * 'b * 'c) : 'c = x
 let nonempty x = List.length x > 0
 let string_of_pair (a : string) (b : string) : string = "(" ^ a ^ ", " ^ b ^ ")"
+let contains l v = List.fold_left (fun acc x -> (x = v) || acc) false l
 
 let string_of_separated_list (sep : string) (f : 'a -> string) (l : 'a list) :
     string =

@@ -54,9 +54,9 @@ let rec search_progs path fs found : GatorAst.prog Assoc.context =
   match fs with
   | [] -> Assoc.empty
   | f :: t ->
-      let p = parse_prog (path ^ f) in
+      let p = Typedef.typedef_prog (parse_prog (path ^ f)) in
       let to_search, found' = Check.search_prog p found in
-      Assoc.update f p (search_progs (path ^ prog_path f) to_search found')
+      Assoc.update f p (search_progs (path ^ prog_path f) (t @ to_search) found')
 
 let _ =
   Arg.parse spec_list set_program_file usage_msg ;
@@ -65,7 +65,7 @@ let _ =
   match !program_file with
   | None -> print_string (Arg.usage_string spec_list usage_msg)
   | Some f ->
-      let prog = parse_prog f in
+      let prog = Typedef.typedef_prog (parse_prog f) in
       let progname =
         List.hd
           (String.split_on_char '.'

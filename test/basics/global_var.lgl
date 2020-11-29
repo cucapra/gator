@@ -3,6 +3,10 @@ varying float[3][3] y;
 attribute int z;
 const int q;
 
+void temp(in int var1, out int var2) {
+    var2 = var1;
+}
+
 void main() {
     print 1;
 }

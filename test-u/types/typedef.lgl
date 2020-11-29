@@ -1,0 +1,42 @@
+declare int +(int x, int y);
+declare float +(float x, float y);
+declare int -(int x);
+declare bool <=(int x, int y);
+
+typedef float[2][2] alias;
+
+int f(int x) {
+    int f = x; // THIS IS FINE
+    return f + 1;
+}
+
+float g(float x) {
+    return x + 1.;
+}
+
+bool h(int x) {
+    return x <= 0;
+}
+
+float[2] vid(float[2] x) {
+    return x;
+}
+
+float[2][2] mid(float[2][2] x) {
+    return x;
+}
+
+void main() {
+    int main = 5;  // THIS IS FINE
+    int s1 = f(5);
+    float s2 = g(1.2);
+    bool s3 = h(-5);
+    float[2] s4 = vid([1., 2.]);
+    float[2][2] s5 = mid([[1., 0.], [0., 1.]]);
+
+    print s1;
+    print s2;
+    print s3;
+    print s4;
+    print s5;
+}

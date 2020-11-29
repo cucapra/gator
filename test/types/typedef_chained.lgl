@@ -1,0 +1,23 @@
+using "../glsl_defs.lgl";
+
+frame model has dimension 3;
+frame world has dimension 3;
+
+//This doesn't work
+
+// type m_pt is cart3<model>.point;
+// type m_pt2 is cart3<model>.point;
+// void main() {
+//   m_pt x = [1., 2., 3.];
+//   m_pt2 y = x;
+// }
+
+//This does work
+
+typedef cart3<model>.point m_pt;
+typedef m_pt my_m_pt;
+typedef m_pt my_m_pt2;
+void main2() {
+  my_m_pt x = [1., 2., 3.];
+  my_m_pt2 y = x;
+}

@@ -1,0 +1,5 @@
+using "import_order2.lgl";
+
+void main() {
+    int x = bar(5);
+}

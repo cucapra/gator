@@ -231,6 +231,19 @@ let bind_typ (cx : contexts) (id : string) (ml : modification list) (t : typ) :
     contexts =
   bind cx id (Gamma (has_modification cx ml Canon, t))
 
+let get_ml_sq (cx : contexts) (ml : modification list) : CoreAst.storage_qual list =
+  let get_ml_sq_rec (ml : modification list) (sql : CoreAst.storage_qual list) =
+    match ml with
+    | Storage_Qualifier sq::ml' ->
+        let fail _ =
+          error cx ("Duplicate storage qualifier assignments to variable "
+            ^ (string_of_storage_qual sq))
+        in
+        if contains sql sq then fail ()
+        else sq :: sql
+    | _ -> sql in
+  get_ml_sq_rec ml []
+
 let get_ml_pm (cx : contexts) (ml : modification list) : parameterization =
   let get_ml_pm_rec (pm : parameterization) (m : modification) =
     match m with
@@ -269,10 +282,16 @@ let get_canonical_vars (cx : contexts) : string list =
     (Assoc.bindings cx._bindings.g)
     []
 
+let get_frame_safe (cx : contexts) (id : string) : delta option =
+  match find_typ cx id with Some (Delta d) -> Some d | _ -> None
+
 let get_frame (cx : contexts) (x : string) : delta =
-  match find_typ cx x with
-  | Some (Delta d) -> d
+  match get_frame_safe cx x with
+  | Some d -> d
   | _ -> error cx ("Undefined frame " ^ x)
+
+let get_scheme_safe (cx : contexts) (id : string) : chi option =
+  match find_typ cx id with Some (Chi c) -> Some c | _ -> None
 
 let get_scheme (cx : contexts) (x : string) : chi =
   match find_typ cx x with
@@ -306,7 +325,11 @@ let bind_function (cx : contexts) (f : fn_typ) (scheme : string option) :
     let p' = (scheme, f_write) :: fnl in
     (id_write, update_bindings {_b with p= Assoc.update id p' _b.p})
   else
-    let f_write = if id = "main" then f else rename_fn (fun x -> x ^ "_0") f in
+    (* let f_write = f in *)
+    (* Basically appends _0 to any function with a name ending with a digit *)
+    (* This is needed for later potential erasure with "in" expressions *)
+    let r = Str.regexp ".*_[0-9]+" in
+    let f_write = if Str.string_match r id 0 then rename_fn (fun x -> x ^ "_0") f else f in
     let _, _, id_write, _, _ = f_write in
     (id_write, bind cx id (Phi [(scheme, f_write)]))
 

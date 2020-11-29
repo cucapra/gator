@@ -1,0 +1,17 @@
+#"precision mediump float;";
+
+using "../glsl_defs.lgl";
+
+frame model has dimension 3;
+frame world has dimension 3;
+frame light has dimension 3;
+frame lightProjective has dimension 3;
+
+attribute cart3<model>.point aPosition;
+canon uniform hom<model>.transformation<world> uModel;
+canon uniform hom<world>.transformation<light> uLightView;
+canon uniform hom<light>.transformation<lightProjective> uLightProjection;
+
+void main() {
+    gl_Position = aPosition in hom<lightProjective>;
+}

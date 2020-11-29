@@ -39,7 +39,7 @@ Now `gatorc` should be available on your path.
 Run
 ---
 
-To simulate a Linguine-compiled shader on your browser, view the README in the `example` folder.
+To simulate a Gator-compiled shader on your browser, view the README in the `example` folder.
 
 You can run the compiler directly by passing a `*.lgl` source file as an argument to `gatorc`.
 For example:

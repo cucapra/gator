@@ -52,6 +52,7 @@ let string_of_modification (m : modification) : string =
         "with " ^ string_of_typ t ^ " " ^ string_of_list (fun x -> x) pm ^ ":"
   | Canon -> "canon"
   | External -> "declare"
+  | Storage_Qualifier sq -> string_of_storage_qual sq
 
 let string_of_mod_list (m : modification list) : string =
   string_of_separated_list " " string_of_modification m
@@ -120,6 +121,9 @@ and string_of_comm (c : comm) : string =
 let string_of_frame ((x, d) : frame) =
   "frame " ^ x ^ " is " ^ string_of_dexp d ^ ";"
 
+let string_of_typedef ((t, x) : typedef) : string =
+    "typedef " ^ (string_of_typ t) ^ " " ^ x ^ ";"
+
 let string_of_fn ((t, c) : fn_typ * acomm list) : string =
   string_of_fn_typ t ^ "{\n"
   ^ string_of_separated_list "\n" string_of_acomm c
@@ -150,8 +154,8 @@ let string_of_coordinate ((ml, x, p, cl) : coordinate) : string =
       (List.map fst cl)
   ^ "}"
 
-let string_of_global_var ((ml, sq, t, x, e) : global_var) : string =
-  string_of_mod_list ml ^ string_of_storage_qual sq ^ " " ^ string_of_typ t
+let string_of_global_var ((ml, t, x, e) : global_var) : string =
+  string_of_mod_list ml ^ " " ^ string_of_typ t
   ^ " " ^ x
   ^ Option.fold ~none:"" ~some:(fun x -> "= " ^ string_of_aexp x) e
 
@@ -166,6 +170,7 @@ let string_of_term (t : term) : string =
       string_of_mod_list ml ^ "type " ^ x ^ " is " ^ string_of_typ t
   | GlobalVar g -> string_of_global_var g
   | Fn f -> string_of_fn f
+  | Typedef t -> string_of_typedef t
 
 let string_of_aterm ((t, _) : aterm) : string = string_of_term t
 

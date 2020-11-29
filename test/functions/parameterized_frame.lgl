@@ -1,0 +1,9 @@
+using "../../examples/glsl_defs.lgl";
+
+with frame(2) r1:
+with frame(2) r2:
+with cart2<r1>.vector T:
+with cart2<r2>.vector U:
+T any(U v) {
+    return v as! T;
+}
