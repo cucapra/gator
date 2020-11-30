@@ -89,7 +89,7 @@ and string_of_exp (e : exp) : string =
   | In (e, t) -> string_of_aexp e ^ " in " ^ string_of_typ t
   | FnInv (i, pr, args) ->
       i ^ string_of_pml pr ^ "(" ^ string_of_list string_of_aexp args ^ ")"
-  | FieldSelect (e, s, _) -> string_of_exp e ^ "." ^ s
+  | FieldSelect (e, s) -> string_of_exp e ^ "." ^ s
 
 let rec string_of_acomm ((c, m) : acomm) : string = string_of_comm c
 

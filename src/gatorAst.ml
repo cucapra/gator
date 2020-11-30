@@ -53,7 +53,7 @@ and exp =
   | As of aexp * typ
   | In of aexp * typ
   | FnInv of string * typ list * args
-  | FieldSelect of exp * id * Lexing.position
+  | FieldSelect of exp * id
 
 (* function invocation *)
 and args = aexp list

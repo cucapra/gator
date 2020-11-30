@@ -391,14 +391,14 @@ let effectful_exp ==
 /* We syntactically reject assignments to anything but Indexes, Vars, and Fields. */
 /* Note that indexes may _recurse_ on expressions, this is fine */
 /* It seems like we have to list out cases so that assign_exp can be inlined. This allows us to avoid parser conflicts with typ */
-let assign_exp :=
+let assign_exp ==
   | x = ID;
     <Var>
   | x = ID; el = nonempty_list_array_brackets(node(exp));
     { List.fold_right (fun e acc -> (Index((acc, $startpos), e))) el (Var x) }
-/* In the typed AST, this can become a swizzle function invocation */
+  /* During typechecking, FieldSelect can become a swizzle */
   | e = exp; DOT; s = ID;
-    {FieldSelect(e, s, $startpos)}
+    {FieldSelect(e, s)}
 
 let id_hack ==
   | x = ID; {x}

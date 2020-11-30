@@ -894,7 +894,7 @@ and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
   | FnInv (x, pr, args) ->
       let (a, b, c), t = check_fn_inv cx x pr (List.map (check_aexp cx) args) in
       (TypedAst.FnInv (a, b, c), t)
-  | FieldSelect (e', s, pos) ->
+  | FieldSelect (e', s) ->
     (* if t is struct, treat as FieldSelect, otherwise, treat as swizzle *)
     let (typed_e, t) = check_exp cx e' in
     match structure_of_typ cx t with
