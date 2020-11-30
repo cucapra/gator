@@ -13,9 +13,6 @@ let union c1 c2 = c1 @ c2
 let lookup x c =
   try List.assoc x c with _ -> failwith ("Undefined association member: " ^ x)
 
-let lookup_multiple x c =
-  List.find_all (fun (y,_) -> y==x) c |> List.map snd
-
 (* Remove var from context *)
 let remove x c = List.remove_assoc x c
 

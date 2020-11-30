@@ -160,8 +160,6 @@ let get_prog cx x =
 
 (* Finds which context in which to find the given string *)
 let find_exp cx x =
-  let exps = Assoc.lookup_multiple x cx._bindings.el in
-  (* exps' should contain at most one element *)
   if Assoc.mem x cx._bindings.el then
     match Assoc.lookup x cx._bindings.el with
     | CGamma -> Some (Gamma (Assoc.lookup x cx._bindings.g))
@@ -207,7 +205,7 @@ let bind (cx : contexts) (x : string) (b : binding) : contexts =
   | Sigma s' ->
       ce () ;
       update_bindings
-        {_b with el= Assoc.update x CSigma _b.el; s= Assoc.update x s' _b.s}
+        {_b with s= Assoc.update x s' _b.s}
 
 (* Clears the given lookup context of elements *)
 let clear (cx : contexts) (b : exp_bindings) : contexts =
@@ -320,10 +318,11 @@ let get_scheme (cx : contexts) (x : string) : chi =
   | _ -> error cx ("Undefined coordinate scheme " ^ x)
 
 let get_structure_safe (cx : contexts) (x : string) : sigma option =
-  match find_exp cx x with
-  | Some (Sigma s) -> Some s
-  | _ -> None
-
+  if Assoc.mem x cx._bindings.s then
+    Some (Assoc.lookup x cx._bindings.s)
+  else
+    None
+    
 let get_structure (cx : contexts) (x : string) : sigma =
   match get_structure_safe cx x with
   | Some s -> s

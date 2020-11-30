@@ -897,10 +897,6 @@ and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
   | FieldSelect (e', s) ->
     (* if t is struct, treat as FieldSelect, otherwise, treat as swizzle *)
     let (typed_e, t) = check_exp cx e' in
-    print_endline "hoopla";
-    print_endline (string_of_typ t);
-    print_bindings cx;
-    print_endline "hoopla";
     match structure_of_typ cx t with
     | Some (st) -> (
         (* Treat as FieldSelect *)

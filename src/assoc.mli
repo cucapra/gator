@@ -14,8 +14,6 @@ val mem : string -> 'a context -> bool
 (* Raises Not_found if no binding *)
 val lookup : string -> 'a context -> 'a
 
-val lookup_multiple : string -> 'a context -> 'a list
-
 (* Remove var from context *)
 val remove : string -> 'a context -> 'a context
 
