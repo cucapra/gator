@@ -160,6 +160,8 @@ let get_prog cx x =
 
 (* Finds which context in which to find the given string *)
 let find_exp cx x =
+  let exps = Assoc.lookup_multiple x cx._bindings.el in
+  (* exps' should contain at most one element *)
   if Assoc.mem x cx._bindings.el then
     match Assoc.lookup x cx._bindings.el with
     | CGamma -> Some (Gamma (Assoc.lookup x cx._bindings.g))
@@ -200,7 +202,6 @@ let bind (cx : contexts) (x : string) (b : binding) : contexts =
       update_bindings
         {_b with tl= Assoc.update x CChi _b.tl; c= Assoc.update x c' _b.c}
   | Phi p' ->
-      ce () ;
       update_bindings
         {_b with el= Assoc.update x CPhi _b.el; p= Assoc.update x p' _b.p}
   | Sigma s' ->

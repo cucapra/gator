@@ -897,6 +897,10 @@ and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
   | FieldSelect (e', s) ->
     (* if t is struct, treat as FieldSelect, otherwise, treat as swizzle *)
     let (typed_e, t) = check_exp cx e' in
+    print_endline "hoopla";
+    print_endline (string_of_typ t);
+    print_bindings cx;
+    print_endline "hoopla";
     match structure_of_typ cx t with
     | Some (st) -> (
         (* Treat as FieldSelect *)
@@ -1355,13 +1359,12 @@ let check_structure_member (cx : contexts) ((t, id) : structure_member) :
 
 let check_structure (cx : contexts) ((name, field_list, pos) : structure) :
     contexts * TypedAst.structure =
-  (bind (bind (bind cx
-  name (Sigma((name, field_list, pos))))
-  name (Tau(true, Assoc.empty, StructureTyp)))
-  ("new_"^name) (Phi([None, ([], ParTyp(name, []), name,
-  List.map (fun (t, id) -> ([], t, id)) field_list, pos)]))
-  ,
-  (name, List.map (check_structure_member cx) field_list))
+  let cx' = bind cx name (Sigma((name, field_list, pos))) in
+  let cx'' = bind cx' name (Tau(true, Assoc.empty, StructureTyp)) in
+  let _, cx''' = bind_function cx''
+    ([], ParTyp(name, []), name,
+    List.map (fun (t, id) -> ([], t, id)) field_list, pos) None in
+  cx''', (name, List.map (check_structure_member cx) field_list)
 
 let rec check_term (cx : contexts) (t : term) : contexts * TypedAst.prog =
   match t with
