@@ -153,7 +153,7 @@ let rec comp_prog (f : term list) : string =
   | [] -> ""
   | Fn h :: t -> comp_fn h ^ comp_prog t
   | GlobalVar (sq, et, x, e) :: t ->
-      string_of_storage_qual sq ^ " " ^ string_of_typ et ^ " " ^ x
+      string_of_list string_of_storage_qual sq ^ " " ^ string_of_typ et ^ " " ^ x
       ^ Option.fold ~none:"" ~some:(fun x -> " = " ^ string_of_texp x) e
       ^ ";" ^ comp_prog t
 

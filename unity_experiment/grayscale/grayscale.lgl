@@ -1,17 +1,15 @@
-#"ifndef GRAYSCALE_INCLUDED";
-#"define GRAYSCALE_INCLUDED";
+#"#ifndef GRAYSCALE_INCLUDED";
+#"#define GRAYSCALE_INCLUDED";
 
 using "../hl_defs.lgl";
 
-
-float Grayscale_float(float3 inp)
+void Grayscale_float(float3 inp, out float result)
 {
     float r = inp[0];
     float g = inp[1];
     float b = inp[2];
-    float retval = (r + g + b) * 0.33;
-    return retval;
+    result = (r + g + b) * 0.33;
 }
 
-#"void Grayscale_float(float inp, out float output) { output = Grayscale_float_0(inp);}";
-#"endif";
+
+#"#endif";
