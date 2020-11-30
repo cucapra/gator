@@ -63,7 +63,7 @@ with float4 T: with float U: declare T *(U f, T v);
 with float4 T: declare float4 *(T v1, T v2);
 with float4 T: declare float4 /(T v1, float v2);
 
-// with float4x4 T: with float4 U: declare float4 *(T m, U v); //TODO:Remove
+// with float4x4 T: with float4 U: declare float4 *(T m, U v); //Remove
 //->
 with float4x4 T: with float4 U: declare float4 mul(U v, T m);
 with float4x4 T: with float4x4 U: declare float4x4 +(T m, U v);
@@ -119,19 +119,24 @@ declare T textureCube(samplerCube<T> texture, float[2] coord);
 with float[4] T:
 declare T textureCube(samplerCube<T> texture, float[3] coord);
 
+//TODO: Implement switch1 float(v) to float(v.x,v.y etc)??
 declare float2 float2(float x, float y);
 declare float3 float3(float x, float y, float z);
 declare float4 float4(float x, float y, float z, float w);
+
 declare float2 float2(float x);
-declare float2 float2(float[3] v);
-declare float2 float2(float[4] v);
+// declare float2 float2(float[3] v);
+// declare float2 float2(float[4] v);
+
 declare float3 float3(float x);
-declare float3 float3(float[2] v, float z);
-declare float3 float3(float[4] v);
-declare float4 float4(float[2] v, float x, float y);
-declare float4 float4(float[2] v1, float[2] v2);
-declare float4 float4(float[3] v, float x);
+// declare float3 float3(float[2] v, float z);
+// declare float3 float3(float[4] v);
+
 declare float4 float4(float x);
+// declare float4 float4(float[2] v, float x, float y);
+// declare float4 float4(float[2] v1, float[2] v2);
+// declare float4 float4(float[3] v, float x);
+
 
 declare float4x4 float4x4(float[3][3] v);
 
@@ -412,23 +417,26 @@ coordinate hom : geometry {
 }
 
 // Transformation Functions
+//TODO: Switch hom functions to non float(v) for hlsl?
 with frame(3) r:
 canon hom<r>.point homify(cart3<r>.point v) {
-    return float4(v, 1.) as! hom<r>.point;
+    return float4(v[0], v[1], v[2], 1.) as! hom<r>.point;
+    // return float4(v.x, v.y, v.z, 1.) as! hom<r>.point;
+
 }
 with frame(3) r:
 canon hom<r>.vector homify(cart3<r>.vector v) {
-    return float4(v, 0.) as! hom<r>.vector;
+    return float4(v[0], v[1], v[2], 0.) as! hom<r>.vector;
 }
 with frame(3) r:
 canon hom<r>.direction homify(cart3<r>.direction v) {
-    return float4(v, 0.) as! hom<r>.direction;
+    return float4(v[0], v[1], v[2], 0.) as! hom<r>.direction;
 }
 with frame(3) r:
 canon cart3<r>.point hom_reduce(hom<r>.point v) {
-    return (float3(v) / v[3]) as! cart3<r>.point;
+    return ( float3(v[0]/v[3], v[1]/v[3], v[2]/v[3])) as! cart3<r>.point;
 }
 with frame(3) r:
 canon cart3<r>.vector hom_reduce(hom<r>.vector v) {
-    return float3(v) as! cart3<r>.vector;
+    return float3(v[0], v[1], v[2]) as! cart3<r>.vector;
 }
