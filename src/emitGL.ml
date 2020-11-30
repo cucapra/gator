@@ -186,10 +186,10 @@ let rec comp_prog (f : term list) : string =
   match f with
   | [] -> ""
   | Fn h :: t -> comp_fn h ^ comp_prog t
-  | GlobalVar (sq, et, x, e) :: t -> (
-      string_of_storage_qual sq ^ " " ^ string_of_typ et ^ " " ^ x
+  | GlobalVar (sq, et, x, e) :: t ->
+      string_of_list string_of_storage_qual sq ^ " " ^ string_of_typ et ^ " " ^ x
       ^ Option.fold ~none:"" ~some:(fun x -> " = " ^ string_of_texp x) e
-      ^ ";" ^ comp_prog t)
+      ^ ";" ^ comp_prog t
   | Structure s :: t -> (
     TypedAstPrinter.string_of_structure s ^
     (if !pretty_printer then "\n" else "") ^comp_prog t

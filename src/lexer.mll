@@ -12,7 +12,7 @@ let white = [' ' '\t']
 let num = ['0'-'9']+
 let letter = ['a'-'z' 'A'-'Z']
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
-let s = ['"'] [ 'a'-'z' 'A'-'Z' '0'-'9' ' ' '\t' '-' '.' ',' '_' '/' ';' '(' ')' '=' '*' '+' '<' '>' '{' '}' ''' '[' ']' '|' ]* ['"']
+let s = ['"'] (['\"']|[ ^ '\r' '\n' '"' ])* ['"']
 let floatval = ((['0'-'9']*['.']['0'-'9']+)|(['0'-'9']+['.']['0'-'9']*))
 let newline = ['\n' '\r']
 let comment = "//" [^ '\r' '\n']*
@@ -101,6 +101,7 @@ rule read = parse
   | "uniform"       { UNIFORM }
   | "varying"       { VARYING }
   | "struct"        { STRUCT }
+  | "typedef"       { TYPEDEF }
   | "break"
   | "continue"
   | "do"

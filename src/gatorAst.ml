@@ -40,6 +40,7 @@ type typ =
   | ExactCodeTyp
   | StructureTyp (* The supertype of structs *)
 
+
 (* expressions *)
 type aexp = exp astNode
 
@@ -62,6 +63,7 @@ type modification =
   (*bool to  specify whether we are restricting ops on types*)
   | Canon
   | External
+  | Storage_Qualifier of storage_qual
 
 (* commands *)
 type acomm = comm astNode
@@ -112,7 +114,9 @@ type coordinate_element =
 (* Name, underlying prototype, dimension, and list of definitions *)
 type acoordinate_element = coordinate_element astNode
 type coordinate = modification list * id * string * acoordinate_element list
-type global_var = modification list * storage_qual * typ * id * aexp option
+type global_var = modification list * typ * id * aexp option
+
+type typedef = typ * id
 
 type structure_member = typ * id
 type structure = id * (structure_member list) * metadata
@@ -124,6 +128,7 @@ type structure = id * (structure_member list) * metadata
  * External function declarations without bodies
  * Global variable declarations
  * Function declarations with bodies
+ * Typedef to create a new alias for a type
  *)
 type aterm = term astNode
 
@@ -137,6 +142,7 @@ and term =
   | GlobalVar of global_var
   | Fn of fn
   | Structure of structure
+  | Typedef of typedef (* Should be removed from ast before typechecking *)
 
 (* program *)
 type prog = aterm list

@@ -35,7 +35,7 @@ prototype geometry {
     object point;
     object vector;
 
-    vector +(geometry.vector x, vector y);
+    vector +(vector x, vector y);
     vector -(vector x, vector y);
     vector *(vector v, scalar s);
     vector *(scalar s, vector v);

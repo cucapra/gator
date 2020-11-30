@@ -1,0 +1,16 @@
+declare string +(string s1, string s2);
+declare string *(string s, int i);
+declare string *(int i, string s);
+
+void main() {
+    string s1 = "abc ";
+    string s2 = "\tvalid_string;";
+    print(s1 + s2);
+    print(s1 * 2);
+    print(5 * s2);
+
+    // Valid string tests:
+    string s3 = "!@#$%^&*()_-+=";
+    string s4 = "`~',.<>/?";
+    string s5 = "\"\\/\/";
+}

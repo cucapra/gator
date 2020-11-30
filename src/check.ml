@@ -787,7 +787,11 @@ let find_in_path (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
           else
             (* Erase the specific invocation found above for future typechecking *)
             (* This is a hack that can probably get removed in favor of not typechecking the (already found) result *)
-            let v' = String.sub v 0 (String.rindex v '_') in
+            (* This is the reason we need the hack of adding _0 to functions ending with a _number name *)
+            let _ = print_endline v in
+            let r = Str.regexp ".*_[0-9]+" in
+            let _ = print_endline (string_of_bool (Str.string_match r v 0)) in
+            let v' = if Str.string_match r v 0 then String.sub v 0 (String.rindex v '_') else v in
             let aes =
               List.map
                 (fun so -> match so with None -> e | Some s -> (Var s, snd e))
@@ -1051,38 +1055,64 @@ let check_return (cx : contexts) (t : typ) (c : acomm) : unit =
           ^ ", found: " ^ string_of_typ rt )
   | _ -> ()
 
+let rec check_valid_supertype (cx : contexts) (cx' : contexts) (t : typ) : typ =
+  match t with
+  | AnyTyp | BoolTyp | IntTyp | FloatTyp | StringTyp -> t
+  | ArrTyp (t', _) -> check_valid_supertype cx cx' t'
+  (*| MemberTyp (mem_c, mem_t) ->*)
+  | MemberTyp (ParTyp (s1, pml1), ParTyp (s2, pml2)) ->
+      (* Matches something of the form "cart3<model>.point" *)
+      (* s1 is cart3, pml1 is [model], s2 is point, pml2 is [] *)
+      let tpm_scheme = match get_scheme_safe cx' s1 with
+      | Some c -> fst c
+      | None -> error cx ("Bad type declaration: Invalid scheme " ^ s1) in
+      let frame_typ = List.hd pml1 in
+      let _ = match frame_typ with
+      | ParTyp (s, pml) -> (match get_frame_safe cx' s with
+        | Some d -> ()
+        | None -> error cx ("Bad type declaration: Invalid frame " ^ s))
+      | _ -> error cx ("Bad type declaration: Invalid frame " ^ (string_of_typ frame_typ)) in
+      let tpm_object = match get_typ_safe cx' (s1 ^ "." ^ s2) with
+      | Some (_, tpm', _) -> tpm'
+      | None -> error cx ("Bad type declaration: Invalid object " ^ s2) in
+      check_valid_supertype_helper cx cx' false s1 t pml1 tpm_scheme;
+      check_valid_supertype_helper cx cx' false s2 t pml2 tpm_object;
+      t
+  | ParTyp (s, pml) ->
+      if Assoc.mem s cx'.pm then
+        check_valid_supertype cx cx' (fst (Assoc.lookup s cx'.pm)) 
+      else
+        let (_, tpm, _) = get_typ cx' s in
+        check_valid_supertype_helper cx cx' false s t pml tpm;
+        t
+  | _ -> error cx ("Invalid type declaration " ^ string_of_typ t)
+
+(* this factors out the tpm-dependent code *)
+and check_valid_supertype_helper (cx : contexts) (cx' : contexts) (recurse : bool)
+    (s : string) (t : typ) (pml : typ list) (tpm : parameterization) : unit =
+    let pmb = Assoc.bindings tpm in
+    if List.length pmb == List.length pml then (
+      List.fold_left2
+        (fun acc (s, c) t' ->
+        if is_subtype cx' t' c then ()
+        else
+          error cx
+            ( "Invalid typ used in the parameterization "
+            ^ string_of_typ t ^ " for parameter " ^ s ))
+      ()
+      (List.map (fun (s, (t, _)) -> (s, t)) (Assoc.bindings tpm))
+      (if recurse then (List.map (check_valid_supertype cx cx') pml) else pml) ;
+      ) 
+    else
+      error cx
+        ( "Invalid number of parameters\n\
+          \                provided to parameterized type " ^ s )
+
 (* Updates Tau with new typing information *)
-let check_typ_decl (cx : contexts) (x : string) ((b, pm, t) : tau) : contexts =
+and check_typ_decl (cx : contexts) (x : string) ((b, pm, t) : tau) : contexts =
   debug_print ">> check_typ_decl" ;
   let cx' = with_pm cx pm in
-  let rec check_valid_supertype (t : typ) : typ =
-    match t with
-    | AnyTyp | BoolTyp | IntTyp | FloatTyp | StringTyp -> t
-    | ArrTyp (t', _) -> check_valid_supertype t'
-    | ParTyp (s, pml) ->
-        if Assoc.mem s cx'.pm then
-          check_valid_supertype (fst (Assoc.lookup s cx'.pm))
-        else
-          let _, tpm, _ = get_typ cx' s in
-          let pmb = Assoc.bindings tpm in
-          if List.length pmb == List.length pml then (
-            List.fold_left2
-              (fun acc (s, c) t' ->
-                if is_subtype cx' t' c then ()
-                else
-                  error cx
-                    ( "Invalid typ used in the parameterization "
-                    ^ string_of_typ t ^ " for parameter " ^ s ))
-              ()
-              (List.map (fun (s, (t, _)) -> (s, t)) (Assoc.bindings tpm))
-              (List.map check_valid_supertype pml) ;
-            t )
-          else
-            error cx
-              ( "Invalid number of parameters\n\
-                \                provided to parameterized type " ^ s )
-    | _ -> error cx ("Invalid type declaration " ^ string_of_typ t) in
-  check_valid_supertype t |> ignore_typ ;
+  check_valid_supertype cx cx' t |> ignore_typ ;
   bind cx x (Tau (b, pm, t))
 
 (* Updates Phi, and internal calls update gamma and psi *)
@@ -1124,7 +1154,7 @@ let check_fn (cx : contexts) ((f, cl) : fn) (scheme : string option) :
 
 (* Type check global variable *)
 (* Updates gamma *)
-let check_global_variable (cx : contexts) ((ml, sq, t, id, e) : global_var) :
+let check_global_variable (cx : contexts) ((ml, t, id, e) : global_var) :
     contexts * TypedAst.global_var option =
   debug_print ">> check_global_variable" ;
   check_typ_valid cx t ;
@@ -1132,7 +1162,8 @@ let check_global_variable (cx : contexts) ((ml, sq, t, id, e) : global_var) :
   (match e' with Some (_, te) -> check_assign cx t (Var id) te | None -> ()) ;
   let gvr =
     if has_modification cx ml External then None
-    else Some (sq, typ_erase cx t, id, Option.map (fun x -> exp_to_texp cx x) e')
+    else 
+    Some (get_ml_sq cx ml, typ_erase cx t, id, Option.map (fun x -> exp_to_texp cx x) e')
   in
   (bind_typ cx id ml t, gvr)
 
@@ -1354,6 +1385,7 @@ let rec check_term (cx : contexts) (t : term) : contexts * TypedAst.prog =
   | Structure s -> (
       let cx', s' = check_structure cx s in
       (cx', [Structure s']))
+  | Typedef t -> debug_fail cx "Typedef term found in typechecking pass!"
 
 and check_aterm (cx : contexts) ((t, meta) : aterm) : contexts * TypedAst.prog =
   check_term (with_meta cx meta) t

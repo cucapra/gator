@@ -31,8 +31,8 @@ T any(U v) {
     return v as! T;
 }
 
-with frame(3) r:
-cart3<r>.dir abs_plus(cart3<r>.vector v1, cart3<r>.vector v2) {
+with frame(3) t:
+cart3<t>.dir abs_plus(cart3<t>.vector v1, cart3<t>.vector v2) {
     return normalize(v1 + v2);
 }
 

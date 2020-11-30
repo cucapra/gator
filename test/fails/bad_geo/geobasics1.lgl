@@ -31,7 +31,7 @@ frame world has dimension 3;
 frame plane has dimension 2;
 
 void main() {
-    cart3.point<world> pos = [1., 2.]; // Bad dimension for vector
+    cart3<world>.point pos = [1., 2.]; // Bad dimension for vector
 
     print 1;
 }

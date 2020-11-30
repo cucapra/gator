@@ -266,8 +266,10 @@ let rec comp_prog (f : prog) (s : SS.t) : string =
       let (_, id, _, _), _ = f in
       comp_fn f s ^ "\n" ^ comp_prog t (SS.add id s)
   | GlobalVar (sq, et, x, e) :: t -> (
+    (* Lazy hack to make the list thing work *)
+    (* Assume the only storage qualifier is Builtin *)
     match sq with
-    | BuiltIn -> ""
+    | BuiltIn::[] -> ""
     | _ -> (
         let e_str =
           Option.fold ~none:"" ~some:(fun x -> "= " ^ comp_texp x SS.empty) e
