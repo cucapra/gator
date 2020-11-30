@@ -160,6 +160,13 @@ let rec string_of_comm (c : comm) : string =
       ^ ";"
   | ExactCodeComm ec -> ec
 
+let string_of_structure (id, ml) : string =
+  (List.fold_left
+  (fun s (t, id) -> 
+    s ^ " " ^ string_of_typ t ^ " " ^ id ^ ";"
+  ) ("struct " ^ id ^ " {") ml) ^ " };"
+
+
 let comp_fn (f : fn) : string =
   debug_print ">> comp_fn" ;
   let (rt, id, _, p), cl = f in
@@ -191,7 +198,7 @@ let rec comp_prog (f : term list) : string =
       ^ Option.fold ~none:"" ~some:(fun x -> " = " ^ string_of_texp x) e
       ^ ";" ^ comp_prog t
   | Structure s :: t -> (
-    TypedAstPrinter.string_of_structure s ^
+    string_of_structure s ^
     (if !pretty_printer then "\n" else "") ^comp_prog t
   )
 
