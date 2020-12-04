@@ -246,6 +246,14 @@ let has_modification (cx : contexts) (ml : modification list) (m : modification)
     : bool =
   List.fold_right (fun mc acc -> mc = m || acc) ml false
 
+let bind_structure (cx : contexts) (id : string) (s : structure) :
+    contexts =
+  bind cx id (Sigma(s))
+
+let bind_tau (cx : contexts) (id : string) (extern : bool) (p : parameterization) (t : typ) :
+    contexts =
+  bind cx id (Tau(extern, p, t))
+
 let bind_typ (cx : contexts) (id : string) (ml : modification list) (t : typ) :
     contexts =
   bind cx id (Gamma (has_modification cx ml Canon, t))

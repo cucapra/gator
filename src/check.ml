@@ -1355,8 +1355,8 @@ let check_structure_member (cx : contexts) ((t, id) : structure_member) :
 
 let check_structure (cx : contexts) ((name, field_list, pos) : structure) :
     contexts * TypedAst.structure =
-  let cx' = bind cx name (Sigma((name, field_list, pos))) in
-  let cx'' = bind cx' name (Tau(true, Assoc.empty, StructureTyp)) in
+  let cx' = bind_structure cx name (name, field_list, pos) in
+  let cx'' = bind_tau cx' name true Assoc.empty StructureTyp in
   let _, cx''' = bind_function cx''
     ([], ParTyp(name, []), name,
     List.map (fun (t, id) -> ([], t, id)) field_list, pos) None in
