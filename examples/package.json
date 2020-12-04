@@ -8,7 +8,7 @@
     "start": "if test -f $SRC/main.lgl; then gatorc -t $SRC/main.lgl > $SRC/main.ts; fi; parcel serve $SRC/index.html"
   },
   "devDependencies": {
-    "parcel-bundler": "^1.9.7",
+    "parcel-bundler": "^1.12.4",
     "parcel-plugin-lgl": "file:../parcel-plugin-lgl",
     "typescript": "^3.3.3"
   },
@@ -20,7 +20,7 @@
     "gl-matrix": "^2.8.1",
     "icosphere": "^1.0.0",
     "normals": "^0.1.0",
-    "parcel": "^1.12.3",
+    "parcel": "^1.12.4",
     "primitive-cube": "^2.0.1",
     "teapot": "^1.0.0",
     "webgl-obj-loader": "^1.1.3",
