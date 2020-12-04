@@ -1,0 +1,20 @@
+declare int +(int x, int y);
+declare type vec2 is float[2];
+declare type vec3 is float[3];
+declare type vec4 is float[4];
+declare type mat2x3 is float[3][2];
+
+with vec2 T:    declare T +(T v1, T v2);
+with vec2 T:    declare T .*(T v1, T v2);
+with float[3] T: with float U:  declare T *(T v, U f);
+with vec3 T: with float U:  declare T *(T v, U f);
+with vec3 T: with float U:  declare T *(U f, T v);
+
+void main() {
+    float[4] v = [1.1, 2.2, 3.3, 4.4];
+
+    float s11 = v[1 + 2]; // = 4.4
+    int ind = 3;
+    float s12 = v[ind]; // = 4.4
+    (v).w = 3;
+}
