@@ -561,7 +561,7 @@ let check_param (cx : contexts) ((ml, t, id) : modification list * typ * string)
 let check_params (cx : contexts) (pl : params) : contexts * TypedAst.params =
   debug_print ">> check_params" ;
   let cx' = List.fold_left check_param cx pl in
-  let p = List.map (fun (ml, t, x) -> (typ_erase cx t, x)) pl in
+  let p = List.map (fun (ml, t, x) -> (get_ml_sq cx ml, typ_erase cx t, x)) pl in
   (cx', p)
 
 let check_index_exp (cx : contexts) (t1 : typ) (t2 : typ) : typ =

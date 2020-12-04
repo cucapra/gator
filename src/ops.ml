@@ -46,7 +46,7 @@ let rec fn_lookup (name : id) (fns : fn list) : fn option * id list =
   | h :: t -> (
     match h with
     | (_, id, _, p), _ ->
-        if name = id then (Some h, List.map snd p) else fn_lookup name t )
+        if name = id then (Some h, List.map tr_thd p) else fn_lookup name t )
 
 and internal_fn (name : id) (args : ovalue list) : ovalue =
   let fail () =
@@ -112,7 +112,7 @@ and eval_exp (e : exp) (t : etyp) (fns : fn list) (s : sigma) : ovalue * sigma =
       | Some f -> (
         match f with
         | (_, _, _, names), _ ->
-            let add_arg acc (_, name) v = Assoc.update name v acc in
+            let add_arg acc (_, _, name) v = Assoc.update name v acc in
             eval_funct f fns (List.fold_left2 add_arg Assoc.empty names arg_vs)
         ) )
 
