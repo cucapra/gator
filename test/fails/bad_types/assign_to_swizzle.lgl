@@ -16,5 +16,5 @@ void main() {
     float s11 = v[1 + 2]; // = 4.4
     int ind = 3;
     float s12 = v[ind]; // = 4.4
-    (v).w = 3;
+    v.w = 3;
 }
