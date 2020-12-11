@@ -561,7 +561,7 @@ let check_param (cx : contexts) ((ml, t, id) : modification list * typ * string)
 let check_params (cx : contexts) (pl : params) : contexts * TypedAst.params =
   debug_print ">> check_params" ;
   let cx' = List.fold_left check_param cx pl in
-  let p = List.map (fun (ml, t, x) -> (typ_erase cx t, x)) pl in
+  let p = List.map (fun (ml, t, x) -> (get_ml_sq cx ml, typ_erase cx t, x)) pl in
   (cx', p)
 
 let check_index_exp (cx : contexts) (t1 : typ) (t2 : typ) : typ =
@@ -786,9 +786,7 @@ let find_in_path (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
             (* Erase the specific invocation found above for future typechecking *)
             (* This is a hack that can probably get removed in favor of not typechecking the (already found) result *)
             (* This is the reason we need the hack of adding _0 to functions ending with a _number name *)
-            let _ = print_endline v in
             let r = Str.regexp ".*_[0-9]+" in
-            let _ = print_endline (string_of_bool (Str.string_match r v 0)) in
             let v' = if Str.string_match r v 0 then String.sub v 0 (String.rindex v '_') else v in
             let aes =
               List.map

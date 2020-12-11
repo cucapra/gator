@@ -115,7 +115,7 @@ and replace_type_in_comm_list (cl : comm list) (t : etyp) (r : etyp) : comm list
 let rec replace_type_in_params (p : params) (t : etyp) (r : etyp) : params =
   match p with
   | [] -> []
-  | (et, x) :: tl -> (replace_type et t r, x) :: replace_type_in_params tl t r
+  | (sq, et, x) :: tl -> (sq, replace_type et t r, x) :: replace_type_in_params tl t r
 
 let rec replace_type_in_parameterization (pm : parameterization) (t : etyp)
     (r : etyp) : parameterization =

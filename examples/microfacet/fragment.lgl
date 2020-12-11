@@ -33,10 +33,10 @@ uniform color light_color;
 
 canon cart3<normal_localframe>.halfdir proj_normlocalframe (cart3<view>.halfdir m, canon cart3<view>.normal n) {
     auto nhat = normalize(n);
-    auto t = normalize(geom_tangent - dot(geom_tangent,nhat));
+    auto t = normalize(geom_tangent - dot(geom_tangent,nhat) * nhat);
 	// Unfortunate hack due to bug
     auto b = (cross(nhat as! vec3, t as! vec3) as! cart3<view>.direction);
-    if (dot(geom_bitangent, b) <= 0.) {
+    if (dot(normalize(geom_bitangent), b) <= 0.) {
 		///??????
         b = (-b) as! cart3<view>.direction;
     }
@@ -52,7 +52,7 @@ cart3<view>.normal getShadingNormal() {
         auto n = normalize(geom_normal);
         auto t = normalize(geom_tangent - dot(geom_tangent,n) * n);
         auto b = (cross(n as! vec3, t as! vec3) as! cart3<view>.direction);
-        if (dot(geom_bitangent, b) < 0.) {
+        if (dot(normalize(geom_bitangent), b) < 0.) {
             b = (-b) as! cart3<view>.direction;
         }
 

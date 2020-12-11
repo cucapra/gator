@@ -166,7 +166,8 @@ let comp_fn (f : fn) : string =
   | ExactCodeTyp -> id ^ " "
   | _ ->
       let param_string =
-        string_of_list (fun (t, i) -> string_of_typ t ^ " " ^ i) p in
+        string_of_list (fun (sq, t, i) -> string_of_list string_of_storage_qual sq ^ " " ^
+        string_of_typ t ^ " " ^ i) p in
       let type_id_string =
         match id with
         | "main" -> "void main"
