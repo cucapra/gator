@@ -119,7 +119,6 @@ declare T textureCube(samplerCube<T> texture, float[2] coord);
 with float[4] T:
 declare T textureCube(samplerCube<T> texture, float[3] coord);
 
-//TODO: Implement switch1 float(v) to float(v.x,v.y etc)??
 declare float2 float2(float x, float y);
 declare float3 float3(float x, float y, float z);
 declare float4 float4(float x, float y, float z, float w);
@@ -421,8 +420,6 @@ coordinate hom : geometry {
 with frame(3) r:
 canon hom<r>.point homify(cart3<r>.point v) {
     return float4(v[0], v[1], v[2], 1.) as! hom<r>.point;
-    // return float4(v.x, v.y, v.z, 1.) as! hom<r>.point;
-
 }
 with frame(3) r:
 canon hom<r>.vector homify(cart3<r>.vector v) {

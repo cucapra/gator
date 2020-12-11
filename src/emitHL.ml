@@ -56,7 +56,7 @@ and attrib_type (var_name : string) : string =
   if var_name.[0] = 'a' then "attribute"
   else if var_name.[0] = 'v' then "varying"
   else if var_name.[0] = 'u' then "uniform"
-  else failwith "Not a supported glsl attribute"
+  else failwith "Not a supported hlsl attribute"
 
 and op_wrap (op : exp) : string =
   debug_print ">> op_wrap" ;
