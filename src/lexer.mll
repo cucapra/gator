@@ -100,6 +100,7 @@ rule read = parse
   | "attribute"     { ATTRIBUTE }
   | "uniform"       { UNIFORM }
   | "varying"       { VARYING }
+  | "struct"        { STRUCT }
   | "typedef"       { TYPEDEF }
   | "break"
   | "continue"
@@ -145,8 +146,7 @@ rule read = parse
   | "output"
   | "sizeof"
   | "cast"
-  | "namespace"
-  | "struct"        { raise (SyntaxError ("Cannot use reserved GLSL keyword " ^ Lexing.lexeme lexbuf)) }
+  | "namespace" { raise (SyntaxError ("Cannot use reserved GLSL keyword " ^ Lexing.lexeme lexbuf)) }
   | num as num      { NUM (int_of_string num) }
   | s as s          { STRING (String.sub s 1 (String.length s - 2)) }
   | id as id        { ID id }

@@ -16,6 +16,7 @@ let rec string_of_typ (t : etyp) : string =
   | AnyTyp -> "any"
   | GenTyp -> "genType"
   | ExactCodeTyp -> "ExactCodeType"
+  | StructureTyp -> "struct"
 
 and string_of_pml (p : etyp list) : string =
   if List.length p > 0 then "<" ^ string_of_list string_of_typ p ^ ">" else ""
@@ -37,11 +38,13 @@ and string_of_exp (e : exp) : string =
       ^
       if nonempty tl then string_of_list string_of_typ tl
       else "" ^ "(" ^ string_of_list string_of_texp args ^ ")"
+  | FieldSelect (e, s) -> string_of_exp e ^ "." ^ s
 
 let string_of_param (i, e) : string = string_of_typ e ^ " " ^ i
 
 let rec string_of_params (p : params) : string =
-  string_of_list (fun (x, y) -> string_of_typ x ^ " " ^ y) p
+  string_of_list (fun (sq, x, y) -> string_of_separated_list " " string_of_storage_qual sq 
+  ^ " " ^ string_of_typ x ^ " " ^ y) p
 
 let string_of_global_var ((sq, t, i, v) : global_var) =
   string_of_list string_of_storage_qual sq ^ " " ^ string_of_typ t ^ " " ^ i
@@ -84,8 +87,17 @@ let string_of_fn (((rt, id, pm, p), cl) : fn) : string =
   ^ string_of_parameterization pm
   ^ string_of_params p ^ string_of_comm_list cl
 
+let string_of_structure (id, ml) : string =
+  (List.fold_left
+  (fun s (t, id) -> 
+    s ^ " " ^ string_of_typ t ^ " " ^ id ^ ";"
+  ) ("struct " ^ id ^ " {") ml) ^ " };"
+
 let string_of_term (t : term) : string =
-  match t with GlobalVar v -> string_of_global_var v | Fn f -> string_of_fn f
+  match t with
+  | GlobalVar v -> string_of_global_var v
+  | Structure s -> string_of_structure s
+  | Fn f -> string_of_fn f
 
 let string_of_prog (e : prog) : string =
   string_of_separated_list "\n" string_of_term e

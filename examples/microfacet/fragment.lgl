@@ -27,16 +27,20 @@ uniform int mat_hasNormalTexture;
 uniform sampler2D<alphaColor> mat_normalTexture;
 uniform float mat_normalTextureScale;
 uniform int anisotropic;
-uniform cart3<view>.position light_eyePosition;
-uniform attenuation light_attenuation;
-uniform color light_color;
+
+struct light {
+  cart3<view>.position eyePosition;
+  attenuation attenuation;
+  color color;
+};
+uniform light uLight;
 
 canon cart3<normal_localframe>.halfdir proj_normlocalframe (cart3<view>.halfdir m, canon cart3<view>.normal n) {
     auto nhat = normalize(n);
-    auto t = normalize(geom_tangent - dot(geom_tangent,nhat));
+    auto t = normalize(geom_tangent - dot(geom_tangent,nhat) * nhat);
 	// Unfortunate hack due to bug
     auto b = (cross(nhat as! vec3, t as! vec3) as! cart3<view>.direction);
-    if (dot(geom_bitangent, b) <= 0.) {
+    if (dot(normalize(geom_bitangent), b) <= 0.) {
 		///??????
         b = (-b) as! cart3<view>.direction;
     }
@@ -52,7 +56,7 @@ cart3<view>.normal getShadingNormal() {
         auto n = normalize(geom_normal);
         auto t = normalize(geom_tangent - dot(geom_tangent,n) * n);
         auto b = (cross(n as! vec3, t as! vec3) as! cart3<view>.direction);
-        if (dot(geom_bitangent, b) < 0.) {
+        if (dot(normalize(geom_bitangent), b) < 0.) {
             b = (-b) as! cart3<view>.direction;
         }
 
@@ -144,13 +148,13 @@ vec3 promote(float f) {
 
 void main() {
   	alphaColor final_color = [0., 0., 0., 1.];
-	auto i = normalize(light_eyePosition - geom_position);
+	auto i = normalize(uLight.eyePosition - geom_position);
 	auto o = normalize(-geom_position);
 	auto m = get_halfdir(i, o);
 	auto n = getShadingNormal();
 	auto kd = getDiffuseColor();
 	final_color += alphatize(
 		(kd + promote(F(i,m) * D(m,n) * G(i,o,m,n) / (4.0 * abs (dot(i,n)) * abs(dot(o,n))))) * max(0., dot(n,i)) 
-		* I(light_color, light_eyePosition, geom_position, light_attenuation));
+		* I(uLight.color, uLight.eyePosition, geom_position, uLight.attenuation));
 	gl_FragColor = final_color;
 }

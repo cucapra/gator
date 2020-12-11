@@ -127,6 +127,7 @@ and string_of_exp (e : exp) : string =
              vectors, or bools" ) )
   | Index (l, r) -> string_of_texp l ^ "[" ^ string_of_texp r ^ "]"
   | FnInv (id, tl, args) -> string_of_fn_util id (List.map string_of_texp args)
+  | FieldSelect (e', s) -> string_of_exp e' ^ "." ^ s
 
 let rec string_of_comm (c : comm) : string =
   let block_string c =
@@ -159,6 +160,13 @@ let rec string_of_comm (c : comm) : string =
       ^ ";"
   | ExactCodeComm ec -> ec
 
+let string_of_structure (id, ml) : string =
+  (List.fold_left
+  (fun s (t, id) -> 
+    s ^ " " ^ string_of_typ t ^ " " ^ id ^ ";"
+  ) ("struct " ^ id ^ " {") ml) ^ " };"
+
+
 let comp_fn (f : fn) : string =
   debug_print ">> comp_fn" ;
   let (rt, id, _, p), cl = f in
@@ -166,7 +174,8 @@ let comp_fn (f : fn) : string =
   | ExactCodeTyp -> id ^ " "
   | _ ->
       let param_string =
-        string_of_list (fun (t, i) -> string_of_typ t ^ " " ^ i) p in
+        string_of_list (fun (sq, t, i) -> string_of_list string_of_storage_qual sq ^ " " ^
+        string_of_typ t ^ " " ^ i) p in
       let type_id_string =
         match id with
         | "main" -> "void main"
@@ -189,6 +198,10 @@ let rec comp_prog (f : term list) : string =
       string_of_list string_of_storage_qual sq ^ " " ^ string_of_typ et ^ " " ^ x
       ^ Option.fold ~none:"" ~some:(fun x -> " = " ^ string_of_texp x) e
       ^ ";" ^ comp_prog t
+  | Structure s :: t -> (
+    string_of_structure s ^
+    (if !pretty_printer then "\n" else "") ^comp_prog t
+  )
 
 let rec compile_program (prog : prog) : string =
   debug_print ">> compile_program" ;

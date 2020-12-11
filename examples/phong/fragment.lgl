@@ -16,20 +16,27 @@ varying cart3<model>.point vPosition;
 uniform hom<model>.transformation<world> uModel;
 uniform hom<world>.transformation<camera> uView;
 varying cart3<model>.vector vNormal;
-uniform cart3<world>.point uLight;
+
+struct light {
+  cart3<world>.point pos;
+  color diffColor;
+  color specColor;
+};
+uniform light uLight;
+
+struct positions {
+  cart3<world>.point worldPos;
+};
 
 void main() {
     // vec4 gl_FragColor = vec4(uLight, .9);
     hom<model>.transformation<camera> uModelView = uView * uModel;
     color ambient = [0.1, 0., 0.];
-    color diffColor = [0.4, 0.3, 0.8];
-    color specColor = [1.0, 1.0, 1.0];
-
-    auto worldPos = hom_reduce(uModel*homify(vPosition));
+    positions p = positions(hom_reduce(uModel*homify(vPosition)));
     auto camPos = hom_reduce(uView*uModel*homify(vPosition));
     auto worldNorm = normalize(hom_reduce(uModel*homify(vNormal)));
 
-    auto lightDir = normalize(uLight - worldPos);
+    auto lightDir = normalize(uLight.pos - p.worldPos);
     auto lightWorldDot = dot(lightDir, worldNorm);
     scalar diffuse = max(lightWorldDot, 0.);
 
@@ -37,5 +44,5 @@ void main() {
 
     scalar specular = pow(max(dot(normalize(-camPos), reflectDir), 0.), 32.);
 
-    gl_FragColor = vec4(ambient + diffuse * diffColor + specular * specColor, 1.0);
+    gl_FragColor = vec4(ambient + diffuse * uLight.diffColor + specular * uLight.specColor, 1.0);
 }

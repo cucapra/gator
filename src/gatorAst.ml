@@ -38,6 +38,7 @@ type typ =
   | GenTyp
   | GenArrTyp of typ
   | ExactCodeTyp
+  | StructureTyp (* The supertype of structs *)
 
 
 (* expressions *)
@@ -52,6 +53,7 @@ and exp =
   | As of aexp * typ
   | In of aexp * typ
   | FnInv of string * typ list * args
+  | FieldSelect of exp * id
 
 (* function invocation *)
 and args = aexp list
@@ -116,6 +118,9 @@ type global_var = modification list * typ * id * aexp option
 
 type typedef = typ * id
 
+type structure_member = typ * id
+type structure = id * (structure_member list) * metadata
+
 (* Terms that make up a program *)
 (* In any order, we have:
  * ExactCode for exact code insertion
@@ -136,6 +141,7 @@ and term =
   | Typ of modification list * id * typ
   | GlobalVar of global_var
   | Fn of fn
+  | Structure of structure
   | Typedef of typedef (* Should be removed from ast before typechecking *)
 
 (* program *)

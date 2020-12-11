@@ -42,9 +42,9 @@ function main() {
   let loc_mat_normalTexture = lgl.uniformLoc(gl, program, 'mat_normalTexture');
   let loc_mat_normalTextureScale = lgl.uniformLoc(gl, program, 'mat_normalTextureScale');
   let loc_anisotropic = lgl.uniformLoc(gl, program, 'anisotropic');
-  let loc_light_eyePosition = lgl.uniformLoc(gl, program, 'light_eyePosition');
-  let loc_light_attenuation = lgl.uniformLoc(gl, program, 'light_attenuation');
-  let loc_light_color = lgl.uniformLoc(gl, program, 'light_color');
+  let loc_light_eyePosition = lgl.uniformLoc(gl, program, 'uLight.eyePosition');
+  let loc_light_attenuation = lgl.uniformLoc(gl, program, 'uLight.attenuation');
+  let loc_light_color = lgl.uniformLoc(gl, program, 'uLight.color');
 
   // Read in lpshead obj
   // URL must be statically analyzable other than (__dirname) and (__filename)

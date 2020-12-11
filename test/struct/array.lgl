@@ -1,0 +1,26 @@
+prototype geometry {
+  object point;
+  with frame() r: object transformation;
+}
+
+with frame(3) r:
+coordinate cart3 : geometry {
+  object point is float[3];
+  with frame(2) f: object transformation is float[3][3];
+}
+
+frame model has dimension 3;
+
+struct s {
+  int a;
+  cart3<model>.point b;
+};
+
+struct g {
+  int a;
+};
+
+void main(){
+  g[1] x = [g(0)];
+  /*int[1] y = [1];*/
+}

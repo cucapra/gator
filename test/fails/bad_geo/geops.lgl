@@ -208,6 +208,6 @@ frame world has dimension 3;
 frame plane has dimension 2;
 
 void main() {
-    hom.point<world> v = [1., 2., 1., 1.];
+    hom<world>.point v = [1., 2., 1., 1.];
     print -v; // negative of a hom point not defined
 }

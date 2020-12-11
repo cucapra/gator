@@ -305,6 +305,7 @@ let rec typ_erase (cx : contexts) (t : typ) : TypedAst.etyp =
   | GenTyp -> TypedAst.GenTyp
   | BotTyp | AnyFrameTyp | FrameTyp _ | GenArrTyp _ | ExactCodeTyp ->
       debug_fail cx ("Cannot erase " ^ string_of_typ t)
+  | StructureTyp -> TypedAst.StructureTyp
 
 let rec etyp_to_typ (e : TypedAst.etyp) : typ =
   debug_print ">> etyp_to_typ" ;
@@ -322,6 +323,7 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
   | TypedAst.AnyTyp -> AnyTyp
   | TypedAst.GenTyp -> GenTyp
   | TypedAst.ExactCodeTyp -> ExactCodeTyp
+  | TypedAst.StructureTyp -> StructureTyp
 
 let rec check_val (cx : contexts) (v : value) : typ =
   debug_print (">> check_val " ^ string_of_value v) ;
@@ -561,7 +563,7 @@ let check_param (cx : contexts) ((ml, t, id) : modification list * typ * string)
 let check_params (cx : contexts) (pl : params) : contexts * TypedAst.params =
   debug_print ">> check_params" ;
   let cx' = List.fold_left check_param cx pl in
-  let p = List.map (fun (ml, t, x) -> (typ_erase cx t, x)) pl in
+  let p = List.map (fun (ml, t, x) -> (get_ml_sq cx ml, typ_erase cx t, x)) pl in
   (cx', p)
 
 let check_index_exp (cx : contexts) (t1 : typ) (t2 : typ) : typ =
@@ -786,9 +788,7 @@ let find_in_path (cx : contexts) (start_exp : aexp) (start : typ) (target : typ)
             (* Erase the specific invocation found above for future typechecking *)
             (* This is a hack that can probably get removed in favor of not typechecking the (already found) result *)
             (* This is the reason we need the hack of adding _0 to functions ending with a _number name *)
-            let _ = print_endline v in
             let r = Str.regexp ".*_[0-9]+" in
-            let _ = print_endline (string_of_bool (Str.string_match r v 0)) in
             let v' = if Str.string_match r v 0 then String.sub v 0 (String.rindex v '_') else v in
             let aes =
               List.map
@@ -889,17 +889,30 @@ and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
       let er = check_aexp cx r in
       ( TypedAst.Index (exp_to_texp cx el, exp_to_texp cx er)
       , check_index_exp cx (snd el) (snd er) )
-  | FnInv ("swizzle", _, args) -> (
-    try check_swizzle cx (List.map (check_aexp cx) args)
-    with TypeException e -> (
-      match args with
-      (* See if this is actually something like mesh.normals in which case treat it like one var *)
-      | [(Var s1, _); (Val (StringVal s2), _)] ->
-          check_exp cx (Var (s1 ^ "." ^ s2))
-      | _ -> raise (TypeException e) ) )
   | FnInv (x, pr, args) ->
       let (a, b, c), t = check_fn_inv cx x pr (List.map (check_aexp cx) args) in
       (TypedAst.FnInv (a, b, c), t)
+  | FieldSelect (e', s) ->
+    (* if t is struct, treat as FieldSelect, otherwise, treat as swizzle *)
+    let (typed_e, t) = check_exp cx e' in
+    match structure_of_typ cx t with
+    | Some (st) -> (
+        (* Treat as FieldSelect *)
+        match struct_field_lookup st s with
+        | Some field_typ ->
+            (TypedAst.FieldSelect (typed_e, s), field_typ)
+        | None ->
+            error cx ("Invalid field name " ^ s))
+    | None -> (
+        (* Treat as swizzle *)
+        let args = [(typed_e, t); check_exp cx (Val (StringVal(s)))] in
+        try check_swizzle cx args
+        with TypeException e -> (
+          match args with
+          (* See if this is actually something like mesh.normals in which case treat it like one var *)
+          | [(Var s1, _); (Val (StringVal s2), _)] ->
+              check_exp cx (Var (s1 ^ "." ^ s2))
+          | _ -> raise (TypeException e) ))
 
 and check_arr (cx : contexts) (a : aexp list) : TypedAst.exp * typ =
   debug_print ">> check_arr" ;
@@ -1333,6 +1346,20 @@ let check_exactCode (ec : string) : TypedAst.prog =
   let test = Assoc.empty in
   [Fn ((ExactCodeTyp, ec, test, []), [])]
 
+let check_structure_member (cx : contexts) ((t, id) : structure_member) :
+    TypedAst.structure_member =
+  check_typ_valid cx t;
+  (typ_erase cx t, id)
+
+let check_structure (cx : contexts) ((name, field_list, pos) : structure) :
+    contexts * TypedAst.structure =
+  let cx' = bind_structure cx name (name, field_list, pos) in
+  let cx'' = bind_tau cx' name true Assoc.empty StructureTyp in
+  let _, cx''' = bind_function cx''
+    ([], ParTyp(name, []), name,
+    List.map (fun (t, id) -> ([], t, id)) field_list, pos) None in
+  cx''', (name, List.map (check_structure_member cx) field_list)
+
 let rec check_term (cx : contexts) (t : term) : contexts * TypedAst.prog =
   match t with
   | Using s -> check_exprog (get_prog cx s) cx
@@ -1352,6 +1379,9 @@ let rec check_term (cx : contexts) (t : term) : contexts * TypedAst.prog =
   | Fn f -> (
       let cx', f' = check_fn cx f None in
       (cx', match f' with None -> [] | Some f' -> [Fn f']) )
+  | Structure s -> (
+      let cx', s' = check_structure cx s in
+      (cx', [Structure s']))
   | Typedef t -> debug_fail cx "Typedef term found in typechecking pass!"
 
 and check_aterm (cx : contexts) ((t, meta) : aterm) : contexts * TypedAst.prog =

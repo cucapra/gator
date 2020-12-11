@@ -86,6 +86,7 @@ exception ParseException of string
 %token VARYING
 %token POUND
 %token PERCENT
+%token STRUCT
 %token TYPEDEF
 
 (* Precedences *)
@@ -161,6 +162,8 @@ let term ==
     { GlobalVar(m, t, x, v) }
   | f = fn;
     <Fn>
+  | st = structure;
+    <Structure>
   | TYPEDEF ; t = typ; x = id_hack; SEMI;
     <Typedef>
 
@@ -213,6 +216,14 @@ let fn ==
   | f = fn_typ; LBRACE; cl = acomm*; RBRACE; <>
   | f = fn_typ; SEMI; { (f, []) }
 
+let structure ==
+  | STRUCT; i = ID; LBRACE; ml = structure_member+; RBRACE; SEMI;
+  { (i, ml, $startpos) }
+
+let structure_member ==
+  | t = typ; i = ID; SEMI;
+  {(t, i)}
+
 let acomm ==
   | c = comm;
     { (c, $startpos) }
@@ -250,7 +261,7 @@ let assignop ==
 let comm_element ==
   | SKIP;
     { Skip }
-  | (m, t) = terminated_list(modification, typ); x = id_hack; GETS; e = node(exp);
+  | (m, t) = terminated_list(modification, typ); x = ID; GETS; e = node(exp);
     { Decl(m, t, x, e) }
   | e = node(effectful_exp);
     < Exp >
@@ -298,13 +309,15 @@ let typ :=
     <FrameTyp>
   | t = typ; LBRACK; d = dexp; RBRACK;
     { ArrTyp(t, d) }
-  | t1 = typ; DOT; t2 = typ;
-    <MemberTyp>
-  | x = id_hack; pt = parameters(LWICK, typ, RWICK);
+  | t1 = ID; pt = parameters(LWICK, typ, RWICK); DOT; t2 = typ;
+    { MemberTyp(ParTyp(t1, pt), t2) }
+  | THIS; pt = parameters(LWICK, typ, RWICK); DOT; t2 = typ;
+    { MemberTyp(ParTyp("this", pt), t2) }
+  | x = ID; pt = parameters(LWICK, typ, RWICK);
     <ParTyp>
   | THIS; pt = parameters(LWICK, typ, RWICK);
     { ParTyp("this", pt) }
-  | x = id_hack; /* explicit for clarity and to help out the parser */
+  | x = ID; /* explicit for clarity and to help out the parser */
     { ParTyp(x, []) }
   | GENTYPE;
     { GenTyp }
@@ -360,16 +373,14 @@ let exp:=
     <As>
   | e = node(exp); IN; t = typ;
     <In>
-  | e = node(assign_exp); DOT; s = ID;
-    { FnInv("swizzle",[],[e; Val (StringVal(s)), $startpos]) }
 
 /* A strict subset of expressions that can have effects, separated to help parse commands */
 /* In other words, we syntactically reject commands that have no effect on the program */
 /* See comm_element for more details */
 let effectful_exp ==
-  | x = id_hack; p = parameters(LWICK, typ, RWICK); a = arguments;
+  | x = ID; p = parameters(LWICK, typ, RWICK); a = arguments;
     <FnInv>
-  | x = id_hack; LPAREN; a = separated_list(COMMA, node(exp)); RPAREN;
+  | x = ID; LPAREN; a = separated_list(COMMA, node(exp)); RPAREN;
     { FnInv(x, [], a) }
   | op = unop_effectful; x = node(ID);
     { FnInv(op, [], [(Var (fst x), snd x)]) }
@@ -377,7 +388,7 @@ let effectful_exp ==
     { FnInv(op, [], [(Var (fst x), snd x)]) }
 
 /* A strict subset of expressions that can be in assignments to help the parser */
-/* We syntactically reject assignments to anything but Indexes and Vars */
+/* We syntactically reject assignments to anything but Indexes, Vars, and Fields. */
 /* Note that indexes may _recurse_ on expressions, this is fine */
 /* It seems like we have to list out cases so that assign_exp can be inlined. This allows us to avoid parser conflicts with typ */
 let assign_exp ==
@@ -385,6 +396,9 @@ let assign_exp ==
     <Var>
   | x = ID; el = nonempty_list_array_brackets(node(exp));
     { List.fold_right (fun e acc -> (Index((acc, $startpos), e))) el (Var x) }
+  /* During typechecking, FieldSelect can become a swizzle */
+  | e = exp; DOT; s = ID;
+    {FieldSelect(e, s)}
 
 let id_hack ==
   | x = ID; {x}

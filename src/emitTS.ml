@@ -23,6 +23,7 @@ let rec comp_type (t : etyp) : string =
   | AnyTyp -> failwith "unimplemented anytyp in Javascript"
   | GenTyp -> failwith "unimplemented gentyp in Javascript"
   | ExactCodeTyp -> "ExactCode"
+  | StructureTyp -> failwith "unimplemented struct in Javascript"
 
 (* let comp_fn_arg_type (t : etyp) : string =
     match t with
@@ -180,6 +181,7 @@ and comp_exp (e : exp) (s : SS.t) : string =
          in
          fn_name ^ "(" ^ (String.concat "," (List.map (fun (e, _) -> comp_exp e s) args)) ^ ")" *)
       "(" ^ string_of_fn_util f (List.map (fun x -> comp_texp x s) args) ^ ")"
+  | FieldSelect (_, _) -> failwith "Unimplemented field select in Javascript"
 
 (* failwith "unimplemented function invocation writing" *)
 
@@ -192,6 +194,7 @@ let comp_assign (x : texp) ((e, t) : texp) (s : SS.t) : string =
      | MatTyp (m, n) -> "mat" ^ (string_of_int (max m n)) ^ ".copy(" ^ x ^ "," ^ (comp_exp e s) ^ ");" *)
   | ArrTyp _ | AnyTyp | GenTyp ->
       comp_exp (fst x) s (*comp_type t ^*) ^ "=" ^ comp_exp e s ^ ";"
+  | StructureTyp -> failwith "Unimplemented struct in Javascript"
 
 let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
   debug_print ">> comp_comm_lst" ;
@@ -244,7 +247,7 @@ let comp_fn (f : fn) (s : SS.t) : string =
   | ExactCodeTyp -> id ^ " "
   | _ ->
       let param_string =
-        string_of_list (fun (t, i) -> i ^ ":" ^ comp_type t) p in
+        string_of_list (fun (sq, t, i) -> i ^ ":" ^ comp_type t) p in
       (* let fn_name = id ^ "__" ^ (String.concat "__" (List.map (fun (_, t) -> comp_fn_arg_type t) (Assoc.bindings pm))) in *)
       let fn_name =
         id
@@ -281,6 +284,7 @@ let rec comp_prog (f : prog) (s : SS.t) : string =
         | _ ->
             "var " ^ x (*^ ":" ^ ts_type*) ^ e_str ^ ";" ^ "\n" ^ comp_prog t s
         ) )
+  | Structure (_, _) :: t -> failwith "Unimplemented struct in Javascript"
 
 (* let rec decl_attribs (gv : global_vars) : string =
     debug_print ">> decl_attribs";
