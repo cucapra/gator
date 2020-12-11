@@ -46,7 +46,7 @@ type comm =
 and if_block = texp * comm list
 
 type parameterization = etyp Assoc.context
-type params = (etyp * string) list
+type params = (storage_qual list * etyp * string) list
 type global_var = storage_qual list * etyp * string * texp option
 type ret_typ = etyp
 type fn_decl = ret_typ * id * parameterization * params

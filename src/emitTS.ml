@@ -247,7 +247,7 @@ let comp_fn (f : fn) (s : SS.t) : string =
   | ExactCodeTyp -> id ^ " "
   | _ ->
       let param_string =
-        string_of_list (fun (t, i) -> i ^ ":" ^ comp_type t) p in
+        string_of_list (fun (sq, t, i) -> i ^ ":" ^ comp_type t) p in
       (* let fn_name = id ^ "__" ^ (String.concat "__" (List.map (fun (_, t) -> comp_fn_arg_type t) (Assoc.bindings pm))) in *)
       let fn_name =
         id
