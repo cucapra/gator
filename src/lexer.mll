@@ -102,6 +102,10 @@ rule read = parse
   | "varying"       { VARYING }
   | "struct"        { STRUCT }
   | "typedef"       { TYPEDEF }
+  | "class"         { CLASS }
+  | "public"        { PUBLIC }
+  | "private"       { PRIVATE }
+  | "protected"     { PROTECTED }
   | "break"
   | "continue"
   | "do"
@@ -117,7 +121,6 @@ rule read = parse
   | "invariant"
   | "discard"
   | "asm"
-  | "class"
   | "union"
   | "enum"
   | "typedef"
@@ -129,7 +132,6 @@ rule read = parse
   | "inline"
   | "noinline"
   | "volatile"
-  | "public"
   | "static"
   | "extern"
   | "external"

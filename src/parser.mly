@@ -88,6 +88,10 @@ exception ParseException of string
 %token PERCENT
 %token STRUCT
 %token TYPEDEF
+%token CLASS
+%token PUBLIC
+%token PRIVATE
+%token PROTECTED
 
 (* Precedences *)
 
@@ -166,6 +170,8 @@ let term ==
     <Structure>
   | TYPEDEF ; t = typ; x = id_hack; SEMI;
     <Typedef>
+  | c = _class;
+    <Class>
 
 let prototype_element ==
   | m = modification*; OBJECT; x = id_hack; t = snd(combined(IS, typ))?; SEMI;
@@ -223,6 +229,26 @@ let structure ==
 let structure_member ==
   | t = typ; i = ID; SEMI;
   {(t, i)}
+
+let _class ==
+  | CLASS; i = ID; LBRACE; m = class_member*; RBRACE; SEMI;
+  { (i, None, m) }
+  | CLASS; i = ID; COLON; parent = ID; LBRACE; m = class_member*; RBRACE; SEMI;
+  { (i, Some(parent), m) }
+
+let visibility ==
+  | PUBLIC;
+    { Public }
+  | PRIVATE;
+    { Private }
+  | PROTECTED;
+    { Protected }
+
+let class_member ==
+  | v = visibility; t = typ; name = ID; SEMI;
+  { Field (v, t, name) }
+  | v = visibility; f = fn;
+  { Method (v, f) }
 
 let acomm ==
   | c = comm;

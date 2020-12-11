@@ -121,6 +121,17 @@ type typedef = typ * id
 type structure_member = typ * id
 type structure = id * (structure_member list) * metadata
 
+type visibility = 
+  | Private
+  | Public
+  | Protected
+  | Default
+
+type class_member =
+  | Field of visibility * typ * id
+  | Method of visibility * fn
+type _class = id * (id option) * (class_member list)
+
 (* Terms that make up a program *)
 (* In any order, we have:
  * ExactCode for exact code insertion
@@ -143,6 +154,7 @@ and term =
   | Fn of fn
   | Structure of structure
   | Typedef of typedef (* Should be removed from ast before typechecking *)
+  | Class of _class
 
 (* program *)
 type prog = aterm list
