@@ -1,0 +1,19 @@
+
+
+Unity Shadergraph for Gator:
+The goal of this work is to use unity to get more immediate feedback on shader development using gator. Using the unity pipeline would open up new ways to test gator for errors. If it works well enough this could also open gator up for use by unity shader developers.
+
+The work so far exists in two parts: 
+1 - Modifications to support HLSL (unity's default shader language) in gator. This includes an emitHL file, hlsl definitions gator file, and other changes, visible here: https://github.com/cucapra/gator/pull/123
+
+2 - Files written for unity shadergraph - unity's visual scripting based shader editor. It may sound a bit convoluted but this was one of the best ways to avoid having to put a lot of unity's complicated shader support logic into gator. The workflow is to create a custom function node in shadergraph, and have the inputs and outputs declared within that function. Examples of this for a grayscale functiona and an initial Phong function are under the unity-shadergraph branch.
+To import just copy pase the "unity-shaders" folder into the Assets folder of any Unity-PBR project. From there you can open each shadergraph file and edit the HLSL code. 
+
+The full work flow to get from gator to unity currently is:
+1 - Write the .lgl file with the call to hldefs at the top
+2 - Copy the output to a .hl file in the shaders folder of the UnityPBR project
+3 - Make the custom function node read in that HL file, and connect any necessary inputs
+
+Todos:
+-find parts of hlsl unsupported by the HLDefs file
+-Automate the running process to one step compiles gator files on unity runtime
