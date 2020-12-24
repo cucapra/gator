@@ -424,7 +424,9 @@ let assign_exp ==
     { List.fold_right (fun e acc -> (Index((acc, $startpos), e))) el (Var x) }
   /* During typechecking, FieldSelect can become a swizzle */
   | e = exp; DOT; s = ID;
-    {FieldSelect(e, s)}
+    {FieldSelect(Some e, s)}
+  | THIS; DOT; s = ID;
+    {FieldSelect(None, s)}
 
 let id_hack ==
   | x = ID; {x}
