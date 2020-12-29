@@ -1,0 +1,44 @@
+class c1 {
+  public int a;
+  public c1 init(int x) {
+    self(x);
+  }
+};
+class c2 : c1 {
+  public int b;
+  public c2 init(int x1, int x2) {
+    super(x1);
+    self(x2);
+  }
+};
+class c3 : c2 {
+  public int c;
+  public c3 init(int x1, int x2, int x3) {
+    super(x1, x2);
+    self(x3);
+  }
+};
+class c4 : c3 {
+  public int d;
+  public c4 init(int x1, int x2, int x3, int x4) {
+    super(x1, x2, x3);
+    self(x4);
+  }
+};
+class c5 : c4 {
+  public int e;
+  public c5 init(int x1, int x2, int x3, int x4, int x5) {
+    super(x1, x2, x3, x4);
+    self(x5);
+  }
+};
+
+void main() {
+  c5 c = new_c5(1,2,3,4,5);
+  int x = 0;
+  x = c.a;
+  x = c.b;
+  x = c.c;
+  x = c.d;
+  x = c.e;
+}
