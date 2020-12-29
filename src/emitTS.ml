@@ -24,6 +24,7 @@ let rec comp_type (t : etyp) : string =
   | GenTyp -> failwith "unimplemented gentyp in Javascript"
   | ExactCodeTyp -> "ExactCode"
   | StructureTyp -> failwith "unimplemented struct in Javascript"
+  | ClassTyp -> failwith "unimplemented class in Javascript"
 
 (* let comp_fn_arg_type (t : etyp) : string =
     match t with
@@ -174,6 +175,7 @@ and comp_exp (e : exp) (s : SS.t) : string =
              | _ -> "(" ^ string_of_binop_exp (comp_exp e1 s) op (comp_exp e2 s) ^ ")"
          end *)
   | Index (l, r) -> string_of_texp l ^ "[" ^ string_of_texp r ^ "]"
+  | MethodInv _ -> failwith "Unimplemented method invocation in JavaScript"
   | FnInv (f, tpl, args) ->
       (* let fn_name =
              if SS.mem f s then f ^ "__" ^ (String.concat "__" (List.map comp_fn_arg_type tpl))
@@ -181,7 +183,7 @@ and comp_exp (e : exp) (s : SS.t) : string =
          in
          fn_name ^ "(" ^ (String.concat "," (List.map (fun (e, _) -> comp_exp e s) args)) ^ ")" *)
       "(" ^ string_of_fn_util f (List.map (fun x -> comp_texp x s) args) ^ ")"
-  | FieldSelect (_, _) -> failwith "Unimplemented field select in Javascript"
+  | FieldSelect (_, _, _) -> failwith "Unimplemented field select in JavaScript"
 
 (* failwith "unimplemented function invocation writing" *)
 
@@ -195,6 +197,7 @@ let comp_assign (x : texp) ((e, t) : texp) (s : SS.t) : string =
   | ArrTyp _ | AnyTyp | GenTyp ->
       comp_exp (fst x) s (*comp_type t ^*) ^ "=" ^ comp_exp e s ^ ";"
   | StructureTyp -> failwith "Unimplemented struct in Javascript"
+  | ClassTyp -> failwith "Unimplemented class in Javascript"
 
 let rec comp_comm_lst (cl : comm list) (s : SS.t) : string =
   debug_print ">> comp_comm_lst" ;
@@ -285,6 +288,7 @@ let rec comp_prog (f : prog) (s : SS.t) : string =
             "var " ^ x (*^ ":" ^ ts_type*) ^ e_str ^ ";" ^ "\n" ^ comp_prog t s
         ) )
   | Structure (_, _) :: t -> failwith "Unimplemented struct in Javascript"
+  | Class (_, _, _) :: t -> failwith "Unimplemented class in Javascript"
 
 (* let rec decl_attribs (gv : global_vars) : string =
     debug_print ">> decl_attribs";

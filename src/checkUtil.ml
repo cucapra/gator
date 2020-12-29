@@ -51,6 +51,9 @@ let string_of_psi (ps : psi) : string = string_of_list (fun x -> x) ps
 let string_of_sigma (s : sigma) =
   string_of_structure s
 
+let string_of_kappa (k : kappa) =
+  string_of_class k
+
 let print_cxt (cx : contexts) =
   print_endline (Assoc.to_string_sep string_of_tau "\n" cx._bindings.t)
 
@@ -75,6 +78,9 @@ let print_cxpm (cx : contexts) =
 let print_cxs (cx : contexts) =
   print_endline (Assoc.to_string_sep string_of_sigma "\n" cx._bindings.s)
 
+let print_cxk (cx : contexts) =
+  print_endline (Assoc.to_string_sep string_of_kappa "\n" cx._bindings.k)
+
 let print_bindings (cx : contexts) =
   print_endline "Bindings:" ;
   print_endline "tau:" ;
@@ -88,7 +94,9 @@ let print_bindings (cx : contexts) =
   print_endline "phi:" ;
   print_cxp cx ;
   print_endline "sigma:" ;
-  print_cxs cx 
+  print_cxs cx ;
+  print_endline "kappa:" ;
+  print_cxk cx 
 
 let print_context (cx : contexts) =
   print_endline "Current context:" ;
@@ -128,6 +136,7 @@ let init meta progs =
     ; c= Assoc.empty
     ; p= Assoc.empty
     ; s= Assoc.empty
+    ; k= Assoc.empty
     ; el= Assoc.empty
     ; tl= Assoc.empty } in
   let cx =
@@ -165,6 +174,7 @@ let find_exp cx x =
     | CGamma -> Some (Gamma (Assoc.lookup x cx._bindings.g))
     | CPhi -> Some (Phi (Assoc.lookup x cx._bindings.p))
     | CSigma -> Some (Sigma (Assoc.lookup x cx._bindings.s))
+    | CKappa -> Some (Kappa (Assoc.lookup x cx._bindings.k))
   else None
 
 let find_typ cx x =
@@ -206,6 +216,10 @@ let bind (cx : contexts) (x : string) (b : binding) : contexts =
       ce () ;
       update_bindings
         {_b with s= Assoc.update x s' _b.s}
+  | Kappa k' ->
+      ce () ;
+      update_bindings
+        {_b with k= Assoc.update x k' _b.k}
 
 (* Clears the given lookup context of elements *)
 let clear (cx : contexts) (b : exp_bindings) : contexts =
@@ -222,6 +236,7 @@ let clear (cx : contexts) (b : exp_bindings) : contexts =
   | CGamma -> update_bindings {_b with el= clear _b.g; g= Assoc.empty}
   | CPhi -> update_bindings {_b with el= clear _b.p; p= Assoc.empty}
   | CSigma -> update_bindings {_b with el= clear _b.s; s= Assoc.empty}
+  | CKappa -> update_bindings {_b with el= clear _b.k; k= Assoc.empty}
 
 (* Resets the contexts cx to the state provided by the reference contexts cx_ref *)
 let reset (cx : contexts) (cx_ref : contexts) (b : exp_bindings) : contexts =
@@ -241,6 +256,11 @@ let reset (cx : contexts) (cx_ref : contexts) (b : exp_bindings) : contexts =
         (fun acc (x, s) -> bind acc x (Sigma s))
         (clear cx b)
         (Assoc.bindings cx_ref._bindings.s)
+  | CKappa ->
+      List.fold_left
+        (fun acc (x, s) -> bind acc x (Kappa s))
+        (clear cx b)
+        (Assoc.bindings cx_ref._bindings.k)
 
 let has_modification (cx : contexts) (ml : modification list) (m : modification)
     : bool =
@@ -249,6 +269,9 @@ let has_modification (cx : contexts) (ml : modification list) (m : modification)
 let bind_structure (cx : contexts) (id : string) (s : structure) :
     contexts =
   bind cx id (Sigma(s))
+
+let bind_class (cx : contexts) (id : string) (c : _class) : contexts =
+  bind cx id (Kappa(c))
 
 let bind_tau (cx : contexts) (id : string) (extern : bool) (p : parameterization) (t : typ) :
     contexts =
@@ -339,14 +362,72 @@ let get_structure (cx : contexts) (x : string) : sigma =
 
 let structure_of_typ (cx : contexts) (ty : typ) : sigma option =
   match ty with
-  | ParTyp (s, []) ->
-      get_structure_safe cx s
+  | ParTyp (s, []) -> get_structure_safe cx s
+  | _ -> None
+
+let get_class_safe (cx : contexts) (x : string) : kappa option =
+  if Assoc.mem x cx._bindings.k then
+    Some (Assoc.lookup x cx._bindings.k)
+  else
+    None
+
+let get_class (cx : contexts) (x : string) : kappa =
+  match get_class_safe cx x with
+  | Some k -> k
+  | None -> error cx ("Undefined class " ^ x)
+
+let class_of_typ (cx : contexts) (ty : typ) : kappa option =
+  match ty with
+  | ParTyp (s, []) -> get_class_safe cx s
   | _ -> None
 
 let struct_field_lookup ((_, field_list, _) : structure) (id : string) : typ option =
   match List.find_opt (fun (_, name) -> String.equal name id) field_list with
   | Some (t, _) -> Some t
   | None -> None
+
+let class_field_lookup_shallow ((_, _, mems, _) : _class) (id : string) :
+  class_member option =
+  List.find_opt
+  (fun m -> match m with
+  | Field (vis, typ, name) -> String.equal name id
+  | Method _ -> false)
+  mems
+
+(* Return value contains an int indicating how many parents had to be visited.
+ * For example, a value of zero indicates that the value was found in the class
+ * c, and a value of three indicates that the value was found in c's great
+ * grandparent. *)
+let rec class_field_lookup_deep ?(num_parents:int = 0) (cx : contexts)
+    (c : _class) (id : string) : (class_member * int) option =
+  let (_, parent, _, _) = c in
+  match class_field_lookup_shallow c id with
+  | Some m -> Some (m, num_parents)
+  | None -> (match parent with
+    | Some p -> class_field_lookup_deep ~num_parents:(num_parents+1) cx (get_class cx p) id
+    | None -> None)
+
+let class_method_lookup_shallow ((_, _, mems, _) : _class) (id : string) :
+  class_member option =
+  List.find_opt
+  (fun m -> match m with
+  | Method (vis, ((_, _, name, _, _), _)) -> String.equal name id
+  | Field _ -> false)
+  mems
+
+(* Return value contains an int indicating how many parents had to be visited.
+ * For example, a value of zero indicates that the value was found in the class
+ * c, and a value of three indicates that the value was found in c's great
+ * grandparent.
+ * Return value also contains the class the method was found in. *)
+let rec class_method_lookup_deep ?(num_parents:int = 0) (cx : contexts)
+    (c : _class) (id : string) : (class_member * int * string) option =
+  let (class_name, parent, _, _) = c in
+  match class_method_lookup_shallow c id with
+  | Some m -> Some (m, num_parents, class_name)
+  | None -> (match parent with
+    | Some p -> class_method_lookup_deep ~num_parents:(num_parents+1) cx (get_class cx p) id
+    | None -> None)
 
 let get_functions_safe (cx : contexts) (id : string) : phi =
   let get_fn x = match find_exp cx x with Some (Phi p) -> p | _ -> [] in
@@ -457,3 +538,6 @@ let map_acoordinate_element (cx : contexts) (fs : string -> string)
   | CoordObjectAssign (ml, s, t) ->
       (CoordObjectAssign (List.map (map_mod cx ft) ml, s, ft t), meta)
   | CoordFn fn -> (CoordFn (map_fn cx fs fe ft fn), meta)
+
+let most_recent_class (cx : contexts) : _class =
+  let _, k = Assoc.hd cx._bindings.k in k

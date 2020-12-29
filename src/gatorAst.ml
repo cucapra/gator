@@ -39,7 +39,7 @@ type typ =
   | GenArrTyp of typ
   | ExactCodeTyp
   | StructureTyp (* The supertype of structs *)
-
+  | ClassTyp (* The supertype of classes *)
 
 (* expressions *)
 type aexp = exp astNode
@@ -53,6 +53,7 @@ and exp =
   | As of aexp * typ
   | In of aexp * typ
   | FnInv of string * typ list * args
+  | MethodInv of exp option * string * typ list * args
   | FieldSelect of exp option * id
 
 (* function invocation *)
@@ -121,16 +122,10 @@ type typedef = typ * id
 type structure_member = typ * id
 type structure = id * (structure_member list) * metadata
 
-type visibility = 
-  | Private
-  | Public
-  | Protected
-  | Default
-
 type class_member =
   | Field of visibility * typ * id
   | Method of visibility * fn
-type _class = id * (id option) * (class_member list)
+type _class = id * (id option) * (class_member list) * metadata
 
 (* Terms that make up a program *)
 (* In any order, we have:

@@ -99,6 +99,7 @@ and eval_exp (e : exp) (t : etyp) (fns : fn list) (s : sigma) : ovalue * sigma =
           ([], s) a in
       (ArrValue result, s')
   | Index _ -> failwith "unimplemented op"
+  | MethodInv _ -> failwith "unimplemented op"
   | FnInv (id, tl, args) -> (
       let fn, p = fn_lookup id fns in
       let arg_vs, s' =
@@ -115,7 +116,7 @@ and eval_exp (e : exp) (t : etyp) (fns : fn list) (s : sigma) : ovalue * sigma =
             let add_arg acc (_, _, name) v = Assoc.update name v acc in
             eval_funct f fns (List.fold_left2 add_arg Assoc.empty names arg_vs)
         ))
-  | FieldSelect (_, _) -> failwith "unimplemented op"
+  | FieldSelect (_, _, _) -> failwith "unimplemented op"
 
 and eval_comm (c : comm) (fns : fn list) (s : sigma) : sigma =
   match c with
@@ -199,6 +200,7 @@ let rec default_value (t : etyp) : ovalue =
   | AnyTyp | GenTyp -> CoreValue Unit
   | ExactCodeTyp -> CoreValue Unit
   | StructureTyp -> CoreValue Unit
+  | ClassTyp -> CoreValue Unit
 
 let start_eval (fns : term list) : unit = failwith "unimplemented"
 

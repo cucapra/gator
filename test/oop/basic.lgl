@@ -1,37 +1,48 @@
-using "../glsl_defs.lgl";
-
-frame model has dimension 3;
-
 class d {
   protected int d_value;
+
+  public void init(int d_value) {
+    this.d_value = d_value;
+  }
 };
 
 class c : d {
   public int a;
-  private cart3<model>.point b;
+  private int b;
 
-  public void init(int a, cart3<model>.point b, int d) {
-    /* TODO can't parse field selectors without merging struct branch */
-    /*this.a = a;*/
-    /*this.b = b;*/
-    /*this.d = d;*/
+  public void init(int a, int b, int d_value) {
+    super(d_value);
+    this.a = a;
+    this.b = b;
   }
-  public int foo(int x) {
-    return this.a + this.d_value + x;
+  public int get_a() {
+    return this.a;
   }
-  public b bar(c x){
-    return this.b + x.b;
+  public void set_a(int a) {
+    this.a = a;
+  }
+  public int get_b() {
+    return this.b;
+  }
+  public void set_b(int b) {
+    this.b = b;
+  }
+  public int get_d_value() {
+    return this.d_value;
+  }
+  public void set_d_value(int d_value) {
+    this.d_value = d_value;
   }
 };
 
 void main(){
-  c my_c = c(1, [2.0, 3.0, 4.0]);
-
-  /* TODO can't parse field selectors without merging struct branch */
-  /*int x1 = c.a;*/
-  /*c.a = x1;*/
-  /*cart3<model>.point x2 = c.b;*/
-  /*c.b = x2;*/
-  /*int x3 = c.foo(10);*/
-  /*cart3<model>.point x4 = c.bar([10.0, 10.0, 10.0]);*/
+  c my_c = new_c(1, 2, 3);
+  int x1 = my_c.a;
+  my_c.a = x1;
+  int x2 = my_c.get_a();
+  my_c.set_a(x2);
+  int x3 = my_c.get_b();
+  my_c.set_b(x3);
+  int x4 = my_c.get_d_value();
+  my_c.set_d_value(x4);
 }

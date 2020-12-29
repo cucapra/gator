@@ -15,6 +15,7 @@ type etyp =
   | GenTyp
   | ExactCodeTyp
   | StructureTyp
+  | ClassTyp
 
 (* expressions *)
 type texp = exp * etyp
@@ -25,7 +26,10 @@ and exp =
   | Arr of texp list
   | Index of texp * texp
   | FnInv of id * etyp list * args
-  | FieldSelect of exp * id
+  (* last string of MethodInv and FieldSelect is used for the class name.
+   * Useful for GLSL codegen. For struct, can set to dummy string. *)
+  | MethodInv of exp option * string * etyp list * args * string
+  | FieldSelect of exp option * id * string
 
 and args = texp list
 
@@ -53,5 +57,15 @@ type fn_decl = ret_typ * id * parameterization * params
 type fn = fn_decl * comm list
 type structure_member = etyp * id
 type structure = id * (structure_member list)
-type term = GlobalVar of global_var | Structure of structure | Fn of fn
+
+type class_member =
+  | Field of visibility * etyp * id
+  | Method of visibility * fn
+type _class = id * (id option) * (class_member list)
+
+type term =
+  |  GlobalVar of global_var
+  | Structure of structure
+  | Class of _class
+  | Fn of fn
 type prog = term list

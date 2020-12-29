@@ -172,3 +172,20 @@ let generate_generics_for_fn (((rt, s, pm, p), cl) : fn) (int_and_float : bool)
     in
     let l = [2; 3; 4] in
     List.fold_left (fun a m -> (List.fold_left (fun a n -> replace_type_in_fn_list a (TransTyp(VecTyp n, VecTyp m)) (MatTyp(m,n))) a l)) p' l *)
+
+let this_keyword = "self"
+let super_keyword = "super"
+
+let method_to_function_name (class_name : string) (method_name : string) : string =
+  "class_method_" ^ class_name ^ "_" ^ method_name
+
+let class_to_constructor_name (class_name : string) : string =
+  "new_" ^ class_name
+
+let class_to_struct_name (class_name : string) : string =
+  "class_fields_" ^ class_name
+
+let default_value (t : etyp) : string =
+  match t with
+  | IntTyp -> "0"
+  | _ -> failwith ("Unimplemented default value for type: " ^ (string_of_typ t))

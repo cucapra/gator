@@ -232,9 +232,9 @@ let structure_member ==
 
 let _class ==
   | CLASS; i = ID; LBRACE; m = class_member*; RBRACE; SEMI;
-  { (i, None, m) }
+  { (i, None, m, $startpos) }
   | CLASS; i = ID; COLON; parent = ID; LBRACE; m = class_member*; RBRACE; SEMI;
-  { (i, Some(parent), m) }
+  { (i, Some(parent), m, $startpos) }
 
 let visibility ==
   | PUBLIC;
@@ -408,6 +408,10 @@ let effectful_exp ==
     <FnInv>
   | x = ID; LPAREN; a = separated_list(COMMA, node(exp)); RPAREN;
     { FnInv(x, [], a) }
+  | THIS; DOT; x = ID; LPAREN; a = separated_list(COMMA, node(exp)); RPAREN;
+    { MethodInv(None, x, [], a) }
+  | e = exp; DOT; x = ID; LPAREN; a = separated_list(COMMA, node(exp)); RPAREN;
+    { MethodInv(Some e, x, [], a) }
   | op = unop_effectful; x = node(ID);
     { FnInv(op, [], [(Var (fst x), snd x)]) }
   | x = node(ID); op = unop_effectful;

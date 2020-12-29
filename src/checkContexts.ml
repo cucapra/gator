@@ -16,6 +16,9 @@ type gamma = bool * typ
 (* Structure definitions *)
 type sigma = structure
 
+(* Class definitions *)
+type kappa = _class
+
 (* Dimension definitions *)
 (* Stores dimension information for reference frames *)
 type delta = dexp
@@ -45,7 +48,7 @@ type psi = string list
  * otherwise 'x' is in none of the variant types *)
 (* Note that the parameterization variable names are _not_ necessarily unique, 
  * so aren't tracked in the lookup *)
-type exp_bindings = CGamma | CPhi | CSigma
+type exp_bindings = CGamma | CPhi | CSigma | CKappa
 type typ_bindings = CTau | CChi | CDelta
 
 (* Variant type for correctly abstracting storage of a new variable
@@ -57,6 +60,7 @@ type binding =
   | Chi of chi
   | Phi of phi
   | Sigma of sigma
+  | Kappa of kappa
 
 (* The internal type of the lookup_contexts (which shouldn't be accessed directly) *)
 type binding_contexts =
@@ -66,6 +70,7 @@ type binding_contexts =
   ; c: chi Assoc.context
   ; p: phi Assoc.context
   ; s: sigma Assoc.context
+  ; k: kappa Assoc.context
   ; el: exp_bindings Assoc.context
   ; tl: typ_bindings Assoc.context }
 
