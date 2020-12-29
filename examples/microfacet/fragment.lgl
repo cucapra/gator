@@ -28,10 +28,10 @@ uniform sampler2D<alphaColor> mat_normalTexture;
 uniform float mat_normalTextureScale;
 uniform int anisotropic;
 
-struct light {
-  cart3<view>.position eyePosition;
-  attenuation attenuation;
-  color color;
+class light {
+  public cart3<view>.position eyePosition;
+  public attenuation attenuation;
+  public color color;
 };
 uniform light uLight;
 

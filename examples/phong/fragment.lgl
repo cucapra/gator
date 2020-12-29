@@ -17,10 +17,10 @@ uniform hom<model>.transformation<world> uModel;
 uniform hom<world>.transformation<camera> uView;
 varying cart3<model>.vector vNormal;
 
-struct light {
-  cart3<world>.point pos;
-  color diffColor;
-  color specColor;
+class light {
+  public cart3<world>.point pos;
+  public color diffColor;
+  public color specColor;
 };
 uniform light uLight;
 
