@@ -149,8 +149,8 @@ and string_of_exp (e : exp) : string =
     let glsl_lhs = (match lhs with
       | Some e' -> string_of_exp e'
       | None -> this_keyword) in
-    if String.equal class_name "" then (* Evil hack. Need to properly signal
-    that the field select is for a struct *)
+    if String.equal class_name "" then (* Ugly hack that signals that the field
+    select is for a struct *)
     glsl_lhs ^ "." ^ s
     else
     let cx = (match !check_contexts with
@@ -238,30 +238,32 @@ let string_of_class (c : _class) : string =
     | _ -> failwith "not a field") fields in
   let struct_str = string_of_structure ((class_to_struct_name name), struct_mems) in
 
-  let constructor_types = List.map (fun f -> match f with
-  | Field (_, typ, _) -> typ
-  | _ -> failwith "not a field") fields in
-
-  let constructor_defaults = List.map (fun f -> match f with
-  | Field (_, typ, _) -> default_value typ
-  | _ -> failwith "not a field") fields in
-
   let class_type = ParTyp(name, []) in
   let function_strs = List.map
   (fun m -> match m with
   | Method (_, (fn_decl, fn_comms)) -> 
     let ret_typ, fn_name, pmt, params  = fn_decl in
-    if String.equal fn_name "init" then (
+    (match fn_name with
+    | "init" ->
       let new_fn_name = class_to_constructor_name name in
-      let new_ret_typ = class_type in
-      let new_fn_comms =
-        (*[Decl (class_type, this_keyword, ((
-          FnInv (class_to_struct_name name, constructor_types, constructor_defaults)), class_type))] @*)
-        fn_comms @
-        [Return (Some (Var this_keyword, class_type))]
-      in
-      comp_fn ((new_ret_typ, new_fn_name, pmt, params), new_fn_comms)
-    ) else (
+      let new_fn_comms = (* Find and replace the super and self method invocations *)
+      List.map (fun comm -> match comm with
+      | Exp((MethodInv (None, "super", tl, args, class_name)), _) ->
+          let par = (match parent with | Some par -> par
+            | None -> failwith "super invocation in class with no parent class") in
+          Decl ((ParTyp(par, [])), "super",
+          ((FnInv(class_to_constructor_name par, tl, args)), (ParTyp(par, []))))
+      | Exp((MethodInv (None, "self", tl, args, class_name)), _) ->
+          let new_tl, new_args = (match parent with
+          | Some par ->
+            (ParTyp(par, []))::tl,
+            (Var "super", ParTyp(par, []))::args
+          | None -> tl, args) in
+          Return (Some((
+          FnInv(class_to_struct_name name, new_tl, new_args)), ParTyp(name, [])))
+      | _ -> comm) fn_comms in
+      comp_fn ((ret_typ, new_fn_name, pmt, params), new_fn_comms)
+    | _ ->
       let new_fn_name = method_to_function_name name fn_name in
       let new_params = [([], class_type, this_keyword)] @ params in
       comp_fn ((ret_typ, new_fn_name, pmt, new_params), fn_comms)

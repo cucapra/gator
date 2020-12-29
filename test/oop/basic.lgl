@@ -1,19 +1,17 @@
 class d {
-  protected int d_value;
+  public int a;
 
-  public void init(int d_value) {
-    this.d_value = d_value;
+  public d init(int a) {
+    self(a);
   }
 };
 
 class c : d {
-  public int a;
-  private int b;
+  public int b;
 
-  public void init(int a, int b, int d_value) {
-    super(d_value);
-    this.a = a;
-    this.b = b;
+  public c init(int a, int b) {
+    super(a);
+    self(b);
   }
   public int get_a() {
     return this.a;
@@ -27,22 +25,14 @@ class c : d {
   public void set_b(int b) {
     this.b = b;
   }
-  public int get_d_value() {
-    return this.d_value;
-  }
-  public void set_d_value(int d_value) {
-    this.d_value = d_value;
-  }
 };
 
 void main(){
-  c my_c = new_c(1, 2, 3);
+  c my_c = new_c(1, 2);
   int x1 = my_c.a;
   my_c.a = x1;
   int x2 = my_c.get_a();
   my_c.set_a(x2);
   int x3 = my_c.get_b();
   my_c.set_b(x3);
-  int x4 = my_c.get_d_value();
-  my_c.set_d_value(x4);
 }

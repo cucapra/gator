@@ -895,7 +895,8 @@ and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
       ( TypedAst.Index (exp_to_texp cx el, exp_to_texp cx er)
       , check_index_exp cx (snd el) (snd er) )
   | FnInv (x, pr, args) ->
-      if String.equal x "super" then (
+      (match x with
+      | "super" ->
         let c = most_recent_class cx in
         let (_, parent, _, _) = c in
         (match parent with
@@ -916,8 +917,26 @@ and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
           | _ -> error cx "parent type has no constructor"
           )
         )
-      )
-      else (
+      | "self" ->
+        let c = most_recent_class cx in
+        let (class_name, _, mems, _) = c in
+        let typed_args1 = List.map (check_aexp cx) args in
+        let typed_args2 = List.map (exp_to_texp cx) typed_args1 in
+        let fields = List.filter
+          (fun m -> match m with | Field _ -> true | Method _ -> false) mems in
+        let params = List.map
+          (fun m -> match m with
+          | Field (_, typ, id) -> ([], typ, id)
+          | _ -> failwith "Not a field!") fields in
+        let ret_typ = ParTyp(class_name, []) in
+        let fn_typ = ([], ret_typ, x, params, Lexing.dummy_pos) in
+        (match try_fn_inv cx x pr typed_args1 None fn_typ with
+        | Some _ ->
+          let typed_pr = List.map (typ_erase cx) pr in
+          (TypedAst.MethodInv (None, x, typed_pr, typed_args2, class_name), ret_typ)
+        | None -> error cx ("Invalid method invocation: " ^ x)
+        )
+      | _ ->
         let (a, b, c), t = check_fn_inv cx x pr (List.map (check_aexp cx) args) in
         (TypedAst.FnInv (a, b, c), t)
       )

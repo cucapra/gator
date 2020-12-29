@@ -183,7 +183,7 @@ let class_to_constructor_name (class_name : string) : string =
   "new_" ^ class_name
 
 let class_to_struct_name (class_name : string) : string =
-  "class_fields_" ^ class_name
+  class_name (* TODO remove this function *)
 
 let default_value (t : etyp) : string =
   match t with
