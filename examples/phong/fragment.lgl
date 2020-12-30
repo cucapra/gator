@@ -24,15 +24,18 @@ class light {
 };
 uniform light uLight;
 
-struct positions {
-  cart3<world>.point worldPos;
+class positions {
+  public cart3<world>.point worldPos;
+  public positions init(cart3<world>.point p) {
+    self(p);
+  }
 };
 
 void main() {
     // vec4 gl_FragColor = vec4(uLight, .9);
     hom<model>.transformation<camera> uModelView = uView * uModel;
     color ambient = [0.1, 0., 0.];
-    positions p = positions(hom_reduce(uModel*homify(vPosition)));
+    positions p = new_positions(hom_reduce(uModel*homify(vPosition)));
     auto camPos = hom_reduce(uView*uModel*homify(vPosition));
     auto worldNorm = normalize(hom_reduce(uModel*homify(vNormal)));
 
