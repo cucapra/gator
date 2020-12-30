@@ -940,36 +940,13 @@ and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
         let (a, b, c), t = check_fn_inv cx x pr (List.map (check_aexp cx) args) in
         (TypedAst.FnInv (a, b, c), t)
       )
-  | MethodInv (exp, x, pr, args) -> (
-    let c, typed_exp = match exp with
-    | Some e -> (
-      let (typed_e, t) = check_exp cx e in
-      match class_of_typ cx t with
-      | Some c' -> (c', Some typed_e)
-      | None -> error cx ("Invalid method invocation: " ^ x)
-    )
-    | None -> (most_recent_class cx, None) in
-    match class_method_lookup_deep cx c x with
-    | Some (Method (vis, (fn_typ, _)), num_parents, _) -> (
-      (match (exp, vis, num_parents) with
-      | _,      Public,    _ -> ()
-      | Some _, Protected, _ -> error cx "Protected method access not allowed"
-      | None,   Protected, _ -> ()
-      | None,   Private,   0   -> ()
-      | _,      Private,   _ -> error cx "Private method access not allowed"
-      );
-      let typed_args1 = List.map (check_aexp cx) args in
-      let typed_args2 = List.map (exp_to_texp cx) typed_args1 in
-      match try_fn_inv cx x pr typed_args1 None fn_typ with
-      | Some _ ->
-        let _, ret_typ, _, _, _ = fn_typ in
-        let typed_pr = List.map (typ_erase cx) pr in
-        let class_name, _, _, _ = c in
-        (TypedAst.MethodInv (typed_exp, x, typed_pr, typed_args2, class_name), ret_typ)
-      | None -> error cx ("Invalid method invocation: " ^ x)
-    )
-    | _ -> error cx ("Invalid method invocation: " ^ x))
-  | FieldSelect (Some e', s) -> ( (* can be struct, class, or swizzle *)
+  | MethodInv (exp, x, pr, args) -> check_method_inv cx exp x pr args
+  | FieldSelect (e_opt, s) -> check_field_select cx e_opt s
+
+and check_field_select (cx : contexts) (e_opt : exp option) (s : id) :
+    TypedAst.exp * typ =  (* can be struct, class, or swizzle *)
+  match e_opt with
+  | Some e' -> (
     let (typed_e, t) = check_exp cx e' in
     match structure_of_typ cx t with
     | Some st -> ( (* Treat as struct field select *)
@@ -999,20 +976,53 @@ and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
             (* See if this is actually something like mesh.normals in which case treat it like one var *)
             | [(Var s1, _); (Val (StringVal s2), _)] ->
                 check_exp cx (Var (s1 ^ "." ^ s2))
-            | _ -> raise (TypeException e) ))))
-    | FieldSelect (None, s) -> (
-        let c = most_recent_class cx in
-        let (class_name, _, _, _) = c in
-        match class_field_lookup_deep cx c s with
-        | Some (Field (vis, field_type, _), num_parents) ->
-            (match (vis, num_parents) with
-            | Public,    _ -> ()
-            | Protected, _ -> ()
-            | Private,   0   -> ()
-            | Private,   _ -> error cx "Private field access not allowed"
-            );
-            (TypedAst.FieldSelect (None, s, class_name), field_type)
-        | _ -> raise (TypeException ("Invalid field " ^ s)))
+            | _ -> raise (TypeException e) )))
+  )
+  | None -> (
+    let c = most_recent_class cx in
+    let (class_name, _, _, _) = c in
+    match class_field_lookup_deep cx c s with
+    | Some (Field (vis, field_type, _), num_parents) ->
+        (match (vis, num_parents) with
+        | Public,    _ -> ()
+        | Protected, _ -> ()
+        | Private,   0   -> ()
+        | Private,   _ -> error cx "Private field access not allowed"
+        );
+        (TypedAst.FieldSelect (None, s, class_name), field_type)
+    | _ -> raise (TypeException ("Invalid field " ^ s))
+  )
+
+and check_method_inv (cx : contexts) (exp : exp option) (x : string) (pr : typ list)
+      (args : args) : TypedAst.exp * typ =
+    let c, typed_exp = match exp with
+    | Some e -> (
+      let (typed_e, t) = check_exp cx e in
+      match class_of_typ cx t with
+      | Some c' -> (c', Some typed_e)
+      | None -> error cx ("Invalid method invocation: " ^ x)
+    )
+    | None -> (most_recent_class cx, None) in
+    match class_method_lookup_deep cx c x with
+    | Some (Method (vis, (fn_typ, _)), num_parents, _) -> (
+      (match (exp, vis, num_parents) with
+      | _,      Public,    _ -> ()
+      | Some _, Protected, _ -> error cx "Protected method access not allowed"
+      | None,   Protected, _ -> ()
+      | None,   Private,   0   -> ()
+      | _,      Private,   _ -> error cx "Private method access not allowed"
+      );
+      let typed_args1 = List.map (check_aexp cx) args in
+      let typed_args2 = List.map (exp_to_texp cx) typed_args1 in
+      match try_fn_inv cx x pr typed_args1 None fn_typ with
+      | Some _ ->
+        let _, ret_typ, _, _, _ = fn_typ in
+        let typed_pr = List.map (typ_erase cx) pr in
+        let class_name, _, _, _ = c in
+        (TypedAst.MethodInv (typed_exp, x, typed_pr, typed_args2, class_name), ret_typ)
+      | None -> error cx ("Invalid method invocation: " ^ x)
+    )
+    | _ -> error cx ("Invalid method invocation: " ^ x)
 
 and check_arr (cx : contexts) (a : aexp list) : TypedAst.exp * typ =
   debug_print ">> check_arr" ;
