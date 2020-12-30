@@ -25,4 +25,3 @@ type visibility =
   | Private
   | Public
   | Protected
-  | Default

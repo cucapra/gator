@@ -112,7 +112,6 @@ let string_of_visibility (vis : visibility) : string =
   | Private -> "private"
   | Public -> "public"
   | Protected -> "protected"
-  | Default -> "default"
 
 let string_of_class_member (mem : class_member) : string =
   match mem with

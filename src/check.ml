@@ -950,7 +950,14 @@ and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
     )
     | None -> (most_recent_class cx, None) in
     match class_method_lookup_deep cx c x with
-    | Some (Method (vis, (fn_typ, _)), _, _) -> (
+    | Some (Method (vis, (fn_typ, _)), num_parents, _) -> (
+      (match (exp, vis, num_parents) with
+      | _,      Public,    _ -> ()
+      | Some _, Protected, _ -> error cx "Protected method access not allowed"
+      | None,   Protected, _ -> ()
+      | None,   Private,   0   -> ()
+      | _,      Private,   _ -> error cx "Private method access not allowed"
+      );
       let typed_args1 = List.map (check_aexp cx) args in
       let typed_args2 = List.map (exp_to_texp cx) typed_args1 in
       match try_fn_inv cx x pr typed_args1 None fn_typ with
@@ -976,7 +983,12 @@ and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
         | Some c -> ( (* Treat as class field select *)
           let (class_name, _, _, _) = c in
           match class_field_lookup_deep cx c s with
-            | Some (Field (_, field_type, _), _) ->
+            | Some (Field (vis, field_type, _), _) ->
+                (match (vis) with
+                | Public    -> ()
+                | Protected -> error cx "Protected field access not allowed"
+                | Private   -> error cx "Private field access not allowed"
+                );
                 (TypedAst.FieldSelect (Some typed_e, s, class_name), field_type)
             | _ -> raise (TypeException ("Invalid field " ^ s)))
         | None -> ( (* Treat as swizzle *)
@@ -992,8 +1004,14 @@ and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
         let c = most_recent_class cx in
         let (class_name, _, _, _) = c in
         match class_field_lookup_deep cx c s with
-        | Some (Field (_, field_type, _), _) -> (TypedAst.FieldSelect (None,
-            s, class_name), field_type)
+        | Some (Field (vis, field_type, _), num_parents) ->
+            (match (vis, num_parents) with
+            | Public,    _ -> ()
+            | Protected, _ -> ()
+            | Private,   0   -> ()
+            | Private,   _ -> error cx "Private field access not allowed"
+            );
+            (TypedAst.FieldSelect (None, s, class_name), field_type)
         | _ -> raise (TypeException ("Invalid field " ^ s)))
 
 and check_arr (cx : contexts) (a : aexp list) : TypedAst.exp * typ =
