@@ -210,6 +210,7 @@ let bind (cx : contexts) (x : string) (b : binding) : contexts =
       update_bindings
         {_b with tl= Assoc.update x CChi _b.tl; c= Assoc.update x c' _b.c}
   | Phi p' ->
+      ce () ;
       update_bindings
         {_b with el= Assoc.update x CPhi _b.el; p= Assoc.update x p' _b.p}
   | Sigma s' ->
