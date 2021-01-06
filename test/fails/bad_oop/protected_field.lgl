@@ -1,0 +1,37 @@
+class animal {
+  public    int a;
+  protected int b;
+  private   int c;
+
+  public animal init(int a, int b, int c) {
+    self(a, b, c);
+  }
+  public int  get_c() { return this.c; }
+  public void set_c(int x) {this.c = x;  }
+
+  private   void baz(){}
+  protected void bar(){ this.baz(); }
+  public    void foo(){}
+};
+
+class dog : animal {
+  public  int d;
+  private int e;
+
+  public dog init(int a, int b, int c, int d, int e) {
+    super(a, b, c);
+    self(d, e);
+  }
+  public int  get_b() { return this.b; }
+  public void set_b(int x) {this.b = x;  }
+  public int  get_e() { return this.e; }
+  public void set_e(int x) {this.e = x;  }
+
+  private void f1(){}
+  public  void f2(){ this.foo(); this.bar(); this.f1(); }
+};
+
+void main() {
+  dog my_dog = new_dog(1,2,3,4,5);
+  int x = my_dog.b;  
+}

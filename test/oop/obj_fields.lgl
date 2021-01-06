@@ -1,0 +1,21 @@
+class human {
+  public int x;
+  public int y;
+  public human init(int a, int b){
+    self(a,b);
+  }
+};
+
+class dog {
+  public human owner;
+  public dog init(human h) {
+    self(h);
+  }
+};
+
+void main() {
+  human h = new_human(5,6);
+  dog d = new_dog(h);
+  int t = d.owner.x;
+  d.owner.y = t;
+}

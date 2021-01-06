@@ -83,3 +83,7 @@ let pretty_printer = ref true
 (*Add pretty printing flag here*)
 
 let debug_print (s : string) : unit = if !debug then Printf.printf "%s\n" s
+
+let rec string_multiply s n =
+  if n == 0 then "" else s ^ string_multiply s (n-1)
+

@@ -20,3 +20,8 @@ type storage_qual =
   | Uniform
   | Varying
   | BuiltIn
+
+type visibility = 
+  | Private
+  | Public
+  | Protected

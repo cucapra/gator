@@ -27,9 +27,13 @@ uniform int mat_hasNormalTexture;
 uniform sampler2D<alphaColor> mat_normalTexture;
 uniform float mat_normalTextureScale;
 uniform int anisotropic;
-uniform cart3<view>.position light_eyePosition;
-uniform attenuation light_attenuation;
-uniform color light_color;
+
+class light {
+  public cart3<view>.position eyePosition;
+  public attenuation attenuation;
+  public color color;
+};
+uniform light uLight;
 
 canon cart3<normal_localframe>.halfdir proj_normlocalframe (cart3<view>.halfdir m, canon cart3<view>.normal n) {
     auto nhat = normalize(n);
@@ -144,13 +148,13 @@ vec3 promote(float f) {
 
 void main() {
   	alphaColor final_color = [0., 0., 0., 1.];
-	auto i = normalize(light_eyePosition - geom_position);
+	auto i = normalize(uLight.eyePosition - geom_position);
 	auto o = normalize(-geom_position);
 	auto m = get_halfdir(i, o);
 	auto n = getShadingNormal();
 	auto kd = getDiffuseColor();
 	final_color += alphatize(
 		(kd + promote(F(i,m) * D(m,n) * G(i,o,m,n) / (4.0 * abs (dot(i,n)) * abs(dot(o,n))))) * max(0., dot(n,i)) 
-		* I(light_color, light_eyePosition, geom_position, light_attenuation));
+		* I(uLight.color, uLight.eyePosition, geom_position, uLight.attenuation));
 	gl_FragColor = final_color;
 }

@@ -86,7 +86,12 @@ exception ParseException of string
 %token VARYING
 %token POUND
 %token PERCENT
+%token STRUCT
 %token TYPEDEF
+%token CLASS
+%token PUBLIC
+%token PRIVATE
+%token PROTECTED
 
 (* Precedences *)
 
@@ -161,8 +166,12 @@ let term ==
     { GlobalVar(m, t, x, v) }
   | f = fn;
     <Fn>
+  | st = structure;
+    <Structure>
   | TYPEDEF ; t = typ; x = id_hack; SEMI;
     <Typedef>
+  | c = _class;
+    <Class>
 
 let prototype_element ==
   | m = modification*; OBJECT; x = id_hack; t = snd(combined(IS, typ))?; SEMI;
@@ -213,6 +222,34 @@ let fn ==
   | f = fn_typ; LBRACE; cl = acomm*; RBRACE; <>
   | f = fn_typ; SEMI; { (f, []) }
 
+let structure ==
+  | STRUCT; i = ID; LBRACE; ml = structure_member+; RBRACE; SEMI;
+  { (i, ml, $startpos) }
+
+let structure_member ==
+  | t = typ; i = ID; SEMI;
+  {(t, i)}
+
+let _class ==
+  | CLASS; i = ID; LBRACE; m = class_member*; RBRACE; SEMI;
+  { (i, None, m, $startpos) }
+  | CLASS; i = ID; COLON; parent = ID; LBRACE; m = class_member*; RBRACE; SEMI;
+  { (i, Some(parent), m, $startpos) }
+
+let visibility ==
+  | PUBLIC;
+    { Public }
+  | PRIVATE;
+    { Private }
+  | PROTECTED;
+    { Protected }
+
+let class_member ==
+  | v = visibility; t = typ; name = ID; SEMI;
+  { Field (v, t, name) }
+  | v = visibility; f = fn;
+  { Method (v, f) }
+
 let acomm ==
   | c = comm;
     { (c, $startpos) }
@@ -250,7 +287,7 @@ let assignop ==
 let comm_element ==
   | SKIP;
     { Skip }
-  | (m, t) = terminated_list(modification, typ); x = id_hack; GETS; e = node(exp);
+  | (m, t) = terminated_list(modification, typ); x = ID; GETS; e = node(exp);
     { Decl(m, t, x, e) }
   | e = node(effectful_exp);
     < Exp >
@@ -298,13 +335,15 @@ let typ :=
     <FrameTyp>
   | t = typ; LBRACK; d = dexp; RBRACK;
     { ArrTyp(t, d) }
-  | t1 = typ; DOT; t2 = typ;
-    <MemberTyp>
-  | x = id_hack; pt = parameters(LWICK, typ, RWICK);
+  | t1 = ID; pt = parameters(LWICK, typ, RWICK); DOT; t2 = typ;
+    { MemberTyp(ParTyp(t1, pt), t2) }
+  | THIS; pt = parameters(LWICK, typ, RWICK); DOT; t2 = typ;
+    { MemberTyp(ParTyp("this", pt), t2) }
+  | x = ID; pt = parameters(LWICK, typ, RWICK);
     <ParTyp>
   | THIS; pt = parameters(LWICK, typ, RWICK);
     { ParTyp("this", pt) }
-  | x = id_hack; /* explicit for clarity and to help out the parser */
+  | x = ID; /* explicit for clarity and to help out the parser */
     { ParTyp(x, []) }
   | GENTYPE;
     { GenTyp }
@@ -360,24 +399,26 @@ let exp:=
     <As>
   | e = node(exp); IN; t = typ;
     <In>
-  | e = node(assign_exp); DOT; s = ID;
-    { FnInv("swizzle",[],[e; Val (StringVal(s)), $startpos]) }
 
 /* A strict subset of expressions that can have effects, separated to help parse commands */
 /* In other words, we syntactically reject commands that have no effect on the program */
 /* See comm_element for more details */
 let effectful_exp ==
-  | x = id_hack; p = parameters(LWICK, typ, RWICK); a = arguments;
+  | x = ID; p = parameters(LWICK, typ, RWICK); a = arguments;
     <FnInv>
-  | x = id_hack; LPAREN; a = separated_list(COMMA, node(exp)); RPAREN;
+  | x = ID; LPAREN; a = separated_list(COMMA, node(exp)); RPAREN;
     { FnInv(x, [], a) }
+  | THIS; DOT; x = ID; LPAREN; a = separated_list(COMMA, node(exp)); RPAREN;
+    { MethodInv(None, x, [], a) }
+  | e = exp; DOT; x = ID; LPAREN; a = separated_list(COMMA, node(exp)); RPAREN;
+    { MethodInv(Some e, x, [], a) }
   | op = unop_effectful; x = node(ID);
     { FnInv(op, [], [(Var (fst x), snd x)]) }
   | x = node(ID); op = unop_effectful;
     { FnInv(op, [], [(Var (fst x), snd x)]) }
 
 /* A strict subset of expressions that can be in assignments to help the parser */
-/* We syntactically reject assignments to anything but Indexes and Vars */
+/* We syntactically reject assignments to anything but Indexes, Vars, and Fields. */
 /* Note that indexes may _recurse_ on expressions, this is fine */
 /* It seems like we have to list out cases so that assign_exp can be inlined. This allows us to avoid parser conflicts with typ */
 let assign_exp ==
@@ -385,6 +426,11 @@ let assign_exp ==
     <Var>
   | x = ID; el = nonempty_list_array_brackets(node(exp));
     { List.fold_right (fun e acc -> (Index((acc, $startpos), e))) el (Var x) }
+  /* During typechecking, FieldSelect can become a swizzle */
+  | e = exp; DOT; s = ID;
+    {FieldSelect(Some e, s)}
+  | THIS; DOT; s = ID;
+    {FieldSelect(None, s)}
 
 let id_hack ==
   | x = ID; {x}

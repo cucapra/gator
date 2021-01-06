@@ -37,3 +37,5 @@ let to_string_sep f sep c =
   String.concat sep (List.map (fun (l, r) -> l ^ " : " ^ f r) c)
 
 let to_string f c = to_string_sep f ", " c
+
+let hd c = List.hd c

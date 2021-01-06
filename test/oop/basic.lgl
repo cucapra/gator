@@ -1,0 +1,38 @@
+class d {
+  public int a;
+
+  public d init(int a) {
+    self(a);
+  }
+};
+
+class c : d {
+  public int b;
+
+  public c init(int a, int b) {
+    super(a);
+    self(b);
+  }
+  public int get_a() {
+    return this.a;
+  }
+  public void set_a(int a) {
+    this.a = a;
+  }
+  public int get_b() {
+    return this.b;
+  }
+  public void set_b(int b) {
+    this.b = b;
+  }
+};
+
+void main(){
+  c my_c = new_c(1, 2);
+  int x1 = my_c.a;
+  my_c.a = x1;
+  int x2 = my_c.get_a();
+  my_c.set_a(x2);
+  int x3 = my_c.get_b();
+  my_c.set_b(x3);
+}

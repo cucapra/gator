@@ -1,0 +1,15 @@
+class d {
+  public int a;
+
+  public d init(int a) {
+    self(a);
+  }
+};
+
+void foo(d x) {}
+d bar() { return new_d(5); }
+
+void main() {
+  d my_d = bar();
+  foo(my_d);
+}

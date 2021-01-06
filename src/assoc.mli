@@ -42,3 +42,5 @@ val to_string_sep : ('a -> string) -> string -> 'a context -> string
 
 (* String representation seperated by ", " *)
 val to_string : ('a -> string) -> 'a context -> string
+
+val hd : 'a context -> string * 'a

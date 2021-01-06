@@ -4,6 +4,10 @@ open Assoc
 open Lin_ops
 open Util
 open EmitUtil
+open CheckUtil
+open CheckContexts
+
+let check_contexts : contexts option ref = ref None
 
 (* type epsilon = (id, etyp) Assoc.context *)
 type delta = etyp list Assoc.context
@@ -127,6 +131,36 @@ and string_of_exp (e : exp) : string =
              vectors, or bools" ) )
   | Index (l, r) -> string_of_texp l ^ "[" ^ string_of_texp r ^ "]"
   | FnInv (id, tl, args) -> string_of_fn_util id (List.map string_of_texp args)
+  | MethodInv (lhs, id, tl, args, class_name) ->
+    let cx = (match !check_contexts with
+      | Some con -> con
+      | None -> failwith "No check contexts!") in
+    let class_string, super_string = (match class_method_lookup_deep cx
+        (get_class cx class_name) id with
+      | Some (_, num_parents, class_found) ->
+          (class_found, string_multiply ("." ^ super_keyword) num_parents)
+      | None -> failwith ("Invalid method invocation: " ^ id)) in
+    let first_arg = (match lhs with
+      | Some e' -> string_of_exp e'
+      | None -> this_keyword) in
+    string_of_fn_util (method_to_function_name class_string id)
+      ([first_arg ^ super_string] @ (List.map string_of_texp args))
+  | FieldSelect (lhs, s, class_name) ->
+    let glsl_lhs = (match lhs with
+      | Some e' -> string_of_exp e'
+      | None -> this_keyword) in
+    if String.equal class_name "" then (* Ugly hack that signals that the field
+    select is for a struct *)
+    glsl_lhs ^ "." ^ s
+    else
+    let cx = (match !check_contexts with
+      | Some con -> con
+      | None -> failwith "No check contexts!") in
+    let super_string = (match class_field_lookup_deep cx (get_class cx class_name) s with
+      | Some (_, num_parents) -> string_multiply ("." ^ super_keyword) num_parents
+      | None -> failwith "Invalid field select: " ^ s
+    ) in
+    glsl_lhs ^ super_string ^ "." ^ s
 
 let rec string_of_comm (c : comm) : string =
   let block_string c =
@@ -159,6 +193,13 @@ let rec string_of_comm (c : comm) : string =
       ^ ";"
   | ExactCodeComm ec -> ec
 
+let string_of_structure (id, ml) : string =
+  (List.fold_left
+  (fun s (t, id) -> 
+    s ^ " " ^ string_of_typ t ^ " " ^ id ^ ";"
+  ) ("struct " ^ id ^ " {") ml) ^ " };"
+  ^ (if !pretty_printer then "\n" else "")
+
 let comp_fn (f : fn) : string =
   debug_print ">> comp_fn" ;
   let (rt, id, _, p), cl = f in
@@ -181,6 +222,57 @@ let comp_fn (f : fn) : string =
         ^ string_of_separated_list "" string_of_comm cl
         ^ "}"
 
+let string_of_class (c : _class) : string =
+  let name, parent, mems = c in
+  let fields = List.filter
+  (fun m -> match m with | Field _ -> true | Method _ -> false) mems in
+  let methods = List.filter
+  (fun m -> match m with | Method _ -> true | Field _ -> false) mems in
+
+  let struct_mems =
+    (match parent with
+    | Some par -> [(ParTyp(class_to_struct_name par, []), "super")]
+    | None -> []) @
+    List.map (fun f -> match f with
+    | Field (_, typ, id) -> (typ, id)
+    | _ -> failwith "not a field") fields in
+  let struct_str = string_of_structure ((class_to_struct_name name), struct_mems) in
+
+  let class_type = ParTyp(name, []) in
+  let function_strs = List.map
+  (fun m -> match m with
+  | Method (_, (fn_decl, fn_comms)) -> 
+    let ret_typ, fn_name, pmt, params  = fn_decl in
+    (match fn_name with
+    | "init" ->
+      let new_fn_name = class_to_constructor_name name in
+      let new_fn_comms = (* Find and replace the super and self method invocations *)
+      List.map (fun comm -> match comm with
+      | Exp((MethodInv (None, "super", tl, args, class_name)), _) ->
+          let par = (match parent with | Some par -> par
+            | None -> failwith "super invocation in class with no parent class") in
+          Decl ((ParTyp(par, [])), "super",
+          ((FnInv(class_to_constructor_name par, tl, args)), (ParTyp(par, []))))
+      | Exp((MethodInv (None, "self", tl, args, class_name)), _) ->
+          let new_tl, new_args = (match parent with
+          | Some par ->
+            (ParTyp(par, []))::tl,
+            (Var "super", ParTyp(par, []))::args
+          | None -> tl, args) in
+          Return (Some((
+          FnInv(class_to_struct_name name, new_tl, new_args)), ParTyp(name, [])))
+      | _ -> comm) fn_comms in
+      comp_fn ((ret_typ, new_fn_name, pmt, params), new_fn_comms)
+    | _ ->
+      let new_fn_name = method_to_function_name name fn_name in
+      let new_params = [([], class_type, this_keyword)] @ params in
+      comp_fn ((ret_typ, new_fn_name, pmt, new_params), fn_comms)
+    )
+  | _ -> failwith "not a method"
+  ) methods in
+  let concatenated_functions = String.concat " " function_strs in
+  struct_str ^ concatenated_functions
+
 let rec comp_prog (f : term list) : string =
   debug_print ">> comp_fn_lst" ;
   match f with
@@ -190,7 +282,10 @@ let rec comp_prog (f : term list) : string =
       string_of_list string_of_storage_qual sq ^ " " ^ string_of_typ et ^ " " ^ x
       ^ Option.fold ~none:"" ~some:(fun x -> " = " ^ string_of_texp x) e
       ^ ";" ^ comp_prog t
+  | Structure s :: t -> string_of_structure s ^ comp_prog t
+  | Class c :: t -> string_of_class c ^ comp_prog t
 
-let rec compile_program (prog : prog) : string =
+let rec compile_program (cx : contexts) (prog : prog) : string =
   debug_print ">> compile_program" ;
+  check_contexts := Some cx;
   comp_prog prog

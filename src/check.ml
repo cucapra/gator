@@ -305,6 +305,8 @@ let rec typ_erase (cx : contexts) (t : typ) : TypedAst.etyp =
   | GenTyp -> TypedAst.GenTyp
   | BotTyp | AnyFrameTyp | FrameTyp _ | GenArrTyp _ | ExactCodeTyp ->
       debug_fail cx ("Cannot erase " ^ string_of_typ t)
+  | StructureTyp -> TypedAst.StructureTyp
+  | ClassTyp -> TypedAst.ClassTyp
 
 let rec etyp_to_typ (e : TypedAst.etyp) : typ =
   debug_print ">> etyp_to_typ" ;
@@ -322,6 +324,8 @@ let rec etyp_to_typ (e : TypedAst.etyp) : typ =
   | TypedAst.AnyTyp -> AnyTyp
   | TypedAst.GenTyp -> GenTyp
   | TypedAst.ExactCodeTyp -> ExactCodeTyp
+  | TypedAst.StructureTyp -> StructureTyp
+  | TypedAst.ClassTyp -> ClassTyp
 
 let rec check_val (cx : contexts) (v : value) : typ =
   debug_print (">> check_val " ^ string_of_value v) ;
@@ -382,6 +386,66 @@ let infer_pml (cx : contexts) (args : typ list) (target : params) :
               if Assoc.mem x inf then Some (Assoc.lookup x inf :: acc) else None)
         (Assoc.keys cx.pm) (Some [])
 
+let try_fn_inv (cx : contexts) (x : id) (pml : typ list)
+    (args : (TypedAst.exp * typ) list) (c : string option) (f : fn_typ) :
+    (typ Assoc.context option * fn_typ * typ Assoc.context) option =
+  let arg_typs = List.map snd args in
+  let ml, rt, x, params, meta' = f in
+  let pm = get_ml_pm cx ml in
+  debug_print (">> try_fn_inv " ^ string_of_fn_typ f) ;
+  (* This function asserts whether or not the function
+   * invocation matches the function given *)
+  (* In particular, this checks whether the given function
+   * matches the given parameterization and parameters *)
+  (* If it is valid, this returns (Some 'map from parameter to type'),
+   * otherwise returns 'None' *)
+  (* If we have the wrong number of arguments, then no match for sure *)
+  if List.length args != List.length params then None
+  else
+    (* Work out the parameter inference if one is needed *)
+    let inferred_pml =
+      if Assoc.size pm == List.length pml then Some pml
+      else if List.length pml == 0 then
+        infer_pml (with_pm cx pm) arg_typs params
+      else None in
+    match inferred_pml with
+    | None -> None
+    | Some ipml -> (
+        (* Check that the parameterization conforms to the bounds provided *)
+        let ipml_clean =
+          List.map (replace_abstype (Assoc.map fst cx.pm)) ipml in
+        let param_check =
+          match_parameterization_safe (with_pm cx pm) ipml_clean in
+        let scheme_check =
+          match c with
+          | None -> None
+          | Some scheme -> (
+              let scx = with_pm cx (fst (get_scheme cx scheme)) in
+              match infer_pml scx arg_typs params with
+              | None -> None
+              | Some spml -> match_parameterization_safe scx spml ) in
+        match param_check with
+        | None -> None
+        | Some pm_map ->
+            (* Get the parameters types and replace them in params_typ *)
+            let param_typs = List.map tr_snd params in
+            let param_typs' = List.map (replace_abstype pm_map) param_typs in
+            let param_typs'' =
+              match scheme_check with
+              | None -> param_typs'
+              | Some spm_map -> List.map (replace_abstype spm_map) param_typs'
+            in
+            (* TODO: something's wrong here: see the note at the top of canon_basics *)
+            (* Finally, check that the arg and parameter types match *)
+            if List.length arg_typs == List.length param_typs then
+              Option.map
+                (fun x -> (scheme_check, f, x))
+                (List.fold_left2
+                   (fun acc arg param ->
+                     if is_subtype cx arg param then acc else None)
+                   param_check arg_typs param_typs'')
+            else None )
+
 let check_fn_inv (cx : contexts) (x : id) (pml : typ list)
     (args : (TypedAst.exp * typ) list) :
     (string * TypedAst.etyp list * TypedAst.args) * typ =
@@ -389,69 +453,12 @@ let check_fn_inv (cx : contexts) (x : id) (pml : typ list)
   let arg_typs = List.map snd args in
   (* find definition for function in phi *)
   (* looks through all possible overloaded definitions of the function *)
-  let try_fn_inv (c : string option) (f : fn_typ) :
-      (typ Assoc.context option * fn_typ * typ Assoc.context) option =
-    let ml, rt, x, params, meta' = f in
-    let pm = get_ml_pm cx ml in
-    debug_print (">> try_fn_inv " ^ string_of_fn_typ f) ;
-    (* This function asserts whether or not the function
-     * invocation matches the function given *)
-    (* In particular, this checks whether the given function
-     * matches the given parameterization and parameters *)
-    (* If it is valid, this returns (Some 'map from parameter to type'),
-     * otherwise returns 'None' *)
-    (* If we have the wrong number of arguments, then no match for sure *)
-    if List.length args != List.length params then None
-    else
-      (* Work out the parameter inference if one is needed *)
-      let inferred_pml =
-        if Assoc.size pm == List.length pml then Some pml
-        else if List.length pml == 0 then
-          infer_pml (with_pm cx pm) arg_typs params
-        else None in
-      match inferred_pml with
-      | None -> None
-      | Some ipml -> (
-          (* Check that the parameterization conforms to the bounds provided *)
-          let ipml_clean =
-            List.map (replace_abstype (Assoc.map fst cx.pm)) ipml in
-          let param_check =
-            match_parameterization_safe (with_pm cx pm) ipml_clean in
-          let scheme_check =
-            match c with
-            | None -> None
-            | Some scheme -> (
-                let scx = with_pm cx (fst (get_scheme cx scheme)) in
-                match infer_pml scx arg_typs params with
-                | None -> None
-                | Some spml -> match_parameterization_safe scx spml ) in
-          match param_check with
-          | None -> None
-          | Some pm_map ->
-              (* Get the parameters types and replace them in params_typ *)
-              let param_typs = List.map tr_snd params in
-              let param_typs' = List.map (replace_abstype pm_map) param_typs in
-              let param_typs'' =
-                match scheme_check with
-                | None -> param_typs'
-                | Some spm_map -> List.map (replace_abstype spm_map) param_typs'
-              in
-              (* TODO: something's wrong here: see the note at the top of canon_basics *)
-              (* Finally, check that the arg and parameter types match *)
-              if List.length arg_typs == List.length param_typs then
-                Option.map
-                  (fun x -> (scheme_check, f, x))
-                  (List.fold_left2
-                     (fun acc arg param ->
-                       if is_subtype cx arg param then acc else None)
-                     param_check arg_typs param_typs'')
-              else None ) in
   (* Check if this function should be treated as a scheme function *)
   let fn_invocated = get_functions_safe cx x in
   match
     List.fold_right
       (fun (c, f) acc ->
-        match (acc, try_fn_inv c f) with
+        match (acc, try_fn_inv cx x pml args c f) with
         | None, f -> f
         | Some _, None -> acc
         | Some f1, Some f2 ->
@@ -887,17 +894,135 @@ and check_exp (cx : contexts) (e : exp) : TypedAst.exp * typ =
       let er = check_aexp cx r in
       ( TypedAst.Index (exp_to_texp cx el, exp_to_texp cx er)
       , check_index_exp cx (snd el) (snd er) )
-  | FnInv ("swizzle", _, args) -> (
-    try check_swizzle cx (List.map (check_aexp cx) args)
-    with TypeException e -> (
-      match args with
-      (* See if this is actually something like mesh.normals in which case treat it like one var *)
-      | [(Var s1, _); (Val (StringVal s2), _)] ->
-          check_exp cx (Var (s1 ^ "." ^ s2))
-      | _ -> raise (TypeException e) ) )
   | FnInv (x, pr, args) ->
-      let (a, b, c), t = check_fn_inv cx x pr (List.map (check_aexp cx) args) in
-      (TypedAst.FnInv (a, b, c), t)
+      (match x with
+      | "super" ->
+        let c = most_recent_class cx in
+        let (_, parent, _, _) = c in
+        (match parent with
+        | None -> error cx "'super' used in a class with no parent class"
+        | Some par -> 
+          (match class_method_lookup_shallow (get_class cx par) "init" with
+          | Some (Method (vis, (fn_typ, _))) ->  (
+            let typed_args1 = List.map (check_aexp cx) args in
+            let typed_args2 = List.map (exp_to_texp cx) typed_args1 in
+            match try_fn_inv cx x pr typed_args1 None fn_typ with
+            | Some _ ->
+              let _, ret_typ, _, _, _ = fn_typ in
+              let typed_pr = List.map (typ_erase cx) pr in
+              let class_name, _, _, _ = c in
+              (TypedAst.MethodInv (None, x, typed_pr, typed_args2, class_name), ret_typ)
+            | None -> error cx ("Invalid method invocation: " ^ x)
+          )
+          | _ -> error cx "parent type has no constructor"
+          )
+        )
+      | "self" ->
+        let c = most_recent_class cx in
+        let (class_name, _, mems, _) = c in
+        let typed_args1 = List.map (check_aexp cx) args in
+        let typed_args2 = List.map (exp_to_texp cx) typed_args1 in
+        let fields = List.filter
+          (fun m -> match m with | Field _ -> true | Method _ -> false) mems in
+        let params = List.map
+          (fun m -> match m with
+          | Field (_, typ, id) -> ([], typ, id)
+          | _ -> failwith "Not a field!") fields in
+        let ret_typ = ParTyp(class_name, []) in
+        let fn_typ = ([], ret_typ, x, params, Lexing.dummy_pos) in
+        (match try_fn_inv cx x pr typed_args1 None fn_typ with
+        | Some _ ->
+          let typed_pr = List.map (typ_erase cx) pr in
+          (TypedAst.MethodInv (None, x, typed_pr, typed_args2, class_name), ret_typ)
+        | None -> error cx ("Invalid method invocation: " ^ x)
+        )
+      | _ ->
+        let (a, b, c), t = check_fn_inv cx x pr (List.map (check_aexp cx) args) in
+        (TypedAst.FnInv (a, b, c), t)
+      )
+  | MethodInv (exp, x, pr, args) -> check_method_inv cx exp x pr args
+  | FieldSelect (e_opt, s) -> check_field_select cx e_opt s
+
+and check_field_select (cx : contexts) (e_opt : exp option) (s : id) :
+    TypedAst.exp * typ =  (* can be struct, class, or swizzle *)
+  match e_opt with
+  | Some e' -> (
+    let (typed_e, t) = check_exp cx e' in
+    match structure_of_typ cx t with
+    | Some st -> ( (* Treat as struct field select *)
+        match struct_field_lookup st s with
+        | Some field_typ ->
+            (TypedAst.FieldSelect (Some typed_e, s, ""), field_typ)
+        | None ->
+            error cx ("Invalid field name " ^ s))
+    | None -> (
+        match class_of_typ cx t with
+        | Some c -> ( (* Treat as class field select *)
+          let (class_name, _, _, _) = c in
+          match class_field_lookup_deep cx c s with
+            | Some (Field (vis, field_type, _), _) ->
+                (match (vis) with
+                | Public    -> ()
+                | Protected -> error cx "Protected field access not allowed"
+                | Private   -> error cx "Private field access not allowed"
+                );
+                (TypedAst.FieldSelect (Some typed_e, s, class_name), field_type)
+            | _ -> raise (TypeException ("Invalid field " ^ s)))
+        | None -> ( (* Treat as swizzle *)
+          let args = [(typed_e, t); check_exp cx (Val (StringVal(s)))] in
+          try check_swizzle cx args
+          with TypeException e -> (
+            match args with
+            (* See if this is actually something like mesh.normals in which case treat it like one var *)
+            | [(Var s1, _); (Val (StringVal s2), _)] ->
+                check_exp cx (Var (s1 ^ "." ^ s2))
+            | _ -> raise (TypeException e) )))
+  )
+  | None -> (
+    let c = most_recent_class cx in
+    let (class_name, _, _, _) = c in
+    match class_field_lookup_deep cx c s with
+    | Some (Field (vis, field_type, _), num_parents) ->
+        (match (vis, num_parents) with
+        | Public,    _ -> ()
+        | Protected, _ -> ()
+        | Private,   0   -> ()
+        | Private,   _ -> error cx "Private field access not allowed"
+        );
+        (TypedAst.FieldSelect (None, s, class_name), field_type)
+    | _ -> raise (TypeException ("Invalid field " ^ s))
+  )
+
+and check_method_inv (cx : contexts) (exp : exp option) (x : string) (pr : typ list)
+      (args : args) : TypedAst.exp * typ =
+    let c, typed_exp = match exp with
+    | Some e -> (
+      let (typed_e, t) = check_exp cx e in
+      match class_of_typ cx t with
+      | Some c' -> (c', Some typed_e)
+      | None -> error cx ("Invalid method invocation: " ^ x)
+    )
+    | None -> (most_recent_class cx, None) in
+    match class_method_lookup_deep cx c x with
+    | Some (Method (vis, (fn_typ, _)), num_parents, _) -> (
+      (match (exp, vis, num_parents) with
+      | _,      Public,    _ -> ()
+      | Some _, Protected, _ -> error cx "Protected method access not allowed"
+      | None,   Protected, _ -> ()
+      | None,   Private,   0   -> ()
+      | _,      Private,   _ -> error cx "Private method access not allowed"
+      );
+      let typed_args1 = List.map (check_aexp cx) args in
+      let typed_args2 = List.map (exp_to_texp cx) typed_args1 in
+      match try_fn_inv cx x pr typed_args1 None fn_typ with
+      | Some _ ->
+        let _, ret_typ, _, _, _ = fn_typ in
+        let typed_pr = List.map (typ_erase cx) pr in
+        let class_name, _, _, _ = c in
+        (TypedAst.MethodInv (typed_exp, x, typed_pr, typed_args2, class_name), ret_typ)
+      | None -> error cx ("Invalid method invocation: " ^ x)
+    )
+    | _ -> error cx ("Invalid method invocation: " ^ x)
 
 and check_arr (cx : contexts) (a : aexp list) : TypedAst.exp * typ =
   debug_print ">> check_arr" ;
@@ -1331,6 +1456,49 @@ let check_exactCode (ec : string) : TypedAst.prog =
   let test = Assoc.empty in
   [Fn ((ExactCodeTyp, ec, test, []), [])]
 
+let check_structure_member (cx : contexts) ((t, id) : structure_member) :
+    TypedAst.structure_member =
+  check_typ_valid cx t;
+  (typ_erase cx t, id)
+
+let check_structure (cx : contexts) ((name, field_list, pos) : structure) :
+    contexts * TypedAst.structure =
+  let cx' = bind_structure cx name (name, field_list, pos) in
+  let cx'' = bind_tau cx' name true Assoc.empty StructureTyp in
+  let _, cx''' = bind_function cx''
+    ([], ParTyp(name, []), name,
+    List.map (fun (t, id) -> ([], t, id)) field_list, pos) None in
+  cx''', (name, List.map (check_structure_member cx) field_list)
+
+let check_class_member (cx : contexts) (mem : class_member) :
+    TypedAst.class_member =
+  match mem with
+  | Field(vis, typ, id) ->
+    check_typ_valid cx typ;
+    Field(vis, typ_erase cx typ, id)
+  | Method(vis, fn) ->
+    let _, typed_fn = check_fn cx fn None in
+    (* probably not a good idea to just drop the modified contexts like this *)
+    match typed_fn with
+    | Some tfn -> Method(vis, tfn)
+    | None -> debug_fail cx "Typechecking class method returns None"
+
+let check_class (cx : contexts) (c : _class) :
+    contexts * TypedAst._class =
+  let name, parent, mems, pos = c in
+  let cx' = bind_class cx name c in
+  let supertype = match parent with
+  | Some p -> ParTyp(name, [])
+  | None -> ClassTyp in
+  let cx'' = bind_tau cx' name true Assoc.empty supertype in
+  let constructor_args = match class_method_lookup_shallow c "init" with
+  | Some (Method (_, ((_, _, _, p, _), _))) -> p
+  | _ -> [] in
+  let _, cx''' = bind_function cx''
+    ([], ParTyp(name, []), "new_" ^ name, constructor_args, pos) None in
+  let typed_mems = List.map (fun m -> check_class_member cx''' m) mems in
+  cx''', (name, parent, typed_mems)
+
 let rec check_term (cx : contexts) (t : term) : contexts * TypedAst.prog =
   match t with
   | Using s -> check_exprog (get_prog cx s) cx
@@ -1350,6 +1518,12 @@ let rec check_term (cx : contexts) (t : term) : contexts * TypedAst.prog =
   | Fn f -> (
       let cx', f' = check_fn cx f None in
       (cx', match f' with None -> [] | Some f' -> [Fn f']) )
+  | Structure s -> (
+      let cx', s' = check_structure cx s in
+      (cx', [Structure s']))
+  | Class c -> (
+      let cx', c' = check_class cx c in
+      (cx', [Class c']))
   | Typedef t -> debug_fail cx "Typedef term found in typechecking pass!"
 
 and check_aterm (cx : contexts) ((t, meta) : aterm) : contexts * TypedAst.prog =
@@ -1381,14 +1555,14 @@ let rec check_term_list (tl : prog) (externs : prog Assoc.context) :
 
 (* Returns the list of fn's which represent the program
  * and params of the void main() fn *)
-let check_prog (tl : prog) (externs : prog Assoc.context) : TypedAst.prog =
+let check_prog (tl : prog) (externs : prog Assoc.context) : contexts * TypedAst.prog =
   debug_print ">> check_prog" ;
   let cx, typed_prog = check_term_list tl externs in
   check_main_fn cx ;
   debug_print "===================" ;
   debug_print "Type Check Complete" ;
   debug_print "===================\n" ;
-  typed_prog
+  (cx, typed_prog)
 
 (* Searches the program for files which need to be loaded *)
 (* If we have any duplicate names, throws an exception to avoid cycles *)

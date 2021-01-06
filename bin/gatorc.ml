@@ -71,14 +71,14 @@ let _ =
           (String.split_on_char '.'
              (List.hd (List.rev (String.split_on_char '/' f)))) in
       let fs, found = Check.search_prog prog [progname] in
-      let typedProg =
+      let cx, typedProg =
         Check.check_prog prog (search_progs (prog_path f) fs found) in
       if !run_interp then Ops.eval_prog typedProg
       else if !emit_ts then print_string (EmitTS.compile_program typedProg)
       else if !emit_hl then print_string (EmitHL.compile_program typedProg)
       else if !pretty_printer then
-        let compiled_program = EmitGL.compile_program typedProg in
+        let compiled_program = EmitGL.compile_program cx typedProg in
         let r = Str.regexp ";\\s*}?" in
         let result = Str.global_replace r "\\0\n" compiled_program in
         print_string result
-      else print_string (EmitGL.compile_program typedProg)
+      else print_string (EmitGL.compile_program cx typedProg)

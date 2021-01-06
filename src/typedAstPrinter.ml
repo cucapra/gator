@@ -16,6 +16,8 @@ let rec string_of_typ (t : etyp) : string =
   | AnyTyp -> "any"
   | GenTyp -> "genType"
   | ExactCodeTyp -> "ExactCodeType"
+  | StructureTyp -> "struct"
+  | ClassTyp -> "class"
 
 and string_of_pml (p : etyp list) : string =
   if List.length p > 0 then "<" ^ string_of_list string_of_typ p ^ ">" else ""
@@ -32,11 +34,25 @@ and string_of_exp (e : exp) : string =
   | Var v -> v
   | Index (l, r) ->
       string_of_texp l ^ "[" ^ string_of_texp r ^ "]" (* id * args *)
+  | MethodInv (Some e, id, tl, args, _) ->
+      string_of_exp e ^ "." ^
+      id
+      ^
+      if nonempty tl then string_of_list string_of_typ tl
+      else "" ^ "(" ^ string_of_list string_of_texp args ^ ")"
+  | MethodInv (None, id, tl, args, _) ->
+      "this." ^
+      id
+      ^
+      if nonempty tl then string_of_list string_of_typ tl
+      else "" ^ "(" ^ string_of_list string_of_texp args ^ ")"
   | FnInv (id, tl, args) ->
       id
       ^
       if nonempty tl then string_of_list string_of_typ tl
       else "" ^ "(" ^ string_of_list string_of_texp args ^ ")"
+  | FieldSelect (Some e, s, _) -> string_of_exp e ^ "." ^ s
+  | FieldSelect (None, s, _) -> "this." ^ s
 
 let string_of_param (i, e) : string = string_of_typ e ^ " " ^ i
 
@@ -85,8 +101,44 @@ let string_of_fn (((rt, id, pm, p), cl) : fn) : string =
   ^ string_of_parameterization pm
   ^ string_of_params p ^ string_of_comm_list cl
 
+let string_of_structure (id, ml) : string =
+  (List.fold_left
+  (fun s (t, id) -> 
+    s ^ " " ^ string_of_typ t ^ " " ^ id ^ ";"
+  ) ("struct " ^ id ^ " {") ml) ^ " };"
+
+let string_of_visibility (vis : visibility) : string =
+  match vis with
+  | Private -> "private"
+  | Public -> "public"
+  | Protected -> "protected"
+
+let string_of_class_member (mem : class_member) : string =
+  match mem with
+  | Field (vis, typ, id) ->
+      string_of_visibility vis ^ " " ^
+      string_of_typ typ ^ " " ^ id
+  | Method (vis, fn) ->
+      string_of_visibility vis ^ " " ^
+      string_of_fn fn
+
+let string_of_class (name, parent, mems) : string =
+  let parent_str = match parent with
+  | Some id -> id
+  | None -> "none" in
+  (List.fold_left
+  (fun s mem ->
+    s ^ " " ^ string_of_class_member mem ^ ";"
+  ) ("class " ^ name ^ " : " ^ parent_str ^ " {")
+  mems) ^ " }"
+
+
 let string_of_term (t : term) : string =
-  match t with GlobalVar v -> string_of_global_var v | Fn f -> string_of_fn f
+  match t with
+  | GlobalVar v -> string_of_global_var v
+  | Structure s -> string_of_structure s
+  | Class c -> string_of_class c
+  | Fn f -> string_of_fn f
 
 let string_of_prog (e : prog) : string =
   string_of_separated_list "\n" string_of_term e
