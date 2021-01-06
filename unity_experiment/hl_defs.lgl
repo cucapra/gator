@@ -1,0 +1,439 @@
+// GLSL Type Declarations
+declare type float2 is float[2];
+declare type float3 is float[3];
+declare type float4 is float[4];
+declare type float4x4 is float[4][4];
+declare float[4] gl_FragColor;
+declare float[4] gl_Position;
+with float[4] T:
+declare type sampler2D;
+with float[4] T:
+declare type samplerCube;
+
+type scalar is float;
+type angle is scalar;
+
+// Numeric Operator Types
+with float T: declare T +(T f1, T f2);
+with float T: declare T -(T f1, T f2);
+with float T: declare T -(T f);
+with float T: declare T *(T f1, T f2);
+with float T: declare T /(T f1, T f2);
+with float T: declare bool ==(T f1, T f2);
+with float T: declare bool >=(T f1, T f2);
+with float T: declare bool <=(T f1, T f2);
+with float T: declare bool >(T f1, T f2);
+with float T: declare bool <(T f1, T f2);
+// with float T: declare T ++(T f);
+
+with int T: declare T +(T f1, T f2);
+with int T: declare T -(T f1, T f2);
+with int T: declare T -(T f);
+with int T: declare T *(T f1, T f2);
+with int T: declare T /(T f1, T f2);
+with int T: declare bool ==(T f1, T f2);
+with int T: declare bool >=(T f1, T f2);
+with int T: declare bool <=(T f1, T f2);
+with int T: declare bool >(T f1, T f2);
+with int T: declare bool <(T f1, T f2);
+with int T: declare T ++(T f);
+
+// GLSL float/Matrix Types
+with float2 T: declare T +(T v1, T v2);
+with float2 T: declare T -(T v1, T v2);
+with float2 T: declare T -(T v);
+with float2 T: with float U: declare T *(T v, U f);
+with float2 T: with float U: declare T *(U f, T v);
+with float2 T: with float U: declare T /(T f1, U f2);
+with float2 T: declare float2 *(T v1, T v2);
+
+with float3 T: declare T +(T v1, T v2);
+with float3 T: declare T -(T v1, T v2);
+with float3 T: declare T -(T v);
+with float3 T: declare T *(T v1, T v2);
+with float3 T: with float U: declare T *(T v, U f);
+with float3 T: with float U: declare T *(U f, T v);
+with float3 T: with float U: declare T /(T f1, U f2);
+
+with float4 T: declare T +(T v1, T v2);
+with float4 T: declare T -(T v1, T v2);
+with float4 T: declare T -(T v);
+with float4 T: with float U: declare T *(T v, U f);
+with float4 T: with float U: declare T *(U f, T v);
+with float4 T: declare float4 *(T v1, T v2);
+with float4 T: declare float4 /(T v1, float v2);
+
+// with float4x4 T: with float4 U: declare float4 *(T m, U v); //Remove
+//->
+with float4x4 T: with float4 U: declare float4 mul(U v, T m);
+with float4x4 T: with float4x4 U: declare float4x4 +(T m, U v);
+with float4x4 T: with float4x4 U: declare float4x4 *(T m, U v);
+
+// HLSL function types
+
+declare float sin(float f);
+declare float cos(float f);
+declare float tan(float f);
+declare float sqrt(float f);
+declare float acos(float f);
+declare float atan(float f, float f2);
+with float[2] T: declare T sin(T f);
+with float[2] T: declare T cos(T f);
+with float[2] T: declare T sqrt(T f);
+with float[2] T: declare T acos(T f);
+with float[3] T: declare T sin(T f);
+with float[3] T: declare T cos(T f);
+with float[3] T: declare T sqrt(T f);
+with float[3] T: declare T acos(T f);
+with float[4] T: declare T sin(T f);
+with float[4] T: declare T cos(T f);
+with float[4] T: declare T sqrt(T f);
+with float[4] T: declare T acos(T f);
+
+declare float abs(float f);
+with float[2] T: declare T abs(T f);
+with float[3] T: declare T abs(T f);
+with float[4] T: declare T abs(T f);
+
+declare float lerp(float a, float b, float c);
+with float2 T: declare T pow(T v, float f);
+with float3 T: declare T pow(T v, float f);
+with float4 T: declare T pow(T v, float f);
+with float3 T: declare T pow(T v, T f);
+// with float2 T: declare T cross(T v, T f);
+// with float3 T: T cross(T v1, T v2) {
+//         return [v1[1] * v2[2] - v1[2] * v2[1],
+//             v1[2] * v2[0] - v1[0] * v2[2],
+//             v1[0] * v2[1] - v1[1] * v2[0]];
+//     }
+with float2 T: declare T floor(T v);
+with float T: declare T fract(T f);
+with float2 T: declare T fract(T v);
+with float4 T: declare T fract(T v);
+
+with float[4] T:
+declare T texture2D(sampler2D<T> texture, float[2] coord);
+with float[4] T:
+declare T textureCube(samplerCube<T> texture, float[2] coord);
+
+with float[4] T:
+declare T textureCube(samplerCube<T> texture, float[3] coord);
+
+declare float2 float2(float x, float y);
+declare float3 float3(float x, float y, float z);
+declare float4 float4(float x, float y, float z, float w);
+
+declare float2 float2(float x);
+// declare float2 float2(float[3] v);
+// declare float2 float2(float[4] v);
+
+declare float3 float3(float x);
+// declare float3 float3(float[2] v, float z);
+// declare float3 float3(float[4] v);
+
+declare float4 float4(float x);
+// declare float4 float4(float[2] v, float x, float y);
+// declare float4 float4(float[2] v1, float[2] v2);
+// declare float4 float4(float[3] v, float x);
+
+
+declare float4x4 float4x4(float[3][3] v);
+
+with float2 T: declare float dot(T v1, T v2);
+with float3 T: declare float dot(T v1, T v2);
+with float4 T: declare float dot(T v1, T v2);
+with float2 T: declare float length(T v);
+with float3 T: declare float length(T v);
+with float4 T: declare float length(T v);
+with float2 T: declare float distance(T p1, T p2);
+with float3 T: declare float distance(T p1, T p2);
+with float4 T: declare float distance(T p1, T p2);
+// declare T normalize<T : float3>(T x);
+declare float2 normalize(float2 x);
+declare float3 normalize(float3 x);
+with float T: declare T max(T f1, T f2);
+with float2 T: declare T reflect(T v1, T v2);
+with float3 T: declare T reflect(T v1, T v2);
+with float T: declare T pow(T f1, T f2);
+with float T: declare T pow(T f1, int e);
+with float2 T: declare T lerp(T v1, T v2, T v3);
+
+// Geometric Objects and Operations
+
+prototype geometry {
+    object point;
+    object position is point;
+    object vector;
+    object direction;
+    object halfdir is direction;
+    // There's probably a better way to do this, but whatever
+    // Separate normals so they work with normal transformations
+    object normal is direction;
+    with frame() r: object transformation;
+    with frame() r: object normalTransformation;
+
+    vector +(vector x, vector y);
+    vector -(vector x, vector y);
+    vector -(vector x);
+    direction -(direction x);
+    vector *(vector v, scalar s);
+    vector *(scalar s, vector v);
+    point +(point p, vector v);
+    point +(vector p, point v);
+    point -(point p, vector v);
+    vector -(vector p, point v);
+    vector -(point x, point y);
+    vector -(point x);
+    with frame() target:
+    this<target>.vector *(transformation<target> m, direction v);
+
+    with frame() target:
+    this<target>.vector *(transformation<target> m, vector v);
+
+    with frame() target:
+    this<target>.point *(transformation<target> m, point p);
+
+    with frame() target:
+    this<target>.vector *(normalTransformation<target> m, normal d);
+
+    with frame() target:
+    transformation<target> +(transformation<target> m1, transformation<target> m2);
+
+    with frame() middle, target:
+    transformation<target> *(this<middle>.transformation<target> m2, transformation<middle> m1);
+
+    // position point_pos_free(point p);
+    angle dot(direction v1, direction v2);
+    scalar length(vector v);
+    scalar distance(point p1, point p2);
+    direction normalize(vector v); // Only direction -> direction is allowed, so canonicalizing this is fine
+    direction normalize(direction v);
+    normal normalNormalize(vector v);
+    vector reflect(direction v1, direction v2);
+    vector reflect(vector v1, direction v2);
+    // vector cross(vector v1, vector v2);
+    vector lerp(vector v1, vector v2, vector v3);
+}
+
+// Coordinate Scheme Definitions
+
+with frame(2) r:
+coordinate cart2 : geometry {
+    object point is float[2];
+    object position is point;
+    object vector is float[2];
+    object direction is vector;
+    object halfdir is direction;
+    object normal is direction;
+    with frame(2) r2: object transformation is float[2][2];
+    with frame(2) r2: object normalTransformation is float[2][2];
+
+    vector +(vector x, vector y) {
+        return (x as! float2 + y as! float2) as! vector;
+    }
+    vector -(vector x, vector y) {
+        return (x as! float2 - y as! float2) as! vector;
+    }
+    vector *(vector v, scalar s) {
+        return (v as! float2 * s) as! vector;
+    }
+    vector *(scalar s, vector v) {
+        return (s * v as! float2) as! vector;
+    }
+    vector -(vector v) {
+        return (-v as! float2) as! vector;
+    }
+    direction -(direction v) {
+        return (-v as! float2) as! direction;
+    }
+    point +(point p, vector v) {
+        return (p as! float2 + v as! float2) as! point;
+    }
+    point +(vector v, point p) {
+        return (v as! float2 + p as! float2) as! point;
+    }
+    point -(point p, vector v) {
+        return (p as! float2 - v as! float2) as! point;
+    }
+    vector -(vector v, point p) {
+        return (v as! float2 - p as! float2) as! vector;
+    }
+    vector -(point x, point y) {
+        return (x as! float2 - y as! float2) as! vector;
+    }
+    vector -(point v) {
+        return (-v as! float2) as! vector;
+    }
+
+    // canon position point_pos_free(point p) { return p as! position; }
+    angle dot(direction v1, direction v2) {
+        return (dot(v1 as! float2, v2 as! float2) as! angle);
+    }
+    scalar length(vector v) {
+        return (length(v as! float2) as! scalar);
+    }
+    scalar distance(point p1, point p2) {
+        return distance(p1 as! float2, p2 as! float2) as! scalar;
+    }
+    direction normalize(vector v) {
+        return (normalize(v as! float2) as! direction);
+    }
+    direction normalize(direction v) {
+        return v;
+    }
+    canon normal normalNormalize(vector v) {
+        return (normalize(v as! float2) as! normal);
+    }
+    vector reflect(direction v1, direction v2) {
+        return (reflect(v1 as! float2, v2 as! float2) as! vector);
+    }
+    vector reflect(vector v1, direction v2) {
+        return (reflect(v1 as! float2, v2 as! float2) as! vector);
+    }
+    vector lerp(vector v1, vector v2, vector v3) {
+        return (lerp(v1 as! float2, v2 as! float2, v3 as! float2) as! vector);
+    }
+}
+
+with frame(3) r:
+coordinate cart3 : geometry {
+    object point is float[3];
+    object position is point;
+    object vector is float[3];
+    object direction is vector;
+    object halfdir is direction;
+    object normal is direction;
+    with frame(3) r2: object transformation is float[3][3];
+    with frame(3) r2: object normalTransformation is float[3][3];
+
+    vector +(vector x, vector y) {
+        return (x as! float3 + y as! float3) as! vector;
+    }
+    vector -(vector x, vector y) {
+        return (x as! float3 - y as! float3) as! vector;
+    }
+    vector *(vector v, scalar s) {
+        return (v as! float3 * s) as! vector;
+    }
+    vector *(scalar s, vector v) {
+        return (s * v as! float3) as! vector;
+    }
+    vector -(vector v) {
+        return (-v as! float3) as! vector;
+    }
+    direction -(direction v) {
+        return (-v as! float3) as! direction;
+    }
+    point +(point p, vector v) {
+        return (p as! float3 + v as! float3) as! point;
+    }
+    point +(vector v, point p) {
+        return (v as! float3 + p as! float3) as! point;
+    }
+    point -(point p, vector v) {
+        return (p as! float3 - v as! float3) as! point;
+    }
+    vector -(vector v, point p) {
+        return (v as! float3 - p as! float3) as! vector;
+    }
+    vector -(point x, point y) {
+        return (x as! float3 - y as! float3) as! vector;
+    }
+    vector -(point v) {
+        return (-v as! float3) as! vector;
+    }
+    // canon position point_pos_free(point p) { return p as! position; }
+    angle dot(direction v1, direction v2) {
+        return (dot(v1 as! float3, v2 as! float3) as! angle);
+    }
+    scalar length(vector v) {
+        return (length(v as! float3) as! scalar);
+    }
+    scalar distance(point p1, point p2) {
+        return distance(p1 as! float3, p2 as! float3) as! scalar;
+    }
+    direction normalize(vector v) {
+        return (normalize(v as! float3) as! direction);
+    }
+    direction normalize(direction v) {
+        return v;
+    }
+    // canon normal normalNormalize(vector v) {
+    //     return (normalize(v as! float3) as! normal);
+    // }
+    vector reflect(direction v1, direction v2) {
+        return (reflect(v1 as! float3, v2 as! float3) as! vector);
+    }
+    // vector cross(vector v1, vector v2) {
+    //     return (reflect(v1 as! float3, v2 as! float3) as! vector);
+    // }
+    vector reflect(vector v1, direction v2) {
+        return (reflect(v1 as! float3, v2 as! float3) as! vector);
+    }
+}
+
+with frame(3) r:
+coordinate hom : geometry {
+    object point is float[4];
+    object position is point;
+    object vector is float[4];
+    object direction is vector;
+    object halfdir is direction;
+    object normal is direction;
+    with frame(3) r2: object transformation is float[4][4];
+    with frame(3) r2: object normalTransformation is float[4][4];
+    // canon position point_pos_free(point p) { return p as! position; }
+
+    point +(point p, vector v) {
+        return (p as! float4 + v as! float4 * p[3]) as! point;
+    }
+    point +(vector v, point p) {
+        return (p as! float4 + v as! float4 * p[3]) as! point;
+    }
+    vector -(point x, point y) {
+        return (x as! float4 * y[3] - y as! float4 * x[3]) as! vector;
+    }
+    with frame(3) target:
+    canon this<target>.vector *(canon transformation<target> m, direction v) {
+        return mul(v as! float4, m as! float4x4) as! this<target>.vector;
+    }
+    with frame(3) target:
+    canon this<target>.vector *(canon transformation<target> m, vector v) {
+        return mul(v as! float4, m as! float4x4) as! this<target>.vector;
+    }
+    with frame(3) target:
+    canon this<target>.point *(canon transformation<target> m, point p) {
+        return mul(p as! float4, m as! float4x4) as! this<target>.point;
+    }
+    with frame(3) target:
+    transformation<target> +(transformation<target> m1, transformation<target> m2) {
+        return (m1 as! float4x4 + m2 as! float4x4) as! transformation<target>;
+    }
+    with frame(3) middle, target:
+    transformation<target> *(this<middle>.transformation<target> m2, transformation<middle> m1) {
+        return (m2 as! float4x4 * m1 as! float4x4) as! transformation<target>;
+    }
+}
+
+// Transformation Functions
+//TODO: Switch hom functions to non float(v) for hlsl?
+with frame(3) r:
+canon hom<r>.point homify(cart3<r>.point v) {
+    return float4(v[0], v[1], v[2], 1.) as! hom<r>.point;
+}
+with frame(3) r:
+canon hom<r>.vector homify(cart3<r>.vector v) {
+    return float4(v[0], v[1], v[2], 0.) as! hom<r>.vector;
+}
+with frame(3) r:
+canon hom<r>.direction homify(cart3<r>.direction v) {
+    return float4(v[0], v[1], v[2], 0.) as! hom<r>.direction;
+}
+with frame(3) r:
+canon cart3<r>.point hom_reduce(hom<r>.point v) {
+    return ( float3(v[0]/v[3], v[1]/v[3], v[2]/v[3])) as! cart3<r>.point;
+}
+with frame(3) r:
+canon cart3<r>.vector hom_reduce(hom<r>.vector v) {
+    return float3(v[0], v[1], v[2]) as! cart3<r>.vector;
+}
